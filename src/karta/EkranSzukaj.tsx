@@ -13,6 +13,7 @@ import {
 } from '@/wynik/stan'
 import { MAKS_POROWNANIE } from '@/wynik/url'
 import { useWyniki } from '@/wynik/useWyniki'
+import { useWstepnaMapa } from '@/wynik/wstepnaMapa'
 import { opisAdresu } from './adres'
 import { PanelFiltrow } from './panel/PanelFiltrow'
 import { Ranking } from './Ranking'
@@ -36,6 +37,7 @@ export function EkranSzukaj() {
   const kierunki = useStan((s) => s.kierunki)
   const [komunikatHeksow, setKomunikatHeksow] = useState('')
   const wyniki = useWyniki()
+  const wstepnaMapa = useWstepnaMapa(dane.stan !== 'gotowe')
   const adres = dane.stan === 'gotowe' && wybrany !== null ? dane.adresy[wybrany] : undefined
   const wybraneAdresy =
     dane.stan === 'gotowe'
@@ -110,8 +112,8 @@ export function EkranSzukaj() {
               }
             >
               <MapaKrakowa
-                heksy={wyniki?.heksy ?? BRAK_HEKSOW}
-                podpisWarstwy={wyniki?.podpis ?? 'Wynik tej okolicy'}
+                heksy={wyniki?.heksy ?? wstepnaMapa?.heksy ?? BRAK_HEKSOW}
+                podpisWarstwy={wyniki?.podpis ?? wstepnaMapa?.podpis ?? 'Wynik tej okolicy'}
                 wykluczone={wyniki?.wykluczoneHeksy}
                 wybrany={adres ? { lon: adres.lon, lat: adres.lat } : null}
                 onKlik={(lon, lat) => {

@@ -18,7 +18,8 @@ export function Ranking() {
   const wykluczony = wyniki.wykluczenia.wykluczony
   for (let i = 0; i < v.length; i++) {
     const x = v[i] as number
-    if (x !== x || wykluczony[i]) continue
+    const heks = dane.adresy[i]?.h3
+    if (x !== x || wykluczony[i] || !heks || wyniki.heksy.get(heks) == null) continue
     if (najlepsze.length < ILE || x > (v[najlepsze[ILE - 1] as number] as number)) {
       najlepsze.push(i)
       najlepsze.sort((a, b) => (v[b] as number) - (v[a] as number))

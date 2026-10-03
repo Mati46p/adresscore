@@ -8,6 +8,7 @@ import {
   type Wykluczenia,
   wykluczoneHeksy,
 } from './filtry.ts'
+import { zakryjBrakiHeksow } from './heksy.ts'
 import {
   type Kierunki,
   mapaHeksow,
@@ -74,9 +75,16 @@ export function policzWyniki(
   const wynik: Wyniki = {
     naAdres,
     heksy: mapaHeksow(
-      srednieHeksow(
-        zMaska ? maskujWykluczone(naAdres, wykluczenia.wykluczony) : naAdres,
+      zakryjBrakiHeksow(
+        srednieHeksow(
+          zMaska ? maskujWykluczone(naAdres, wykluczenia.wykluczony) : naAdres,
+          dane.grupyHeksow,
+        ),
         dane.grupyHeksow,
+        dane.wskazniki,
+        wagi,
+        kierunki,
+        warstwa,
       ),
       dane.grupyHeksow,
     ),
