@@ -6,6 +6,7 @@ import {
   csv,
   indeksPrzystankow,
   najblizszyPrzystanek,
+  obslugaDnia,
   odczytajGtfs,
   odlegloscMetry,
 } from './gtfs-przystanki.mjs'
@@ -56,5 +57,7 @@ test('GTFS: wyjątek kalendarza aktywuje kurs, bez wsiadania nie liczy peronu', 
     ),
   }
   assert.deepEqual([...aktywneStopIds(pliki, '2026-10-03')], ['z_wsiadaniem'])
+  assert.equal(obslugaDnia(pliki, '2026-10-03').odjazdySzczyt.get('z_wsiadaniem'), 1)
+  assert.equal(obslugaDnia(pliki, '2026-10-03').odjazdySzczyt.has('bez_wsiadania'), false)
   assert.throws(() => aktywneStopIds(pliki, '2026-10-04'), /brak aktywnych usług/)
 })

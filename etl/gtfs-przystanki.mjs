@@ -1,9 +1,12 @@
 // Statyczne rozkłady ZTP -> odległość w linii prostej do najbliższego peronu.
 // Uruchom: node etl/gtfs-przystanki.mjs. Bez argumentów pobiera aktualne A/M/T.
+
+import { execFile } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { promisify } from 'node:util'
 import { strFromU8, unzipSync } from 'fflate'
 import KDBush from 'kdbush'
 import { CACHE, dzis, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
@@ -14,6 +17,7 @@ const RAD = Math.PI / 180
 const PROMIEN_ZIEMI = 6_371_000
 const MAX_PROMIEN = 16_000
 const DNI = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+const execFileAsync = promisify(execFile)
 
 function dataLokalna(data = new Date()) {
   const czesci = new Intl.DateTimeFormat('en-GB', {
@@ -70,8 +74,8 @@ export function csv(tekst) {
   return dane.map((pola) => Object.fromEntries(naglowek.map((n, i) => [n, pola[i] ?? ''])))
 }
 
-/** Wybiera tylko przystanki, na których w danym dniu można wsiąść do kursu. */
-export function aktywneStopIds(pliki, data) {
+/** Wybiera przystanki i odjazdy w szczycie z kursów dostępnych danego dnia. */
+export function obslugaDnia(pliki, data) {
   for (const nazwa of ['calendar.txt', 'calendar_dates.txt', 'trips.txt', 'stop_times.txt'])
     if (!pliki[nazwa]) throw new Error(`GTFS: brak ${nazwa}`)
   const dzien = data.replaceAll('-', '')
@@ -100,6 +104,7 @@ export function aktywneStopIds(pliki, data) {
   const bajty = pliki['stop_times.txt']
   const dekoder = new TextDecoder()
   const przystanki = new Set()
+  const odjazdySzczyt = new Map()
   let reszta = ''
   let pierwsza = true
   const przecinekPoPolu = (linia, od) => {
@@ -128,7 +133,12 @@ export function aktywneStopIds(pliki, data) {
     const f = przecinekPoPolu(linia, e + 1)
     const g = przecinekPoPolu(linia, f + 1)
     if (b < 0 || c < 0 || d < 0 || e < 0 || f < 0 || g < 0) return
-    if (linia.slice(f + 1, g) !== '1') przystanki.add(linia.slice(c + 1, d))
+    if (linia.slice(f + 1, g) === '1') return
+    const id = linia.slice(c + 1, d)
+    przystanki.add(id)
+    const odjazd = linia.slice(b + 1, c)
+    if (odjazd >= '07:00:00' && odjazd < '09:00:00')
+      odjazdySzczyt.set(id, (odjazdySzczyt.get(id) ?? 0) + 1)
   }
   for (let od = 0; od < bajty.length; od += 1024 * 1024) {
     const tekst = reszta + dekoder.decode(bajty.subarray(od, od + 1024 * 1024), { stream: true })
@@ -138,7 +148,11 @@ export function aktywneStopIds(pliki, data) {
   }
   if (reszta) dodajLinie(reszta)
   if (!przystanki.size) throw new Error(`GTFS: brak obsługiwanych przystanków na ${data}`)
-  return przystanki
+  return { przystanki, odjazdySzczyt }
+}
+
+export function aktywneStopIds(pliki, data) {
+  return obslugaDnia(pliki, data).przystanki
 }
 
 export function odczytajGtfs(bufor, grupa, dataObslugi) {
@@ -163,9 +177,9 @@ export function odczytajGtfs(bufor, grupa, dataObslugi) {
   const informacje = csv(strFromU8(pliki['feed_info.txt']))[0]
   const wiersze = csv(strFromU8(pliki['stops.txt']))
   if (!wiersze.length) throw new Error(`GTFS ${grupa}: puste stops.txt`)
-  const czynne = dataObslugi ? aktywneStopIds(pliki, dataObslugi) : null
+  const obsluga = dataObslugi ? obslugaDnia(pliki, dataObslugi) : null
   const punkty = wiersze.flatMap((p) => {
-    if (czynne && !czynne.has(p.stop_id)) return []
+    if (obsluga && !obsluga.przystanki.has(p.stop_id)) return []
     if (!p.stop_lat || !p.stop_lon) return []
     const lat = Number(p.stop_lat)
     const lon = Number(p.stop_lon)
@@ -181,13 +195,29 @@ export function odczytajGtfs(bufor, grupa, dataObslugi) {
       lon > 180
     )
       return []
-    return [{ id: `${grupa}:${p.stop_id}`, nazwa: p.stop_name, lat, lon }]
+    return [
+      {
+        id: `${grupa}:${p.stop_id}`,
+        kod: p.stop_code || null,
+        nazwa: p.stop_name,
+        lat,
+        lon,
+        odjazdySzczyt: obsluga?.odjazdySzczyt.get(p.stop_id) ?? 0,
+      },
+    ]
   })
   if (!punkty.length) throw new Error(`GTFS ${grupa}: brak poprawnych przystanków`)
   return { informacje, punkty, odrzucone: wiersze.length - punkty.length }
 }
 
-async function pobierzGrupe(grupa, dataObslugi) {
+function odczytajDwieDaty(bufor, grupa, dataObslugi, dataSzczyt) {
+  return {
+    ...odczytajGtfs(bufor, grupa, dataObslugi),
+    szczyt: odczytajGtfs(bufor, grupa, dataSzczyt),
+  }
+}
+
+async function pobierzGrupe(grupa, dataObslugi, dataSzczyt) {
   mkdirSync(CACHE, { recursive: true })
   const url = `${BAZA}/GTFS_KRK_${grupa}.zip`
   const cel = join(CACHE, `GTFS_KRK_${grupa}_${dzis()}.zip`)
@@ -200,7 +230,7 @@ async function pobierzGrupe(grupa, dataObslugi) {
         bufor.length === meta.bajty &&
         createHash('sha256').update(bufor).digest('hex') === meta.sha256
       ) {
-        return { ...odczytajGtfs(bufor, grupa, dataObslugi), url, ...meta }
+        return { ...odczytajDwieDaty(bufor, grupa, dataObslugi, dataSzczyt), url, ...meta }
       }
     } catch {
       /* uszkodzony cache trzeba pobrać ponownie */
@@ -212,24 +242,49 @@ async function pobierzGrupe(grupa, dataObslugi) {
   let ostatniBlad
   for (let proba = 1; proba <= 5; proba++) {
     try {
-      const odpowiedz = await fetch(url, { signal: AbortSignal.timeout(120_000) })
-      if (!odpowiedz.ok) throw new Error(`HTTP ${odpowiedz.status}`)
-      const bufor = Buffer.from(await odpowiedz.arrayBuffer())
-      const oczekiwane = Number(odpowiedz.headers.get('content-length'))
+      // Serwer ZTP potrafi uciąć transfer HTTP/2 bez błędu; curl przez HTTP/1.1
+      // jest stabilniejszy. Fallback fetch pozwala uruchomić ETL bez curl.
+      const tymczasowy = `${cel}.tmp`
+      const naglowki = `${cel}.headers.tmp`
+      let bufor
+      let lastModified
+      let oczekiwane
+      try {
+        await execFileAsync(
+          'curl',
+          ['-fsSL', '--http1.1', '--max-time', '180', '-D', naglowki, '-o', tymczasowy, url],
+          { timeout: 190_000 },
+        )
+        const tekstNaglowkow = readFileSync(naglowki, 'utf8')
+        bufor = readFileSync(tymczasowy)
+        lastModified = [...tekstNaglowkow.matchAll(/^last-modified:\s*(.+)$/gim)]
+          .at(-1)?.[1]
+          ?.trim()
+        oczekiwane = Number([...tekstNaglowkow.matchAll(/^content-length:\s*(\d+)/gim)].at(-1)?.[1])
+      } catch (blad) {
+        if (blad.code !== 'ENOENT') throw blad
+        const odpowiedz = await fetch(url, { signal: AbortSignal.timeout(120_000) })
+        if (!odpowiedz.ok) throw new Error(`HTTP ${odpowiedz.status}`)
+        bufor = Buffer.from(await odpowiedz.arrayBuffer())
+        lastModified = odpowiedz.headers.get('last-modified')
+        oczekiwane = Number(odpowiedz.headers.get('content-length'))
+        writeFileSync(tymczasowy, bufor)
+      } finally {
+        rmSync(naglowki, { force: true })
+      }
       if (oczekiwane && bufor.length !== oczekiwane)
         throw new Error(`ucięte pobranie: ${bufor.length}/${oczekiwane} bajtów`)
-      const dane = odczytajGtfs(bufor, grupa, dataObslugi)
+      const dane = odczytajDwieDaty(bufor, grupa, dataObslugi, dataSzczyt)
       const meta = {
         bajty: bufor.length,
         sha256: createHash('sha256').update(bufor).digest('hex'),
-        lastModified: odpowiedz.headers.get('last-modified'),
+        lastModified,
       }
-      const tymczasowy = `${cel}.tmp`
-      writeFileSync(tymczasowy, bufor)
       renameSync(tymczasowy, cel)
       writeFileSync(metaplik, JSON.stringify(meta))
       return { ...dane, url, ...meta }
     } catch (blad) {
+      rmSync(`${cel}.tmp`, { force: true })
       ostatniBlad = blad
       console.warn(`GTFS ${grupa}, próba ${proba}/5: ${blad.message}`)
       if (proba < 5) await new Promise((resolve) => setTimeout(resolve, proba * 1000))
@@ -282,11 +337,19 @@ function dataZNaglowka(naglowek, informacje) {
   throw new Error('Brak daty stanu GTFS w Last-Modified i feed_version')
 }
 
+function najblizszaSroda(data) {
+  const dzien = new Date(`${data}T12:00:00Z`)
+  const przesuniecie = (3 - dzien.getUTCDay() + 7) % 7
+  dzien.setUTCDate(dzien.getUTCDate() + przesuniecie)
+  return dzien.toISOString().slice(0, 10)
+}
+
 export async function generuj() {
   const dataObslugi = dataLokalna()
+  const dataSzczyt = najblizszaSroda(dataObslugi)
   // Kolejno, żeby nie trzymać w pamięci równocześnie trzech dużych stop_times.
   const feedy = []
-  for (const grupa of GRUPY) feedy.push(await pobierzGrupe(grupa, dataObslugi))
+  for (const grupa of GRUPY) feedy.push(await pobierzGrupe(grupa, dataObslugi, dataSzczyt))
   for (const [i, f] of feedy.entries())
     console.log(
       `GTFS ${GRUPY[i]}: ${f.punkty.length} peronów, ${f.odrzucone} odrzuconych, SHA-256 ${f.sha256}`,
@@ -295,6 +358,19 @@ export async function generuj() {
   const indeks = indeksPrzystankow(punkty)
   const { adresy } = wczytajAdresy()
   const wyniki = adresy.map((a) => najblizszyPrzystanek(a, punkty, indeks))
+  const odjazdyPoKodzie = new Map()
+  for (const p of feedy.flatMap((f) => f.szczyt.punkty)) {
+    const klucz = p.kod || p.id
+    odjazdyPoKodzie.set(klucz, (odjazdyPoKodzie.get(klucz) ?? 0) + p.odjazdySzczyt)
+  }
+  const zrodla = feedy.map((f, i) => ({
+    nazwa: `ZTP Kraków GTFS ${GRUPY[i]} (wydawca w feed_info: ${f.informacje.feed_publisher_name || 'nie podano'}; wersja ${f.informacje.feed_version || 'bez numeru'})`,
+    url: f.url,
+    licencja:
+      'Warunki ponownego wykorzystania informacji GMK: źródło, daty, przetworzenie i klauzula odpowiedzialności; prawa osób trzecich zastrzeżone. https://bip.krakow.pl/?dok_id=48482',
+    dataDanych: f.dataDanych || dataZNaglowka(f.lastModified, f.informacje),
+    pobrano: dzis(),
+  }))
   zapiszWskaznik(
     {
       id: 'przystanek_odleglosc',
@@ -306,17 +382,27 @@ export async function generuj() {
       rozdzielczosc: 'adres',
       zakres: [0, 1500],
       zadanie: 5,
-      zrodla: feedy.map((f, i) => ({
-        nazwa: `ZTP Kraków GTFS ${GRUPY[i]} (wydawca w feed_info: ${f.informacje.feed_publisher_name || 'nie podano'}; wersja ${f.informacje.feed_version || 'bez numeru'})`,
-        url: f.url,
-        licencja:
-          'Warunki ponownego wykorzystania informacji GMK: źródło, daty, przetworzenie i klauzula odpowiedzialności; prawa osób trzecich zastrzeżone. https://bip.krakow.pl/?dok_id=48482',
-        dataDanych: dataZNaglowka(f.lastModified, f.informacje),
-        pobrano: dzis(),
-      })),
+      zrodla,
     },
     wyniki.map((w) => w?.metry ?? null),
-    wyniki.map((w) => (w ? `${w.punkt.nazwa}, ${Math.round(w.metry)} m w linii prostej` : null)),
+  )
+  zapiszWskaznik(
+    {
+      id: 'kursy_szczyt_h',
+      kategoria: 'transport',
+      nazwa: 'Kursy w porannym szczycie',
+      opis: `Średnia liczba planowych odjazdów na godzinę z najbliższego stanowiska przystankowego (tego samego co dla odległości) między 07:00 a 09:00 w środę ${dataSzczyt}. Zsumowano kursy A/M/T o tym samym kodzie stanowiska, bez kursów bez wsiadania. Nie jest to częstotliwość całego zespołu przystankowego ani gwarancja rzeczywistego odjazdu.`,
+      jednostka: 'kursy/h',
+      kierunek: 'wiecej-lepiej',
+      rozdzielczosc: 'adres',
+      zakres: [0, 60],
+      zadanie: 5,
+      zrodla,
+    },
+    wyniki.map((w) => {
+      if (!w) return null
+      return (odjazdyPoKodzie.get(w.punkt.kod || w.punkt.id) ?? 0) / 2
+    }),
   )
 }
 
