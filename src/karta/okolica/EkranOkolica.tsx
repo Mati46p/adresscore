@@ -1,4 +1,5 @@
 import { lazy, Suspense, useState } from 'react'
+import { PoleZapytajOAdres } from '@/ai/PoleZapytajOAdres'
 import { liczba, opisAdresu } from '@/karta/adres'
 import { KATEGORIE, type KategoriaId } from '@/kontrakty'
 import { Sekcja3D } from '@/miasto3d/Sekcja3D'
@@ -75,6 +76,8 @@ export function EkranOkolica() {
         miejsce={adres.dzielnica ? `Dzielnica ${adres.dzielnica}` : `Gmina ${adres.gmina}`}
         atrapa={atrapa}
       />
+
+      <PoleZapytajOAdres indeks={stan.wybrany} />
 
       <section aria-labelledby="h-kategorie" className="karta">
         <h2 id="h-kategorie" className="okol-h2">

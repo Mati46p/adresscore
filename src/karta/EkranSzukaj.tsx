@@ -1,4 +1,5 @@
 import { lazy, Suspense, useState } from 'react'
+import { PoleOpiszSiebie } from '@/ai/PoleOpiszSiebie'
 import { useDane } from '@/wynik/dane'
 import { WARSTWY_BIZNESU } from '@/wynik/persony'
 import { kierunekEfektywny } from '@/wynik/silnik'
@@ -12,6 +13,7 @@ import {
   wybierzAdres,
 } from '@/wynik/stan'
 import { MAKS_POROWNANIE } from '@/wynik/url'
+import { usePropsSasiadowMapy } from '@/wynik/useSasiedzi'
 import { useWyniki } from '@/wynik/useWyniki'
 import { useWstepnaMapa } from '@/wynik/wstepnaMapa'
 import { opisAdresu } from './adres'
@@ -37,6 +39,7 @@ export function EkranSzukaj() {
   const kierunki = useStan((s) => s.kierunki)
   const [komunikatHeksow, setKomunikatHeksow] = useState('')
   const wyniki = useWyniki()
+  const sasiedzi = usePropsSasiadowMapy()
   const wstepnaMapa = useWstepnaMapa(dane.stan !== 'gotowe')
   const adres = dane.stan === 'gotowe' && wybrany !== null ? dane.adresy[wybrany] : undefined
   const wybraneAdresy =
@@ -76,6 +79,7 @@ export function EkranSzukaj() {
           </div>
         </div>
         <aside aria-label="Filtry" className="szukaj-filtry">
+          <PoleOpiszSiebie />
           <PanelFiltrow />
         </aside>
       </div>
@@ -115,6 +119,7 @@ export function EkranSzukaj() {
                 heksy={wyniki?.heksy ?? wstepnaMapa?.heksy ?? BRAK_HEKSOW}
                 podpisWarstwy={wyniki?.podpis ?? wstepnaMapa?.podpis ?? 'Wynik tej okolicy'}
                 wykluczone={wyniki?.wykluczoneHeksy}
+                sasiedzi={sasiedzi}
                 wybrany={adres ? { lon: adres.lon, lat: adres.lat } : null}
                 onKlik={(lon, lat) => {
                   if (dane.stan !== 'gotowe') return

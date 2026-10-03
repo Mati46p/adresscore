@@ -28,7 +28,7 @@ function opisZrodla(w: WynikZZapasem<Zrozumienie>): string {
   return 'Źródło: reguły słów kluczowych (bez AI).'
 }
 
-export function OpiszSiebie() {
+export function PoleOpiszSiebie() {
   const dane = useDane()
   const tryb = useStan((s) => s.tryb)
   const [tekst, setTekst] = useState('')
