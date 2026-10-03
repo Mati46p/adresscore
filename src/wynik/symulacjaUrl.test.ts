@@ -9,6 +9,8 @@ const obiekty: Obiekt[] = [
   { typ: 'przystanek', lon: 19.9372, lat: 50.0614 },
   { typ: 'przedszkole', lon: 19.90001, lat: 50.05 },
   { typ: 'aed', lon: 19.95, lat: 50.07 },
+  { typ: 'kolej', lon: 19.96, lat: 50.08 },
+  { typ: 'szkola_kampus', lon: 19.97, lat: 50.09 },
   { typ: 'zdrowie', lon: 20.01234, lat: 50.08765 },
   { typ: 'schron', lon: 19.8, lat: 50.1 },
 ]
@@ -42,10 +44,12 @@ describe('obiekty w URL', () => {
 })
 
 describe('typy obiektów w linku', () => {
-  it('znaki są unikalne, a sklep (dział biznesu) nie wraca jako inny typ', () => {
-    const znaki = TYPY_OBIEKTOW.map((d) => d.znak.toLowerCase())
-    assert.equal(new Set(znaki).size, znaki.length)
-    assert.ok(!TYPY_OBIEKTOW.some((d) => d.warstwa === 'sklep_odleglosc'))
+  it('kody są unikalne, a sklep (dział biznesu) nie wraca jako inny typ', () => {
+    const kody = TYPY_OBIEKTOW.map((d) => d.kod)
+    assert.equal(new Set(kody).size, kody.length)
+    for (const k of kody) assert.match(k, /^[a-z]{1,2}$/)
+    assert.ok(!kody.includes('s'))
+    assert.ok(!TYPY_OBIEKTOW.some((d) => d.warstwy.includes('sklep_odleglosc')))
     assert.deepEqual(obiektyZTekstu('s:19.90000,50.05000'), [])
   })
 })

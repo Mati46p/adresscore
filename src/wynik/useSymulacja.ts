@@ -8,7 +8,10 @@ import {
   type BazaSymulacji,
   type Obiekt,
   przygotujBaze,
+  type SugestiaMiejsca,
+  sugerujMiejsce,
   symuluj,
+  type TypObiektu,
   type WynikSymulacji,
 } from './symulacja.ts'
 import type { OdpowiedzWorkera, WiadomoscDoWorkera } from './symulacja.worker.ts'
@@ -110,4 +113,31 @@ export function useSymulacja(
   }, [dane, wagi, kierunki, klucz])
 
   return stan
+}
+
+/**
+ * Sugestia miejsca (#98) w workerze; bez Workera liczy synchronicznie. Bazę bierze z ostatniego
+ * `useSymulacja` – wywoływać dopiero, gdy hook ją zwrócił.
+ */
+export function sugerujWTle(
+  baza: BazaSymulacji,
+  typ: TypObiektu,
+  obiekty: readonly Obiekt[],
+): Promise<SugestiaMiejsca | null> {
+  const w = pobierzWorker()
+  if (!w) return Promise.resolve(sugerujMiejsce(baza, typ, obiekty))
+  const id = ++licznik
+  return new Promise((ok) => {
+    const odbierz = (e: MessageEvent<OdpowiedzWorkera>) => {
+      if (e.data.typ !== 'sugestia' || e.data.id !== id) return
+      w.removeEventListener('message', odbierz)
+      ok(e.data.sugestia)
+    }
+    w.addEventListener('message', odbierz)
+    if (bazaWWorkerze !== baza) {
+      wyslij(w, { typ: 'baza', baza })
+      bazaWWorkerze = baza
+    }
+    wyslij(w, { typ: 'sugeruj', id, typObiektu: typ, obiekty: [...obiekty] })
+  })
 }

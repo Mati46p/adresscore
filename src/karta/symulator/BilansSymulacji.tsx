@@ -14,6 +14,11 @@ export interface BilansSymulacjiProps {
 const orzeczenie = (n: number, pojedyncza: string, mnoga: string) =>
   odmianaAdresow(n) === 'adresy' ? mnoga : pojedyncza
 
+const osob = (n: number) => {
+  const r = Math.round(n)
+  return `ok. ${liczbaPelna(r)} ${r === 1 ? 'osoby' : 'osób'}`
+}
+
 const sumaWyjsc = (w: Record<string, number>) => Object.values(w).reduce((s, x) => s + x, 0)
 
 /**
@@ -44,6 +49,9 @@ export function BilansSymulacji({ tytul, wynik, aktywny }: BilansSymulacjiProps)
         <strong className="bilans__liczba">{liczbaPelna(wynik.awans)}</strong>{' '}
         {odmianaAdresow(wynik.awans)} {orzeczenie(wynik.awans, 'awansuje', 'awansują')} o co
         najmniej jedną literę
+        {wynik.mieszkancy.awans > 0 && (
+          <span className="bilans__dopisek"> – {osob(wynik.mieszkancy.awans)} zameldowanych</span>
+        )}
       </p>
       {wynik.luki.map((l) => (
         <p key={l.warstwa} className="bilans__glowna">
@@ -53,14 +61,25 @@ export function BilansSymulacji({ tytul, wynik, aktywny }: BilansSymulacjiProps)
             {' '}
             – {l.prog.naglowek}: było {liczbaPelna(l.przed)}, zostaje{' '}
             {liczbaPelna(l.przed - l.wychodzi)}
+            {l.mieszkancyWychodzi > 0 && `; ${osob(l.mieszkancyWychodzi)} zameldowanych`}
           </span>
         </p>
       ))}
       {wynik.spadek > 0 && (
         <p className="bilans__uwaga">
           {liczbaPelna(wynik.spadek)} {odmianaAdresow(wynik.spadek)}{' '}
-          {orzeczenie(wynik.spadek, 'traci', 'tracą')} literę – w ustawieniach wyniku odwrócono
-          kierunek tej warstwy („im dalej, tym lepiej”).
+          {orzeczenie(wynik.spadek, 'traci', 'tracą')} literę
+          {wynik.mieszkancy.spadek > 0 && ` (${osob(wynik.mieszkancy.spadek)} zameldowanych)`}
+          {wynik.uciazliwe > 0
+            ? ' – to koszt obiektu uciążliwego: bliżej zakładu wynik spada.'
+            : ' – w ustawieniach wyniku odwrócono kierunek tej warstwy („im dalej, tym lepiej”).'}
+        </p>
+      )}
+      {wynik.mieszkancy.adresyBezSzacunku > 0 && (
+        <p className="bilans__zasieg">
+          {liczbaPelna(wynik.mieszkancy.adresyBezSzacunku)}{' '}
+          {wynik.mieszkancy.adresyBezSzacunku === 1 ? 'adres' : 'adresów'} ze zmianą bez szacunku
+          mieszkańców (zameldowania mamy tylko dla Krakowa).
         </p>
       )}
       <p className="bilans__zasieg">

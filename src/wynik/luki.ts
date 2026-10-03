@@ -106,6 +106,24 @@ export const PROGI_LUK: Readonly<Record<string, ProgLuki>> = {
     zrodlo:
       'Próg roboczy: przy zatrzymaniu krążenia każda minuta bez defibrylacji obniża szansę przeżycia (wytyczne ERC 2021); 500 m to ok. 3 minuty marszu w jedną stronę, czyli ok. 6 minut po AED i z powrotem.',
   },
+  recykling_odleglosc: {
+    id: 'recykling_odleglosc',
+    prog: 500,
+    jednostka: 'm',
+    opis: 'dalej niż 500 m (w linii prostej) do punktu selektywnej zbiórki odpadów',
+    naglowek: 'adresy bez punktu recyklingu w 500 m',
+    zrodlo:
+      'Próg roboczy – ustawa o utrzymaniu czystości i porządku w gminach nie podaje odległości. Ok. 6 minut pieszo z workiem segregacji.',
+  },
+  wybieg_psy_odleglosc: {
+    id: 'wybieg_psy_odleglosc',
+    prog: 1000,
+    jednostka: 'm',
+    opis: 'dalej niż 1 km (w linii prostej) do wybiegu dla psów',
+    naglowek: 'adresy bez wybiegu dla psów w 1 km',
+    zrodlo:
+      'Próg roboczy: ok. 12 minut spaceru z psem w jedną stronę. Przepisy nie podają odległości.',
+  },
   halas_ldwn: {
     id: 'halas_ldwn',
     prog: 64,

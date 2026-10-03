@@ -47,112 +47,322 @@ import {
 
 export type TypObiektu =
   | 'przystanek'
-  | 'zdrowie'
-  | 'schron'
+  | 'kolej'
+  | 'pr'
+  | 'rower'
+  | 'ev'
   | 'przedszkole'
   | 'zlobek'
   | 'szkola'
-  | 'plac_zabaw'
+  | 'liceum'
+  | 'cas'
+  | 'zdrowie'
+  | 'poz_bez_barier'
   | 'aed'
-  | 'kultura'
+  | 'schron'
+  | 'policja'
+  | 'straz'
+  | 'plac_zabaw'
   | 'silownia'
+  | 'sport'
+  | 'wybieg'
+  | 'kapielisko'
+  | 'kultura'
   | 'toaleta'
+  | 'urzad'
+  | 'recykling'
+  | 'targowisko'
+  | 'szkola_kampus'
+  | 'centrum'
+  | 'emitent'
+  | 'seveso'
 
-export type GrupaObiektu = 'transport' | 'edukacja' | 'zdrowie' | 'rekreacja'
+export type GrupaObiektu =
+  | 'transport'
+  | 'edukacja'
+  | 'zdrowie'
+  | 'rekreacja'
+  | 'uslugi'
+  | 'zlozone'
+  | 'uciazliwe'
 
 export const GRUPY_OBIEKTOW: readonly { id: GrupaObiektu; nazwa: string }[] = [
   { id: 'transport', nazwa: 'Transport' },
   { id: 'edukacja', nazwa: 'Edukacja i opieka' },
   { id: 'zdrowie', nazwa: 'Zdrowie i bezpieczeństwo' },
   { id: 'rekreacja', nazwa: 'Rekreacja i przestrzeń wspólna' },
+  { id: 'uslugi', nazwa: 'Usługi miejskie' },
+  { id: 'zlozone', nazwa: 'Obiekty złożone' },
+  { id: 'uciazliwe', nazwa: 'Obiekty uciążliwe – koszt inwestycji' },
 ]
 
 export interface DefinicjaObiektu {
   typ: TypObiektu
   nazwa: string
   grupa: GrupaObiektu
-  /** Id warstwy odległościowej, którą obiekt zmienia. */
-  warstwa: string
+  /**
+   * Warstwy odległościowe, które obiekt zmienia. Obiekt złożony (szkoła z boiskiem) zmienia
+   * kilka naraz; pierwsza warstwa to ta, którą maluje mapa.
+   */
+  warstwy: readonly string[]
   /** Id branży z katalogu usług (#104, `public/dane/uslugi/katalog.json`), gdy obiekt jest usługą. */
   branza?: string
-  /** Jedna litera na znaczniku mapy i w linku (`a=k:…`) – unikalna, bez polskich znaków. */
+  /**
+   * Obiekt uciążliwy: warstwa ma kierunek „im dalej, tym lepiej”, więc bliżej = gorzej.
+   * Bilans pokazuje wtedy koszt (spadki liter), nie zysk.
+   */
+  negatywny?: true
+  /** Kod w linku (`a=kl:…`): 1–2 małe litery, unikalny. Jednoliterowe – typy z pierwszej wersji. */
+  kod: string
+  /** Napis w rombie na mapie (1–2 znaki). */
   znak: string
 }
 
-// Znak „S” (dawny sklep) celowo wolny: stary link ze sklepem gubi tylko ten obiekt, nie
+// Kod „s” (dawny sklep) celowo wolny: stary link ze sklepem gubi tylko ten obiekt, nie
 // podstawia pod niego innego typu.
 export const TYPY_OBIEKTOW: readonly DefinicjaObiektu[] = [
   {
     typ: 'przystanek',
     nazwa: 'Przystanek',
     grupa: 'transport',
-    warstwa: 'przystanek_odleglosc',
+    warstwy: ['przystanek_odleglosc'],
+    kod: 'p',
     znak: 'P',
+  },
+  {
+    typ: 'kolej',
+    nazwa: 'Przystanek kolejowy',
+    grupa: 'transport',
+    warstwy: ['kolej_odleglosc'],
+    kod: 'kl',
+    znak: 'KL',
+  },
+  {
+    typ: 'pr',
+    nazwa: 'Parking P+R',
+    grupa: 'transport',
+    warstwy: ['pr_odleglosc'],
+    kod: 'pr',
+    znak: 'PR',
+  },
+  {
+    typ: 'rower',
+    nazwa: 'Stacja roweru lub stojaki',
+    grupa: 'transport',
+    warstwy: ['rower_infrastruktura_odleglosc'],
+    kod: 'rw',
+    znak: 'RW',
+  },
+  {
+    typ: 'ev',
+    nazwa: 'Ładowarka EV',
+    grupa: 'transport',
+    warstwy: ['ladowarka_ev_odleglosc'],
+    kod: 'ev',
+    znak: 'EV',
   },
   {
     typ: 'przedszkole',
     nazwa: 'Przedszkole',
     grupa: 'edukacja',
-    warstwa: 'przedszkole_odleglosc',
+    warstwy: ['przedszkole_odleglosc'],
+    kod: 'k',
     znak: 'K',
   },
-  { typ: 'zlobek', nazwa: 'Żłobek', grupa: 'edukacja', warstwa: 'zlobek_odleglosc', znak: 'J' },
+  {
+    typ: 'zlobek',
+    nazwa: 'Żłobek',
+    grupa: 'edukacja',
+    warstwy: ['zlobek_odleglosc'],
+    kod: 'j',
+    znak: 'J',
+  },
   {
     typ: 'szkola',
     nazwa: 'Szkoła podstawowa',
     grupa: 'edukacja',
-    warstwa: 'szkola_podst_odleglosc',
+    warstwy: ['szkola_podst_odleglosc'],
+    kod: 'e',
     znak: 'E',
+  },
+  {
+    typ: 'liceum',
+    nazwa: 'Liceum',
+    grupa: 'edukacja',
+    warstwy: ['liceum_odleglosc'],
+    kod: 'lo',
+    znak: 'LO',
+  },
+  {
+    typ: 'cas',
+    nazwa: 'Centrum aktywności seniora',
+    grupa: 'edukacja',
+    warstwy: ['cas_odleglosc'],
+    kod: 'cs',
+    znak: 'CS',
   },
   {
     typ: 'zdrowie',
     nazwa: 'Punkt zdrowia (POZ)',
     grupa: 'zdrowie',
-    warstwa: 'przychodnia_odleglosc',
+    warstwy: ['przychodnia_odleglosc'],
     branza: 'poz',
+    kod: 'z',
     znak: 'Z',
+  },
+  {
+    typ: 'poz_bez_barier',
+    nazwa: 'Przychodnia bez barier',
+    grupa: 'zdrowie',
+    warstwy: ['przychodnia_bez_barier_odleglosc'],
+    kod: 'pb',
+    znak: 'PB',
   },
   {
     typ: 'aed',
     nazwa: 'Defibrylator AED',
     grupa: 'zdrowie',
-    warstwa: 'defibrylator_odleglosc',
+    warstwy: ['defibrylator_odleglosc'],
+    kod: 'a',
     znak: 'A',
   },
   {
     typ: 'schron',
     nazwa: 'Punkt schronienia',
     grupa: 'zdrowie',
-    warstwa: 'punkt_schronienia_odleglosc',
+    warstwy: ['punkt_schronienia_odleglosc'],
+    kod: 'u',
     znak: 'U',
+  },
+  {
+    typ: 'policja',
+    nazwa: 'Posterunek policji',
+    grupa: 'zdrowie',
+    warstwy: ['policja_odleglosc'],
+    kod: 'po',
+    znak: 'PO',
+  },
+  {
+    typ: 'straz',
+    nazwa: 'Remiza straży (PSP/OSP)',
+    grupa: 'zdrowie',
+    warstwy: ['straz_pozarna_odleglosc'],
+    kod: 'st',
+    znak: 'ST',
   },
   {
     typ: 'plac_zabaw',
     nazwa: 'Plac zabaw',
     grupa: 'rekreacja',
-    warstwa: 'plac_zabaw_odleglosc',
+    warstwy: ['plac_zabaw_odleglosc'],
+    kod: 'l',
     znak: 'L',
   },
   {
     typ: 'silownia',
     nazwa: 'Siłownia plenerowa',
     grupa: 'rekreacja',
-    warstwa: 'silownia_plenerowa_odleglosc',
+    warstwy: ['silownia_plenerowa_odleglosc'],
+    kod: 'g',
     znak: 'G',
+  },
+  {
+    typ: 'sport',
+    nazwa: 'Boisko lub hala sportowa',
+    grupa: 'rekreacja',
+    warstwy: ['sport_odleglosc'],
+    kod: 'sp',
+    znak: 'SP',
+  },
+  {
+    typ: 'wybieg',
+    nazwa: 'Wybieg dla psów',
+    grupa: 'rekreacja',
+    warstwy: ['wybieg_psy_odleglosc'],
+    kod: 'ps',
+    znak: 'PS',
+  },
+  {
+    typ: 'kapielisko',
+    nazwa: 'Kąpielisko',
+    grupa: 'rekreacja',
+    warstwy: ['kapielisko_odleglosc'],
+    kod: 'kp',
+    znak: 'KP',
   },
   {
     typ: 'kultura',
     nazwa: 'Biblioteka lub dom kultury',
     grupa: 'rekreacja',
-    warstwa: 'kultura_odleglosc',
+    warstwy: ['kultura_odleglosc'],
+    kod: 'b',
     znak: 'B',
   },
   {
     typ: 'toaleta',
     nazwa: 'Toaleta publiczna lub pitnik',
     grupa: 'rekreacja',
-    warstwa: 'toaleta_woda_odleglosc',
+    warstwy: ['toaleta_woda_odleglosc'],
+    kod: 't',
     znak: 'T',
+  },
+  {
+    typ: 'urzad',
+    nazwa: 'Punkt urzędu (filia)',
+    grupa: 'uslugi',
+    warstwy: ['urzad_odleglosc'],
+    kod: 'ur',
+    znak: 'UR',
+  },
+  {
+    typ: 'recykling',
+    nazwa: 'PSZOK lub punkt recyklingu',
+    grupa: 'uslugi',
+    warstwy: ['recykling_odleglosc'],
+    kod: 're',
+    znak: 'RE',
+  },
+  {
+    typ: 'targowisko',
+    nazwa: 'Targowisko miejskie',
+    grupa: 'uslugi',
+    warstwy: ['targowisko_odleglosc'],
+    kod: 'tg',
+    znak: 'TG',
+  },
+  {
+    typ: 'szkola_kampus',
+    nazwa: 'Szkoła z placem zabaw i boiskiem',
+    grupa: 'zlozone',
+    warstwy: ['szkola_podst_odleglosc', 'plac_zabaw_odleglosc', 'sport_odleglosc'],
+    kod: 'sz',
+    znak: 'SZ',
+  },
+  {
+    typ: 'centrum',
+    nazwa: 'Centrum lokalne (biblioteka, CAS, filia urzędu)',
+    grupa: 'zlozone',
+    warstwy: ['kultura_odleglosc', 'cas_odleglosc', 'urzad_odleglosc'],
+    kod: 'cl',
+    znak: 'CL',
+  },
+  {
+    typ: 'emitent',
+    nazwa: 'Zakład emitujący zanieczyszczenia',
+    grupa: 'uciazliwe',
+    warstwy: ['emitent_odleglosc'],
+    negatywny: true,
+    kod: 'em',
+    znak: 'EM',
+  },
+  {
+    typ: 'seveso',
+    nazwa: 'Zakład Seveso (ryzyko awarii)',
+    grupa: 'uciazliwe',
+    warstwy: ['seveso_odleglosc'],
+    negatywny: true,
+    kod: 'sv',
+    znak: 'SV',
   },
 ]
 
@@ -220,6 +430,8 @@ export interface BazaSymulacji {
   /** Typ obiektu → powód wyłączenia (warstwa nie wczytana albo atrapa). */
   wylaczone: Partial<Record<TypObiektu, string>>
   siatka: Siatka
+  /** Szacunek zameldowanych pod adresem (`szacujMieszkancow`); NaN = brak szacunku (poza Krakowem). */
+  mieszkancy: Float32Array
 }
 
 export interface WejscieBazy {
@@ -231,6 +443,11 @@ export interface WejscieBazy {
 }
 
 const M_NA_STOPIEN = 111_320
+/**
+ * Górna granica zasięgu obiektu. Kąpielisko czy zakład Seveso mają skalę do 20 km – bez limitu
+ * jeden obiekt przeliczałby pół województwa przy każdym przesunięciu znacznika.
+ */
+const ZASIEG_MAKS_M = 8000
 const KUBELEK_M = 250
 
 function zbudujSiatke(lon: Float64Array, lat: Float64Array): Siatka {
@@ -285,6 +502,47 @@ function zbudujSiatke(lon: Float64Array, lat: Float64Array): Siatka {
     kursor[k] = (kursor[k] as number) + 1
   }
   return { lon0: minLon, lat0: minLat, dLon, dLat, kolumny, wiersze, start, indeksy }
+}
+
+/** Warstwa zameldowań MSIP (#74): os./ha w heksagonie o boku 100 m. */
+export const WARSTWA_ZAMELDOWAN = 'gestosc_zaludnienia_100m'
+/** Pole heksagonu foremnego o boku 100 m w ha: 3√3/2 · 100² m². */
+const HA_HEKSAGONU_MSIP = (3 * Math.sqrt(3) * 100 * 100) / 2 / 10_000
+const KOMORKA_GRUPY_M = 500
+
+/**
+ * Szacunek zameldowanych na adres: osoby w heksagonie MSIP (gęstość × 2,6 ha) dzielone równo
+ * między adresy tego heksagonu. Granic heksagonów MSIP nie mamy, więc „ten sam heksagon” to
+ * ta sama wartość gęstości w tej samej komórce ~500 m. To szacunek, nie liczba mieszkańców:
+ * adres w kamienicy i domek dostają tyle samo, a zameldowanie to nie zamieszkanie.
+ */
+export function szacujMieszkancow(
+  gestosc: ArrayLike<number | null | undefined>,
+  lon: Float64Array,
+  lat: Float64Array,
+): Float32Array {
+  const n = lon.length
+  const wynik = new Float32Array(n).fill(Number.NaN)
+  const klucze: (string | null)[] = new Array(n).fill(null)
+  const liczba = new Map<string, number>()
+  const dLat = KOMORKA_GRUPY_M / M_NA_STOPIEN
+  for (let i = 0; i < n; i++) {
+    const g = gestosc[i]
+    const x = lon[i] as number
+    const y = lat[i] as number
+    if (g === null || g === undefined || !(g > 0) || !Number.isFinite(x) || !Number.isFinite(y))
+      continue
+    const dLon = KOMORKA_GRUPY_M / (M_NA_STOPIEN * Math.cos((y * Math.PI) / 180))
+    const k = `${g}|${Math.floor(x / dLon)}|${Math.floor(y / dLat)}`
+    klucze[i] = k
+    liczba.set(k, (liczba.get(k) ?? 0) + 1)
+  }
+  for (let i = 0; i < n; i++) {
+    const k = klucze[i]
+    if (k === null || k === undefined) continue
+    wynik[i] = ((gestosc[i] as number) * HA_HEKSAGONU_MSIP) / (liczba.get(k) as number)
+  }
+  return wynik
 }
 
 /** Odległość geodezyjna w metrach (haversine) – ta sama co w `sasiedzi.ts`. */
@@ -365,17 +623,18 @@ export function przygotujBaze(we: WejscieBazy): BazaSymulacji {
 
   const warstwy: Record<string, WarstwaSymulacji> = {}
   const wylaczone: Partial<Record<TypObiektu, string>> = {}
-  for (const def of TYPY_OBIEKTOW) {
-    const w = we.wskazniki.find((x) => x.meta.id === def.warstwa)
+  const powody: Record<string, string> = {}
+  const idWarstw = new Set(TYPY_OBIEKTOW.flatMap((d) => d.warstwy))
+  for (const id of idWarstw) {
+    const w = we.wskazniki.find((x) => x.meta.id === id)
     if (!w || w.niedostepny || w.meta.atrapa) {
-      wylaczone[def.typ] = w?.niedostepny
-        ? `warstwa ${def.warstwa} się nie wczytała`
+      powody[id] = w?.niedostepny
+        ? `warstwa ${id} się nie wczytała`
         : w?.meta.atrapa
-          ? `warstwa ${def.warstwa} to atrapa`
-          : `brak warstwy ${def.warstwa}`
+          ? `warstwa ${id} to atrapa`
+          : `brak warstwy ${id}`
       continue
     }
-    if (warstwy[w.meta.id]) continue
     const wartosci = new Float64Array(n)
     for (let i = 0; i < n; i++) {
       const v = w.wartosci[i]
@@ -386,8 +645,12 @@ export function przygotujBaze(we: WejscieBazy): BazaSymulacji {
     const liczona = kierunek !== null && waga > 0
     const prog = progLuki(w.meta)
     // Za końcem skali ocena się nie zmienia (wartość jest przycinana), za progiem – luka.
-    const zasiegOceny = liczona && Number.isFinite(w.skala.do) ? w.skala.do : 0
-    const zasiegM = Math.max(zasiegOceny, prog?.prog ?? 0)
+    const zasiegOceny =
+      liczona && Number.isFinite(w.skala.do) ? Math.min(w.skala.do, ZASIEG_MAKS_M) : 0
+    // Warstwa bez oceny i bez progu (kierunek neutralny): liczymy choć krótszą drogę do końca skali.
+    const zasiegM =
+      Math.max(zasiegOceny, prog?.prog ?? 0) ||
+      (Number.isFinite(w.skala.do) ? Math.min(w.skala.do, ZASIEG_MAKS_M) : 0)
 
     let lukiHeksow: WarstwaSymulacji['lukiHeksow'] = null
     let wLuceRazem = 0
@@ -426,10 +689,22 @@ export function przygotujBaze(we: WejscieBazy): BazaSymulacji {
     }
   }
 
+  for (const def of TYPY_OBIEKTOW) {
+    if (def.warstwy.some((id) => warstwy[id])) continue
+    wylaczone[def.typ] = def.warstwy.map((id) => powody[id]).join('; ')
+  }
+
+  const zameldowania = we.wskazniki.find((x) => x.meta.id === WARSTWA_ZAMELDOWAN)
+  const mieszkancy =
+    zameldowania && !zameldowania.niedostepny && !zameldowania.meta.atrapa
+      ? szacujMieszkancow(zameldowania.wartosci, lon, lat)
+      : new Float32Array(n).fill(Number.NaN)
+
   return {
     n,
     lon,
     lat,
+    mieszkancy,
     heksy: we.grupy.heksy,
     indeksHeksu: we.grupy.indeksHeksu,
     okolice,
@@ -454,6 +729,18 @@ export interface LukaWarstwy {
   przed: number
   /** Adresy, które wychodzą z luki (były w luce, są bez luki). */
   wychodzi: number
+  /** Szacunek zameldowanych pod adresami wychodzącymi z luki. */
+  mieszkancyWychodzi: number
+}
+
+/** Szacunek zameldowanych (`szacujMieszkancow`) pod adresami ze zmianą. */
+export interface MieszkancySymulacji {
+  awans: number
+  spadek: number
+  /** Pod adresami, które wychodzą z którejkolwiek luki (adres liczony raz). */
+  wychodzi: number
+  /** Adresy z awansem, spadkiem albo wyjściem z luki, ale bez szacunku (np. poza Krakowem). */
+  adresyBezSzacunku: number
 }
 
 export interface BilansOkolicy extends Okolica {
@@ -476,6 +763,9 @@ export interface HeksPoSymulacji {
 
 export interface WynikSymulacji {
   obiekty: number
+  /** Ile z obiektów to obiekty uciążliwe (`negatywny`). */
+  uciazliwe: number
+  mieszkancy: MieszkancySymulacji
   /** Adresy, którym zmienił się pomiar którejś warstwy. */
   zasieg: number
   awans: number
@@ -503,17 +793,42 @@ function wynikZSum(suma: number, sumaWag: number): number | null {
 
 /** Pusta symulacja – stan bazowy bez obiektów. */
 export function pustyWynik(): WynikSymulacji {
-  return { obiekty: 0, zasieg: 0, awans: 0, spadek: 0, luki: [], okolice: [], heksy: new Map() }
+  return {
+    obiekty: 0,
+    uciazliwe: 0,
+    mieszkancy: { awans: 0, spadek: 0, wychodzi: 0, adresyBezSzacunku: 0 },
+    zasieg: 0,
+    awans: 0,
+    spadek: 0,
+    luki: [],
+    okolice: [],
+    heksy: new Map(),
+  }
 }
 
-export function symuluj(baza: BazaSymulacji, obiekty: readonly Obiekt[]): WynikSymulacji {
-  if (obiekty.length === 0) return pustyWynik()
-
-  // 1. Nowe pomiary per warstwa: tylko adresy z danymi, którym obiekt skraca odległość.
-  const nowe = new Map<string, Map<number, number>>()
+/** Każdy obiekt z każdą swoją dostępną warstwą (obiekt złożony daje kilka par). */
+function paryObiektWarstwa(
+  baza: BazaSymulacji,
+  obiekty: readonly Obiekt[],
+): { o: Obiekt; w: WarstwaSymulacji }[] {
+  const pary: { o: Obiekt; w: WarstwaSymulacji }[] = []
   for (const o of obiekty) {
-    const w = baza.warstwy[definicjaObiektu(o.typ)?.warstwa ?? '']
-    if (!w || !Number.isFinite(o.lon) || !Number.isFinite(o.lat)) continue
+    if (!Number.isFinite(o.lon) || !Number.isFinite(o.lat)) continue
+    for (const id of definicjaObiektu(o.typ)?.warstwy ?? []) {
+      const w = baza.warstwy[id]
+      if (w) pary.push({ o, w })
+    }
+  }
+  return pary
+}
+
+/** Warstwa → (adres → nowy pomiar) dla adresów z danymi, którym obiekty skracają odległość. */
+function nowePomiary(
+  baza: BazaSymulacji,
+  obiekty: readonly Obiekt[],
+): Map<string, Map<number, number>> {
+  const nowe = new Map<string, Map<number, number>>()
+  for (const { o, w } of paryObiektWarstwa(baza, obiekty)) {
     let zmiany = nowe.get(w.id)
     if (!zmiany) {
       zmiany = new Map()
@@ -528,6 +843,15 @@ export function symuluj(baza: BazaSymulacji, obiekty: readonly Obiekt[]): WynikS
     })
   }
 
+  return nowe
+}
+
+export function symuluj(baza: BazaSymulacji, obiekty: readonly Obiekt[]): WynikSymulacji {
+  if (obiekty.length === 0) return pustyWynik()
+
+  // 1. Nowe pomiary per warstwa: tylko adresy z danymi, którym obiekt skraca odległość.
+  const nowe = nowePomiary(baza, obiekty)
+
   // 2. Adres po adresie: wynik, litera i luka przed i po.
   const dotkniete = new Set<number>()
   for (const z of nowe.values()) for (const i of z.keys()) dotkniete.add(i)
@@ -539,6 +863,8 @@ export function symuluj(baza: BazaSymulacji, obiekty: readonly Obiekt[]): WynikS
     { sumaWyniku: number; liczbaWyniku: number; luki: Record<string, number[]>; zmiana: boolean }
   >()
   const wychodziRazem: Record<string, number> = {}
+  const mieszkancyWychodziWarstwy: Record<string, number> = {}
+  const mieszkancy: MieszkancySymulacji = { awans: 0, spadek: 0, wychodzi: 0, adresyBezSzacunku: 0 }
   let awans = 0
   let spadek = 0
 
@@ -587,6 +913,16 @@ export function symuluj(baza: BazaSymulacji, obiekty: readonly Obiekt[]): WynikS
     if (roznica > 0) awans++
     if (roznica < 0) spadek++
     for (const id of wyjscia) wychodziRazem[id] = (wychodziRazem[id] ?? 0) + 1
+    if (roznica !== 0 || wyjscia.length > 0) {
+      const m = baza.mieszkancy[i] as number
+      if (m === m) {
+        if (roznica > 0) mieszkancy.awans += m
+        if (roznica < 0) mieszkancy.spadek += m
+        if (wyjscia.length > 0) mieszkancy.wychodzi += m
+        for (const id of wyjscia)
+          mieszkancyWychodziWarstwy[id] = (mieszkancyWychodziWarstwy[id] ?? 0) + m
+      } else mieszkancy.adresyBezSzacunku++
+    }
 
     const io = baza.indeksOkolicy[i] as number
     if (roznica !== 0 || wyjscia.length > 0) {
@@ -643,6 +979,7 @@ export function symuluj(baza: BazaSymulacji, obiekty: readonly Obiekt[]): WynikS
       prog: w.prog,
       przed: w.wLuceRazem,
       wychodzi: wychodziRazem[id] ?? 0,
+      mieszkancyWychodzi: mieszkancyWychodziWarstwy[id] ?? 0,
     })
   }
 
@@ -677,6 +1014,8 @@ export function symuluj(baza: BazaSymulacji, obiekty: readonly Obiekt[]): WynikS
 
   return {
     obiekty: obiekty.length,
+    uciazliwe: obiekty.filter((o) => definicjaObiektu(o.typ)?.negatywny).length,
+    mieszkancy,
     zasieg: dotkniete.size,
     awans,
     spadek,
@@ -684,4 +1023,82 @@ export function symuluj(baza: BazaSymulacji, obiekty: readonly Obiekt[]): WynikS
     okolice: listaOkolic,
     heksy: heksyWynik,
   }
+}
+
+// ── Sugestia miejsca ─────────────────────────────────────────────────────────────────────
+
+export interface SugestiaMiejsca {
+  lon: number
+  lat: number
+  /** Wynik wariantu z dotychczasowymi obiektami i obiektem w sugerowanym miejscu. */
+  wynik: WynikSymulacji
+  /** Ile miejsc sprawdzono zgrubnie (środki kubełków ~250 m z adresami). */
+  sprawdzone: number
+}
+
+/** Ilu najlepszych kandydatów z oceny zgrubnej liczymy pełną symulacją. */
+const KANDYDACI_DOKLADNI = 12
+/** Promień oceny zgrubnej warstwy bez progu – dalej zysk i tak jest mały. */
+const PROMIEN_ZGRUBNY_M = 3000
+
+const zyskWyniku = (w: WynikSymulacji) =>
+  w.awans - w.spadek + w.luki.reduce((s, l) => s + l.wychodzi, 0)
+
+/**
+ * Gdzie postawić obiekt typu `typ`, żeby najwięcej adresów wyszło z luki i awansowało
+ * (#98, „gdzie postawić?”). Dwa kroki: zgrubna ocena środka każdego kubełka siatki (ile adresów
+ * w luce obejmie próg, ile skróci się droga w skali), potem pełna `symuluj` dla najlepszych.
+ * Obiekty już postawione w wariancie się liczą – druga szkoła nie ląduje obok pierwszej.
+ * Obiekt uciążliwy nie ma „najlepszego miejsca” – zwraca null.
+ */
+export function sugerujMiejsce(
+  baza: BazaSymulacji,
+  typ: TypObiektu,
+  obiekty: readonly Obiekt[],
+): SugestiaMiejsca | null {
+  const def = definicjaObiektu(typ)
+  if (!def || def.negatywny) return null
+  const warstwy = def.warstwy
+    .map((id) => baza.warstwy[id])
+    .filter((w): w is WarstwaSymulacji => w !== undefined && w.zasiegM > 0)
+  const s = baza.siatka
+  if (warstwy.length === 0 || s.kolumny === 0) return null
+
+  const obecne = nowePomiary(baza, obiekty)
+  const promienie = warstwy.map((w) => w.prog?.prog ?? Math.min(w.zasiegM, PROMIEN_ZGRUBNY_M))
+  const krok = Math.max(1, Math.floor(Math.max(...promienie) / 1000))
+
+  const kandydaci: { lon: number; lat: number; ocena: number }[] = []
+  for (let w = 0; w < s.wiersze; w += krok) {
+    for (let k = 0; k < s.kolumny; k += krok) {
+      const kub = w * s.kolumny + k
+      if ((s.start[kub + 1] as number) === (s.start[kub] as number)) continue
+      const lon = s.lon0 + (k + 0.5) * s.dLon
+      const lat = s.lat0 + (w + 0.5) * s.dLat
+      let ocena = 0
+      warstwy.forEach((ws, j) => {
+        const z = obecne.get(ws.id)
+        const r = promienie[j] as number
+        wPromieniu(baza, lon, lat, r, (i, d) => {
+          const teraz = z?.get(i) ?? (ws.wartosci[i] as number)
+          if (!(d < teraz)) return
+          if (ws.prog) {
+            if (teraz > ws.prog.prog && d <= ws.prog.prog) ocena += 1
+          } else ocena += (Math.min(teraz, r) - d) / r
+        })
+      })
+      if (ocena > 0) kandydaci.push({ lon, lat, ocena })
+    }
+  }
+  if (kandydaci.length === 0) return null
+
+  kandydaci.sort((a, b) => b.ocena - a.ocena)
+  let najlepsza: SugestiaMiejsca | null = null
+  for (const c of kandydaci.slice(0, KANDYDACI_DOKLADNI)) {
+    const wynik = symuluj(baza, [...obiekty, { typ, lon: c.lon, lat: c.lat }])
+    if (!najlepsza || zyskWyniku(wynik) > zyskWyniku(najlepsza.wynik)) {
+      najlepsza = { lon: c.lon, lat: c.lat, wynik, sprawdzone: kandydaci.length }
+    }
+  }
+  return najlepsza
 }
