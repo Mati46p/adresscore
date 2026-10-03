@@ -6,12 +6,21 @@ import { useStan } from '@/wynik/stan'
 import { opisAdresu } from './adres'
 import { EkranSzukaj } from './EkranSzukaj'
 import { KatalogAdresow } from './KatalogAdresow'
-import { ladujMetode, ladujOkolice, ladujPorownanie, przygotujEkran } from './ladowanieEkranow'
+import {
+  ladujMetode,
+  ladujOkolice,
+  ladujPorownanie,
+  ladujSymulator,
+  przygotujEkran,
+} from './ladowanieEkranow'
 import { Naglowek } from './Naglowek'
 
 const EkranOkolica = lazy(async () => ({ default: (await ladujOkolice()).EkranOkolica }))
 const EkranPorownanie = lazy(async () => ({ default: (await ladujPorownanie()).EkranPorownanie }))
 const Metoda = lazy(async () => ({ default: (await ladujMetode()).Metoda }))
+const EkranSymulatora = lazy(async () => ({
+  default: (await ladujSymulator()).EkranSymulatora,
+}))
 
 /** Powłoka: nagłówek z krokami i ekran wybrany przez hash (#/, #/adres/<id>, #/porownanie). */
 export function Aplikacja() {
@@ -38,7 +47,9 @@ function Powloka() {
           ? 'Metoda i źródła'
           : ekran === 'katalog'
             ? 'Katalog adresów Krakowa'
-            : 'Szukaj okolicy'
+            : ekran === 'symulator'
+              ? 'Symulator inwestycji dla miasta'
+              : 'Szukaj okolicy'
 
   // Przejście = inny ekran albo, na karcie, inny adres. Klik w mapę na Szukaj niczego nie resetuje.
   const klucz = ekran === 'okolica' ? `okolica:${wybrany}` : ekran
@@ -125,6 +136,7 @@ function Powloka() {
         {ekran === 'okolica' && <EkranOkolica />}
         {ekran === 'porownanie' && <EkranPorownanie />}
         {ekran === 'metoda' && <Metoda />}
+        {ekran === 'symulator' && <EkranSymulatora />}
       </Suspense>
     </>
   )

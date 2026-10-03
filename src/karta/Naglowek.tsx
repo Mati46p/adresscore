@@ -7,6 +7,7 @@ const KROKI: { ekran: Ekran; etykieta: string }[] = [
   { ekran: 'szukaj', etykieta: 'Szukaj' },
   { ekran: 'katalog', etykieta: 'Katalog adresów' },
   { ekran: 'porownanie', etykieta: 'Porównanie' },
+  { ekran: 'symulator', etykieta: 'Symulator dla miasta' },
 ]
 
 export function Naglowek() {

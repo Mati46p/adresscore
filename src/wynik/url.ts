@@ -5,7 +5,7 @@ import type { PersonaId, Tryb } from './persony.ts'
 import { PERSONY } from './persony.ts'
 import type { Kierunki } from './silnik.ts'
 
-export type Ekran = 'szukaj' | 'okolica' | 'porownanie' | 'metoda' | 'katalog'
+export type Ekran = 'szukaj' | 'okolica' | 'porownanie' | 'metoda' | 'katalog' | 'symulator'
 
 export interface StanUrl {
   ekran: Ekran
@@ -19,6 +19,11 @@ export interface StanUrl {
   ustawienia: { wagi: Record<string, number>; kierunki: Kierunki } | null
   /** Twarde filtry (parametr `f`). */
   filtry: TwardyFiltr[]
+  /**
+   * Obiekty symulatora (#98) jako tekst `symulacjaUrl.ts`, warianty A i B (parametry `a`, `b`).
+   * Tylko na ekranie symulatora – gdzie indziej pola nie ma.
+   */
+  symulacja?: { a: string; b: string }
 }
 
 export const MAKS_POROWNANIE = 5
@@ -81,6 +86,8 @@ export function czytajHash(hash: string): StanUrl {
     ekran = 'metoda'
   } else if (czesci[0] === 'katalog') {
     ekran = 'katalog'
+  } else if (czesci[0] === 'symulator') {
+    ekran = 'symulator'
   }
 
   const p = parametry.get('p')
@@ -95,6 +102,9 @@ export function czytajHash(hash: string): StanUrl {
     porownanie: cmp ? cmp.split(',').filter(Boolean).slice(0, MAKS_POROWNANIE) : [],
     ustawienia,
     filtry: filtryZTekstu(parametry.get('f')),
+    ...(ekran === 'symulator'
+      ? { symulacja: { a: parametry.get('a') ?? '', b: parametry.get('b') ?? '' } }
+      : {}),
   }
 }
 
@@ -104,6 +114,7 @@ export function zapiszHash(s: StanUrl): string {
   else if (s.ekran === 'porownanie') sciezka = '/porownanie'
   else if (s.ekran === 'metoda') sciezka = '/metoda'
   else if (s.ekran === 'katalog') sciezka = '/katalog'
+  else if (s.ekran === 'symulator') sciezka = '/symulator'
   const parametry = new URLSearchParams()
   if (s.persona) parametry.set('p', s.persona)
   if (s.tryb) parametry.set('t', s.tryb)
@@ -111,7 +122,15 @@ export function zapiszHash(s: StanUrl): string {
   if (s.ustawienia)
     parametry.set('u', JSON.stringify({ v: 1, w: s.ustawienia.wagi, k: s.ustawienia.kierunki }))
   if (s.filtry.length) parametry.set('f', filtryDoTekstu(s.filtry))
-  const q = parametry.toString().replaceAll('%2C', ',').replaceAll('%3A', ':')
+  if (s.ekran === 'symulator' && s.symulacja) {
+    if (s.symulacja.a) parametry.set('a', s.symulacja.a)
+    if (s.symulacja.b) parametry.set('b', s.symulacja.b)
+  }
+  const q = parametry
+    .toString()
+    .replaceAll('%2C', ',')
+    .replaceAll('%3A', ':')
+    .replaceAll('%3B', ';')
   return `#${sciezka}${q ? `?${q}` : ''}`
 }
 
