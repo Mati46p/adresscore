@@ -1,7 +1,10 @@
 # Pomiar JEV po polsku (#18)
 
-> Najnowszy wynik jest w sekcji „Opisy strukturalne (#163)”: przed i po na **zbiorze kontrolnym
-> nr 5**, pisanym na ślepo, mierzonym raz. Runda #154–#156 na zbiorze nr 4 i test A/A (szum JEV na
+> **Najnowszy wynik jest w sekcji „Duża walidacja (#170)”.** To **zbiór kontrolny nr 6**
+> (150 opisów i 150 pytań, pisany na ślepo, mierzony raz) z 95% przedziałami ufności. Ta sama
+> sekcja zawiera też osobne przebiegi zbioru nr 5 przed i po #163 oraz A/A i opóźnienie na
+> końcowym zapytaniu. Zdania „Na slajd” pochodzą ze zbioru nr 6. Przed i po na zbiorze nr 5
+> (wspólne zapytanie) opisuje sekcja „Opisy strukturalne (#163)”. Runda #154–#156 na zbiorze nr 4 i test A/A (szum JEV na
 > przypiętym modelu) są w sekcji „Pomiar rundy (#154–#157)”. Zbiór nr 3 mierzyliśmy w „Trzy błędy (#153)”, nr 2 w „Wersja końcowa (#152)”,
 > a nr 1 w „Poprawki trafności (#147)” i „Druga runda (#150)”. Liczby z #18 niżej dotyczą zbioru,
 > na którym potem stroiliśmy.
@@ -1829,44 +1832,346 @@ strojenie – opisów pozostałych warstw, kryteriów ani progów nie ruszałem.
 teraz 120 warstw zamiast 108, więc w aplikacji wybór ma 12 opcji więcej niż w pomiarze (tak jak
 warstwy Sejmu w #152). Zapytanie ma ok. 33 tys. znaków.
 
+## Duża walidacja (#170)
+
+Pomiar z 2026-10-03, model `jev-1.13.0`, kod z `origin/main` = `ba69cfd` (wersja końcowa, z #163).
+W kodzie aplikacji nic tu nie zmieniałem – tylko pomiar. Budżet JEV przestał być ograniczeniem,
+więc zadanie robi trzy rzeczy, których wcześniej nie dało się zrobić:
+
+- zbiór nr 5 przed i po #163 w dwóch osobnych, pełnych przebiegach;
+- A/A i opóźnienie na końcowym zapytaniu;
+- duży zbiór kontrolny nr 6 (150 + 150), pierwszy na tyle liczny, żeby podawać wynik
+  z przedziałem ufności.
+
+Części (a) i (b) zmierzyły dwa osobne okna. Ich raporty i skrypty są poza repo, a przebiegi
+w `przebiegi/` (tabela na końcu pliku).
+
+**Wywołania na żywo tego dnia: 702.**
+
+- zbiór nr 6 – 309: 150 opisów, 150 pytań i 9 drugich wywołań;
+- zbiór nr 5 osobno – 158 (2 × 79);
+- A/A i opóźnienie – 235.
+
+Inne okna wołały JEV w tym samym czasie. Wszystkie trzy skrypty ponawiały 429, 5xx, błąd sieci
+i timeout z rosnącym odstępem i nie liczyły nieudanych prób jako odpowiedzi. **Ponowień było 0
+na 702 wywołania.**
+
+### (a) Zbiór nr 5: osobne przebiegi zamiast wspólnego zapytania z #163
+
+#163 mierzył przed i po w **jednym** wywołaniu na pozycję (pytania obu wersji w jednym
+zapytaniu). Teraz to dwa zwykłe przebiegi `pomiar.ts --na-zywo --zbior kontrolny5`:
+
+- PRZED – kod z `baa4353`, czyli bez #163;
+- PO – `ba69cfd`.
+
+Każde zapytanie niesie tylko pytania swojej wersji, a oba przebiegi szły w tym samym czasie.
+
+| | PRZED osobno | **PO osobno** | #163 wspólne: przed → po |
+|---|---|---|---|
+| A: profil | 95% | 95% | 93% → 95% |
+| A: potrzeby P / R / F1 | 86 / 88 / 87% | 89 / 86 / 88% | 86/90/88 → 90/88/89% |
+| **A: cały opis dokładnie** | 68% (27) | **75% (30)** | 70% (28) → 78% (31) |
+| A: bramka zamknięta | 4 | 4 | 5 → 3 |
+| **B: trafna warstwa główna od razu** | 91% (32) | **94% (33)** | 89% (31) → 97% (34) |
+| B: surowy wybór JEV (bez progu 0,5) | 33/35 | 35/35 | 33/35 → 35/35 |
+| B: pokrycie złożonych | 56% | 62% | 56% → 62% |
+| B: precyzja warstw | 86% | 86% | 86% → 87% |
+| B: fałszywe dodatki na pojedynczych | 3 | 4 | 3 → 5 |
+| B: zapas (pewność < 0,5) | 2/35 | 2/35 | 4/35 → 1/35 |
+| B: pewność wyboru > 0,9 | 14/35 | 24/35 | 14/35 → 23/35 |
+| B: po kliknięciu propozycji | 33/35 | 32/35 | 30/35 → 34/35 |
+
+**Wynik: A potwierdzone, B potwierdzone częściowo.**
+
+- **A: +3 / −0, te same trzy pozycje co w #163** (K5-A01, A08, A22; cechy `w_imieniu`,
+  `domownik`, `bliska_pomylka`). Oba poziomy są o 1 opis niższe niż w #163. Powód to K5-A37
+  (`praca_centrum` 0,55–0,57 przy progu 0,6, w #163 było 0,62) – to pozycja na progu, a nie
+  różnica wersji.
+- **B: +2 / −1 zamiast +3 / −0.**
+  - Pewne są zyski K5-B18 i B30. Pojawiają się w obu metodach i w surowym wyborze.
+  - K5-B35 (`bliska_pomylka`, jedyny zysk, który #163 przypisał `nie_dla` i przykładom) się
+    nie powtórzył: pewność 0,53 w #163, a teraz 0,46.
+  - Strata K5-B29 to ten sam rodzaj szumu: surowy wybór jest trafny we wszystkich czterech
+    przebiegach, a pewność skacze od 0,46 do 0,62 wokół progu.
+  - Bez progu (surowy wybór) obie metody dają to samo: 33 → 35, zero strat.
+- **Koszt się potwierdza, ale mniejszy:** fałszywe dodatki 3 → 4, a nie 3 → 5. Pewny jest
+  dodatek na K5-B30.
+- **Decyzja z #163 („zostaje”) stoi.** Liczby się zmieniają: na zbiorze nr 5 wersja po #163 ma
+  w osobnym przebiegu **94% (33/35)** warstwy głównej, a nie 97%, i **75%** „dokładnie”, a nie 78%.
+- **Wniosek o metodzie.** Wspólne zapytanie dobrze mierzy wybory JEV (zgodne w 69/70 pytań
+  i 78/80 profili) i oceny noul (|Δ| ok. 0,005–0,009, tyle co szum). Liczby zależne od progu
+  pewności (warstwa główna z zapasem, zapas, propozycje) mają w nim niepewność ±1–2 pozycje.
+  Pewność wyboru w wersji „przed”, która stała w zapytaniu obok dwóch innych pytań o warstwę,
+  wahała się średnio o 0,065, a w „po” o 0,033. Tu obie różnice wypadły na korzyść „po”, ale dwie
+  pozycje to za mało, żeby to nazwać stronniczością metody. **Do liczb nagłówkowych – osobne
+  przebiegi.**
+
+### (b) A/A i opóźnienie na końcowym zapytaniu
+
+Skrypt A/A wziął pełne zbiory do strojenia (30 opisów, 28 pytań), a nie co drugą pozycję jak
+w #157. Przebiegi były trzy (r1, r2, r3) i każdy szedł tą samą ścieżką co aplikacja. Timeout
+pośrednika podniósł do 10 s, żeby zobaczyć cały ogon opóźnień. Żadne wywołanie nie przekroczyło
+800 ms, więc wynik jest taki, jaki dałaby produkcja.
+
+| r1 vs r2 | n | wybór (`choice`) taki sam | \|Δ pewności\| średnio / max | \|Δ noul\| średnio / max | końcowa odpowiedź inna | wynik wzorcowy r1 / r2 |
+|---|---|---|---|---|---|---|
+| A – opisz siebie | 30 | **30/30** | 0,009 / 0,12 | 0,008 / 0,07 | 4/30 | 23 / 22 |
+| B – zapytaj o adres | 28 | **28/28** | 0,007 / 0,03 | 0,006 / 0,05 | 1/28 | 28 / 28 |
+
+- **Wybór JEV jest powtarzalny:** 58/58 w każdej parze przebiegów, także w drugim wywołaniu.
+- **Pełna odpowiedź końcowa już nie zawsze.** W każdej parze różni się 4–5 z 58 pozycji,
+  a w trzech przebiegach 7 z 58 (12%) dało choć raz inną odpowiedź. W #157 było 0 z 29.
+  Najczęstsze źródło to pewność poziomu kategorii przy progu 0,6, głównie `kat_transport`
+  (0,55–0,62 w tym zbiorze). Rzadziej noul potrzeby przy 0,6, bramka przy 0,7, temat przy 0,6
+  i pewność przy 0,9 (propozycje).
+- **Wynik wzorcowy** („dokładnie” w A, warstwa główna w B) zmienia się o 0–1 pozycję na parę,
+  zawsze ta sama pozycja (A16). Warstwa główna B nie zmieniła się ani razu.
+- **Reguła z #157 po korekcie:**
+  - różnica 1 pozycji to szum;
+  - różnica 2 lub więcej pozycji to skutek zmiany tylko wtedy, gdy te pozycje nie leżą przy
+    progu. Pas „przy progu” to teraz **±0,10**, a nie ±0,07 (max |Δ noul| 0,09, a pewności 0,12);
+  - gdy porównujemy całe odpowiedzi (z kategoriami), skutek zaczyna się dopiero od ok. 6–7 z 58.
+
+**Opóźnienie i ryzyko timeoutu** (czas `obsluz`, z lokalnego Maca prosto do JEV):
+
+| Wywołanie | n | p50 | p95 | max | > 800 ms |
+|---|---|---|---|---|---|
+| Opisz siebie (A/A i powtórki) | 103 | 281 ms | 361 ms | 461 ms | 0 |
+| Zapytaj o adres, pierwsze wywołanie | 103 | 346 ms | 385 ms | 564 ms | 0 |
+| Zapytaj o adres, samo drugie wywołanie | 17 | 286 ms | 339 ms | 339 ms | 0 |
+| Pytanie z drugim wywołaniem, oba po kolei | 17 | 631 ms | 826 ms | 826 ms | – (każde z dwóch < 800 ms) |
+| Zbiór nr 6 (to zadanie), A | 150 | 274 ms | 334 ms | 498 ms | 0 |
+| Zbiór nr 6, B, pytania z jednym wywołaniem | 141 | 363 ms | 536 ms | 730 ms | 0 |
+| Zbiór nr 6, B, pytania z dwoma wywołaniami | 9 | 634 ms | 1016 ms | 1016 ms | – (każde z dwóch < 800 ms) |
+| Zbiór nr 5 osobno, pojedyncze wywołanie (PRZED / PO) | 79 / 79 | 313 / 310 ms | 407 / 399 ms | 644 / 578 ms | 0 |
+
+- **Timeoutu nie było w żadnym z 702 wywołań tego dnia.** Zbiór nr 6 szedł z prawdziwym limitem
+  pośrednika 800 ms: 0 nieudanych prób. Z 291 pojedynczych wywołań ponad 600 ms były 3, ponad
+  700 ms – 1 (730 ms).
+- **Zapas do limitu jest jednak niewielki:** ok. 240 ms od najgorszego wyniku w A/A, 70 ms od
+  najgorszego w zbiorze nr 6 i ok. 400 ms od p95 dla „zapytaj o adres”.
+- **Czego tu nie zmierzyliśmy:**
+  - zimnego startu funkcji na Vercelu;
+  - sieci przeglądarka → Vercel (ta zjada zapas klienta 1,5 s, nie limit 800 ms);
+  - odległości regionu funkcji od JEV. Ta wchodzi wprost w limit 800 ms, więc pierwszy pomiar
+    z produkcji jest potrzebny, zanim uznamy ryzyko za zerowe.
+- Pytanie z drugim wywołaniem trwa ok. 0,6 s, w najgorszym przypadku 1,0 s. To dwa osobne limity
+  po 800 ms, więc nie timeout, tylko dłuższe czekanie (9 z 150 pytań w zbiorze nr 6).
+- **Rozmiar zapytania** (z pola `usage` w odpowiedzi JEV):
+  - „zapytaj o adres” – ok. 33,7 tys. znaków, czyli ok. **14,4 tys. tokenów** wejścia;
+  - „opisz siebie” – 4,6 tys. znaków, czyli 1,9 tys. tokenów.
+  - Polski JSON ma ok. 2,3–2,5 znaku na token, a nie 4. P50 „zapytaj o adres” jest mimo to
+    tylko o ok. 50–90 ms wyższe niż „opisz siebie”.
+
+### (c) Wynik nagłówkowy – zbiór kontrolny nr 6 (na ślepo, 150 + 150, mierzony raz)
+
+`kontrolny6-opisz.json` ma 150 opisów i `kontrolny6-zapytaj.json` 150 pytań: 105 pojedynczych,
+30 złożonych i 15 spoza zakresu.
+
+- Napisały je na ślepo dwa osobne agenty AI, bez dostępu do kodu, poleceń i poprzednich zbiorów.
+- Pliki weszły bajt w bajt osobnym commitem (`1f612db`), zanim poszło pierwsze wywołanie.
+- Tekstów nie czytałem. Z pozycji widziałem tylko id, cechy i etykiety w liczbach zbiorczych.
+- Jeden przebieg: `pomiar.ts --na-zywo --zbior kontrolny6`, czyli 309 wywołań bez ponowień.
+  Przebieg pozycja po pozycji jest w `przebiegi/k6-170.json`, a `--z-pliku` odtwarza z niego
+  wszystkie liczby bez sieci.
+- Po pomiarze nic nie zmieniałem.
+- JEV oznacza to, co widzi użytkownik: odpowiedź JEV, a pod progiem reguły.
+- W nawiasach kwadratowych podaję **95% przedział ufności Wilsona**.
+- „Pary niezgodne” to porównanie sparowane na tych samych pozycjach: w ilu pozycjach trafia tylko
+  JEV, a w ilu tylko reguły. p to dokładny test McNemara.
+
+**A – „opisz siebie”** (150 opisów):
+
+| | Reguły | **JEV** | tylko JEV / tylko reguły | p |
+|---|---|---|---|---|
+| **Profil trafiony** | 72% [64–79%] (108) | **85% [79–90%]** (128) | 33 / 13 | 0,005 |
+| **Cały opis zrozumiany dokładnie** | 47% [39–55%] (70) | **61% [53–69%]** (92) | 44 / 22 | 0,009 |
+| Potrzeby (10 z twierdzeniem) – precyzja¹ | 77% [69–83%] | 79% [72–84%] | | |
+| Potrzeby – pełność¹ | 69% [62–76%] | **84% [78–89%]** | | |
+| Potrzeby – F1 (10) | 73% | **81%** | | |
+| Potrzeby – F1 na wszystkich 15 | 72% | 71% | | |
+| Kategorie ważne – P / R / F1 | 83 / 77 / 80% | 93 / 77 / 85% | | |
+| „Nic nie zrozumiano” tam, gdzie trzeba | 12/18 | 16/18 | | |
+| Bramka zamknięta | – | 12 (9 z 10 pozycji `nikt_nie_szuka`) | | |
+| Zapas (JEV bez pewnej odpowiedzi → reguły) | – | 11/150, z tego 8 na `bez_sygnalu` (wzorzec: nic) | | |
+
+¹ Liczone na potrzebach, a nie na opisach (kilka potrzeb na opis), więc przedział jest tylko
+przybliżony.
+
+**B – „zapytaj o adres”** (150 pytań):
+
+| | Reguły | **JEV** | tylko JEV / tylko reguły | p |
+|---|---|---|---|---|
+| **Trafna warstwa główna od razu (albo „nie wiem”)** | 37% [29–45%] (55) | **97% [93–99%]** (146) | 92 / 1 | < 0,001 |
+| Pojedyncze – warstwa główna | 29% [21–38%] (30/105) | **98% [93–99%]** (103/105) | 73 / 0 | < 0,001 |
+| Złożone – trafiony choć jeden temat | 60% [42–75%] (18/30) | **100% [89–100%]** (30/30) | 12 / 0 | < 0,001 |
+| Spoza zakresu → „nie wiem” | 47% [25–70%] (7/15) | 87% [62–96%] (13/15) | 7 / 1 | 0,07 |
+| Pokrycie pytań złożonych (do 3 warstw)² | 38% | **61%** | | |
+| Złożone z kompletem tematów | 7% [2–21%] (2/30) | 23% [12–41%] (7/30) | | |
+| Precyzja warstw¹ | 57% [48–66%] | **87% [81–91%]** | | |
+| Fałszywe dodatki na pojedynczych (pytań) | 7 z 105 | **15 z 105** | | |
+| Średnio warstw na odpowiedź | 0,76 | 1,23 | | |
+| Surowy wybór JEV (bez progu 0,5) | – | 99% (149/150) | | |
+| Zapas (pewność < 0,5 → reguły + tematy JEV) | – | 6/150 | | |
+| Drugie wywołanie (#153) | – | 9/150 | | |
+
+² Średnia ułamków tematów, a nie proporcja pozycji, więc bez przedziału.
+
+**Dwie propozycje (#156) – od razu i po kliknięciu:**
+
+| Pasmo pewności wyboru | Pytań | Warstwa główna trafna od razu | Z propozycjami |
+|---|---|---|---|
+| > 0,9 (odpowiedź od razu) | 117 | 117/117 | – |
+| 0,5–0,9 | 27 | 26/27 | 19 |
+| < 0,5 (reguły + tematy JEV) | 6 | 3/6 | – |
+
+- Propozycje pojawiły się w 19 pytaniach. **W 19 z 19 warstwa z wzorca była wśród dwóch**
+  [83–100%]. W żadnym pytaniu spoza zakresu propozycji nie było.
+- Od razu trafne jest 146/150, **po kliknięciu też 146/150**. We wszystkich 19 pytaniach
+  z propozycjami warstwa główna była już trafna, więc na tym zbiorze klik niczego nie dodaje. Na
+  zbiorze nr 4 dodawał 2 pytania, a na zbiorze nr 5 w #163 – 0.
+- Pasmo > 0,9 to 78% pytań, wszystkie trafne. Tam odpowiedź od razu jest bezpieczna.
+
+**Przekrój po cechach** (liczby zbiorcze; przy n ≤ 25 jedna pozycja to co najmniej 4 pp,
+więc różnice kilku punktów w cesze to szum):
+
+| Cecha (A) | n | Reguły: profil / dokładnie | **JEV: profil / dokładnie** | JEV: potrzeby P / R |
+|---|---|---|---|---|
+| `zwykly` | 60 | 78% / 50% | 85% / 55% | 80 / 85% |
+| `bez_diakrytykow` | 71 | 66% / 51% | 85% / 58% | 74 / 79% |
+| `bliska_pomylka` | 25 | 64% / 24% | **76% / 60%** | 81 / 74% |
+| `profil_glowny` | 20 | 55% / 50% | **85% / 70%** | 71 / 91% |
+| `w_imieniu` | 15 | 47% / 33% | **80% / 53%** | 88 / 88% |
+| `domownik` | 12 | 92% / 58% | 92% / 50% | 75 / 83% |
+| `nikt_nie_szuka` | 10 | 80% / 50% | **100% / 90%** | – |
+| `bez_sygnalu` | 8 | 100% / 88% | 100% / 88% | – |
+| `krotki` / `dlugi` | 4 / 3 | 50% / 50%; 33% / 0% | 100% / 75%; 67% / 0% | – |
+
+| Cecha (B) | n | Reguły: warstwa główna | **JEV: warstwa główna** | Reguły / JEV: precyzja | Uwagi |
+|---|---|---|---|---|---|
+| `jeden_temat` | 70 | 29% | **100%** | 48 / 89% | 9 fałszywych dodatków JEV |
+| `zlozone` | 30 | 60% | **100%** | 79 / 88% | pokrycie 38% → **61%** |
+| `bliska_pomylka` | 20 | 15% | **100%** | 36 / 87% | 3 fałszywe dodatki JEV |
+| `dwa_z_tematu` | 17 | 82% | **100%** | 89 / 95% | pokrycie 50% → 62% |
+| `niejednoznaczne` | 15 | 47% | **87%** | 70 / 76% | 3 fałszywe dodatki JEV; 2 chybione to pewność < 0,5 |
+| `spoza` | 15 | 47% | **87%** | – | 2 chybione: jedno pewne (0,71), jedno `nie_wiem` 0,49 |
+
+**Opóźnienie (zbiór nr 6, czas na pozycję):** A 274 / 334 / 498 ms, B 366 / 632 / 1016 ms,
+razem p50 326 / p95 537 / max 1016 ms. Wartości ponad 800 ms to pytania z dwoma wywołaniami (patrz (b)).
+
+**Na tle zbiorów nr 4 i 5.** To inne zbiory, więc porównanie jest przybliżone:
+
+- **Warstwa główna od razu, JEV:** 91% na zbiorze nr 4, 94% na nr 5 (osobno) i 97% [93–99%] na
+  nr 6. Reguły mają 66%, 37% i 37%.
+- **„Dokładnie”, JEV:** 33% na zbiorze nr 4, 75% na nr 5 i 61% [53–69%] na nr 6. Reguły mają
+  28%, 35% i 47%.
+
+Na zbiorze nr 6 reguły w „opisz siebie” wypadają wyraźnie lepiej niż kiedykolwiek, a w „zapytaj
+o adres” tak źle jak na zbiorze nr 5. Poziom zależy więc mocno od autora zbioru. Dlatego
+w zdaniach na zewnątrz podajemy nazwę zbioru i przedział.
+
+### (d) Bilans – co JEV robi wyraźnie lepiej, gdzie remis, co jest słabe
+
+**Wyraźnie lepiej** – przedziały się nie nakładają albo test sparowany daje p < 0,01:
+
+- **Wybór danych do pytania:** 97% [93–99%] wobec 37% [29–45%]. W 92 pytaniach trafia tylko JEV,
+  w 1 tylko reguły. Ta przewaga powtarza się na każdym zbiorze od nr 2.
+- **Pytania z bliską pomyłką, potoczne i niejednoznaczne:** `bliska_pomylka` 100% wobec 15%,
+  `niejednoznaczne` 87% wobec 47%.
+- **Profil:** 85% [79–90%] wobec 72% [64–79%], p = 0,005. JEV wygrywa zwłaszcza tam, gdzie profil
+  wynika z kontekstu (`profil_glowny`, `w_imieniu`).
+- **Cały opis dokładnie:** 61% [53–69%] wobec 47% [39–55%], p = 0,009. Przedziały lekko się
+  nakładają, ale na tych samych opisach JEV wygrywa 44 do 22.
+- **Pełność potrzeb:** 84% wobec 69%.
+- **Precyzja warstw:** 87% wobec 57%.
+- **Pokrycie pytań złożonych:** 61% wobec 38%.
+
+**Remis albo różnica w granicach szumu:**
+
+- precyzja potrzeb: 79% wobec 77%;
+- F1 na wszystkich 15 potrzebach: 71% wobec 72%. Pięć potrzeb bez twierdzenia JEV pokrywa tylko
+  pośrednio;
+- zwykłe opisy bez pułapek: „dokładnie” 55% wobec 50%;
+- `domownik`: 50% wobec 58%, n = 12 – tu reguły są o jeden opis lepsze;
+- spoza zakresu: 87% wobec 47%, ale n = 15 i p = 0,07, więc nie rozstrzygnięte;
+- „dokładnie” to nie jest dominacja. W 22 opisach dokładne są tylko reguły.
+
+**Znane słabości:**
+
+1. **Pytania o kilka rzeczy naraz.** Komplet tematów JEV daje tylko w 7 z 30 pytań (23%
+   [12–41%]), choć reguły dają 2 z 30. Odpowiedź ma najwyżej 3 warstwy, a tematy często nie
+   przechodzą progu.
+2. **Fałszywe dodatki.** Do 15 ze 105 pojedynczych pytań (co siódmego) JEV dokłada warstwę spoza
+   pytania, a reguły do 7.
+   - Przeliczenie z tych samych odpowiedzi: przy progu tematu 0,7 byłoby ich 7, a przy 0,8 – 3,
+     bez straty pokrycia na tym zbiorze.
+   - **Progu nie zmieniłem**, bo to byłoby strojenie na zbiorze nr 6. To kandydat na osobne
+     zadanie, sprawdzone na nowym zbiorze.
+3. **Próg 0,5 wyrzuca trafne wybory.** We wszystkich 6 pytaniach pod 0,5 surowy wybór JEV był
+   trafny, a reguły z tematami trafiły w 3. Surowy JEV ma 99%, a to, co widzi użytkownik, 97%.
+   Ten sam wzór był na zbiorze nr 5 (B29, B35).
+4. **Bramka zamyka się czasem bez powodu.** Na 10 opisów `nikt_nie_szuka` zamknęła się 9 razy,
+   i to dobrze. Zamknęła się też 3 razy poza tą cechą, na opisach z prawdziwym profilem
+   (`nikt_nie_szuka` 0,72–0,85 przy progu 0,7).
+5. **Spoza zakresu:** 2 z 15 chybione.
+   - Raz JEV był pewny złej warstwy (0,71).
+   - Raz wybrał „nie wiem”, ale z pewnością 0,49. Wtedy odpowiadają reguły z tematami, które
+     dołożyły 3 warstwy.
+6. **Szum odpowiedzi końcowej (A/A):** ok. 9% pozycji zmienia odpowiedź między identycznymi
+   przebiegami. Głównie chodzi o kategorie przy progu pewności 0,6. Wynik nagłówkowy waha się
+   przez to o ok. ±1–2 pozycje.
+7. **Ograniczenia samego pomiaru.**
+   - Zbiory i etykiety pisały agenty AI, a nie ludzie.
+   - Konwencja etykiet (np. profil null) różni się między autorami.
+   - Czas mierzyliśmy lokalnie, a nie z produkcji.
+
+### Wywołania na żywo
+
+**309 z budżetu 450** – jeden przebieg zbioru nr 6, bez ponowień i bez timeoutów. Przebieg samych
+reguł na zbiorze nr 6 (`pomiar.ts --zbior kontrolny6`) nic nie kosztował. Części (a) i (b) to
+inne okna: 158 i 235 wywołań.
+
+`pomiar.ts` ma teraz:
+
+- `--zbior kontrolny6`;
+- ponawianie 429, 5xx, timeoutu i błędu sieci (do 6 prób, odstęp 1–30 s). Nieudana próba nie jest
+  odpowiedzią, a ponowienia są zapisane przy pozycji (`ponowienia`) i w podsumowaniu
+  (`nieudane`);
+- sekcję raportu z przedziałami Wilsona i testem McNemara (`wilson`, `mcnemar`).
+
 ## Na slajd
 
-**Po #163 (zbiór kontrolny nr 5, na ślepo, 40 opisów i 35 pytań, mierzony raz).** Zbiór nr 5
-potwierdza zdania niżej o wyborze warstwy i profilu, z wyższymi liczbami. Liczby po #163:
+**Zbiór kontrolny nr 6 (#170).** To 150 opisów i 150 pytań, które napisały na ślepo osobne agenty
+AI, bez dostępu do kodu. Wersję końcową zmierzyliśmy na nim raz. W nawiasach podajemy 95%
+przedział ufności.
 
-- Na pytanie o adres JEV wskazuje właściwe dane od razu w 97% pytań (przed #163: 89%; reguły:
-  37%).
-- Profil trafia w 95% opisów, a cały opis rozumie dokładnie w 78% (przed #163: 70%; reguły: 35%).
-- Opisy warstw po ludzku i definicje „kiedy tak, kiedy nie” dały +3 pozycje w każdej części
-  zbioru, bez żadnej pozycji, która przeszła z trafnej na chybioną.
-- Na zbiorze nr 4 te same miary wypadły niżej (91% i 33% przed #163). Zbiory różnią się
-  trudnością, więc zdania „97%” i „78%” podajemy razem z nazwą zbioru.
+- Na pytanie o adres JEV wskazuje właściwe dane od razu w **97%** pytań (93–99%). Reguły słów
+  kluczowych robią to w 37% (29–45%).
+- Profil szukającego, np. rodzina, senior albo inwestor, JEV trafia w **85%** opisów (79–90%),
+  a reguły w 72% (64–79%).
+- Cały opis, czyli profil razem z kompletem potrzeb, JEV rozumie dokładnie w **61%** (53–69%),
+  a reguły w 47% (39–55%).
+- Z potrzeb wymienionych w opisie JEV wyłapuje 84%, a reguły 69%.
+- Odpowiedź przychodzi zwykle po ok. 0,3 s, a w 95% przypadków przed upływem 0,55 s.
+  Z 702 wywołań tego dnia żadne nie przekroczyło limitu 0,8 s (pomiar lokalny, nie z produkcji).
+- Słabe strony: w pytaniach o kilka rzeczy naraz komplet tematów JEV daje tylko w 23% (12–41%).
+  Do co siódmego prostego pytania dokłada też zbędną warstwę.
 
-Liczby pochodzą ze **zbioru kontrolnego nr 4** (#157). Napisał go na ślepo osobny agent AI, bez
-dostępu do kodu i poleceń. Wersję po rundzie #154–#156 zmierzyliśmy na nim raz i potem niczego
-nie poprawialiśmy. To 40 opisów i 35 pytań, więc wynik jest orientacyjny. Test A/A pokazał, że
-powtórka tego samego zapytania na przypiętym modelu nie zmienia odpowiedzi.
+Zbiory pisały agenty AI, a nie ludzie. Wynik zależy od zbioru: na zbiorach nr 4 i 5 „dokładnie”
+wyniosło 33% i 75%. Dlatego zawsze podajemy go z nazwą zbioru.
 
-Zdania ze zbioru nr 3 wymieniłem tam, gdzie zbiór nr 4 ich nie potwierdza:
+### Wcześniej (historia, zastąpione zdaniami wyżej)
 
-- Potrzeby: na zbiorze nr 3 było 8 z 10, na nr 4 jest 7 z 10 (reguły 6 z 10).
-- Cały opis dokładnie: na zbiorze nr 3 było 50% vs 30%, na nr 4 jest 33% vs 28%. Przewaga JEV to
-  tu 2 opisy z 40, więc zdanie o „połowie” i dużej różnicy wypada.
-- Pytania złożone: na zbiorze nr 3 było 85% vs 78%, na nr 4 jest 60% vs 52%.
+**Po #163 (zbiór kontrolny nr 5, 40 opisów i 35 pytań).** Osobne przebiegi w #170 dały 94%
+warstwy głównej i 75% „dokładnie”. Wspólne zapytanie z #163 dało 97% i 78%.
 
-Potwierdzają się wybór warstwy (91% vs 66%), profil (85% vs 63%, teraz bez ani jednego profilu
-innego niż we wzorcu) i czas odpowiedzi.
+**Po rundzie #154–#156 (zbiór kontrolny nr 4, 40 opisów i 35 pytań):**
 
-- Na pytanie o adres JEV wskazuje właściwe dane od razu w 91% przypadków (reguły 66%). Gdy nie
-  jest pewny, pokazuje dwie propozycje do kliknięcia – z nimi właściwe dane są pod ręką w 97%
-  pytań.
-- Profil JEV trafia w 85% opisów, reguły w 63%. JEV nie przypisał nikomu innego profilu, niż
-  powinien; myli się tylko, gdy przypisuje profil tam, gdzie lepiej byłoby go nie zgadywać.
-- Z wymienionych potrzeb JEV wyłapuje 7 z 10, reguły słów kluczowych 6 z 10. Cały opis (profil
-  i komplet potrzeb) JEV rozumie dokładnie w jednej trzeciej przypadków (33%), reguły w 28%.
-- Zwykle odpowiada w 0,3 sekundy, a gdy pytanie dotyczy dwóch rzeczy z jednej grupy (np.
-  przedszkole i żłobek), w ok. 0,65 sekundy. Przy pytaniach o kilka rzeczy naraz pokrywa 60%
-  tematów, reguły 52% – różnica mniejsza niż jedno pytanie.
+- warstwa główna: od razu 91%, po kliknięciu propozycji 97% (reguły: 66%);
+- profil: 85%, bez ani jednego profilu innego niż we wzorcu (reguły: 63%);
+- potrzeby: 7 z 10 (reguły: 6 z 10);
+- cały opis dokładnie: 33% (reguły: 28%);
+- pytania złożone: pokrycie 60% (reguły: 52%).
 
 ## Surowe przebiegi i research
 
@@ -1883,6 +2188,11 @@ bez nowych wywołań:
 | `przebiegi/k5-przed-163.json` | zbiór kontrolny nr 5, kod z `main` przed #163 (wersja „przed”) | #163 |
 | `przebiegi/k5-po-163.json` | zbiór kontrolny nr 5, #163 (wersja „po”, wynik nagłówkowy) | #163 |
 | `przebiegi/k5-proste-163.json` | zbiór kontrolny nr 5, same zwykłe opisy bez struktury (przekrój pomocniczy) | #163 |
+| `przebiegi/k6-170.json` | zbiór kontrolny nr 6 (150 + 150), wersja końcowa, wynik nagłówkowy | #170 |
+| `przebiegi/k5-przed-osobno-170.json` | zbiór kontrolny nr 5, kod sprzed #163 (`baa4353`), osobny przebieg | #170 |
+| `przebiegi/k5-po-osobno-170.json` | zbiór kontrolny nr 5, kod po #163 (`ba69cfd`), osobny przebieg | #170 |
+| `przebiegi/aa-170-r1.json`, `aa-170-r2.json` | A/A na końcowym zapytaniu, pełne zbiory do strojenia (format własnego skryptu: wszystkie wywołania, czasy, `usage`) | #170 |
+| `przebiegi/latencja-170.json` | opóźnienie końcowego zapytania: wszystkie wywołania z przebiegów A/A i powtórek, podsumowanie | #170 |
 
 Przebiegów zbioru nr 1 (#147, #150) nie zapisywaliśmy pozycja po pozycji – są tylko liczby
 zbiorcze powyżej. Raport z przeglądu projektu JEV (nazwy warstw, prawdopodobieństwa, profil,

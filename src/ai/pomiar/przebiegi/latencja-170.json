@@ -1,0 +1,4587 @@
+{
+ "model": "jev-1.13.0",
+ "uwaga": "Sygnał 800 ms pośrednika zastąpiony 10 s, żeby zmierzyć pełny ogon; ms = czas obsluz bez nieudanych prób (429/5xx/sieć) i przerw.",
+ "proby": {
+  "r1": 59,
+  "r2": 59,
+  "r3": 59,
+  "r4": 31,
+  "smoke": 3,
+  "drugie": 24
+ },
+ "ponowienia": {
+  "r1": [],
+  "r2": [],
+  "r3": [],
+  "r4": [],
+  "smoke": [],
+  "drugie": []
+ },
+ "podsumowanie": {
+  "opisz": {
+   "posrednik": {
+    "n": 103,
+    "p50": 281,
+    "p95": 361,
+    "p99": 450,
+    "max": 461,
+    "min": 243,
+    "srednio": 289,
+    "ponad600": 0,
+    "od700do800": 0,
+    "ponad800": 0,
+    "ponad1500": 0
+   },
+   "upstream": {
+    "n": 103,
+    "p50": 280,
+    "p95": 360,
+    "p99": 448,
+    "max": 459,
+    "min": 242,
+    "srednio": 288,
+    "ponad600": 0,
+    "od700do800": 0,
+    "ponad800": 0,
+    "ponad1500": 0
+   },
+   "rozmiar": {
+    "znakiZadania": {
+     "min": 4522,
+     "max": 4702,
+     "srednio": 4647
+    },
+    "znakiPytan": {
+     "min": 4439,
+     "max": 4439
+    },
+    "tokenyWejscia": {
+     "min": 1844,
+     "max": 1920,
+     "srednio": 1892
+    },
+    "tokenyWyjscia": {
+     "min": 348,
+     "max": 349,
+     "srednio": 348
+    },
+    "znakowNaToken": 2.456
+   }
+  },
+  "zapytajPierwsze": {
+   "posrednik": {
+    "n": 103,
+    "p50": 346,
+    "p95": 385,
+    "p99": 484,
+    "max": 564,
+    "min": 316,
+    "srednio": 351,
+    "ponad600": 0,
+    "od700do800": 0,
+    "ponad800": 0,
+    "ponad1500": 0
+   },
+   "upstream": {
+    "n": 103,
+    "p50": 344,
+    "p95": 383,
+    "p99": 482,
+    "max": 562,
+    "min": 315,
+    "srednio": 349,
+    "ponad600": 0,
+    "od700do800": 0,
+    "ponad800": 0,
+    "ponad1500": 0
+   },
+   "rozmiar": {
+    "znakiZadania": {
+     "min": 33657,
+     "max": 33697,
+     "srednio": 33678
+    },
+    "znakiPytan": {
+     "min": 33588,
+     "max": 33588
+    },
+    "tokenyWejscia": {
+     "min": 14397,
+     "max": 14414,
+     "srednio": 14405
+    },
+    "tokenyWyjscia": {
+     "min": 2068,
+     "max": 2078,
+     "srednio": 2072
+    },
+    "znakowNaToken": 2.338
+   }
+  },
+  "zapytajPierwszeZPowtorkamiB01": {
+   "posrednik": {
+    "n": 115,
+    "p50": 346,
+    "p95": 395,
+    "p99": 564,
+    "max": 564,
+    "min": 316,
+    "srednio": 352,
+    "ponad600": 0,
+    "od700do800": 0,
+    "ponad800": 0,
+    "ponad1500": 0
+   }
+  },
+  "zapytajDrugie": {
+   "posrednik": {
+    "n": 17,
+    "p50": 286,
+    "p95": 339,
+    "p99": 339,
+    "max": 339,
+    "min": 250,
+    "srednio": 287,
+    "ponad600": 0,
+    "od700do800": 0,
+    "ponad800": 0,
+    "ponad1500": 0
+   },
+   "rozmiar": {
+    "znakiZadania": {
+     "min": 1094,
+     "max": 1094,
+     "srednio": 1094
+    },
+    "znakiPytan": {
+     "min": 990,
+     "max": 990
+    },
+    "tokenyWejscia": {
+     "min": 684,
+     "max": 684,
+     "srednio": 684
+    },
+    "tokenyWyjscia": {
+     "min": 82,
+     "max": 82,
+     "srednio": 82
+    },
+    "znakowNaToken": 1.599
+   }
+  },
+  "zapytajPozycjeZDrugim": {
+   "n": 17,
+   "p50": 631,
+   "p95": 826,
+   "p99": 826,
+   "max": 826,
+   "min": 574,
+   "srednio": 646,
+   "ponad600": 16,
+   "od700do800": 1,
+   "ponad800": 1,
+   "ponad1500": 0
+  },
+  "zapytajPozycjeZDrugimPierwszeWywolanie": {
+   "n": 17,
+   "p50": 339,
+   "p95": 564,
+   "p99": 564,
+   "max": 564,
+   "min": 316,
+   "srednio": 359,
+   "ponad600": 0,
+   "od700do800": 0,
+   "ponad800": 0,
+   "ponad1500": 0
+  }
+ },
+ "pozycjeZDrugim": [
+  {
+   "przebieg": "r1",
+   "id": "B01",
+   "ms": 643,
+   "czesci": [
+    372,
+    271
+   ]
+  },
+  {
+   "przebieg": "r2",
+   "id": "B01",
+   "ms": 601,
+   "czesci": [
+    346,
+    255
+   ]
+  },
+  {
+   "przebieg": "r3",
+   "id": "B01",
+   "ms": 641,
+   "czesci": [
+    328,
+    313
+   ]
+  },
+  {
+   "przebieg": "r4",
+   "id": "B01",
+   "ms": 645,
+   "czesci": [
+    328,
+    317
+   ]
+  },
+  {
+   "przebieg": "smoke",
+   "id": "B01",
+   "ms": 621,
+   "czesci": [
+    371,
+    250
+   ]
+  },
+  {
+   "przebieg": "drugie",
+   "id": "B01",
+   "ms": 826,
+   "czesci": [
+    564,
+    262
+   ]
+  },
+  {
+   "przebieg": "drugie",
+   "id": "B01",
+   "ms": 699,
+   "czesci": [
+    395,
+    304
+   ]
+  },
+  {
+   "przebieg": "drugie",
+   "id": "B01",
+   "ms": 611,
+   "czesci": [
+    316,
+    295
+   ]
+  },
+  {
+   "przebieg": "drugie",
+   "id": "B01",
+   "ms": 662,
+   "czesci": [
+    327,
+    335
+   ]
+  },
+  {
+   "przebieg": "drugie",
+   "id": "B01",
+   "ms": 715,
+   "czesci": [
+    376,
+    339
+   ]
+  },
+  {
+   "przebieg": "drugie",
+   "id": "B01",
+   "ms": 627,
+   "czesci": [
+    336,
+    291
+   ]
+  },
+  {
+   "przebieg": "drugie",
+   "id": "B01",
+   "ms": 609,
+   "czesci": [
+    336,
+    273
+   ]
+  },
+  {
+   "przebieg": "drugie",
+   "id": "B01",
+   "ms": 631,
+   "czesci": [
+    324,
+    307
+   ]
+  },
+  {
+   "przebieg": "drugie",
+   "id": "B01",
+   "ms": 628,
+   "czesci": [
+    369,
+    259
+   ]
+  },
+  {
+   "przebieg": "drugie",
+   "id": "B01",
+   "ms": 633,
+   "czesci": [
+    347,
+    286
+   ]
+  },
+  {
+   "przebieg": "drugie",
+   "id": "B01",
+   "ms": 574,
+   "czesci": [
+    323,
+    251
+   ]
+  },
+  {
+   "przebieg": "drugie",
+   "id": "B01",
+   "ms": 613,
+   "czesci": [
+    339,
+    274
+   ]
+  }
+ ],
+ "wywolania": [
+  {
+   "przebieg": "r1",
+   "funkcja": "opisz",
+   "id": "A01",
+   "nr": 1,
+   "ms": 461,
+   "upstreamMs": 459,
+   "znakiZadania": 4674,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1413,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1905,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "opisz",
+   "id": "A02",
+   "nr": 1,
+   "ms": 259,
+   "upstreamMs": 258,
+   "znakiZadania": 4671,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1427,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1905,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "opisz",
+   "id": "A03",
+   "nr": 1,
+   "ms": 266,
+   "upstreamMs": 265,
+   "znakiZadania": 4671,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1411,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1898,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "opisz",
+   "id": "A04",
+   "nr": 1,
+   "ms": 270,
+   "upstreamMs": 270,
+   "znakiZadania": 4688,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1412,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1904,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "opisz",
+   "id": "A05",
+   "nr": 1,
+   "ms": 289,
+   "upstreamMs": 288,
+   "znakiZadania": 4522,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1414,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1844,
+    "output_tokens": 349
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "opisz",
+   "id": "A06",
+   "nr": 1,
+   "ms": 255,
+   "upstreamMs": 254,
+   "znakiZadania": 4670,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1414,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1898,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "opisz",
+   "id": "A07",
+   "nr": 1,
+   "ms": 297,
+   "upstreamMs": 296,
+   "znakiZadania": 4643,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1414,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1889,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "opisz",
+   "id": "A08",
+   "nr": 1,
+   "ms": 349,
+   "upstreamMs": 348,
+   "znakiZadania": 4643,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1414,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1897,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "opisz",
+   "id": "A09",
+   "nr": 1,
+   "ms": 296,
+   "upstreamMs": 296,
+   "znakiZadania": 4664,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1409,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1895,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "opisz",
+   "id": "A10",
+   "nr": 1,
+   "ms": 269,
+   "upstreamMs": 268,
+   "znakiZadania": 4682,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1416,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1908,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "opisz",
+   "id": "A11",
+   "nr": 1,
+   "ms": 299,
+   "upstreamMs": 298,
+   "znakiZadania": 4670,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1411,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1903,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "opisz",
+   "id": "A12",
+   "nr": 1,
+   "ms": 306,
+   "upstreamMs": 305,
+   "znakiZadania": 4642,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1412,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1889,
+    "output_tokens": 349
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "opisz",
+   "id": "A13",
+   "nr": 1,
+   "ms": 263,
+   "upstreamMs": 263,
+   "znakiZadania": 4648,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1412,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1892,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "opisz",
+   "id": "A14",
+   "nr": 1,
+   "ms": 250,
+   "upstreamMs": 250,
+   "znakiZadania": 4651,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1414,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1890,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "opisz",
+   "id": "A15",
+   "nr": 1,
+   "ms": 248,
+   "upstreamMs": 248,
+   "znakiZadania": 4702,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1414,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1920,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "opisz",
+   "id": "A16",
+   "nr": 1,
+   "ms": 265,
+   "upstreamMs": 265,
+   "znakiZadania": 4635,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1413,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1892,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "opisz",
+   "id": "A17",
+   "nr": 1,
+   "ms": 247,
+   "upstreamMs": 247,
+   "znakiZadania": 4645,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1413,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1889,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "opisz",
+   "id": "A18",
+   "nr": 1,
+   "ms": 270,
+   "upstreamMs": 270,
+   "znakiZadania": 4564,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1415,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1865,
+    "output_tokens": 349
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "opisz",
+   "id": "A19",
+   "nr": 1,
+   "ms": 278,
+   "upstreamMs": 277,
+   "znakiZadania": 4639,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1413,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1891,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "opisz",
+   "id": "A20",
+   "nr": 1,
+   "ms": 294,
+   "upstreamMs": 293,
+   "znakiZadania": 4647,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1417,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1893,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "opisz",
+   "id": "A21",
+   "nr": 1,
+   "ms": 246,
+   "upstreamMs": 246,
+   "znakiZadania": 4670,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1413,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1897,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "opisz",
+   "id": "A22",
+   "nr": 1,
+   "ms": 255,
+   "upstreamMs": 255,
+   "znakiZadania": 4662,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1417,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1902,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "opisz",
+   "id": "A23",
+   "nr": 1,
+   "ms": 287,
+   "upstreamMs": 287,
+   "znakiZadania": 4603,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1413,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1875,
+    "output_tokens": 349
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "opisz",
+   "id": "A24",
+   "nr": 1,
+   "ms": 291,
+   "upstreamMs": 290,
+   "znakiZadania": 4672,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1411,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1907,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "opisz",
+   "id": "A25",
+   "nr": 1,
+   "ms": 278,
+   "upstreamMs": 277,
+   "znakiZadania": 4647,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1411,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1896,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "opisz",
+   "id": "A26",
+   "nr": 1,
+   "ms": 318,
+   "upstreamMs": 317,
+   "znakiZadania": 4621,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1412,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1880,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "opisz",
+   "id": "A27",
+   "nr": 1,
+   "ms": 282,
+   "upstreamMs": 281,
+   "znakiZadania": 4652,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1414,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1897,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "opisz",
+   "id": "A28",
+   "nr": 1,
+   "ms": 291,
+   "upstreamMs": 290,
+   "znakiZadania": 4657,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1413,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1875,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "opisz",
+   "id": "A29",
+   "nr": 1,
+   "ms": 265,
+   "upstreamMs": 264,
+   "znakiZadania": 4654,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1431,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1900,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "opisz",
+   "id": "A30",
+   "nr": 1,
+   "ms": 287,
+   "upstreamMs": 286,
+   "znakiZadania": 4572,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1430,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1865,
+    "output_tokens": 349
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "zapytaj",
+   "id": "B01",
+   "nr": 1,
+   "ms": 372,
+   "upstreamMs": 369,
+   "znakiZadania": 33692,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3931,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14409,
+    "output_tokens": 2075
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "zapytaj",
+   "id": "B01",
+   "nr": 2,
+   "ms": 271,
+   "upstreamMs": 270,
+   "znakiZadania": 1094,
+   "znakiPytan": 990,
+   "znakiOdpowiedzi": 282,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 684,
+    "output_tokens": 82
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "zapytaj",
+   "id": "B02",
+   "nr": 1,
+   "ms": 322,
+   "upstreamMs": 319,
+   "znakiZadania": 33672,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3918,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14403,
+    "output_tokens": 2069
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "zapytaj",
+   "id": "B03",
+   "nr": 1,
+   "ms": 325,
+   "upstreamMs": 322,
+   "znakiZadania": 33675,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3921,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14405,
+    "output_tokens": 2070
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "zapytaj",
+   "id": "B04",
+   "nr": 1,
+   "ms": 327,
+   "upstreamMs": 325,
+   "znakiZadania": 33666,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3926,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14401,
+    "output_tokens": 2071
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "zapytaj",
+   "id": "B05",
+   "nr": 1,
+   "ms": 338,
+   "upstreamMs": 336,
+   "znakiZadania": 33668,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3928,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14402,
+    "output_tokens": 2074
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "zapytaj",
+   "id": "B06",
+   "nr": 1,
+   "ms": 326,
+   "upstreamMs": 325,
+   "znakiZadania": 33659,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3917,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14397,
+    "output_tokens": 2068
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "zapytaj",
+   "id": "B07",
+   "nr": 1,
+   "ms": 392,
+   "upstreamMs": 390,
+   "znakiZadania": 33680,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3921,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14405,
+    "output_tokens": 2068
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "zapytaj",
+   "id": "B08",
+   "nr": 1,
+   "ms": 329,
+   "upstreamMs": 327,
+   "znakiZadania": 33658,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3917,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14400,
+    "output_tokens": 2068
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "zapytaj",
+   "id": "B09",
+   "nr": 1,
+   "ms": 350,
+   "upstreamMs": 347,
+   "znakiZadania": 33678,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3923,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14403,
+    "output_tokens": 2070
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "zapytaj",
+   "id": "B10",
+   "nr": 1,
+   "ms": 372,
+   "upstreamMs": 370,
+   "znakiZadania": 33697,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3941,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14414,
+    "output_tokens": 2071
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "zapytaj",
+   "id": "B11",
+   "nr": 1,
+   "ms": 330,
+   "upstreamMs": 328,
+   "znakiZadania": 33689,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3944,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14409,
+    "output_tokens": 2078
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "zapytaj",
+   "id": "B12",
+   "nr": 1,
+   "ms": 331,
+   "upstreamMs": 329,
+   "znakiZadania": 33683,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3929,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14409,
+    "output_tokens": 2071
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "zapytaj",
+   "id": "B13",
+   "nr": 1,
+   "ms": 358,
+   "upstreamMs": 357,
+   "znakiZadania": 33679,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3925,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14406,
+    "output_tokens": 2071
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "zapytaj",
+   "id": "B14",
+   "nr": 1,
+   "ms": 348,
+   "upstreamMs": 347,
+   "znakiZadania": 33678,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3925,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14406,
+    "output_tokens": 2072
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "zapytaj",
+   "id": "B15",
+   "nr": 1,
+   "ms": 361,
+   "upstreamMs": 359,
+   "znakiZadania": 33674,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3928,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14406,
+    "output_tokens": 2074
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "zapytaj",
+   "id": "B16",
+   "nr": 1,
+   "ms": 377,
+   "upstreamMs": 375,
+   "znakiZadania": 33685,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3959,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14406,
+    "output_tokens": 2072
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "zapytaj",
+   "id": "B17",
+   "nr": 1,
+   "ms": 375,
+   "upstreamMs": 373,
+   "znakiZadania": 33686,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3918,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14408,
+    "output_tokens": 2072
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "zapytaj",
+   "id": "B18",
+   "nr": 1,
+   "ms": 340,
+   "upstreamMs": 338,
+   "znakiZadania": 33657,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3921,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14400,
+    "output_tokens": 2068
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "zapytaj",
+   "id": "B19",
+   "nr": 1,
+   "ms": 324,
+   "upstreamMs": 322,
+   "znakiZadania": 33681,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3933,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14407,
+    "output_tokens": 2077
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "zapytaj",
+   "id": "B20",
+   "nr": 1,
+   "ms": 350,
+   "upstreamMs": 348,
+   "znakiZadania": 33680,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3935,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14406,
+    "output_tokens": 2077
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "zapytaj",
+   "id": "B21",
+   "nr": 1,
+   "ms": 349,
+   "upstreamMs": 347,
+   "znakiZadania": 33682,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3927,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14409,
+    "output_tokens": 2071
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "zapytaj",
+   "id": "B22",
+   "nr": 1,
+   "ms": 384,
+   "upstreamMs": 383,
+   "znakiZadania": 33666,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3921,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14402,
+    "output_tokens": 2069
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "zapytaj",
+   "id": "B23",
+   "nr": 1,
+   "ms": 364,
+   "upstreamMs": 362,
+   "znakiZadania": 33682,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3937,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14406,
+    "output_tokens": 2077
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "zapytaj",
+   "id": "B24",
+   "nr": 1,
+   "ms": 373,
+   "upstreamMs": 371,
+   "znakiZadania": 33686,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3927,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14411,
+    "output_tokens": 2074
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "zapytaj",
+   "id": "B25",
+   "nr": 1,
+   "ms": 340,
+   "upstreamMs": 338,
+   "znakiZadania": 33669,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3926,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14401,
+    "output_tokens": 2071
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "zapytaj",
+   "id": "B26",
+   "nr": 1,
+   "ms": 352,
+   "upstreamMs": 349,
+   "znakiZadania": 33673,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3929,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14403,
+    "output_tokens": 2071
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "zapytaj",
+   "id": "B27",
+   "nr": 1,
+   "ms": 349,
+   "upstreamMs": 347,
+   "znakiZadania": 33689,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3925,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14409,
+    "output_tokens": 2071
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r1",
+   "funkcja": "zapytaj",
+   "id": "B28",
+   "nr": 1,
+   "ms": 352,
+   "upstreamMs": 350,
+   "znakiZadania": 33697,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3945,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14412,
+    "output_tokens": 2076
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "opisz",
+   "id": "A01",
+   "nr": 1,
+   "ms": 418,
+   "upstreamMs": 417,
+   "znakiZadania": 4674,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1413,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1905,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "opisz",
+   "id": "A02",
+   "nr": 1,
+   "ms": 258,
+   "upstreamMs": 257,
+   "znakiZadania": 4671,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1415,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1905,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "opisz",
+   "id": "A03",
+   "nr": 1,
+   "ms": 338,
+   "upstreamMs": 338,
+   "znakiZadania": 4671,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1410,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1898,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "opisz",
+   "id": "A04",
+   "nr": 1,
+   "ms": 305,
+   "upstreamMs": 304,
+   "znakiZadania": 4688,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1408,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1904,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "opisz",
+   "id": "A05",
+   "nr": 1,
+   "ms": 295,
+   "upstreamMs": 294,
+   "znakiZadania": 4522,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1414,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1844,
+    "output_tokens": 349
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "opisz",
+   "id": "A06",
+   "nr": 1,
+   "ms": 289,
+   "upstreamMs": 288,
+   "znakiZadania": 4670,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1416,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1898,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "opisz",
+   "id": "A07",
+   "nr": 1,
+   "ms": 270,
+   "upstreamMs": 269,
+   "znakiZadania": 4643,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1414,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1889,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "opisz",
+   "id": "A08",
+   "nr": 1,
+   "ms": 315,
+   "upstreamMs": 315,
+   "znakiZadania": 4643,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1414,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1897,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "opisz",
+   "id": "A09",
+   "nr": 1,
+   "ms": 299,
+   "upstreamMs": 299,
+   "znakiZadania": 4664,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1411,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1895,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "opisz",
+   "id": "A10",
+   "nr": 1,
+   "ms": 278,
+   "upstreamMs": 277,
+   "znakiZadania": 4682,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1417,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1908,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "opisz",
+   "id": "A11",
+   "nr": 1,
+   "ms": 252,
+   "upstreamMs": 251,
+   "znakiZadania": 4670,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1412,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1903,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "opisz",
+   "id": "A12",
+   "nr": 1,
+   "ms": 243,
+   "upstreamMs": 242,
+   "znakiZadania": 4642,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1413,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1889,
+    "output_tokens": 349
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "opisz",
+   "id": "A13",
+   "nr": 1,
+   "ms": 283,
+   "upstreamMs": 282,
+   "znakiZadania": 4648,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1412,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1892,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "opisz",
+   "id": "A14",
+   "nr": 1,
+   "ms": 258,
+   "upstreamMs": 257,
+   "znakiZadania": 4651,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1414,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1890,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "opisz",
+   "id": "A15",
+   "nr": 1,
+   "ms": 270,
+   "upstreamMs": 270,
+   "znakiZadania": 4702,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1412,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1920,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "opisz",
+   "id": "A16",
+   "nr": 1,
+   "ms": 281,
+   "upstreamMs": 280,
+   "znakiZadania": 4635,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1410,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1892,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "opisz",
+   "id": "A17",
+   "nr": 1,
+   "ms": 282,
+   "upstreamMs": 282,
+   "znakiZadania": 4645,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1413,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1889,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "opisz",
+   "id": "A18",
+   "nr": 1,
+   "ms": 257,
+   "upstreamMs": 256,
+   "znakiZadania": 4564,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1416,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1865,
+    "output_tokens": 349
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "opisz",
+   "id": "A19",
+   "nr": 1,
+   "ms": 291,
+   "upstreamMs": 290,
+   "znakiZadania": 4639,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1414,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1891,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "opisz",
+   "id": "A20",
+   "nr": 1,
+   "ms": 263,
+   "upstreamMs": 262,
+   "znakiZadania": 4647,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1416,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1893,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "opisz",
+   "id": "A21",
+   "nr": 1,
+   "ms": 253,
+   "upstreamMs": 253,
+   "znakiZadania": 4670,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1411,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1897,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "opisz",
+   "id": "A22",
+   "nr": 1,
+   "ms": 270,
+   "upstreamMs": 269,
+   "znakiZadania": 4662,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1417,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1902,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "opisz",
+   "id": "A23",
+   "nr": 1,
+   "ms": 298,
+   "upstreamMs": 298,
+   "znakiZadania": 4603,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1415,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1875,
+    "output_tokens": 349
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "opisz",
+   "id": "A24",
+   "nr": 1,
+   "ms": 269,
+   "upstreamMs": 268,
+   "znakiZadania": 4672,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1411,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1907,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "opisz",
+   "id": "A25",
+   "nr": 1,
+   "ms": 301,
+   "upstreamMs": 301,
+   "znakiZadania": 4647,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1412,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1896,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "opisz",
+   "id": "A26",
+   "nr": 1,
+   "ms": 245,
+   "upstreamMs": 245,
+   "znakiZadania": 4621,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1412,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1880,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "opisz",
+   "id": "A27",
+   "nr": 1,
+   "ms": 289,
+   "upstreamMs": 289,
+   "znakiZadania": 4652,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1417,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1897,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "opisz",
+   "id": "A28",
+   "nr": 1,
+   "ms": 276,
+   "upstreamMs": 276,
+   "znakiZadania": 4657,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1413,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1875,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "opisz",
+   "id": "A29",
+   "nr": 1,
+   "ms": 361,
+   "upstreamMs": 360,
+   "znakiZadania": 4654,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1416,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1900,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "opisz",
+   "id": "A30",
+   "nr": 1,
+   "ms": 263,
+   "upstreamMs": 262,
+   "znakiZadania": 4572,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1415,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1865,
+    "output_tokens": 349
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "zapytaj",
+   "id": "B01",
+   "nr": 1,
+   "ms": 346,
+   "upstreamMs": 344,
+   "znakiZadania": 33692,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3932,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14409,
+    "output_tokens": 2075
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "zapytaj",
+   "id": "B01",
+   "nr": 2,
+   "ms": 255,
+   "upstreamMs": 255,
+   "znakiZadania": 1094,
+   "znakiPytan": 990,
+   "znakiOdpowiedzi": 282,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 684,
+    "output_tokens": 82
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "zapytaj",
+   "id": "B02",
+   "nr": 1,
+   "ms": 319,
+   "upstreamMs": 318,
+   "znakiZadania": 33672,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3918,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14403,
+    "output_tokens": 2069
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "zapytaj",
+   "id": "B03",
+   "nr": 1,
+   "ms": 359,
+   "upstreamMs": 357,
+   "znakiZadania": 33675,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3924,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14405,
+    "output_tokens": 2070
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "zapytaj",
+   "id": "B04",
+   "nr": 1,
+   "ms": 378,
+   "upstreamMs": 375,
+   "znakiZadania": 33666,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3925,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14401,
+    "output_tokens": 2071
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "zapytaj",
+   "id": "B05",
+   "nr": 1,
+   "ms": 379,
+   "upstreamMs": 377,
+   "znakiZadania": 33668,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3927,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14402,
+    "output_tokens": 2074
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "zapytaj",
+   "id": "B06",
+   "nr": 1,
+   "ms": 355,
+   "upstreamMs": 353,
+   "znakiZadania": 33659,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3917,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14397,
+    "output_tokens": 2068
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "zapytaj",
+   "id": "B07",
+   "nr": 1,
+   "ms": 338,
+   "upstreamMs": 336,
+   "znakiZadania": 33680,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3921,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14405,
+    "output_tokens": 2068
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "zapytaj",
+   "id": "B08",
+   "nr": 1,
+   "ms": 362,
+   "upstreamMs": 360,
+   "znakiZadania": 33658,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3919,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14400,
+    "output_tokens": 2068
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "zapytaj",
+   "id": "B09",
+   "nr": 1,
+   "ms": 331,
+   "upstreamMs": 329,
+   "znakiZadania": 33678,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3924,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14403,
+    "output_tokens": 2070
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "zapytaj",
+   "id": "B10",
+   "nr": 1,
+   "ms": 356,
+   "upstreamMs": 354,
+   "znakiZadania": 33697,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3926,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14414,
+    "output_tokens": 2071
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "zapytaj",
+   "id": "B11",
+   "nr": 1,
+   "ms": 358,
+   "upstreamMs": 356,
+   "znakiZadania": 33689,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3944,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14409,
+    "output_tokens": 2078
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "zapytaj",
+   "id": "B12",
+   "nr": 1,
+   "ms": 354,
+   "upstreamMs": 352,
+   "znakiZadania": 33683,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3929,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14409,
+    "output_tokens": 2071
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "zapytaj",
+   "id": "B13",
+   "nr": 1,
+   "ms": 348,
+   "upstreamMs": 346,
+   "znakiZadania": 33679,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3925,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14406,
+    "output_tokens": 2071
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "zapytaj",
+   "id": "B14",
+   "nr": 1,
+   "ms": 413,
+   "upstreamMs": 410,
+   "znakiZadania": 33678,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3925,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14406,
+    "output_tokens": 2072
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "zapytaj",
+   "id": "B15",
+   "nr": 1,
+   "ms": 318,
+   "upstreamMs": 316,
+   "znakiZadania": 33674,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3929,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14406,
+    "output_tokens": 2074
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "zapytaj",
+   "id": "B16",
+   "nr": 1,
+   "ms": 352,
+   "upstreamMs": 349,
+   "znakiZadania": 33685,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3942,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14406,
+    "output_tokens": 2072
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "zapytaj",
+   "id": "B17",
+   "nr": 1,
+   "ms": 340,
+   "upstreamMs": 338,
+   "znakiZadania": 33686,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3919,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14408,
+    "output_tokens": 2072
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "zapytaj",
+   "id": "B18",
+   "nr": 1,
+   "ms": 338,
+   "upstreamMs": 336,
+   "znakiZadania": 33657,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3921,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14400,
+    "output_tokens": 2068
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "zapytaj",
+   "id": "B19",
+   "nr": 1,
+   "ms": 334,
+   "upstreamMs": 332,
+   "znakiZadania": 33681,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3935,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14407,
+    "output_tokens": 2077
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "zapytaj",
+   "id": "B20",
+   "nr": 1,
+   "ms": 436,
+   "upstreamMs": 434,
+   "znakiZadania": 33680,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3936,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14406,
+    "output_tokens": 2077
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "zapytaj",
+   "id": "B21",
+   "nr": 1,
+   "ms": 353,
+   "upstreamMs": 350,
+   "znakiZadania": 33682,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3926,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14409,
+    "output_tokens": 2071
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "zapytaj",
+   "id": "B22",
+   "nr": 1,
+   "ms": 382,
+   "upstreamMs": 380,
+   "znakiZadania": 33666,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3923,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14402,
+    "output_tokens": 2069
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "zapytaj",
+   "id": "B23",
+   "nr": 1,
+   "ms": 564,
+   "upstreamMs": 562,
+   "znakiZadania": 33682,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3937,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14406,
+    "output_tokens": 2077
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "zapytaj",
+   "id": "B24",
+   "nr": 1,
+   "ms": 356,
+   "upstreamMs": 355,
+   "znakiZadania": 33686,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3930,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14411,
+    "output_tokens": 2074
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "zapytaj",
+   "id": "B25",
+   "nr": 1,
+   "ms": 326,
+   "upstreamMs": 324,
+   "znakiZadania": 33669,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3925,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14401,
+    "output_tokens": 2071
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "zapytaj",
+   "id": "B26",
+   "nr": 1,
+   "ms": 354,
+   "upstreamMs": 352,
+   "znakiZadania": 33673,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3928,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14403,
+    "output_tokens": 2071
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "zapytaj",
+   "id": "B27",
+   "nr": 1,
+   "ms": 341,
+   "upstreamMs": 339,
+   "znakiZadania": 33689,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3925,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14409,
+    "output_tokens": 2071
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r2",
+   "funkcja": "zapytaj",
+   "id": "B28",
+   "nr": 1,
+   "ms": 336,
+   "upstreamMs": 334,
+   "znakiZadania": 33697,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3943,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14412,
+    "output_tokens": 2076
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "opisz",
+   "id": "A01",
+   "nr": 1,
+   "ms": 450,
+   "upstreamMs": 448,
+   "znakiZadania": 4674,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1414,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1905,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "opisz",
+   "id": "A02",
+   "nr": 1,
+   "ms": 279,
+   "upstreamMs": 278,
+   "znakiZadania": 4671,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1429,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1905,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "opisz",
+   "id": "A03",
+   "nr": 1,
+   "ms": 261,
+   "upstreamMs": 261,
+   "znakiZadania": 4671,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1410,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1898,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "opisz",
+   "id": "A04",
+   "nr": 1,
+   "ms": 274,
+   "upstreamMs": 273,
+   "znakiZadania": 4688,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1409,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1904,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "opisz",
+   "id": "A05",
+   "nr": 1,
+   "ms": 255,
+   "upstreamMs": 254,
+   "znakiZadania": 4522,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1416,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1844,
+    "output_tokens": 349
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "opisz",
+   "id": "A06",
+   "nr": 1,
+   "ms": 298,
+   "upstreamMs": 297,
+   "znakiZadania": 4670,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1417,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1898,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "opisz",
+   "id": "A07",
+   "nr": 1,
+   "ms": 289,
+   "upstreamMs": 289,
+   "znakiZadania": 4643,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1415,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1889,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "opisz",
+   "id": "A08",
+   "nr": 1,
+   "ms": 315,
+   "upstreamMs": 314,
+   "znakiZadania": 4643,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1411,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1897,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "opisz",
+   "id": "A09",
+   "nr": 1,
+   "ms": 273,
+   "upstreamMs": 272,
+   "znakiZadania": 4664,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1412,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1895,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "opisz",
+   "id": "A10",
+   "nr": 1,
+   "ms": 359,
+   "upstreamMs": 358,
+   "znakiZadania": 4682,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1418,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1908,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "opisz",
+   "id": "A11",
+   "nr": 1,
+   "ms": 282,
+   "upstreamMs": 281,
+   "znakiZadania": 4670,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1413,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1903,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "opisz",
+   "id": "A12",
+   "nr": 1,
+   "ms": 275,
+   "upstreamMs": 274,
+   "znakiZadania": 4642,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1414,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1889,
+    "output_tokens": 349
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "opisz",
+   "id": "A13",
+   "nr": 1,
+   "ms": 267,
+   "upstreamMs": 267,
+   "znakiZadania": 4648,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1413,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1892,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "opisz",
+   "id": "A14",
+   "nr": 1,
+   "ms": 272,
+   "upstreamMs": 272,
+   "znakiZadania": 4651,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1414,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1890,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "opisz",
+   "id": "A15",
+   "nr": 1,
+   "ms": 302,
+   "upstreamMs": 301,
+   "znakiZadania": 4702,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1415,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1920,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "opisz",
+   "id": "A16",
+   "nr": 1,
+   "ms": 301,
+   "upstreamMs": 300,
+   "znakiZadania": 4635,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1413,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1892,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "opisz",
+   "id": "A17",
+   "nr": 1,
+   "ms": 284,
+   "upstreamMs": 284,
+   "znakiZadania": 4645,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1414,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1889,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "opisz",
+   "id": "A18",
+   "nr": 1,
+   "ms": 252,
+   "upstreamMs": 251,
+   "znakiZadania": 4564,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1416,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1865,
+    "output_tokens": 349
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "opisz",
+   "id": "A19",
+   "nr": 1,
+   "ms": 256,
+   "upstreamMs": 256,
+   "znakiZadania": 4639,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1412,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1891,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "opisz",
+   "id": "A20",
+   "nr": 1,
+   "ms": 274,
+   "upstreamMs": 273,
+   "znakiZadania": 4647,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1417,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1893,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "opisz",
+   "id": "A21",
+   "nr": 1,
+   "ms": 283,
+   "upstreamMs": 283,
+   "znakiZadania": 4670,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1412,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1897,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "opisz",
+   "id": "A22",
+   "nr": 1,
+   "ms": 292,
+   "upstreamMs": 291,
+   "znakiZadania": 4662,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1417,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1902,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "opisz",
+   "id": "A23",
+   "nr": 1,
+   "ms": 265,
+   "upstreamMs": 264,
+   "znakiZadania": 4603,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1415,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1875,
+    "output_tokens": 349
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "opisz",
+   "id": "A24",
+   "nr": 1,
+   "ms": 315,
+   "upstreamMs": 314,
+   "znakiZadania": 4672,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1411,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1907,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "opisz",
+   "id": "A25",
+   "nr": 1,
+   "ms": 274,
+   "upstreamMs": 273,
+   "znakiZadania": 4647,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1414,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1896,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "opisz",
+   "id": "A26",
+   "nr": 1,
+   "ms": 290,
+   "upstreamMs": 289,
+   "znakiZadania": 4621,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1411,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1880,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "opisz",
+   "id": "A27",
+   "nr": 1,
+   "ms": 325,
+   "upstreamMs": 325,
+   "znakiZadania": 4652,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1418,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1897,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "opisz",
+   "id": "A28",
+   "nr": 1,
+   "ms": 260,
+   "upstreamMs": 260,
+   "znakiZadania": 4657,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1414,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1875,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "opisz",
+   "id": "A29",
+   "nr": 1,
+   "ms": 300,
+   "upstreamMs": 299,
+   "znakiZadania": 4654,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1416,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1900,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "opisz",
+   "id": "A30",
+   "nr": 1,
+   "ms": 251,
+   "upstreamMs": 251,
+   "znakiZadania": 4572,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1416,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1865,
+    "output_tokens": 349
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "zapytaj",
+   "id": "B01",
+   "nr": 1,
+   "ms": 328,
+   "upstreamMs": 325,
+   "znakiZadania": 33692,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3933,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14409,
+    "output_tokens": 2075
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "zapytaj",
+   "id": "B01",
+   "nr": 2,
+   "ms": 313,
+   "upstreamMs": 313,
+   "znakiZadania": 1094,
+   "znakiPytan": 990,
+   "znakiOdpowiedzi": 282,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 684,
+    "output_tokens": 82
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "zapytaj",
+   "id": "B02",
+   "nr": 1,
+   "ms": 355,
+   "upstreamMs": 353,
+   "znakiZadania": 33672,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3917,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14403,
+    "output_tokens": 2069
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "zapytaj",
+   "id": "B03",
+   "nr": 1,
+   "ms": 384,
+   "upstreamMs": 382,
+   "znakiZadania": 33675,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3921,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14405,
+    "output_tokens": 2070
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "zapytaj",
+   "id": "B04",
+   "nr": 1,
+   "ms": 382,
+   "upstreamMs": 381,
+   "znakiZadania": 33666,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3925,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14401,
+    "output_tokens": 2071
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "zapytaj",
+   "id": "B05",
+   "nr": 1,
+   "ms": 327,
+   "upstreamMs": 325,
+   "znakiZadania": 33668,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3928,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14402,
+    "output_tokens": 2074
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "zapytaj",
+   "id": "B06",
+   "nr": 1,
+   "ms": 318,
+   "upstreamMs": 316,
+   "znakiZadania": 33659,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3917,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14397,
+    "output_tokens": 2068
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "zapytaj",
+   "id": "B07",
+   "nr": 1,
+   "ms": 333,
+   "upstreamMs": 331,
+   "znakiZadania": 33680,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3921,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14405,
+    "output_tokens": 2068
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "zapytaj",
+   "id": "B08",
+   "nr": 1,
+   "ms": 339,
+   "upstreamMs": 337,
+   "znakiZadania": 33658,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3920,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14400,
+    "output_tokens": 2068
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "zapytaj",
+   "id": "B09",
+   "nr": 1,
+   "ms": 344,
+   "upstreamMs": 342,
+   "znakiZadania": 33678,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3923,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14403,
+    "output_tokens": 2070
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "zapytaj",
+   "id": "B10",
+   "nr": 1,
+   "ms": 346,
+   "upstreamMs": 344,
+   "znakiZadania": 33697,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3940,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14414,
+    "output_tokens": 2071
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "zapytaj",
+   "id": "B11",
+   "nr": 1,
+   "ms": 375,
+   "upstreamMs": 374,
+   "znakiZadania": 33689,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3944,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14409,
+    "output_tokens": 2078
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "zapytaj",
+   "id": "B12",
+   "nr": 1,
+   "ms": 364,
+   "upstreamMs": 363,
+   "znakiZadania": 33683,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3929,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14409,
+    "output_tokens": 2071
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "zapytaj",
+   "id": "B13",
+   "nr": 1,
+   "ms": 484,
+   "upstreamMs": 482,
+   "znakiZadania": 33679,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3925,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14406,
+    "output_tokens": 2071
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "zapytaj",
+   "id": "B14",
+   "nr": 1,
+   "ms": 357,
+   "upstreamMs": 355,
+   "znakiZadania": 33678,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3924,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14406,
+    "output_tokens": 2072
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "zapytaj",
+   "id": "B15",
+   "nr": 1,
+   "ms": 337,
+   "upstreamMs": 335,
+   "znakiZadania": 33674,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3928,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14406,
+    "output_tokens": 2074
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "zapytaj",
+   "id": "B16",
+   "nr": 1,
+   "ms": 325,
+   "upstreamMs": 323,
+   "znakiZadania": 33685,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3928,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14406,
+    "output_tokens": 2072
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "zapytaj",
+   "id": "B17",
+   "nr": 1,
+   "ms": 380,
+   "upstreamMs": 378,
+   "znakiZadania": 33686,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3917,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14408,
+    "output_tokens": 2072
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "zapytaj",
+   "id": "B18",
+   "nr": 1,
+   "ms": 322,
+   "upstreamMs": 320,
+   "znakiZadania": 33657,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3920,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14400,
+    "output_tokens": 2068
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "zapytaj",
+   "id": "B19",
+   "nr": 1,
+   "ms": 322,
+   "upstreamMs": 319,
+   "znakiZadania": 33681,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3934,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14407,
+    "output_tokens": 2077
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "zapytaj",
+   "id": "B20",
+   "nr": 1,
+   "ms": 320,
+   "upstreamMs": 318,
+   "znakiZadania": 33680,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3935,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14406,
+    "output_tokens": 2077
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "zapytaj",
+   "id": "B21",
+   "nr": 1,
+   "ms": 351,
+   "upstreamMs": 349,
+   "znakiZadania": 33682,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3926,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14409,
+    "output_tokens": 2071
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "zapytaj",
+   "id": "B22",
+   "nr": 1,
+   "ms": 333,
+   "upstreamMs": 330,
+   "znakiZadania": 33666,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3936,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14402,
+    "output_tokens": 2069
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "zapytaj",
+   "id": "B23",
+   "nr": 1,
+   "ms": 325,
+   "upstreamMs": 322,
+   "znakiZadania": 33682,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3937,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14406,
+    "output_tokens": 2077
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "zapytaj",
+   "id": "B24",
+   "nr": 1,
+   "ms": 330,
+   "upstreamMs": 328,
+   "znakiZadania": 33686,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3928,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14411,
+    "output_tokens": 2074
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "zapytaj",
+   "id": "B25",
+   "nr": 1,
+   "ms": 346,
+   "upstreamMs": 343,
+   "znakiZadania": 33669,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3925,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14401,
+    "output_tokens": 2071
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "zapytaj",
+   "id": "B26",
+   "nr": 1,
+   "ms": 353,
+   "upstreamMs": 351,
+   "znakiZadania": 33673,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3928,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14403,
+    "output_tokens": 2071
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "zapytaj",
+   "id": "B27",
+   "nr": 1,
+   "ms": 329,
+   "upstreamMs": 327,
+   "znakiZadania": 33689,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3925,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14409,
+    "output_tokens": 2071
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r3",
+   "funkcja": "zapytaj",
+   "id": "B28",
+   "nr": 1,
+   "ms": 385,
+   "upstreamMs": 383,
+   "znakiZadania": 33697,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3945,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14412,
+    "output_tokens": 2076
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r4",
+   "funkcja": "opisz",
+   "id": "A01",
+   "nr": 1,
+   "ms": 403,
+   "upstreamMs": 401,
+   "znakiZadania": 4674,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1415,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1905,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r4",
+   "funkcja": "opisz",
+   "id": "A02",
+   "nr": 1,
+   "ms": 268,
+   "upstreamMs": 267,
+   "znakiZadania": 4671,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1416,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1905,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r4",
+   "funkcja": "opisz",
+   "id": "A03",
+   "nr": 1,
+   "ms": 254,
+   "upstreamMs": 253,
+   "znakiZadania": 4671,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1412,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1898,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r4",
+   "funkcja": "opisz",
+   "id": "A04",
+   "nr": 1,
+   "ms": 299,
+   "upstreamMs": 299,
+   "znakiZadania": 4688,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1412,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1904,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r4",
+   "funkcja": "opisz",
+   "id": "A05",
+   "nr": 1,
+   "ms": 294,
+   "upstreamMs": 294,
+   "znakiZadania": 4522,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1414,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1844,
+    "output_tokens": 349
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r4",
+   "funkcja": "opisz",
+   "id": "A06",
+   "nr": 1,
+   "ms": 297,
+   "upstreamMs": 297,
+   "znakiZadania": 4670,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1415,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1898,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r4",
+   "funkcja": "opisz",
+   "id": "A07",
+   "nr": 1,
+   "ms": 264,
+   "upstreamMs": 263,
+   "znakiZadania": 4643,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1412,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1889,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r4",
+   "funkcja": "opisz",
+   "id": "A08",
+   "nr": 1,
+   "ms": 277,
+   "upstreamMs": 277,
+   "znakiZadania": 4643,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1410,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1897,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r4",
+   "funkcja": "opisz",
+   "id": "A09",
+   "nr": 1,
+   "ms": 298,
+   "upstreamMs": 297,
+   "znakiZadania": 4664,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1413,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1895,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r4",
+   "funkcja": "opisz",
+   "id": "A10",
+   "nr": 1,
+   "ms": 279,
+   "upstreamMs": 278,
+   "znakiZadania": 4682,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1419,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1908,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r4",
+   "funkcja": "opisz",
+   "id": "A11",
+   "nr": 1,
+   "ms": 285,
+   "upstreamMs": 285,
+   "znakiZadania": 4670,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1412,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1903,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r4",
+   "funkcja": "opisz",
+   "id": "A12",
+   "nr": 1,
+   "ms": 289,
+   "upstreamMs": 288,
+   "znakiZadania": 4642,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1428,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1889,
+    "output_tokens": 349
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r4",
+   "funkcja": "zapytaj",
+   "id": "B01",
+   "nr": 1,
+   "ms": 328,
+   "upstreamMs": 326,
+   "znakiZadania": 33692,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3933,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14409,
+    "output_tokens": 2075
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r4",
+   "funkcja": "zapytaj",
+   "id": "B01",
+   "nr": 2,
+   "ms": 317,
+   "upstreamMs": 317,
+   "znakiZadania": 1094,
+   "znakiPytan": 990,
+   "znakiOdpowiedzi": 282,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 684,
+    "output_tokens": 82
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r4",
+   "funkcja": "zapytaj",
+   "id": "B02",
+   "nr": 1,
+   "ms": 343,
+   "upstreamMs": 340,
+   "znakiZadania": 33672,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3917,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14403,
+    "output_tokens": 2069
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r4",
+   "funkcja": "zapytaj",
+   "id": "B03",
+   "nr": 1,
+   "ms": 346,
+   "upstreamMs": 344,
+   "znakiZadania": 33675,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3923,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14405,
+    "output_tokens": 2070
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r4",
+   "funkcja": "zapytaj",
+   "id": "B04",
+   "nr": 1,
+   "ms": 358,
+   "upstreamMs": 356,
+   "znakiZadania": 33666,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3928,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14401,
+    "output_tokens": 2071
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r4",
+   "funkcja": "zapytaj",
+   "id": "B05",
+   "nr": 1,
+   "ms": 332,
+   "upstreamMs": 331,
+   "znakiZadania": 33668,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3928,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14402,
+    "output_tokens": 2074
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r4",
+   "funkcja": "zapytaj",
+   "id": "B06",
+   "nr": 1,
+   "ms": 333,
+   "upstreamMs": 331,
+   "znakiZadania": 33659,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3917,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14397,
+    "output_tokens": 2068
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r4",
+   "funkcja": "zapytaj",
+   "id": "B07",
+   "nr": 1,
+   "ms": 328,
+   "upstreamMs": 326,
+   "znakiZadania": 33680,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3921,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14405,
+    "output_tokens": 2068
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r4",
+   "funkcja": "zapytaj",
+   "id": "B08",
+   "nr": 1,
+   "ms": 316,
+   "upstreamMs": 315,
+   "znakiZadania": 33658,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3920,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14400,
+    "output_tokens": 2068
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r4",
+   "funkcja": "zapytaj",
+   "id": "B09",
+   "nr": 1,
+   "ms": 327,
+   "upstreamMs": 325,
+   "znakiZadania": 33678,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3923,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14403,
+    "output_tokens": 2070
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r4",
+   "funkcja": "zapytaj",
+   "id": "B10",
+   "nr": 1,
+   "ms": 326,
+   "upstreamMs": 324,
+   "znakiZadania": 33697,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3926,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14414,
+    "output_tokens": 2071
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r4",
+   "funkcja": "zapytaj",
+   "id": "B11",
+   "nr": 1,
+   "ms": 327,
+   "upstreamMs": 325,
+   "znakiZadania": 33689,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3945,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14409,
+    "output_tokens": 2078
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r4",
+   "funkcja": "zapytaj",
+   "id": "B12",
+   "nr": 1,
+   "ms": 339,
+   "upstreamMs": 337,
+   "znakiZadania": 33683,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3929,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14409,
+    "output_tokens": 2071
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r4",
+   "funkcja": "zapytaj",
+   "id": "B13",
+   "nr": 1,
+   "ms": 334,
+   "upstreamMs": 332,
+   "znakiZadania": 33679,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3925,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14406,
+    "output_tokens": 2071
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r4",
+   "funkcja": "zapytaj",
+   "id": "B14",
+   "nr": 1,
+   "ms": 329,
+   "upstreamMs": 327,
+   "znakiZadania": 33678,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3923,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14406,
+    "output_tokens": 2072
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r4",
+   "funkcja": "zapytaj",
+   "id": "B15",
+   "nr": 1,
+   "ms": 355,
+   "upstreamMs": 352,
+   "znakiZadania": 33674,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3929,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14406,
+    "output_tokens": 2074
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r4",
+   "funkcja": "zapytaj",
+   "id": "B16",
+   "nr": 1,
+   "ms": 327,
+   "upstreamMs": 324,
+   "znakiZadania": 33685,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3940,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14406,
+    "output_tokens": 2072
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r4",
+   "funkcja": "zapytaj",
+   "id": "B17",
+   "nr": 1,
+   "ms": 323,
+   "upstreamMs": 322,
+   "znakiZadania": 33686,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3916,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14408,
+    "output_tokens": 2072
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "r4",
+   "funkcja": "zapytaj",
+   "id": "B18",
+   "nr": 1,
+   "ms": 379,
+   "upstreamMs": 377,
+   "znakiZadania": 33657,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3921,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14400,
+    "output_tokens": 2068
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "smoke",
+   "funkcja": "opisz",
+   "id": "A01",
+   "nr": 1,
+   "ms": 447,
+   "upstreamMs": 446,
+   "znakiZadania": 4674,
+   "znakiPytan": 4439,
+   "znakiOdpowiedzi": 1416,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 1905,
+    "output_tokens": 348
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "smoke",
+   "funkcja": "zapytaj",
+   "id": "B01",
+   "nr": 1,
+   "ms": 371,
+   "upstreamMs": 369,
+   "znakiZadania": 33692,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3934,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14409,
+    "output_tokens": 2075
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "smoke",
+   "funkcja": "zapytaj",
+   "id": "B01",
+   "nr": 2,
+   "ms": 250,
+   "upstreamMs": 249,
+   "znakiZadania": 1094,
+   "znakiPytan": 990,
+   "znakiOdpowiedzi": 282,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 684,
+    "output_tokens": 82
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "drugie",
+   "funkcja": "zapytaj",
+   "id": "B01",
+   "nr": 1,
+   "ms": 564,
+   "upstreamMs": 562,
+   "znakiZadania": 33692,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3933,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14409,
+    "output_tokens": 2075
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "drugie",
+   "funkcja": "zapytaj",
+   "id": "B01",
+   "nr": 2,
+   "ms": 262,
+   "upstreamMs": 261,
+   "znakiZadania": 1094,
+   "znakiPytan": 990,
+   "znakiOdpowiedzi": 282,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 684,
+    "output_tokens": 82
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "drugie",
+   "funkcja": "zapytaj",
+   "id": "B01",
+   "nr": 1,
+   "ms": 395,
+   "upstreamMs": 393,
+   "znakiZadania": 33692,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3931,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14409,
+    "output_tokens": 2075
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "drugie",
+   "funkcja": "zapytaj",
+   "id": "B01",
+   "nr": 2,
+   "ms": 304,
+   "upstreamMs": 303,
+   "znakiZadania": 1094,
+   "znakiPytan": 990,
+   "znakiOdpowiedzi": 282,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 684,
+    "output_tokens": 82
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "drugie",
+   "funkcja": "zapytaj",
+   "id": "B01",
+   "nr": 1,
+   "ms": 316,
+   "upstreamMs": 314,
+   "znakiZadania": 33692,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3934,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14409,
+    "output_tokens": 2075
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "drugie",
+   "funkcja": "zapytaj",
+   "id": "B01",
+   "nr": 2,
+   "ms": 295,
+   "upstreamMs": 295,
+   "znakiZadania": 1094,
+   "znakiPytan": 990,
+   "znakiOdpowiedzi": 282,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 684,
+    "output_tokens": 82
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "drugie",
+   "funkcja": "zapytaj",
+   "id": "B01",
+   "nr": 1,
+   "ms": 327,
+   "upstreamMs": 324,
+   "znakiZadania": 33692,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3933,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14409,
+    "output_tokens": 2075
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "drugie",
+   "funkcja": "zapytaj",
+   "id": "B01",
+   "nr": 2,
+   "ms": 335,
+   "upstreamMs": 335,
+   "znakiZadania": 1094,
+   "znakiPytan": 990,
+   "znakiOdpowiedzi": 280,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 684,
+    "output_tokens": 82
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "drugie",
+   "funkcja": "zapytaj",
+   "id": "B01",
+   "nr": 1,
+   "ms": 376,
+   "upstreamMs": 373,
+   "znakiZadania": 33692,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3934,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14409,
+    "output_tokens": 2075
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "drugie",
+   "funkcja": "zapytaj",
+   "id": "B01",
+   "nr": 2,
+   "ms": 339,
+   "upstreamMs": 338,
+   "znakiZadania": 1094,
+   "znakiPytan": 990,
+   "znakiOdpowiedzi": 282,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 684,
+    "output_tokens": 82
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "drugie",
+   "funkcja": "zapytaj",
+   "id": "B01",
+   "nr": 1,
+   "ms": 336,
+   "upstreamMs": 334,
+   "znakiZadania": 33692,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3931,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14409,
+    "output_tokens": 2075
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "drugie",
+   "funkcja": "zapytaj",
+   "id": "B01",
+   "nr": 2,
+   "ms": 291,
+   "upstreamMs": 290,
+   "znakiZadania": 1094,
+   "znakiPytan": 990,
+   "znakiOdpowiedzi": 282,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 684,
+    "output_tokens": 82
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "drugie",
+   "funkcja": "zapytaj",
+   "id": "B01",
+   "nr": 1,
+   "ms": 336,
+   "upstreamMs": 334,
+   "znakiZadania": 33692,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3934,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14409,
+    "output_tokens": 2075
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "drugie",
+   "funkcja": "zapytaj",
+   "id": "B01",
+   "nr": 2,
+   "ms": 273,
+   "upstreamMs": 272,
+   "znakiZadania": 1094,
+   "znakiPytan": 990,
+   "znakiOdpowiedzi": 282,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 684,
+    "output_tokens": 82
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "drugie",
+   "funkcja": "zapytaj",
+   "id": "B01",
+   "nr": 1,
+   "ms": 324,
+   "upstreamMs": 322,
+   "znakiZadania": 33692,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3934,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14409,
+    "output_tokens": 2075
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "drugie",
+   "funkcja": "zapytaj",
+   "id": "B01",
+   "nr": 2,
+   "ms": 307,
+   "upstreamMs": 307,
+   "znakiZadania": 1094,
+   "znakiPytan": 990,
+   "znakiOdpowiedzi": 282,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 684,
+    "output_tokens": 82
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "drugie",
+   "funkcja": "zapytaj",
+   "id": "B01",
+   "nr": 1,
+   "ms": 369,
+   "upstreamMs": 367,
+   "znakiZadania": 33692,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3934,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14409,
+    "output_tokens": 2075
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "drugie",
+   "funkcja": "zapytaj",
+   "id": "B01",
+   "nr": 2,
+   "ms": 259,
+   "upstreamMs": 259,
+   "znakiZadania": 1094,
+   "znakiPytan": 990,
+   "znakiOdpowiedzi": 282,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 684,
+    "output_tokens": 82
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "drugie",
+   "funkcja": "zapytaj",
+   "id": "B01",
+   "nr": 1,
+   "ms": 347,
+   "upstreamMs": 345,
+   "znakiZadania": 33692,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3933,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14409,
+    "output_tokens": 2075
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "drugie",
+   "funkcja": "zapytaj",
+   "id": "B01",
+   "nr": 2,
+   "ms": 286,
+   "upstreamMs": 285,
+   "znakiZadania": 1094,
+   "znakiPytan": 990,
+   "znakiOdpowiedzi": 282,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 684,
+    "output_tokens": 82
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "drugie",
+   "funkcja": "zapytaj",
+   "id": "B01",
+   "nr": 1,
+   "ms": 323,
+   "upstreamMs": 321,
+   "znakiZadania": 33692,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3932,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14409,
+    "output_tokens": 2075
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "drugie",
+   "funkcja": "zapytaj",
+   "id": "B01",
+   "nr": 2,
+   "ms": 251,
+   "upstreamMs": 250,
+   "znakiZadania": 1094,
+   "znakiPytan": 990,
+   "znakiOdpowiedzi": 282,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 684,
+    "output_tokens": 82
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "drugie",
+   "funkcja": "zapytaj",
+   "id": "B01",
+   "nr": 1,
+   "ms": 339,
+   "upstreamMs": 337,
+   "znakiZadania": 33692,
+   "znakiPytan": 33588,
+   "znakiOdpowiedzi": 3933,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 14409,
+    "output_tokens": 2075
+   },
+   "status": 200,
+   "powod": null
+  },
+  {
+   "przebieg": "drugie",
+   "funkcja": "zapytaj",
+   "id": "B01",
+   "nr": 2,
+   "ms": 274,
+   "upstreamMs": 274,
+   "znakiZadania": 1094,
+   "znakiPytan": 990,
+   "znakiOdpowiedzi": 282,
+   "proby": 1,
+   "usage": {
+    "input_tokens": 684,
+    "output_tokens": 82
+   },
+   "status": 200,
+   "powod": null
+  }
+ ]
+}

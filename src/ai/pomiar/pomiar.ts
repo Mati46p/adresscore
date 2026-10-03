@@ -9,6 +9,7 @@
 //   … --zbior kontrolny3    # trzeci zbiór na ślepo (#153), mierzony raz; + przekrój po cechach
 //   … --zbior kontrolny4    # czwarty zbiór na ślepo (#157, 40 + 35), mierzony raz; + propozycje #156
 //   … --zbior kontrolny5    # piąty zbiór na ślepo (#163), mierzony raz: przed i po w jednym wywołaniu
+//   … --zbior kontrolny6    # szósty zbiór na ślepo (#170, 150 + 150), mierzony raz; + przedziały Wilsona
 //   … --zbior-wlasny a.json b.json  # własne zbiory do strojenia (#163), z błędami pozycja po pozycji
 //   … --przed-po <commit> --wyjscie-przed p.json --wyjscie po.json [--wyjscie-proste s.json]
 //                           # #163: JEDNO wywołanie na pozycję z pytaniami trzech wersji naraz:
@@ -102,6 +103,8 @@ const PLIKI_KONTROLNE: Record<string, { opisz: string; zapytaj: string }> = {
   kontrolny4: { opisz: 'kontrolny4-opisz.json', zapytaj: 'kontrolny4-zapytaj.json' },
   // #163: piąty zbiór na ślepo, z cechą `bliska_pomylka` (opcje, które JEV myli) – cel #163.
   kontrolny5: { opisz: 'kontrolny5-opisz.json', zapytaj: 'kontrolny5-zapytaj.json' },
+  // #170: szósty zbiór na ślepo, duży (150 opisów, 150 pytań) – wynik z przedziałami Wilsona.
+  kontrolny6: { opisz: 'kontrolny6-opisz.json', zapytaj: 'kontrolny6-zapytaj.json' },
 }
 if (NAZWA_ZBIORU !== undefined && !PLIKI_KONTROLNE[NAZWA_ZBIORU]) {
   console.error(
@@ -173,7 +176,34 @@ interface Wywolanie {
   ms: number
   odpowiedzi: Record<string, OdpowiedzJev | null> | null
   powod: string | null
+  /** #170: nieudane próby przed tą (status: 429, 5xx, `timeout`, `siec`) – ponowione. */
+  ponowienia?: string[]
 }
+
+/**
+ * #170: inne okna wołają JEV równolegle, więc przejściowe błędy (429, 5xx, sieć, timeout
+ * pośrednika) ponawiamy z rosnącym odstępem. Nieudana próba nigdy nie liczy się jako odpowiedź
+ * (ani jako zapas): liczy się pierwsza udana, a próby nieudane trafiają do `ponowienia`.
+ * Czas pozycji to czas udanej próby. Po wyczerpaniu prób zostaje błąd – jak w aplikacji, zapas.
+ */
+const MAX_PROB = 6
+const odstep = (proba: number) => Math.min(30_000, 1000 * 2 ** proba) + Math.random() * 500
+const czekaj = (ms: number) => new Promise((r) => setTimeout(r, ms))
+/** #170: wszystkie nieudane próby z całego przebiegu (do raportu ryzyka timeoutu). */
+const NIEUDANE: { status: string; ms: number }[] = []
+let ostatniStatus = 'ok'
+const fetchDoJev = (async (url: string | URL | Request, init?: RequestInit) => {
+  try {
+    const r = await fetch(url, init)
+    ostatniStatus = String(r.status)
+    return r
+  } catch (e) {
+    ostatniStatus = (e as Error).name === 'TimeoutError' ? 'timeout' : 'siec'
+    throw e
+  }
+}) as typeof fetch
+const przejsciowy = (status: string) =>
+  status === '429' || status === 'timeout' || status === 'siec' || Number(status) >= 500
 
 type Posrednik = {
   obsluz: (a: Record<string, unknown>) => Promise<{ status: number; json: unknown }>
@@ -195,23 +225,38 @@ async function klientNaZywo(): Promise<{
   let ostatnie: Wywolanie = { ms: 0, odpowiedzi: null, powod: 'brak' }
   const wszystkie: Wywolanie[] = []
   const fetchPrzezPosrednika = (async (_url: string | URL | Request, init?: RequestInit) => {
-    const t0 = performance.now()
-    liczbaWywolan++
-    const r = await obsluz({
-      metoda: 'POST',
-      cialo: JSON.parse(String(init?.body)),
-      ip: 'pomiar',
-      env: process.env,
-      limiter,
-    })
-    const json = r.json as { odpowiedzi?: Wywolanie['odpowiedzi']; powod?: string | null }
-    ostatnie = {
-      ms: Math.round(performance.now() - t0),
-      odpowiedzi: json.odpowiedzi ?? null,
-      powod: json.powod ?? null,
+    const ponowienia: string[] = []
+    for (let proba = 0; ; proba++) {
+      ostatniStatus = 'ok'
+      const t0 = performance.now()
+      liczbaWywolan++
+      const r = await obsluz({
+        metoda: 'POST',
+        cialo: JSON.parse(String(init?.body)),
+        ip: 'pomiar',
+        env: process.env,
+        limiter,
+        fetch: fetchDoJev,
+      })
+      const ms = Math.round(performance.now() - t0)
+      const json = r.json as { odpowiedzi?: Wywolanie['odpowiedzi']; powod?: string | null }
+      const nieudana = json.powod === 'blad' && przejsciowy(ostatniStatus)
+      if (nieudana && proba + 1 < MAX_PROB) {
+        ponowienia.push(ostatniStatus)
+        NIEUDANE.push({ status: ostatniStatus, ms })
+        process.stderr.write(`  ponowienie po ${ostatniStatus} (${ms} ms)\n`)
+        await czekaj(odstep(proba))
+        continue
+      }
+      ostatnie = {
+        ms,
+        odpowiedzi: json.odpowiedzi ?? null,
+        powod: json.powod ?? null,
+        ...(ponowienia.length && { ponowienia }),
+      }
+      wszystkie.push(ostatnie)
+      return new Response(JSON.stringify(r.json), { status: r.status })
     }
-    wszystkie.push(ostatnie)
-    return new Response(JSON.stringify(r.json), { status: r.status })
   }) as typeof fetch
   return {
     opcje: () => ({ fetch: fetchPrzezPosrednika }),
@@ -413,6 +458,29 @@ function kwantyl(xs: readonly number[], q: number): number {
   return s[Math.min(s.length - 1, Math.ceil(q * s.length) - 1)] ?? Number.NaN
 }
 
+/** #170: 95% przedział Wilsona dla k sukcesów z n (z = 1,96). */
+export function wilson(k: number, n: number, z = 1.96): [number, number] {
+  if (!n) return [Number.NaN, Number.NaN]
+  const p = k / n
+  const m = 1 + (z * z) / n
+  const srodek = (p + (z * z) / (2 * n)) / m
+  const pol = (z * Math.sqrt((p * (1 - p)) / n + (z * z) / (4 * n * n))) / m
+  return [Math.max(0, srodek - pol), Math.min(1, srodek + pol)]
+}
+
+/** #170: dokładny dwustronny test McNemara – b i c to pary niezgodne (tylko A trafia, tylko B). */
+export function mcnemar(b: number, c: number): number {
+  const n = b + c
+  if (!n) return 1
+  let suma = 0
+  let logP = -n * Math.LN2
+  for (let i = 0; i <= Math.min(b, c); i++) {
+    suma += Math.exp(logP)
+    logP += Math.log((n - i) / (i + 1))
+  }
+  return Math.min(1, 2 * suma)
+}
+
 interface Licznik {
   tp: number
   fp: number
@@ -482,6 +550,8 @@ interface WynikA {
     bramka: Record<string, number | null>
     /** #153: bramka zamknięta (profil bez zmian, tylko pewne potrzeby). */
     zamknieta: boolean
+    /** #170: nieudane próby przed udaną (ponowione), gdy były. */
+    ponowienia?: string[]
   }
 }
 
@@ -541,6 +611,7 @@ async function biegA(naZywo: Klient | null, modul: Modul = MODUL_TERAZ): Promise
         poziomy,
         bramka,
         zamknieta: Boolean(odp && modul.opisz.bramkaZamknieta(odp)),
+        ...(o.ponowienia && { ponowienia: o.ponowienia }),
       }
       process.stderr.write(`A ${p.id} ${o.ms} ms ${r.zrodlo}\n`)
     }
@@ -642,6 +713,8 @@ interface WynikB {
     prawdopodobienstwa?: Record<string, number>
     /** #156: dwie propozycje „Chodziło Ci o…?” (id warstw) albo null – odpowiedź od razu. */
     propozycje: string[] | null
+    /** #170: nieudane próby przed udanymi (ponowione), gdy były. */
+    ponowienia?: string[]
   }
 }
 
@@ -684,6 +757,9 @@ async function biegB(naZywo: Klient | null, modul: Modul = MODUL_TERAZ): Promise
         drugie: r.drugie,
         ...(surowy?.prawdopodobienstwa && { prawdopodobienstwa: surowy.prawdopodobienstwa }),
         propozycje: r.wynik.propozycje?.map((x) => x.warstwa) ?? null,
+        ...(wywolania.some((x) => x.ponowienia) && {
+          ponowienia: wywolania.flatMap((x) => x.ponowienia ?? []),
+        }),
       }
       process.stderr.write(
         `B ${p.id} ${msRazem} ms ${r.zrodlo} ×${wywolania.length}${r.wynik.propozycje ? ' propozycje' : ''}\n`,
@@ -766,6 +842,7 @@ export function ocenWiele(
     zlozoneKomplet: [pokrycia.filter((x) => x === 1).length, zlozone.length],
     spoza: [spoza.filter((x) => (x.wiele[system] ?? []).length === 0).length, spoza.length],
     precyzja: warstwy.length ? warstwy.filter(Boolean).length / warstwy.length : Number.NaN,
+    precyzjaKN: [warstwy.filter(Boolean).length, warstwy.length],
     falszyweDodatkiPojedyncze: dodatkiPojedyncze.filter((x) => !x).length,
     pojedynczeZFalszywymDodatkiem: pojedyncze.filter((x) =>
       (x.wiele[system] ?? []).slice(1).some((l) => !wTemacie(x.tematy, l)),
@@ -992,7 +1069,19 @@ function raport(a: WynikA[], b: WynikB[], naZywo: boolean) {
       '',
       '## JEV: zapas, opóźnienie, kalibracja',
       '',
-      `- Wywołań JEV w tym przebiegu: ${liczbaWywolan}`,
+      `- Wywołań JEV w tym przebiegu: ${liczbaWywolan} (w tym nieudanych i ponowionych: ${NIEUDANE.length}${
+        NIEUDANE.length
+          ? ` – ${Object.entries(
+              NIEUDANE.reduce<Record<string, number>>(
+                (acc, x) => ({ ...acc, [x.status]: (acc[x.status] ?? 0) + 1 }),
+                {},
+              ),
+            )
+              .map(([k, v]) => `${k} × ${v}`)
+              .join(', ')}`
+          : ''
+      })`,
+      `- Pozycje z odpowiedzią JEV (bez błędu wywołania; „nieczytelne” = JEV odpowiedział, ale pod progiem – to zapas wyżej): ${[...a, ...b].filter((w) => w.jev && (w.jev.powod === null || w.jev.powod === 'nieczytelne')).length}/${[...a, ...b].filter((w) => w.jev).length}; pozycje, które potrzebowały ponowienia: ${[...a, ...b].filter((w) => w.jev?.ponowienia).length}`,
       `- Zapas (reguły zamiast JEV) A: ${zapasA.length}/${a.length} (${powody(zapasA) || '–'})`,
       `- Zapas (reguły zamiast JEV) B: ${zapasB.length}/${b.length} (${powody(zapasB) || '–'})`,
       `- Opóźnienie p50 / p95 / max: A ${lat(msA)}; B ${lat(msB)}; razem ${lat(ms)}`,
@@ -1028,6 +1117,7 @@ function raport(a: WynikA[], b: WynikB[], naZywo: boolean) {
     podsumowanie = {
       ...podsumowanie,
       wywolan: liczbaWywolan,
+      nieudane: NIEUDANE,
       zapas: { a: zapasA.length, b: zapasB.length },
       bramkaZamknieta: a.filter((w) => w.jev?.zamknieta).length,
       drugieWywolanie: b.filter((w) => (w.jev?.wywolan ?? 0) > 1).length,
@@ -1088,6 +1178,154 @@ function raport(a: WynikA[], b: WynikB[], naZywo: boolean) {
       }
     }
   }
+
+  // #170: 95% przedziały Wilsona dla miar, które są proporcją pozycji, i porównanie sparowane
+  // JEV vs reguły (pary niezgodne, dokładny test McNemara). Pokrycie złożonych to średnia
+  // ułamków, a nie proporcja pozycji – bez przedziału. P/R potrzeb i precyzja warstw liczą
+  // potrzeby/warstwy, nie pozycje (kilka na pozycję), więc ich przedział jest przybliżony.
+  const przedzialy: Record<string, unknown> = {}
+  {
+    const jev = 'jev_z_zapasem'
+    const kn = (k: number, n: number) => {
+      const [d, g] = wilson(k, n)
+      return n ? `${k}/${n} = ${pct(k / n)} [${pct(d)}–${pct(g)}]` : '–'
+    }
+    const trafneA = (s: string) => {
+      const persona = new Set<string>()
+      for (const w of a) {
+        const x = w.systemy[s]
+        const p = ZBIOR_A.find((y) => y.id === w.id) as PozycjaOpisz
+        if (x && new Set<string | null>([p.persona, ...(p.persona_tez ?? [])]).has(x.persona))
+          persona.add(w.id)
+      }
+      const bledne = new Set(ocenA(a, s).bledy.map((e) => e.id))
+      const dokladnie = new Set(a.filter((w) => w.systemy[s] && !bledne.has(w.id)).map((w) => w.id))
+      return { persona, dokladnie }
+    }
+    const trafneB = (s: string, xs: readonly WynikB[] = b) =>
+      new Set(
+        xs
+          .filter((w) => s in w.systemy && trafione(w.tematy, w.systemy[s] ?? null))
+          .map((w) => w.id),
+      )
+    const pary = (r: Set<string>, j: Set<string>) => {
+      const tylkoJ = [...j].filter((x) => !r.has(x)).length
+      const tylkoR = [...r].filter((x) => !j.has(x)).length
+      return { tylkoJev: tylkoJ, tylkoReguly: tylkoR, p: mcnemar(tylkoJ, tylkoR) }
+    }
+    const wiersze: {
+      miara: string
+      r: [number, number]
+      j?: [number, number]
+      p?: ReturnType<typeof pary>
+    }[] = []
+    const maJevA = a.some((w) => w.systemy[jev])
+    const maJevB = b.some((w) => jev in w.systemy)
+    const rA = trafneA('reguly')
+    const jA = maJevA ? trafneA(jev) : null
+    wiersze.push(
+      {
+        miara: 'A: profil trafiony',
+        r: [rA.persona.size, a.length],
+        ...(jA && {
+          j: [jA.persona.size, a.length] as [number, number],
+          p: pary(rA.persona, jA.persona),
+        }),
+      },
+      {
+        miara: 'A: cały opis dokładnie',
+        r: [rA.dokladnie.size, a.length],
+        ...(jA && {
+          j: [jA.dokladnie.size, a.length] as [number, number],
+          p: pary(rA.dokladnie, jA.dokladnie),
+        }),
+      },
+    )
+    const lA = (s: string) => ocenyA[s]?.potrzeby10Licznik
+    const rl = lA('reguly') as Licznik
+    const jl = lA(jev)
+    wiersze.push(
+      {
+        miara: 'A: potrzeby – precyzja (potrzeb, przybliżony)',
+        r: [rl.tp, rl.tp + rl.fp],
+        ...(jl && { j: [jl.tp, jl.tp + jl.fp] as [number, number] }),
+      },
+      {
+        miara: 'A: potrzeby – pełność (potrzeb, przybliżony)',
+        r: [rl.tp, rl.tp + rl.fn],
+        ...(jl && { j: [jl.tp, jl.tp + jl.fn] as [number, number] }),
+      },
+    )
+    const rB = trafneB('reguly')
+    const jB = maJevB ? trafneB(jev) : null
+    wiersze.push({
+      miara: 'B: trafna warstwa główna od razu (albo „nie wiem”)',
+      r: [rB.size, b.length],
+      ...(jB && { j: [jB.size, b.length] as [number, number], p: pary(rB, jB) }),
+    })
+    for (const [nazwa, filtr] of [
+      ['B: pojedyncze – warstwa główna', (w: WynikB) => w.tematy.length === 1],
+      ['B: złożone – trafiony choć jeden temat', (w: WynikB) => w.tematy.length > 1],
+      ['B: spoza zakresu → „nie wiem”', (w: WynikB) => w.tematy.length === 0],
+    ] as const) {
+      const xs = b.filter(filtr)
+      const r = trafneB('reguly', xs)
+      const j = maJevB ? trafneB(jev, xs) : null
+      wiersze.push({
+        miara: nazwa,
+        r: [r.size, xs.length],
+        ...(j && { j: [j.size, xs.length] as [number, number], p: pary(r, j) }),
+      })
+    }
+    const wr = ocenyWiele.reguly
+    const wj = ocenyWiele[jev]
+    if (wr)
+      wiersze.push(
+        {
+          miara: 'B: złożone z kompletem tematów',
+          r: wr.zlozoneKomplet as [number, number],
+          ...(wj && { j: wj.zlozoneKomplet as [number, number] }),
+        },
+        {
+          miara: 'B: precyzja warstw (warstw, przybliżony)',
+          r: wr.precyzjaKN as [number, number],
+          ...(wj && { j: wj.precyzjaKN as [number, number] }),
+        },
+      )
+    if (naZywo && maJevB) {
+      const op = ocenPropozycje(b)
+      wiersze.push(
+        {
+          miara: 'B: po kliknięciu właściwej propozycji (#156, górna granica)',
+          r: [rB.size, b.length],
+          j: [op.poKliknieciu, op.n],
+        },
+        {
+          miara: 'B: z propozycjami – wzorzec wśród dwóch',
+          r: [0, 0],
+          j: [op.propozycje.wPropozycji, op.propozycje.n],
+        },
+      )
+    }
+    out.push(
+      '',
+      '## Przedziały ufności 95% (Wilson) i porównanie sparowane (#170)',
+      '',
+      '| miara | reguły | JEV | pary niezgodne: tylko JEV / tylko reguły | p (McNemar, dokładny) |',
+      '|---|---|---|---|---|',
+    )
+    for (const w of wiersze) {
+      out.push(
+        `| ${w.miara} | ${w.r[1] ? kn(...w.r) : '–'} | ${w.j ? kn(...w.j) : '–'} | ${w.p ? `${w.p.tylkoJev} / ${w.p.tylkoReguly}` : '–'} | ${w.p ? (w.p.p < 0.001 ? '< 0,001' : w.p.p.toFixed(3)) : '–'} |`,
+      )
+      przedzialy[w.miara] = {
+        reguly: { k: w.r[0], n: w.r[1], ci: wilson(...w.r) },
+        ...(w.j && { jev: { k: w.j[0], n: w.j[1], ci: wilson(...w.j) } }),
+        ...(w.p && { pary: w.p }),
+      }
+    }
+  }
+  podsumowanie.przedzialy = przedzialy
 
   if (KONTROLNY) {
     out.push('', 'Zbiór kontrolny: bez błędów pozycja po pozycji (nie stroimy na nim).')
