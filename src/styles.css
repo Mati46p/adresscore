@@ -1,0 +1,57 @@
+:root {
+  --tlo: #f6f6f4;
+  --tekst: #16181d;
+  --tekst-slaby: #4a4f59;
+  --panel: rgb(255 255 255 / 0.9);
+  font-family: system-ui, sans-serif;
+  color: var(--tekst);
+  background: var(--tlo);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --tlo: #121418;
+    --tekst: #eef0f3;
+    --tekst-slaby: #b4b9c2;
+    --panel: rgb(22 24 29 / 0.9);
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+}
+
+.app {
+  position: relative;
+  height: 100dvh;
+}
+.mapa {
+  position: absolute;
+  inset: 0;
+}
+
+.naglowek {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  right: 16px;
+  max-width: 420px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: var(--panel);
+  backdrop-filter: blur(8px);
+}
+.naglowek h1 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+.naglowek p {
+  margin: 4px 0 0;
+  color: var(--tekst-slaby);
+}
