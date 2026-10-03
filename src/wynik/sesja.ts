@@ -1,6 +1,11 @@
 import { czytajHash, type StanUrl, zapiszHash } from './url.ts'
 
 const KLUCZ = 'adresscore:preferencje:v1'
+type Rodzaj = 'mieszkanie' | 'biznes'
+
+function kluczTrybu(rodzaj: Rodzaj): string {
+  return `adresscore:preferencje:${rodzaj}:v1`
+}
 
 /** Preferencje żyją w bieżącej karcie przeglądarki, także po otwarciu czystego linku adresu. */
 export function odczytajPreferencje(): StanUrl | null {
@@ -12,12 +17,21 @@ export function odczytajPreferencje(): StanUrl | null {
   }
 }
 
+/** Ostatnie ustawienia obu zastosowań pozostają dostępne po zmianie adresu i pełnym przeładowaniu. */
+export function odczytajPreferencjeTrybu(rodzaj: Rodzaj): StanUrl | null {
+  try {
+    const zapis = sessionStorage.getItem(kluczTrybu(rodzaj))
+    return zapis ? czytajHash(zapis) : null
+  } catch {
+    return null
+  }
+}
+
 export function zapiszPreferencje(url: StanUrl): void {
   try {
-    sessionStorage.setItem(
-      KLUCZ,
-      zapiszHash({ ...url, ekran: 'szukaj', idAdresu: null, porownanie: [] }),
-    )
+    const zapis = zapiszHash({ ...url, ekran: 'szukaj', idAdresu: null, porownanie: [] })
+    sessionStorage.setItem(KLUCZ, zapis)
+    sessionStorage.setItem(kluczTrybu(url.tryb === 'biznes' ? 'biznes' : 'mieszkanie'), zapis)
   } catch {
     // Aplikacja działa też przy zablokowanym sessionStorage.
   }

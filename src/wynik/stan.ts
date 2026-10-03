@@ -11,8 +11,14 @@ import {
   TRYB_DOMYSLNY,
   type Tryb,
   ustawieniaPersony,
+  WARSTWY_BIZNESU,
 } from './persony.ts'
-import { odczytajPreferencje, polaczPreferencje, zapiszPreferencje } from './sesja.ts'
+import {
+  odczytajPreferencje,
+  odczytajPreferencjeTrybu,
+  polaczPreferencje,
+  zapiszPreferencje,
+} from './sesja.ts'
 import type { KierunekOceny, Kierunki } from './silnik.ts'
 import { hashAdresu, hashZeSluga, slugAdresu } from './slug.ts'
 import { czytajHash, type Ekran, MAKS_POROWNANIE, type StanUrl, zapiszHash } from './url.ts'
@@ -80,6 +86,21 @@ function ustawieniaBiezacegoTrybu(): UstawieniaTrybu {
   }
 }
 
+function ustawieniaZSesji(rodzaj: 'mieszkanie' | 'biznes', tryb: Tryb): UstawieniaTrybu | null {
+  const url = odczytajPreferencjeTrybu(rodzaj)
+  if (!url) return null
+  const persona = url.ustawienia ? 'wlasna' : (url.persona ?? PERSONA_DOMYSLNA)
+  const domyslne = ustawieniaPersony(
+    persona === 'wlasna' ? PERSONA_DOMYSLNA : persona,
+    tryb,
+    metaWskaznikow,
+  )
+  const { wagi, kierunki } = url.ustawienia
+    ? sprawdzUstawienia(url.ustawienia, metaWskaznikow, domyslne, tryb)
+    : domyslne
+  return { persona, wagi, kierunki, filtry: url.filtry }
+}
+
 export function pobierzStan(): StanAplikacji {
   return stan
 }
@@ -120,7 +141,7 @@ export function ustawTryb(tryb: Tryb) {
   if (tryb === stan.tryb) return
   if (tryb === 'biznes') {
     mieszkaniePrzedBiznesem = ustawieniaBiezacegoTrybu()
-    const zapis = ostatniBiznes
+    const zapis = ostatniBiznes ?? ustawieniaZSesji('biznes', 'biznes')
     const domyslne = ustawieniaPersony(PERSONA_DOMYSLNA, 'biznes', metaWskaznikow)
     return zmien({
       tryb,
@@ -135,7 +156,7 @@ export function ustawTryb(tryb: Tryb) {
   }
   if (stan.tryb === 'biznes') {
     ostatniBiznes = ustawieniaBiezacegoTrybu()
-    const zapis = mieszkaniePrzedBiznesem
+    const zapis = mieszkaniePrzedBiznesem ?? ustawieniaZSesji('mieszkanie', tryb)
     const persona = zapis?.persona ?? (stan.persona === 'wlasna' ? PERSONA_DOMYSLNA : stan.persona)
     const domyslne = ustawieniaPersony(
       persona === 'wlasna' ? PERSONA_DOMYSLNA : persona,
@@ -284,7 +305,7 @@ export function podlaczDane(
     wskazniki,
   )
   const { wagi, kierunki } = url?.ustawienia
-    ? sprawdzUstawienia(url.ustawienia, wskazniki, domyslne)
+    ? sprawdzUstawienia(url.ustawienia, wskazniki, domyslne, tryb)
     : domyslne
   zmien({
     persona,
@@ -310,10 +331,18 @@ function zUrl(url: StanUrl): Partial<StanAplikacji> {
 
 function sprawdzUstawienia(
   ustawienia: NonNullable<StanUrl['ustawienia']>,
-  wskazniki: readonly Pick<WskaznikMeta, 'id' | 'kategoria'>[],
+  wskazniki: readonly (Pick<WskaznikMeta, 'id' | 'kategoria'> &
+    Partial<Pick<WskaznikMeta, 'atrapa'>>)[],
   domyslne: { wagi: Record<string, number>; kierunki: Kierunki },
+  tryb: Tryb,
 ) {
-  const znane = new Set(wskazniki.map((w) => w.id))
+  const znane = new Set(
+    wskazniki
+      .filter((w) =>
+        tryb === 'biznes' ? !w.atrapa && WARSTWY_BIZNESU.some((id) => id === w.id) : true,
+      )
+      .map((w) => w.id),
+  )
   const wagi = { ...domyslne.wagi }
   const kierunki = { ...domyslne.kierunki }
   for (const [id, waga] of Object.entries(ustawienia.wagi)) if (znane.has(id)) wagi[id] = waga
@@ -336,7 +365,12 @@ function doUrl(s: StanAplikacji): StanUrl {
 }
 
 function czytajBiezacyUrl(): StanUrl {
-  const url = polaczPreferencje(czytajHash(location.hash), location.hash, odczytajPreferencje())
+  const parametry = new URLSearchParams(location.hash.split('?')[1] ?? '')
+  const trybLinku = parametry.get('t')
+  const zapis = trybLinku
+    ? odczytajPreferencjeTrybu(trybLinku === 'biznes' ? 'biznes' : 'mieszkanie')
+    : odczytajPreferencje()
+  const url = polaczPreferencje(czytajHash(location.hash), location.hash, zapis)
   const sciezka = location.pathname
   if (sciezka === '/katalog' || sciezka.startsWith('/katalog/')) {
     return { ...url, ekran: 'katalog', idAdresu: null }
@@ -415,7 +449,9 @@ if (typeof window !== 'undefined') {
     Object.assign(latka, {
       persona,
       tryb,
-      ...(url.ustawienia ? sprawdzUstawienia(url.ustawienia, metaWskaznikow, domyslne) : domyslne),
+      ...(url.ustawienia
+        ? sprawdzUstawienia(url.ustawienia, metaWskaznikow, domyslne, tryb)
+        : domyslne),
     })
     odczytujemyHistorie = true
     try {
