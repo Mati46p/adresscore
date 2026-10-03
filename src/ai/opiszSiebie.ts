@@ -1047,21 +1047,23 @@ export function silaZRegul(tekst: string): Sila | undefined {
   return undefined
 }
 
-/** Profile do wyboru przez JEV – bez „Od zera”, plus jawne „nie wiadomo”. */
-const PROFILE_JEV = PERSONY.filter((p) => p.id !== 'od-zera')
-const PROFIL_NIEZNANY = 'nieznany'
-
 /**
  * #155: opisy opcji profilu dla JEV mówią, KIM jest osoba, a nie, co ceni. Opisy z UI
  * („Komunikacja i sklepy pod ręką”) pasowały do każdego, kto chce mieć blisko tramwaj, więc
  * JEV wybierał Singla dla par i rodzin. Nazwy i opisy w UI (`persony.ts`) się nie zmieniają.
  */
-export const OPISY_PROFILI_JEV: Readonly<Record<Exclude<PersonaId, 'od-zera'>, string>> = {
+export const OPISY_PROFILI_JEV: Readonly<Partial<Record<Exclude<PersonaId, 'od-zera'>, string>>> = {
   rodzina: 'Rodzic z dziećmi w domu (także gdy dziecko jest w drodze)',
   singiel: 'Osoba mieszkająca sama, zwykle młoda, pracująca albo studiująca',
   senior: 'Osoba na emeryturze albo w starszym wieku',
   inwestor: 'Kupujący pod wynajem albo jako lokatę, sam tam nie zamieszka',
 }
+/**
+ * Profile do wyboru przez JEV – te z opisem powyżej (bez „Od zera” i nowszych person,
+ * których nie ma w zbiorach pomiarowych), plus jawne „nie wiadomo”.
+ */
+const PROFILE_JEV = PERSONY.filter((p) => p.id in OPISY_PROFILI_JEV)
+const PROFIL_NIEZNANY = 'nieznany'
 export const OPIS_PROFILU_NIEZNANEGO = 'Nie da się tego określić z tekstu'
 
 export interface PozycjaZrozumienia {
