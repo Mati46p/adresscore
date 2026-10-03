@@ -223,6 +223,9 @@ export const OPISY_WARSTW_DLA_JEV: Readonly<Record<string, OpisStrukturalny>> = 
   policja_odleglosc: {
     co: `${M}ego komisariatu policji w Krakowie – to dostępność policji, nie poziom przestępczości. Odpowiada na pytania, gdzie jest najbliższy komisariat.`,
   },
+  sor_odleglosc: {
+    co: `${M}ego szpitalnego oddziału ratunkowego w Małopolsce – to nie czas dojazdu karetki. Odpowiada na pytania, jak daleko jest do szpitala w nagłym wypadku.`,
+  },
   poczta_1200m: {
     co: 'Czy w promieniu 1,2 kilometra (w linii prostej) jest poczta albo punkt pocztowy zaznaczony na otwartej mapie OpenStreetMap – tak albo nie. Odpowiada na pytania, czy blisko jest poczta, gdzie nadać list albo odebrać przesyłkę.',
   },
