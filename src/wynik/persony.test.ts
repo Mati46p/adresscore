@@ -67,6 +67,15 @@ describe('hash URL', () => {
     assert.equal(czytajHash('#/?p=hacker').persona, null)
   })
 
+  it('uszkodzony hash to Szukaj, nie wyjątek', () => {
+    for (const h of ['#/adres/%', '#/adres/%E0%A4%A', '#/adres/%zz?p=senior']) {
+      const s = czytajHash(h)
+      assert.equal(s.ekran, 'szukaj', h)
+      assert.equal(s.idAdresu, null, h)
+    }
+    assert.equal(czytajHash('#/adres/%zz?p=senior').persona, 'senior')
+  })
+
   it('porównanie najwyżej 5', () => {
     assert.equal(czytajHash('#/porownanie?cmp=1,2,3,4,5,6,7').porownanie.length, 5)
   })

@@ -22,7 +22,15 @@ import {
   takieSameKlucze,
   zbudujGeometrie,
 } from '@/mapa/geometria'
-import { gradientCss, KOLOR_BRAKU, wyrazenieKoloru } from '@/mapa/skala'
+import {
+  gradientCss,
+  KOLOR_SZRAFURY,
+  KRYCIE_BRAKU,
+  KRYCIE_DANYCH,
+  obrazSzrafury,
+  szrafuraCss,
+  wyrazenieKoloru,
+} from '@/mapa/skala'
 import './mapa.css'
 
 export interface MapaKrakowaProps {
@@ -72,7 +80,19 @@ const STYL: StyleSpecification = {
 
 // Brak danych trzymamy w feature-state jako -1, bo stan nie odróżnia null od nieustawionego.
 const WARTOSC: ExpressionSpecification = ['coalesce', ['feature-state', 'w'], -1]
+const BRAK: ExpressionSpecification = ['<', WARTOSC, 0]
 const zrodloHeksow = (res: number) => `heksy-r${res}`
+const SZRAFURA = 'szrafura-braku'
+
+const POLSKIE_NAPISY = {
+  'NavigationControl.ZoomIn': 'Przybliż',
+  'NavigationControl.ZoomOut': 'Oddal',
+  'NavigationControl.ResetBearing': 'Obróć na północ',
+}
+
+/** Wartości feature-state wysłane już do mapy, per rozdzielczość: h3 → w (-1 = brak). */
+type Wyslane = Record<8 | 9 | 10, Map<string, number>>
+const pusteWyslane = (): Wyslane => ({ 8: new Map(), 9: new Map(), 10: new Map() })
 
 function podpisHeksu(w: number | null | undefined, res: number): string {
   const tekst = w === null || w === undefined || w < 0 ? 'brak danych' : `wynik ${Math.round(w)}`
@@ -121,6 +141,7 @@ export function MapaKrakowa({
       minZoom: 5,
       maxBounds: GRANICE_WIDOKU,
       attributionControl: false,
+      locale: POLSKIE_NAPISY,
     })
     mapaRef.current = mapa
     const kontrolkaLegendy = new KontrolkaLegendy()
@@ -135,6 +156,7 @@ export function MapaKrakowa({
     const dymek = new Popup({ closeButton: false, closeOnClick: false, className: 'mapa-dymek' })
 
     mapa.on('load', () => {
+      mapa.addImage(SZRAFURA, obrazSzrafury(), { pixelRatio: 2 })
       mapa.addSource('mgla', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
       mapa.addSource('obrys', {
         type: 'geojson',
@@ -147,7 +169,6 @@ export function MapaKrakowa({
           data: { type: 'FeatureCollection', features: [] },
           promoteId: 'h3',
         })
-        const brak: ExpressionSpecification = ['<', WARTOSC, 0]
         mapa.addLayer({
           id,
           type: 'fill',
@@ -156,8 +177,18 @@ export function MapaKrakowa({
           maxzoom,
           paint: {
             'fill-color': wyrazenieKoloru(WARTOSC),
-            'fill-opacity': ['case', brak, 0.28, 0.62],
+            'fill-opacity': ['case', BRAK, KRYCIE_BRAKU, KRYCIE_DANYCH],
           },
+        })
+        // Filtr nie widzi feature-state, więc szrafura leży na wszystkich heksach,
+        // a widać ją tylko tam, gdzie krycie z feature-state mówi „brak danych".
+        mapa.addLayer({
+          id: `${id}-szrafura`,
+          type: 'fill',
+          source: id,
+          minzoom,
+          maxzoom,
+          paint: { 'fill-pattern': SZRAFURA, 'fill-opacity': ['case', BRAK, 1, 0] },
         })
         mapa.addLayer({
           id: `${id}-linia`,
@@ -166,6 +197,18 @@ export function MapaKrakowa({
           minzoom: Math.max(minzoom, 12),
           maxzoom,
           paint: { 'line-color': '#FFFFFF', 'line-opacity': 0.45, 'line-width': 0.5 },
+        })
+        mapa.addLayer({
+          id: `${id}-obrys-braku`,
+          type: 'line',
+          source: id,
+          minzoom,
+          maxzoom,
+          paint: {
+            'line-color': KOLOR_SZRAFURY,
+            'line-opacity': ['case', BRAK, 0.8, 0],
+            'line-width': 1,
+          },
         })
 
         mapa.on('mousemove', id, (e: MapLayerMouseEvent) => {
@@ -210,15 +253,40 @@ export function MapaKrakowa({
     }
   }, [])
 
-  // Geometria tylko przy zmianie zbioru kluczy; zmiana wag aktualizuje wyłącznie feature-state.
+  // Suwak wag potrafi zmienić `heksy` kilka razy na klatkę, a każda rewizja to ok. 23 tys.
+  // wywołań setFeatureState. Dlatego zmiana tylko zapamiętuje najnowszą mapę, a mapa dostaje
+  // ją raz na klatkę i wyłącznie dla heksów, których wartość się zmieniła.
+  const najnowszeRef = useRef(heksy)
+  const klatkaRef = useRef<number | null>(null)
+  const wyslaneRef = useRef<Wyslane>(pusteWyslane())
+
   useEffect(() => {
+    najnowszeRef.current = heksy
     const mapa = mapaRef.current
-    if (!mapa || !gotowa) return
+    if (!mapa || !gotowa || klatkaRef.current !== null) return
+    klatkaRef.current = requestAnimationFrame(() => {
+      klatkaRef.current = null
+      zastosujHeksy(mapa, najnowszeRef.current)
+    })
+  }, [heksy, gotowa])
+
+  useEffect(
+    () => () => {
+      if (klatkaRef.current !== null) cancelAnimationFrame(klatkaRef.current)
+      klatkaRef.current = null
+    },
+    [],
+  )
+
+  function zastosujHeksy(mapa: MapaLibre, heksy: ReadonlyMap<string, number | null>) {
+    // Mapa mogła zostać zdjęta (Strict Mode, zmiana ekranu) między zmianą a klatką.
+    if (mapaRef.current !== mapa) return
     let g = geometriaRef.current
     if (!takieSameKlucze(g, heksy)) {
       const pierwsza = g === null
       g = zbudujGeometrie(heksy.keys())
       geometriaRef.current = g
+      wyslaneRef.current = pusteWyslane()
       for (const { res } of POZIOMY) {
         const zrodlo = mapa.getSource<GeoJSONSource>(zrodloHeksow(res))
         zrodlo?.setData(g.zrodla[res])
@@ -244,16 +312,19 @@ export function MapaKrakowa({
         mapa.fitBounds(g.granice, { padding: 32, animate: false })
       }
     }
-    for (const [h, w] of heksy) {
-      mapa.setFeatureState({ source: zrodloHeksow(10), id: h }, { w: w ?? -1 })
+    const wyslane = wyslaneRef.current
+    const wyslij = (res: 8 | 9 | 10, h: string, w: number | null | undefined) => {
+      const v = w === null || w === undefined || Number.isNaN(w) ? -1 : w
+      if (wyslane[res].get(h) === v) return
+      wyslane[res].set(h, v)
+      mapa.setFeatureState({ source: zrodloHeksow(res), id: h }, { w: v })
     }
+    for (const [h, w] of heksy) wyslij(10, h, w)
     for (const res of [8, 9] as const) {
-      for (const [rodzic, dzieci] of g.dzieci[res]) {
-        const w = sredniaDzieci(dzieci, heksy)
-        mapa.setFeatureState({ source: zrodloHeksow(res), id: rodzic }, { w: w ?? -1 })
-      }
+      for (const [rodzic, dzieci] of g.dzieci[res])
+        wyslij(res, rodzic, sredniaDzieci(dzieci, heksy))
     }
-  }, [heksy, gotowa])
+  }
 
   const lon = wybrany?.lon
   const lat = wybrany?.lat
@@ -288,14 +359,20 @@ export function MapaKrakowa({
         createPortal(
           <>
             <div className="mapa-legenda__tytul">{podpisWarstwy}</div>
-            <div className="mapa-legenda__pasek" style={{ background: gradientCss() }} />
+            <div
+              className="mapa-legenda__pasek"
+              style={{ background: gradientCss(), opacity: KRYCIE_DANYCH }}
+            />
             <div className="mapa-legenda__skala" aria-hidden="true">
               <span>0</span>
               <span>50</span>
               <span>100</span>
             </div>
             <div className="mapa-legenda__wiersz">
-              <span className="mapa-legenda__probka" style={{ background: KOLOR_BRAKU }} />
+              <span
+                className="mapa-legenda__probka mapa-legenda__probka--brak"
+                style={{ background: szrafuraCss() }}
+              />
               brak danych
             </div>
             <div className="mapa-legenda__wiersz">

@@ -1,18 +1,51 @@
 import type { ExpressionSpecification } from 'maplibre-gl'
 
 // Pomarańcz → jasny środek → zieleń akcentu. Końce różnią się i barwą, i jasnością (L* ok. 49
-// i 35, środek ok. 90): przy deuteranopii pomarańcz przechodzi w żółtawy, zieleń w niebieskoszary,
-// więc skala zostaje czytelna także bez rozróżniania czerwieni i zieleni.
+// i 35, środek ok. 89): przy deuteranopii pomarańcz przechodzi w żółtawy, zieleń w niebieskoszary,
+// więc skala zostaje czytelna także bez rozróżniania czerwieni i zieleni. Strona zielona jest
+// celowo ciemniejsza: 25 i 75 mają L* ok. 74 i 58 (na podkładzie przy kryciu 0,72: 79 i 67),
+// bo w symetrycznej skali rozbieżnej różniłyby się tylko barwą.
 export const STOPNIE_SKALI: readonly (readonly [number, string])[] = [
   [0, '#B25E12'],
-  [25, '#DDA25C'],
+  [25, '#E4AD68'],
   [50, '#E9DEBC'],
-  [75, '#6FAE8C'],
+  [75, '#4E9A78'],
   [100, '#1F5C46'],
 ]
 
-/** Brak danych – nigdy kolor zera. */
-export const KOLOR_BRAKU = '#9AA0A6'
+/** Krycie heksów z danymi – wspólne dla mapy i paska legendy. */
+export const KRYCIE_DANYCH = 0.72
+
+/** Brak danych – nigdy kolor zera. Pod szrafurą, więc nie myli się z jasnym środkiem skali. */
+export const KOLOR_BRAKU = '#8A9097'
+export const KRYCIE_BRAKU = 0.5
+/** Kreski szrafury i obrys heksu bez danych. */
+export const KOLOR_SZRAFURY = '#3F454C'
+
+/** Ukośne kreski co 8 px CSS, rysowane w kodzie – bez pliku obrazka i bez sprite'a. */
+export function obrazSzrafury(): { width: number; height: number; data: Uint8Array } {
+  // 16 px przy pixelRatio 2: ostre kreski na ekranach o wysokiej gęstości.
+  const bok = 16
+  const data = new Uint8Array(bok * bok * 4)
+  const [r, g, b] = naRgb(KOLOR_SZRAFURY)
+  for (let y = 0; y < bok; y++) {
+    for (let x = 0; x < bok; x++) {
+      // (x + y) mod okres daje ukos, który łączy się na brzegach kafla bez szwu.
+      if ((x + y) % bok >= 3) continue
+      const i = (y * bok + x) * 4
+      data[i] = r
+      data[i + 1] = g
+      data[i + 2] = b
+      data[i + 3] = 230
+    }
+  }
+  return { width: bok, height: bok, data }
+}
+
+/** Ta sama szrafura w CSS – próbka „brak danych" w legendzie. */
+export function szrafuraCss(): string {
+  return `repeating-linear-gradient(-45deg, ${KOLOR_SZRAFURY} 0 1.1px, transparent 1.1px 5.66px), ${KOLOR_BRAKU}80`
+}
 
 function naRgb(hex: string): [number, number, number] {
   const n = Number.parseInt(hex.slice(1), 16)

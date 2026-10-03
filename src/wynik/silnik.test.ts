@@ -10,6 +10,7 @@ import {
   PROGI_LITER,
   przygotujWskaznik,
   srednieHeksow,
+  wskaznikNiedostepny,
   wynikAdresu,
   wynikiWszystkich,
   zbudujSkale,
@@ -158,6 +159,35 @@ describe('wynik adresu', () => {
     // Adres 2: halas (2) i sklep (1) mają dane, zielen (1) nie → 3/4.
     const w = wynikAdresu(2, [halas, zielen, sklep], wagi)
     assert.equal(w.pewnosc, 3 / 4)
+  })
+
+  it('warstwa, która się nie wczytała, obniża pewność, nie wynik', () => {
+    const zgubiona = wskaznikNiedostepny(
+      meta({ id: 'zgubiona', kategoria: 'transport' }),
+      4,
+      'HTTP 404',
+    )
+    const w = { ...wagi, zgubiona: 2 }
+    for (let i = 0; i < 4; i++) {
+      const bez = wynikAdresu(i, [halas, zielen, sklep], w)
+      const z = wynikAdresu(i, [halas, zielen, sklep, zgubiona], w)
+      assert.equal(z.wynik, bez.wynik, `adres ${i}: wynik`)
+      // Mianownik pewności rośnie o wagę zgubionej warstwy, licznik bez zmian.
+      const wszystkie = 2 + 1 + 1
+      assert.ok(
+        Math.abs(z.pewnosc - (bez.pewnosc * wszystkie) / (wszystkie + 2)) < 1e-12,
+        `adres ${i}: pewność ${z.pewnosc} przy ${bez.pewnosc}`,
+      )
+      const r = z.warstwy.find((x) => x.id === 'zgubiona')
+      assert.equal(r?.ocena, null)
+      assert.equal(r?.niedostepny, 'HTTP 404')
+      const transport = z.kategorie.find((k) => k.kategoria === 'transport')
+      assert.equal(transport?.ocena, null)
+      assert.equal(transport?.pewnosc, 0)
+    }
+    const tablica = wynikiWszystkich([halas, zielen, sklep, zgubiona], w, undefined, 4)
+    const bezTablica = wynikiWszystkich([halas, zielen, sklep], w, undefined, 4)
+    assert.deepEqual([...tablica], [...bezTablica])
   })
 
   it('kontekst nie wpływa na wynik', () => {

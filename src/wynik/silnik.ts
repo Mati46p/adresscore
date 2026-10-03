@@ -128,6 +128,8 @@ export interface WskaznikPrzygotowany {
   wartosci: readonly (number | null)[]
   etykiety?: readonly (string | null)[]
   skala: Skala
+  /** Powód, gdy plik warstwy się nie wczytał; wtedy każdy adres ma brak danych. */
+  niedostepny?: string
 }
 
 export function przygotujWskaznik(plik: PlikWskaznika): WskaznikPrzygotowany {
@@ -137,6 +139,20 @@ export function przygotujWskaznik(plik: PlikWskaznika): WskaznikPrzygotowany {
     etykiety: plik.etykiety,
     skala: zbudujSkale(plik.meta, plik.wartosci),
   }
+}
+
+/**
+ * Warstwa z manifestu, której plik nie doszedł (błąd pobrania, inna wersja adresów).
+ * Zostaje w obliczeniach jako brak danych pod każdym adresem: nie zmienia wyniku, ale jej
+ * waga liczy się do mianownika pewności – inaczej awaria pobrania podnosiłaby pewność.
+ */
+export function wskaznikNiedostepny(
+  meta: WskaznikMeta,
+  liczbaAdresow: number,
+  powod: string,
+): WskaznikPrzygotowany {
+  const wartosci: (number | null)[] = new Array(liczbaAdresow).fill(null)
+  return { meta, wartosci, skala: zbudujSkale(meta, wartosci), niedostepny: powod }
 }
 
 // Oceny zależą tylko od kierunku, nie od wag – liczymy je raz na kierunek. Zmiana wag
@@ -186,6 +202,8 @@ export interface RozbicieWarstwy {
   wklad: number | null
   /** Czy warstwa w ogóle liczy się do wyniku (ma kierunek i wagę > 0). */
   liczona: boolean
+  /** Powód, gdy plik warstwy się nie wczytał (patrz `wskaznikNiedostepny`). */
+  niedostepny?: string
 }
 
 export interface RozbicieKategorii {
@@ -245,6 +263,7 @@ export function wynikAdresu(
       waga,
       wklad: s.ocena !== null && waga > 0 ? waga * s.ocena : null,
       liczona: s.liczona,
+      ...(s.w.niedostepny === undefined ? {} : { niedostepny: s.w.niedostepny }),
     }
   })
 

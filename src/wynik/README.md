@@ -18,6 +18,8 @@ bo `src/kontrakty` czyta `import.meta.env`, którego Node nie ma.
 | Funkcja | Co robi |
 |---|---|
 | `przygotujWskaznik(plik)` | Dodaje skalę do pliku wskaźnika. `useDane` robi to za Ciebie. |
+| `kierunekEfektywny(meta, kierunki?)` | Daje kierunek, który faktycznie liczy ocenę: kierunek użytkownika albo persony, a bez niego `meta.kierunek`. `null` = warstwa nie wchodzi do wyniku (kontekst albo `neutralny` bez nadanego kierunku). Warstwa `neutralny` z kierunkiem od persony daje kierunek, więc liczy się do wyniku – ekran musi wtedy pokazać jej przycisk. |
+| `wskaznikNiedostepny(meta, n, powod)` | Daje warstwę bez danych pod każdym adresem dla pliku, który się nie wczytał. `useDane` robi to za Ciebie. |
 | `ocenWartosc(wartosc, skala, kierunek)` | Daje ocenę 0–100. Brak danych albo brak kierunku daje `null`, nigdy 0. |
 | `wynikAdresu(i, wskazniki, wagi, kierunki?)` | Daje pełne rozbicie jednego adresu (`WynikAdresu`). |
 | `wynikiWszystkich(wskazniki, wagi, kierunki, n)` | Daje `Float32Array` wyników wszystkich adresów. `NaN` = brak danych. |
@@ -38,8 +40,10 @@ Zasady skali:
 
 - `wynik` 0–100 albo `null`, `litera` A–G albo `null`.
 - `pewnosc` 0–1: udział wagi warstw z danymi w wadze wszystkich liczonych warstw. To jest pasek pewności.
+  Warstwa, której plik się nie wczytał, liczy się do mianownika jako brak danych, więc obniża pewność, nie wynik.
 - `warstwy[]`: `ocena`, `waga` (po normalizacji, suma = 1), `wagaUzytkownika` (0–4), `wklad` (suma = `wynik`),
-  `wartosc` (surowy pomiar), `etykieta`, `meta` (źródła, `dataDanych`, `rozdzielczosc`, `rozmiar`, `atrapa`).
+  `wartosc` (surowy pomiar), `etykieta`, `meta` (źródła, `dataDanych`, `rozdzielczosc`, `rozmiar`, `atrapa`),
+  `niedostepny` (powód, gdy plik warstwy się nie wczytał; pokaż „warstwa niedostępna", nie „brak danych pod adresem").
 - `kategorie[]`: `ocena` (`null` = szara kategoria), `waga`, `wklad`, `pewnosc`, `warstwy`.
 
 Kolory: `PALETA_WYNIKU` (5 stopni z makiety, od słabo do idealnie) i `KOLOR_BRAKU` (szary).
@@ -56,7 +60,9 @@ Kolory: `PALETA_WYNIKU` (5 stopni z makiety, od słabo do idealnie) i `KOLOR_BRA
 - `useDane()` daje `{ stan: 'ladowanie' } | { stan: 'blad', blad } | { stan: 'gotowe', ...Dane }`.
 - `Dane`: `plikAdresow`, `adresy` (`Adres[]`), `manifest`, `wskazniki` (`WskaznikPrzygotowany[]`), `pominiete`, `grupyHeksow`.
 - Aplikacja ładuje dane raz. Każdy komponent może wołać `useDane()` bez kosztu.
-- Loader pomija warstwę z inną wersją adresów albo z błędem pobrania i pisze ostrzeżenie w konsoli.
+- `wskazniki` ma wszystkie warstwy manifestu. Warstwa z inną wersją adresów albo z błędem pobrania
+  ma pole `niedostepny` i brak danych pod każdym adresem. Loader dopisuje ją też do `pominiete`
+  i pisze ostrzeżenie w konsoli.
 
 ## Wyniki dla UI – `useWyniki.ts`
 
@@ -80,6 +86,7 @@ Kolory: `PALETA_WYNIKU` (5 stopni z makiety, od słabo do idealnie) i `KOLOR_BRA
 | `#/adres/<id adresu>` | 2 Okolica |
 | `#/porownanie` | 3 Porównanie |
 
+Uszkodzony hash (np. `#/adres/%`) daje ekran Szukaj.
 Parametry: `p` (persona), `t` (tryb), `cmp` (id adresów do porównania, po przecinku).
 Stan i hash synchronizują się w obie strony. Zmiana ekranu albo adresu dodaje krok w historii przeglądarki.
 

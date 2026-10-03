@@ -17,6 +17,14 @@ export interface StanUrl {
 
 export const MAKS_POROWNANIE = 5
 
+function odkoduj(tekst: string): string | null {
+  try {
+    return decodeURIComponent(tekst)
+  } catch {
+    return null
+  }
+}
+
 export function czytajHash(hash: string): StanUrl {
   const bez = hash.replace(/^#/, '')
   const [sciezka = '', zapytanie = ''] = bez.split('?')
@@ -26,8 +34,9 @@ export function czytajHash(hash: string): StanUrl {
   let ekran: Ekran = 'szukaj'
   let idAdresu: string | null = null
   if (czesci[0] === 'adres' && czesci[1]) {
-    ekran = 'okolica'
-    idAdresu = decodeURIComponent(czesci[1])
+    idAdresu = odkoduj(czesci[1])
+    // Uszkodzony link (np. `#/adres/%`) prowadzi do wyszukiwania, a nie wywraca aplikacji.
+    if (idAdresu !== null) ekran = 'okolica'
   } else if (czesci[0] === 'porownanie') {
     ekran = 'porownanie'
   }

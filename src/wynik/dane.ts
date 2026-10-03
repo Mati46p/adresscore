@@ -15,6 +15,7 @@ import {
   grupujHeksy,
   przygotujWskaznik,
   type WskaznikPrzygotowany,
+  wskaznikNiedostepny,
 } from './silnik.ts'
 import { podlaczDane } from './stan.ts'
 
@@ -22,7 +23,10 @@ export interface Dane {
   plikAdresow: PlikAdresow
   adresy: Adres[]
   manifest: Manifest
-  /** Tylko warstwy zgodne z wersją adresów, w kolejności manifestu. */
+  /**
+   * Wszystkie warstwy manifestu w jego kolejności. Warstwa, która się nie wczytała, ma
+   * `niedostepny` i brak danych pod każdym adresem – liczy się do pewności, nie do wyniku.
+   */
   wskazniki: WskaznikPrzygotowany[]
   /** Id warstw pominiętych (inna wersja adresów albo błąd pobrania) z powodem. */
   pominiete: { id: string; powod: string }[]
@@ -37,25 +41,26 @@ export type StanDanych =
 async function wczytajWszystko(): Promise<Dane> {
   const [plikAdresow, manifest] = await Promise.all([wczytajAdresy(), wczytajManifest()])
   const pominiete: Dane['pominiete'] = []
-  const wyniki = await Promise.all(
-    manifest.wskazniki.map(async (m) => {
-      if (m.wersjaAdresow !== plikAdresow.wersja) {
-        pominiete.push({ id: m.id, powod: `adresy ${m.wersjaAdresow}, mamy ${plikAdresow.wersja}` })
-        return null
+  const n = plikAdresow.kolumny.id.length
+  const wskazniki = await Promise.all(
+    manifest.wskazniki.map(async ({ wersjaAdresow, ...meta }) => {
+      const pomin = (powod: string) => {
+        pominiete.push({ id: meta.id, powod })
+        return wskaznikNiedostepny(meta, n, powod)
+      }
+      if (wersjaAdresow !== plikAdresow.wersja) {
+        return pomin(`adresy ${wersjaAdresow}, mamy ${plikAdresow.wersja}`)
       }
       try {
-        const plik = await wczytajWskaznik(m.id, plikAdresow.wersja)
-        if (!plik) pominiete.push({ id: m.id, powod: 'niezgodna wersja adresów' })
-        return plik ? przygotujWskaznik(plik) : null
+        const plik = await wczytajWskaznik(meta.id, plikAdresow.wersja)
+        return plik ? przygotujWskaznik(plik) : pomin('niezgodna wersja adresów')
       } catch (e) {
         // Jedna zepsuta warstwa nie może zablokować całej mapy.
-        pominiete.push({ id: m.id, powod: String(e) })
-        return null
+        return pomin(String(e))
       }
     }),
   )
-  for (const p of pominiete) console.warn(`Pomijam wskaźnik ${p.id}: ${p.powod}`)
-  const wskazniki = wyniki.filter((w) => w !== null)
+  for (const p of pominiete) console.warn(`Wskaźnik ${p.id} bez danych: ${p.powod}`)
   const adresy = rozwinAdresy(plikAdresow)
   podlaczDane(
     plikAdresow.kolumny.id,
