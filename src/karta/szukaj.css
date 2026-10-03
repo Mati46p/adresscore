@@ -112,10 +112,22 @@
   background: #174936;
 }
 
-.heksy-pasek__wskazowka {
-  grid-column: 1 / -1;
+.heksy-podpowiedz {
+  position: absolute;
+  z-index: 5;
+  bottom: 16px;
+  left: 50%;
+  max-width: calc(100% - 32px);
+  padding: 6px 12px;
+  transform: translateX(-50%);
+  border: 1px solid rgb(211 221 214 / 90%);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 90%);
+  box-shadow: 0 2px 8px rgb(20 41 31 / 10%);
   color: var(--tekst-2);
-  font-size: 0.9rem;
+  font-size: 0.82rem;
+  text-align: center;
+  pointer-events: none;
 }
 
 /* Pasek zajmuje dół mapy; legenda i przyciski mapy pozostają nad nim. */
@@ -129,8 +141,10 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .slot-mapy:has(.heksy-pasek) .maplibregl-ctrl-bottom-left,
-  .slot-mapy:has(.heksy-pasek) .maplibregl-ctrl-bottom-right {
+  .slot-mapy:has(.heksy-pasek[data-liczba="4"]) .maplibregl-ctrl-bottom-left,
+  .slot-mapy:has(.heksy-pasek[data-liczba="4"]) .maplibregl-ctrl-bottom-right,
+  .slot-mapy:has(.heksy-pasek[data-liczba="5"]) .maplibregl-ctrl-bottom-left,
+  .slot-mapy:has(.heksy-pasek[data-liczba="5"]) .maplibregl-ctrl-bottom-right {
     bottom: 166px;
   }
 }
@@ -145,8 +159,19 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .slot-mapy:has(.heksy-pasek) .maplibregl-ctrl-bottom-left,
-  .slot-mapy:has(.heksy-pasek) .maplibregl-ctrl-bottom-right {
+  .slot-mapy:has(.heksy-pasek[data-liczba="3"]) .maplibregl-ctrl-bottom-left,
+  .slot-mapy:has(.heksy-pasek[data-liczba="3"]) .maplibregl-ctrl-bottom-right,
+  .slot-mapy:has(.heksy-pasek[data-liczba="4"]) .maplibregl-ctrl-bottom-left,
+  .slot-mapy:has(.heksy-pasek[data-liczba="4"]) .maplibregl-ctrl-bottom-right {
+    bottom: 166px;
+  }
+
+  .slot-mapy:has(.heksy-pasek[data-liczba="5"]) .maplibregl-ctrl-bottom-left,
+  .slot-mapy:has(.heksy-pasek[data-liczba="5"]) .maplibregl-ctrl-bottom-right {
     bottom: 208px;
+  }
+
+  .heksy-podpowiedz {
+    bottom: 42px;
   }
 }

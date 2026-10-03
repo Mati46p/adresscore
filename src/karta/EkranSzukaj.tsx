@@ -115,14 +115,18 @@ export function EkranSzukaj() {
                 setKomunikatHeksow('Dodano heks do porównania.')
               }}
             />
-            <div className="heksy-pasek" aria-label="Heksy do porównania">
-              <div className="heksy-pasek__naglowek">
-                <strong>Heksy do porównania</strong>
-                <span>
-                  {wybraneAdresy.length}/{MAKS_POROWNANIE}
-                </span>
-              </div>
-              {wybraneAdresy.length > 0 && (
+            {wybraneAdresy.length > 0 ? (
+              <div
+                className="heksy-pasek"
+                aria-label="Heksy do porównania"
+                data-liczba={wybraneAdresy.length}
+              >
+                <div className="heksy-pasek__naglowek">
+                  <strong>Heksy do porównania</strong>
+                  <span>
+                    {wybraneAdresy.length}/{MAKS_POROWNANIE}
+                  </span>
+                </div>
                 <button
                   type="button"
                   className="heksy-pasek__akcja"
@@ -130,8 +134,6 @@ export function EkranSzukaj() {
                 >
                   Porównaj ({wybraneAdresy.length})
                 </button>
-              )}
-              {wybraneAdresy.length ? (
                 <div className="heksy-pasek__lista">
                   {wybraneAdresy.map((a) => (
                     <span
@@ -150,15 +152,13 @@ export function EkranSzukaj() {
                     </span>
                   ))}
                 </div>
-              ) : (
-                <span className="heksy-pasek__wskazowka">
-                  Kliknij heks. Adres w nim reprezentuje okolicę.
-                </span>
-              )}
-              <span className="sr-only" role="status">
-                {komunikatHeksow}
-              </span>
-            </div>
+              </div>
+            ) : (
+              <span className="heksy-podpowiedz">Kliknij heks, aby porównać</span>
+            )}
+            <span className="sr-only" role="status">
+              {komunikatHeksow}
+            </span>
           </div>
           {adres && (
             <div className="wybrany-adres">
