@@ -1,0 +1,440 @@
+/* Karta okolicy (#12). Prefiks okol-, tokeny z src/styles.css. */
+.okol-wroc {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--cel-dotyku);
+  font-size: 15px;
+}
+.okol-h1 {
+  margin: 0;
+  font-size: 34px;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+.okol-h2 {
+  margin: 0;
+  font-size: 22px;
+}
+.okol-h3 {
+  margin: 0;
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.okol-h3-plus {
+  color: var(--akcent);
+}
+.okol-h3-minus {
+  color: var(--ostrzezenie-tekst);
+}
+.okol-podpis,
+.okol-pusto {
+  margin: 0;
+  font-size: 14px;
+  color: var(--tekst-2);
+}
+.okol-sekcja {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.okol-pusta {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+}
+.okol-pusta p {
+  margin: 0;
+  color: var(--tekst-2);
+}
+
+/* Nagłówek z etykietą */
+.okol-naglowek {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px;
+}
+.okol-miejsce {
+  margin: 6px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  font-size: 15px;
+  color: var(--tekst-2);
+}
+.okol-wynik {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px 40px;
+  align-items: center;
+}
+.okol-etykieta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 240px;
+  flex: none;
+}
+.okol-etykieta-wiersz {
+  display: flex;
+  align-items: center;
+  height: 32px;
+}
+.okol-etykieta-pasek {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding-left: 12px;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 18px;
+  /* Ścięty prawy koniec jak na etykiecie energetycznej. */
+  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%);
+}
+.okol-etykieta-strzalka {
+  display: flex;
+  align-items: center;
+  height: 36px;
+  margin-left: 6px;
+  padding: 0 10px 0 18px;
+  background: var(--tekst);
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 24px;
+  font-weight: 500;
+  clip-path: polygon(14px 0, 100% 0, 100% 100%, 14px 100%, 0 50%);
+}
+.okol-liczba {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: center;
+}
+.okol-pierscien {
+  width: 120px;
+  height: 120px;
+  flex: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.okol-pierscien-srodek {
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  background: var(--powierzchnia);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.okol-pierscien-wartosc {
+  font-size: 34px;
+  font-weight: 500;
+  line-height: 1;
+}
+.okol-pierscien-podpis {
+  font-size: 12px;
+  color: var(--tekst-3);
+}
+.okol-pewnosc {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 180px;
+  font-size: 14px;
+  color: var(--tekst-2);
+}
+.okol-pewnosc-pasek {
+  display: block;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--linia);
+  overflow: hidden;
+}
+.okol-pewnosc-pasek > span {
+  display: block;
+  height: 100%;
+  background: var(--tekst-3);
+}
+.okol-pewnosc-proc {
+  font-size: 12px;
+  color: var(--tekst-3);
+}
+.okol-przyciski {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.okol-przycisk {
+  min-height: 48px;
+  padding: 0 18px;
+  border-radius: 12px;
+  font-size: 15px;
+}
+.okol-status {
+  font-size: 14px;
+  color: var(--tekst-2);
+}
+
+/* Paski */
+.okol-pasek {
+  display: block;
+  height: 10px;
+  border-radius: 5px;
+  background: var(--linia);
+  overflow: hidden;
+  min-width: 80px;
+}
+.okol-pasek > span {
+  display: block;
+  height: 100%;
+  border-radius: 5px;
+}
+.okol-pasek-brak {
+  background: repeating-linear-gradient(135deg, var(--brak-danych) 0 4px, #d4d8db 4px 8px);
+}
+.okol-wyp-dobry {
+  background: var(--akcent);
+}
+.okol-wyp-slaby {
+  background: var(--ostrzezenie);
+}
+.okol-lista {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+.okol-kat {
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) minmax(120px, 2fr) 96px;
+  gap: 12px;
+  align-items: center;
+  min-height: var(--cel-dotyku);
+  border-top: 1px solid var(--linia);
+  font-size: 15px;
+}
+.okol-kat-brak {
+  font-size: 13px;
+  color: var(--tekst-3);
+}
+.okol-kat-liczba {
+  text-align: right;
+}
+
+/* Mocne i słabe strony */
+.okol-dwie {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+}
+.okol-strony {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.okol-strona {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.okol-punkty {
+  flex: none;
+  font-size: 14px;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+.okol-punkty-plus {
+  background: var(--akcent-jasny);
+  color: var(--akcent);
+}
+.okol-punkty-minus {
+  background: var(--ostrzezenie-tlo);
+  color: var(--ostrzezenie-tekst);
+}
+.okol-strona-tekst {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.okol-strona-nazwa {
+  font-size: 16px;
+  font-weight: 500;
+}
+.okol-strona-opis {
+  font-size: 14px;
+  color: var(--tekst-2);
+}
+
+/* Tabela warstw */
+.okol-rozbicie-glowa {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: baseline;
+  padding-bottom: 8px;
+}
+.okol-przewijanie {
+  overflow-x: auto;
+}
+.okol-tabela {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.okol-tabela th {
+  padding: 8px 12px 8px 0;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--tekst-3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.okol-tabela td {
+  padding: 12px 12px 12px 0;
+  border-top: 1px solid var(--linia);
+  vertical-align: top;
+}
+.okol-tabela th:nth-child(2),
+.okol-tabela td:nth-child(2) {
+  width: 64px;
+}
+.okol-tabela th:nth-child(3),
+.okol-tabela td:nth-child(3) {
+  width: 28%;
+}
+.okol-prawo {
+  text-align: right !important;
+  padding-right: 0 !important;
+  width: 72px;
+}
+.okol-warstwa-nazwa {
+  display: block;
+  font-weight: 500;
+  font-size: 15px;
+}
+.okol-warstwa-wartosc {
+  display: block;
+  margin-top: 2px;
+  font-size: 13px;
+  color: var(--tekst);
+}
+.okol-zrodlo {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--tekst-3);
+}
+.okol-zrodlo .okol-rozdz {
+  display: block;
+}
+.okol-zrodlo .atrapa {
+  display: inline-block;
+  margin-top: 2px;
+}
+.okol-ocena {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.okol-ocena .okol-pasek {
+  flex: 1;
+}
+
+/* Na co dzień */
+.okol-codzien {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.okol-fakty {
+  margin: 0;
+}
+.okol-fakt {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--linia);
+  font-size: 15px;
+}
+.okol-fakt dt {
+  color: var(--tekst-2);
+}
+.okol-fakt dd {
+  margin: 0;
+  font-weight: 500;
+  text-align: right;
+}
+.okol-przypis {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--tekst-3);
+}
+
+/* Telefon: etykieta i wynik w pierwszym ekranie, dlatego drabinka obok pierścienia. */
+@media (max-width: 860px) {
+  .okol-naglowek {
+    padding: 16px;
+    gap: 14px;
+  }
+  .okol-h1 {
+    font-size: 24px;
+  }
+  .okol-wynik {
+    flex-wrap: nowrap;
+    gap: 14px;
+    align-items: flex-start;
+  }
+  .okol-etykieta {
+    width: 52%;
+    min-width: 0;
+  }
+  .okol-etykieta-wiersz {
+    height: 28px;
+  }
+  .okol-liczba {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    min-width: 0;
+  }
+  .okol-pierscien {
+    width: 104px;
+    height: 104px;
+  }
+  .okol-pierscien-srodek {
+    width: 80px;
+    height: 80px;
+  }
+  .okol-pierscien-wartosc {
+    font-size: 28px;
+  }
+  .okol-pewnosc {
+    min-width: 0;
+    width: 100%;
+    font-size: 13px;
+  }
+  .okol-kat {
+    grid-template-columns: minmax(0, 1fr) 90px 56px;
+    gap: 8px;
+    font-size: 14px;
+  }
+  .okol-dwie {
+    grid-template-columns: 1fr;
+  }
+}
