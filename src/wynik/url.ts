@@ -78,20 +78,31 @@ function odkoduj(tekst: string): string | null {
   }
 }
 
+/**
+ * Prostokąt (Małopolska), w którym punkt trybu „Biznes” jest dozwolony. Poza nim link go odrzuca,
+ * a dane o popycie i punktach i tak się kończą – stąd jedno miejsce prawdy dla linku, formularza
+ * współrzędnych i przeciągania znaczników.
+ */
+export const GRANICE_PUNKTU = { lonMin: 19.3, lonMax: 20.8, latMin: 49.7, latMax: 50.5 } as const
+
+export function wGranicachPunktu(lon: number, lat: number): boolean {
+  return (
+    Number.isFinite(lon) &&
+    Number.isFinite(lat) &&
+    lon >= GRANICE_PUNKTU.lonMin &&
+    lon <= GRANICE_PUNKTU.lonMax &&
+    lat >= GRANICE_PUNKTU.latMin &&
+    lat <= GRANICE_PUNKTU.latMax
+  )
+}
+
 function czytajPunkt(tekst: string | null): { lon: number; lat: number } | null {
   if (!tekst) return null
   const czesci = tekst.split(',')
   if (czesci.length !== 2) return null
   const lon = Number(czesci[0])
   const lat = Number(czesci[1])
-  return Number.isFinite(lon) &&
-    Number.isFinite(lat) &&
-    lon >= 19.3 &&
-    lon <= 20.8 &&
-    lat >= 49.7 &&
-    lat <= 50.5
-    ? { lon, lat }
-    : null
+  return wGranicachPunktu(lon, lat) ? { lon, lat } : null
 }
 
 export function czytajHash(hash: string): StanUrl {
