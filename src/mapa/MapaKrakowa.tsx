@@ -15,7 +15,7 @@ import {
 } from 'maplibre-gl'
 import adresWorkera from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import { Protocol } from 'pmtiles'
-import { type JSX, type ReactNode, useEffect, useId, useRef, useState } from 'react'
+import { type JSX, lazy, type ReactNode, Suspense, useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import {
   type Geometria,
@@ -63,6 +63,8 @@ import {
   W_WYKLUCZONY,
   wszystkieWykluczone,
 } from '@/mapa/wykluczenie'
+import { odlegloscM } from '@/miasto3d/laczenie'
+import { trybLekki } from '@/wynik/lekki'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import './mapa.css'
 
@@ -105,6 +107,8 @@ export interface MapaKrakowaProps {
   wyroznione?: ReadonlySet<string>
   /** Środek widoku po każdym ruchu kamery – np. do stawiania obiektu z klawiatury. */
   onWidok?: (lon: number, lat: number) => void
+  /** Budynki 3D przy dużym zoomie albo przy wybranym adresie (mapa główna). */
+  widok3d?: boolean
 }
 
 const BRAK_WYKLUCZONYCH: ReadonlySet<string> = new Set()
@@ -126,6 +130,13 @@ const GRANICE_WIDOKU: [[number, number], [number, number]] = [
 ]
 
 export { STYL } from '@/mapa/podklad'
+
+// Budynki 3D (deck.gl) pobierane dopiero przy dużym zoomie albo po wybraniu adresu.
+const Warstwa3D = lazy(() => import('@/miasto3d/Warstwa3D'))
+/** Od tego zoomu mapa sama przechodzi w 3D (bez wybranego adresu). */
+const ZOOM_3D = 16
+/** Środek okolicy 3D przesuwa się za widokiem, gdy ten odjedzie dalej niż tyle metrów. */
+const PRZESUNIECIE_3D_M = 300
 
 // Brak danych trzymamy w feature-state jako -1, bo stan nie odróżnia null od nieustawionego.
 const WARTOSC: ExpressionSpecification = ['coalesce', ['feature-state', 'w'], -1]
@@ -221,6 +232,7 @@ export function MapaKrakowa({
   obiekty,
   wyroznione,
   onWidok,
+  widok3d = false,
 }: MapaKrakowaProps): JSX.Element {
   const kontener = useRef<HTMLDivElement>(null)
   const mapaRef = useRef<MapaLibre | null>(null)
@@ -253,6 +265,8 @@ export function MapaKrakowa({
     !wybrany && introDoPokazania() ? 'polska' : 'miasto',
   )
   const etapRef = useRef(etap)
+  const [srodek3d, setSrodek3d] = useState<[number, number] | null>(null)
+  const [bezLekkiego] = useState(() => !trybLekki())
   const pauzaRef = useRef<number | null>(null)
 
   useEffect(() => {
@@ -286,6 +300,14 @@ export function MapaKrakowa({
     mapa.addControl(new AttributionControl(), 'bottom-right')
     mapa.addControl(new NavigationControl({ showCompass: false }), 'bottom-right')
     setLegenda(kontrolkaLegendy.el)
+
+    mapa.on('moveend', () => {
+      if (mapa.getZoom() < ZOOM_3D) return setSrodek3d(null)
+      const c = mapa.getCenter()
+      setSrodek3d((p) =>
+        p && odlegloscM(p[0], p[1], c.lng, c.lat) < PRZESUNIECIE_3D_M ? p : [c.lng, c.lat],
+      )
+    })
 
     const dymek = new Popup({ closeButton: false, closeOnClick: false, className: 'mapa-dymek' })
     dymekRef.current = dymek
@@ -779,6 +801,20 @@ export function MapaKrakowa({
           </details>
         </div>
       )}
+      {widok3d &&
+        bezLekkiego &&
+        gotowa &&
+        etap === 'miasto' &&
+        mapaRef.current &&
+        (wybrany || srodek3d) && (
+          <Suspense fallback={null}>
+            <Warstwa3D
+              mapa={mapaRef.current}
+              lon={wybrany?.lon ?? (srodek3d as [number, number])[0]}
+              lat={wybrany?.lat ?? (srodek3d as [number, number])[1]}
+            />
+          </Suspense>
+        )}
       {etap !== 'miasto' && (
         <IntroPolski
           lot={etap === 'lot'}

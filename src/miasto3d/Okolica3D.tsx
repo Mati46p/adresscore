@@ -55,7 +55,7 @@ const SWIATLO_STALE = new LightingEffect({
 })
 
 /** Światło od słońca o wybranej chwili; w nocy tylko przygaszone rozproszone. */
-function efektSwiatla(s: Swiatlo | null): LightingEffect {
+export function efektSwiatla(s: Swiatlo | null): LightingEffect {
   if (!s) return SWIATLO_STALE
   if (s.noc) {
     return new LightingEffect({
@@ -76,7 +76,7 @@ function efektSwiatla(s: Swiatlo | null): LightingEffect {
 }
 
 /** Kwadrat ok. 1,4 km wokół adresu: przezroczysta ziemia, na którą padają cienie. */
-function ziemia(lon: number, lat: number): [number, number][] {
+export function ziemia(lon: number, lat: number): [number, number][] {
   const dLat = 700 / 111_320
   const dLon = dLat / Math.cos(lat * (Math.PI / 180))
   return [
@@ -340,7 +340,7 @@ function Scena({
   )
 }
 
-function warstwy(budynki: BudynekOkolicy[], wybrany: BudynekOkolicy | null) {
+export function warstwy(budynki: BudynekOkolicy[], wybrany: BudynekOkolicy | null) {
   const jestWybrany = wybrany !== null
   return [
     new SolidPolygonLayer<BudynekOkolicy>({
@@ -381,7 +381,7 @@ function warstwy(budynki: BudynekOkolicy[], wybrany: BudynekOkolicy | null) {
   ]
 }
 
-function dymek({ object, layer }: PickingInfo<BudynekOkolicy | Pozwolenie>) {
+export function dymek({ object, layer }: PickingInfo<BudynekOkolicy | Pozwolenie>) {
   if (!object) return null
   if (layer?.id === 'pozwolenia') {
     return { text: dymekPozwolenia(object as Pozwolenie), className: 'm3d-dymek' }
