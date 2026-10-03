@@ -6,6 +6,7 @@ import { przygotujEkran } from './ladowanieEkranow'
 const KROKI: { ekran: Ekran; etykieta: string }[] = [
   { ekran: 'szukaj', etykieta: 'Szukaj' },
   { ekran: 'katalog', etykieta: 'Katalog adresów' },
+  { ekran: 'biznes', etykieta: 'Dla biznesu' },
   { ekran: 'porownanie', etykieta: 'Porównanie' },
 ]
 
@@ -23,7 +24,10 @@ export function Naglowek() {
         {KROKI.map((k) => (
           <a
             key={k.ekran}
-            href={hrefDla(stan, { ekran: k.ekran })}
+            href={hrefDla(stan, {
+              ekran: k.ekran,
+              ...(k.ekran === 'biznes' ? { tryb: 'biznes' } : {}),
+            })}
             onMouseEnter={() => przygotujEkran(k.ekran)}
             onFocus={() => przygotujEkran(k.ekran)}
             className="krok"

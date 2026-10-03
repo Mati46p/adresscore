@@ -6,6 +6,47 @@
   min-height: var(--cel-dotyku);
   font-size: 15px;
 }
+.okol-wybor-trybu {
+  display: grid;
+  gap: 16px;
+}
+.okol-wybor-trybu__opcje {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.okol-wybor-trybu__opcje button {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  min-height: 120px;
+  padding: 16px;
+  border: 2px solid var(--linia);
+  border-radius: 16px;
+  background: var(--powierzchnia);
+  color: var(--tekst);
+  text-align: left;
+  cursor: pointer;
+}
+.okol-wybor-trybu__opcje button[aria-pressed="true"] {
+  border-color: var(--akcent);
+  background: #e3eee8;
+}
+.okol-wybor-trybu__opcje strong {
+  font-size: 17px;
+}
+.okol-wybor-trybu__opcje span {
+  color: var(--tekst-2);
+  line-height: 1.35;
+}
+@media (max-width: 650px) {
+  .okol-wybor-trybu__opcje {
+    grid-template-columns: 1fr;
+  }
+  .okol-wybor-trybu__opcje button {
+    min-height: 0;
+  }
+}
 .okol-h1 {
   margin: 0;
   font-size: 36px;

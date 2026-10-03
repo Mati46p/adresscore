@@ -13,6 +13,7 @@ import {
   wagaUzytkownika,
 } from '@/wynik/silnik'
 import {
+  przejdz,
   useStan,
   ustawFiltr,
   ustawKierunek,
@@ -41,7 +42,7 @@ const OPIS_TRYBU: Record<Tryb, string> = {
   wynajmuje:
     'Mocniej liczy się dojazd (waga +1), słabiej przyszłość okolicy (waga −1). Szacunek czynszu: wkrótce – nie mamy jeszcze danych o najmie.',
   biznes:
-    'Sklep spożywczy: dalej od istniejącego sklepu i więcej stałych mieszkańców w polu 1 km² z NSP 2021 to wyższy wynik. Liczba mieszkańców nie mierzy ruchu pieszych ani sprzedaży.',
+    'Wybierz branżę na mapie biznesowej. Model zestawia punkty usługowe z OpenStreetMap z liczbą adresów, mieszkańców NSP 2021 i dostępnością transportu.',
 }
 
 // Panel pamięta ostatni wybrany profil, żeby „Przywróć wagi profilu" działało po ręcznej
@@ -152,7 +153,10 @@ export function PanelFiltrow() {
               type="button"
               className="opt panel-kafel"
               aria-pressed={tryb === t.id}
-              onClick={() => ustawTryb(t.id)}
+              onClick={() => {
+                ustawTryb(t.id)
+                if (t.id === 'biznes') przejdz('biznes')
+              }}
             >
               <span className="panel-kafel-tytul">{t.nazwa}</span>
               <span className="panel-kafel-opis">{t.opis}</span>

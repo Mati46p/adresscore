@@ -3,8 +3,16 @@ import { liczba, opisAdresu } from '@/karta/adres'
 import { KATEGORIE, type KategoriaId } from '@/kontrakty'
 import { Sekcja3D } from '@/miasto3d/Sekcja3D'
 import { useDane } from '@/wynik/dane'
+import { TRYBY } from '@/wynik/persony'
 import type { RozbicieWarstwy, WynikAdresu } from '@/wynik/silnik'
-import { dodajDoPorownania, hrefDla, przejdz, useStan } from '@/wynik/stan'
+import {
+  dodajDoPorownania,
+  hrefDla,
+  przejdz,
+  useStan,
+  ustawPunktBiznesu,
+  ustawTryb,
+} from '@/wynik/stan'
 import { useWynikAdresu } from '@/wynik/useWyniki'
 import { Etykieta } from './Etykieta'
 import type { LiteraEtykiety } from './kolory'
@@ -74,6 +82,31 @@ export function EkranOkolica() {
         miejsce={adres.dzielnica ? `Dzielnica ${adres.dzielnica}` : `Gmina ${adres.gmina}`}
         atrapa={atrapa}
       />
+
+      <section className="karta okol-wybor-trybu" aria-labelledby="h-wybor-trybu">
+        <h2 id="h-wybor-trybu" className="okol-h2">
+          Pod jakim kątem oceniasz ten adres?
+        </h2>
+        <div className="okol-wybor-trybu__opcje">
+          {TRYBY.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              aria-pressed={stan.tryb === t.id}
+              onClick={() => {
+                ustawTryb(t.id)
+                if (t.id === 'biznes') {
+                  ustawPunktBiznesu('a', { lon: adres.lon, lat: adres.lat })
+                  przejdz('biznes')
+                }
+              }}
+            >
+              <strong>{t.nazwa}</strong>
+              <span>{t.opis}</span>
+            </button>
+          ))}
+        </div>
+      </section>
 
       <section aria-labelledby="h-kategorie" className="karta">
         <h2 id="h-kategorie" className="okol-h2">

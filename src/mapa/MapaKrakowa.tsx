@@ -72,9 +72,16 @@ export interface MapaKrakowaProps {
   onKlik?: (lon: number, lat: number) => void
   /** h3 r10 wykluczone twardym filtrem (#37) – rysowane inaczej niż brak danych. */
   wykluczone?: ReadonlySet<string>
+  punktyUslug?: readonly { lon: number; lat: number; nazwa: string }[]
+  postawionePunkty?: readonly { id: 'a' | 'b'; lon: number; lat: number }[]
+  onPrzesunPunkt?: (id: 'a' | 'b', lon: number, lat: number) => void
+  opisHeksu?: (h3: string, res: number, wartosc: number | null) => string
+  etykietySkali?: readonly [string, string, string]
 }
 
 const BRAK_WYKLUCZONYCH: ReadonlySet<string> = new Set()
+const BRAK_PUNKTOW: readonly { lon: number; lat: number; nazwa: string }[] = []
+const BRAK_POSTAWIONYCH: readonly { id: 'a' | 'b'; lon: number; lat: number }[] = []
 
 // MapLibre 6 szuka workera obok własnego pliku (import.meta.url). Po pre-bundlingu Vite i w buildzie
 // tego pliku tam nie ma (404, mapa bez kafli), więc Vite pakuje worker osobno i podajemy jego adres.
@@ -166,6 +173,11 @@ export function MapaKrakowa({
   wybrany,
   onKlik,
   wykluczone = BRAK_WYKLUCZONYCH,
+  punktyUslug = BRAK_PUNKTOW,
+  postawionePunkty = BRAK_POSTAWIONYCH,
+  onPrzesunPunkt,
+  opisHeksu,
+  etykietySkali = ['0', '50', '100'],
 }: MapaKrakowaProps): JSX.Element {
   const kontener = useRef<HTMLDivElement>(null)
   const mapaRef = useRef<MapaLibre | null>(null)
@@ -173,6 +185,9 @@ export function MapaKrakowa({
   const znacznikRef = useRef<Marker | null>(null)
   const podpisMglyRef = useRef<Marker | null>(null)
   const dymekRef = useRef<Popup | null>(null)
+  const biznesMarkeryRef = useRef<Marker[]>([])
+  const opisHeksuRef = useRef(opisHeksu)
+  const onPrzesunPunktRef = useRef(onPrzesunPunkt)
   const onKlikRef = useRef(onKlik)
   const wybranyRef = useRef(wybrany)
   const [gotowa, setGotowa] = useState(false)
@@ -196,6 +211,8 @@ export function MapaKrakowa({
 
   useEffect(() => {
     onKlikRef.current = onKlik
+    opisHeksuRef.current = opisHeksu
+    onPrzesunPunktRef.current = onPrzesunPunkt
     wybranyRef.current = wybrany
     etapRef.current = etap
   })
@@ -292,13 +309,34 @@ export function MapaKrakowa({
           if (f?.id === undefined) return
           mapa.getCanvas().style.cursor = 'pointer'
           const w = mapa.getFeatureState({ source: id, id: f.id }).w as number | undefined
-          dymek.setLngLat(e.lngLat).setText(podpisHeksu(w, res)).addTo(mapa)
+          const opis = opisHeksuRef.current?.(String(f.id), res, w ?? null) ?? podpisHeksu(w, res)
+          dymek.setLngLat(e.lngLat).setText(opis).addTo(mapa)
         })
         mapa.on('mouseleave', id, () => {
           mapa.getCanvas().style.cursor = ''
           dymek.remove()
         })
       }
+      mapa.addSource('punkty-uslug', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] },
+      })
+      mapa.addLayer({
+        id: 'punkty-uslug',
+        type: 'circle',
+        source: 'punkty-uslug',
+        paint: {
+          'circle-radius': 4,
+          'circle-color': '#8b4a26',
+          'circle-stroke-color': '#fff',
+          'circle-stroke-width': 1,
+        },
+      })
+      mapa.on('mouseenter', 'punkty-uslug', (e) => {
+        const nazwa = e.features?.[0]?.properties?.nazwa
+        if (nazwa) dymek.setLngLat(e.lngLat).setText(String(nazwa)).addTo(mapa)
+      })
+      mapa.on('mouseleave', 'punkty-uslug', () => dymek.remove())
       mapa.addLayer({
         id: 'mgla',
         type: 'fill',
@@ -339,6 +377,7 @@ export function MapaKrakowa({
       if (mapaRef.current === mapa) mapaRef.current = null
       geometriaRef.current = null
       znacznikRef.current = null
+      biznesMarkeryRef.current = []
       podpisMglyRef.current = null
       if (pauzaRef.current !== null) clearTimeout(pauzaRef.current)
       pauzaRef.current = null
@@ -482,6 +521,46 @@ export function MapaKrakowa({
     }
   }, [lon, lat])
 
+  useEffect(() => {
+    if (!gotowa) return
+    const mapa = mapaRef.current
+    const zrodlo = mapa?.getSource<GeoJSONSource>('punkty-uslug')
+    zrodlo?.setData({
+      type: 'FeatureCollection',
+      features: punktyUslug.map((p) => ({
+        type: 'Feature',
+        properties: { nazwa: p.nazwa || 'Punkt usługowy' },
+        geometry: { type: 'Point', coordinates: [p.lon, p.lat] },
+      })),
+    })
+  }, [gotowa, punktyUslug])
+
+  useEffect(() => {
+    for (const marker of biznesMarkeryRef.current) marker.remove()
+    biznesMarkeryRef.current = []
+    const mapa = mapaRef.current
+    if (!gotowa || !mapa) return
+    for (const punkt of postawionePunkty) {
+      const el = document.createElement('div')
+      el.className = 'mapa-punkt-biznesu'
+      el.textContent = punkt.id.toUpperCase()
+      el.setAttribute('role', 'img')
+      el.setAttribute('aria-label', 'Postawione miejsce ' + punkt.id.toUpperCase())
+      const marker = new Marker({ element: el, draggable: true })
+        .setLngLat([punkt.lon, punkt.lat])
+        .addTo(mapa)
+      marker.on('dragend', () => {
+        const ll = marker.getLngLat()
+        onPrzesunPunktRef.current?.(punkt.id, ll.lng, ll.lat)
+      })
+      biznesMarkeryRef.current.push(marker)
+    }
+    return () => {
+      for (const marker of biznesMarkeryRef.current) marker.remove()
+      biznesMarkeryRef.current = []
+    }
+  }, [gotowa, postawionePunkty])
+
   function zakonczIntro() {
     if (pauzaRef.current !== null) clearTimeout(pauzaRef.current)
     pauzaRef.current = null
@@ -594,9 +673,9 @@ export function MapaKrakowa({
               style={{ background: gradientCss(), opacity: (KRYCIE_DANYCH * krycieHeksow) / 100 }}
             />
             <div className="mapa-legenda__skala" aria-hidden="true">
-              <span>0</span>
-              <span>50</span>
-              <span>100</span>
+              {etykietySkali.map((t) => (
+                <span key={t}>{t}</span>
+              ))}
             </div>
             <div className="mapa-legenda__wiersz">
               <span

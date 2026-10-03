@@ -12,6 +12,9 @@ import { Naglowek } from './Naglowek'
 const EkranOkolica = lazy(async () => ({ default: (await ladujOkolice()).EkranOkolica }))
 const EkranPorownanie = lazy(async () => ({ default: (await ladujPorownanie()).EkranPorownanie }))
 const Metoda = lazy(async () => ({ default: (await ladujMetode()).Metoda }))
+const EkranBiznes = lazy(async () => ({
+  default: (await import('./biznes/EkranBiznes')).EkranBiznes,
+}))
 
 /** Powłoka: nagłówek z krokami i ekran wybrany przez hash (#/, #/adres/<id>, #/porownanie). */
 export function Aplikacja() {
@@ -36,9 +39,11 @@ function Powloka() {
         ? 'Porównanie'
         : ekran === 'metoda'
           ? 'Metoda i źródła'
-          : ekran === 'katalog'
-            ? 'Katalog adresów Krakowa'
-            : 'Szukaj okolicy'
+          : ekran === 'biznes'
+            ? 'Miejsce na biznes'
+            : ekran === 'katalog'
+              ? 'Katalog adresów Krakowa'
+              : 'Szukaj okolicy'
 
   // Przejście = inny ekran albo, na karcie, inny adres. Klik w mapę na Szukaj niczego nie resetuje.
   const klucz = ekran === 'okolica' ? `okolica:${wybrany}` : ekran
@@ -125,6 +130,7 @@ function Powloka() {
         {ekran === 'okolica' && <EkranOkolica />}
         {ekran === 'porownanie' && <EkranPorownanie />}
         {ekran === 'metoda' && <Metoda />}
+        {ekran === 'biznes' && <EkranBiznes />}
       </Suspense>
     </>
   )

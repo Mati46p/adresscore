@@ -105,7 +105,7 @@ export const TRYBY: readonly { id: Tryb; nazwa: string; opis: string }[] = [
   {
     id: 'biznes',
     nazwa: 'Miejsca do założenia biznesu',
-    opis: 'Sklep spożywczy: konkurencja i liczba mieszkańców',
+    opis: 'Wybierz branżę: konkurencja i lokalny popyt',
   },
 ]
 

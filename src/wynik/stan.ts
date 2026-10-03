@@ -46,6 +46,9 @@ export interface StanAplikacji {
   ostatniaWarstwa: string | null
   /** Twarde filtry: adres, który ich nie spełnia, jest wykluczony (nie dostaje kary w wyniku). */
   filtry: readonly TwardyFiltr[]
+  branza: string
+  punktA: { lon: number; lat: number } | null
+  punktB: { lon: number; lat: number } | null
 }
 
 let stan: StanAplikacji = {
@@ -60,6 +63,9 @@ let stan: StanAplikacji = {
   trybMapy: 'suma',
   ostatniaWarstwa: null,
   filtry: [],
+  branza: 'sklep',
+  punktA: null,
+  punktB: null,
 }
 
 const sluchacze = new Set<() => void>()
@@ -212,7 +218,15 @@ export function pokazOkolice(i: number) {
 }
 
 export function przejdz(ekran: Ekran) {
-  zmien({ ekran })
+  zmien({ ekran, ...(ekran === 'biznes' ? { tryb: 'biznes' as const } : {}) })
+}
+
+export function ustawBranze(branza: string) {
+  zmien({ branza, punktA: null, punktB: null })
+}
+
+export function ustawPunktBiznesu(id: 'a' | 'b', punkt: { lon: number; lat: number } | null) {
+  zmien(id === 'a' ? { punktA: punkt } : { punktB: punkt })
 }
 
 export function dodajDoPorownania(i: number) {
@@ -326,6 +340,9 @@ function zUrl(url: StanUrl): Partial<StanAplikacji> {
     wybrany: url.ekran === 'okolica' ? wybrany : stan.wybrany,
     porownanie: url.porownanie.map((id) => indeksPoId.get(id)).filter((i) => i !== undefined),
     filtry: url.filtry,
+    branza: url.branza ?? 'sklep',
+    punktA: url.punktA ?? null,
+    punktB: url.punktB ?? null,
   }
 }
 
@@ -361,6 +378,9 @@ function doUrl(s: StanAplikacji): StanUrl {
     ustawienia:
       s.persona === 'wlasna' ? { wagi: { ...s.wagi }, kierunki: { ...s.kierunki } } : null,
     filtry: [...s.filtry],
+    branza: s.branza,
+    punktA: s.punktA,
+    punktB: s.punktB,
   }
 }
 
@@ -394,6 +414,7 @@ function sciezkaStanu(s: StanAplikacji): string {
     if (slug) return `/adres/${slug}`
   }
   if (s.ekran === 'katalog') return '/katalog'
+  if (s.ekran === 'biznes') return '/' + zapiszHash(doUrl(s))
   return `/${zapiszHash(doUrl(s))}`
 }
 
@@ -431,6 +452,7 @@ if (typeof window !== 'undefined') {
   stan = { ...stan, ekran: startowy.ekran }
   if (startowy.persona) stan = { ...stan, persona: startowy.persona }
   if (startowy.tryb) stan = { ...stan, tryb: startowy.tryb }
+  if (startowy.ekran === 'biznes') stan = { ...stan, tryb: 'biznes' }
   stan = { ...stan, filtry: startowy.filtry }
   const odczytajZmianeUrl = () => {
     const url = czytajBiezacyUrl()
