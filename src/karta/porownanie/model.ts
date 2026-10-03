@@ -1,4 +1,5 @@
 import type { KategoriaId } from '../../kontrakty/index.ts'
+import type { RozbicieWarstwy } from '../../wynik/silnik.ts'
 
 // Strukturalnie zgodne z WynikAdresu z silnika; moduł porównania nie wymaga jego uruchomienia.
 export interface KategoriaPorownania {
@@ -13,7 +14,7 @@ export interface WynikPorownania {
   litera: string | null
   pewnosc: number
   kategorie: readonly KategoriaPorownania[]
-  warstwy: readonly { meta: { atrapa?: boolean } }[]
+  warstwy: readonly RozbicieWarstwy[]
 }
 
 export interface OkolicaPorownania {
@@ -32,6 +33,11 @@ export const OSIE: readonly KategoriaId[] = [
   'przyszlosc',
   'bezpieczenstwo',
 ]
+
+/** Widoczne w porównaniu są wszystkie warstwy z wagą wybraną w preferencjach. */
+export function wybraneWarstwy(wynik: WynikPorownania): readonly RozbicieWarstwy[] {
+  return wynik.warstwy.filter((w) => w.wagaUzytkownika > 0)
+}
 
 export function priorytety(okolicy: readonly OkolicaPorownania[]): Record<KategoriaId, number> {
   const pierwsza = okolicy[0]?.wynik.kategorie ?? []

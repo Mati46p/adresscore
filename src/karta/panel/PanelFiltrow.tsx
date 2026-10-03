@@ -1,4 +1,5 @@
 import { useEffect, useId, useState } from 'react'
+import { FiltrWyborczy } from '@/karta/FiltrWyborczy'
 import { KATEGORIE, type KategoriaId, type WskaznikMeta } from '@/kontrakty'
 import { useDane } from '@/wynik/dane'
 import { opisFiltru, type TwardyFiltr, type Warunek } from '@/wynik/filtry'
@@ -25,6 +26,7 @@ import {
   wyczyscFiltry,
 } from '@/wynik/stan'
 import { useWyniki } from '@/wynik/useWyniki'
+import { czyWarstwaWyborow } from '@/wynik/wybory'
 import './panel.css'
 import { etykietaKierunku, kierunkiWarstwy } from './preferencje'
 
@@ -235,8 +237,11 @@ export function PanelFiltrow() {
 
         {dane.stan === 'ladowanie' && <p className="panel-uwaga">Wczytuję warstwy…</p>}
         {dane.stan === 'blad' && <p className="panel-uwaga">Nie udało się wczytać warstw.</p>}
+        <FiltrWyborczy />
         {KOLEJNOSC_KATEGORII.map((kat, i) => {
-          const warstwy = warstwyPanelu.filter((w) => w.meta.kategoria === kat)
+          const warstwy = warstwyPanelu.filter(
+            (w) => w.meta.kategoria === kat && !czyWarstwaWyborow(w.meta.id),
+          )
           if (warstwy.length === 0) return null
           return (
             <GrupaWarstw

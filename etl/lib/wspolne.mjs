@@ -59,7 +59,7 @@ export function wersjaAdresow(kolumny) {
  * Zapisuje wskaźnik po walidacji kontraktu. wartosci[i] dotyczy adresy[i]; null = brak danych.
  * Rzuca błąd przy złej długości, NaN, nieznanej kategorii – lepiej teraz niż na karcie.
  */
-export function zapiszWskaznik(meta, wartosci, etykiety) {
+export function zapiszWskaznik(meta, wartosci, etykiety, slownikEtykiet) {
   const { wersja, adresy } = wczytajAdresy()
   const bledy = []
   if (!/^[a-z0-9_]+$/.test(meta.id ?? '')) bledy.push('id: snake_case')
@@ -77,11 +77,14 @@ export function zapiszWskaznik(meta, wartosci, etykiety) {
   if (wartosci.some((v) => v !== null && !Number.isFinite(v)))
     bledy.push('wartosci: tylko liczby albo null')
   if (etykiety && etykiety.length !== adresy.length) bledy.push('etykiety: długość jak adresy')
+  if (slownikEtykiet && etykiety?.some((e) => e !== null && !slownikEtykiet[e]))
+    bledy.push('etykiety: brak wpisu w słowniku')
   if (bledy.length) throw new Error(`Wskaźnik ${meta.id}: ${bledy.join('; ')}`)
 
   const zaokr = (v) => (v === null ? null : Math.round(v * 100) / 100)
   const plik = { meta, wersjaAdresow: wersja, wartosci: wartosci.map(zaokr) }
   if (etykiety) plik.etykiety = etykiety
+  if (slownikEtykiet) plik.slownikEtykiet = slownikEtykiet
   const cel = join(DANE, 'wskazniki', `${meta.id}.json`)
   mkdirSync(dirname(cel), { recursive: true })
   writeFileSync(cel, JSON.stringify(plik))

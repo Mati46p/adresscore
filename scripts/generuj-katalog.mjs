@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { gzipSync } from 'node:zlib'
 import { hashAdresu, kluczUlicy, slugAdresu, slugUlicy } from '../src/wynik/slug.ts'
 
@@ -7,6 +7,11 @@ const zrodlo = JSON.parse(
   readFileSync(new URL('../public/dane/adresy.json', import.meta.url), 'utf8'),
 )
 const c = zrodlo.kolumny
+mkdirSync(new URL('../public/katalog/', import.meta.url), { recursive: true })
+writeFileSync(
+  new URL('../public/katalog/wersja.json', import.meta.url),
+  JSON.stringify({ wersjaAdresow: zrodlo.wersja }),
+)
 const adresy = []
 const ulice = new Map()
 const hashe = new Set()

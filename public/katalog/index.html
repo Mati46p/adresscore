@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Katalog adresów w Krakowie i okolicznych gminach." />
+    <link rel="stylesheet" href="/katalog/katalog.css" />
+    <title>Katalog adresów – adresscore</title>
+  </head>
+  <body>
+    <header class="naglowek">
+      <a href="/#/" class="marka">⬡ adresscore</a>
+      <a href="/#/">Mapa i filtry</a>
+    </header>
+    <main>
+      <div class="wstep">
+        <p class="etykieta">KATALOG ADRESÓW</p>
+        <h1>Znajdź adres</h1>
+        <p>Wyszukaj ulicę, miejscowość lub numer. Otwórz kartę adresu, aby zobaczyć dane o okolicy.</p>
+      </div>
+      <form id="filtry" role="search">
+        <label for="szukaj">Adres</label>
+        <input id="szukaj" type="search" placeholder="Np. Długa 12, Kraków" autocomplete="off" />
+        <label for="gmina">Gmina</label>
+        <select id="gmina"><option value="">Wszystkie gminy</option></select>
+      </form>
+      <p id="stan" role="status">Wczytywanie adresów…</p>
+      <ul id="wyniki" aria-label="Znalezione adresy"></ul>
+      <nav id="strony" aria-label="Strony wyników" hidden>
+        <button id="poprzednia" type="button">← Poprzednia</button>
+        <span id="strona"></span>
+        <button id="nastepna" type="button">Następna →</button>
+      </nav>
+    </main>
+    <script type="module" src="/katalog/katalog.js"></script>
+  </body>
+</html>

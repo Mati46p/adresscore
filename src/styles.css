@@ -228,8 +228,26 @@ a:hover {
 }
 .pasek-warstw {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+}
+.pasek-warstw label {
+  color: var(--tekst-2);
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.pasek-warstw select {
+  width: min(100%, 460px);
+  min-width: 0;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid var(--ramka);
+  border-radius: 10px;
+  background: var(--powierzchnia);
+  color: var(--tekst);
+  font: inherit;
 }
 .slot-mapy {
   position: relative;
@@ -281,23 +299,10 @@ a:hover {
     padding: 20px 16px;
   }
   .pasek-warstw {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    scroll-snap-type: x proximity;
-    scrollbar-width: none;
-    /* Przycięcie przy prawej krawędzi sygnalizuje, że pasek się przewija. */
-    mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
-    /* Zapas wokół przycisków, żeby overflow nie uciął obrysu fokusu. */
-    padding: 4px 28px 4px 4px;
-    margin: -4px;
+    padding: 0;
   }
-  .pasek-warstw::-webkit-scrollbar {
-    display: none;
-  }
-  .pasek-warstw .seg {
-    flex: none;
-    scroll-snap-align: start;
-    white-space: nowrap;
+  .pasek-warstw select {
+    flex: 1;
   }
   .slot-mapy {
     flex: none;
