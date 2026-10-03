@@ -167,16 +167,19 @@ export function zapiszHash(s: StanUrl): string {
     if (s.symulacja.a) parametry.set('a', s.symulacja.a)
     if (s.symulacja.b) parametry.set('b', s.symulacja.b)
   }
-  const q = parametry
-    .toString()
-    .replaceAll('%2C', ',')
-    .replaceAll('%3A', ':')
-    .replaceAll('%3B', ';')
+  // Parametry biznesu muszą trafić do `parametry` PRZED zbudowaniem `q`. Wcześniej `q` powstawało
+  // pierwsze, więc `#/biznes?b=apteka&a=…&c=…` zapisywał się jako `#/biznes` i link z punktami
+  // ginął przy pierwszej zmianie stanu (odświeżenie strony gubiło branżę i oba punkty).
   if (s.ekran === 'biznes') {
     parametry.set('b', s.branza ?? 'sklep')
     if (s.punktA) parametry.set('a', s.punktA.lon.toFixed(6) + ',' + s.punktA.lat.toFixed(6))
     if (s.punktB) parametry.set('c', s.punktB.lon.toFixed(6) + ',' + s.punktB.lat.toFixed(6))
   }
+  const q = parametry
+    .toString()
+    .replaceAll('%2C', ',')
+    .replaceAll('%3A', ':')
+    .replaceAll('%3B', ';')
   return `#${sciezka}${q ? `?${q}` : ''}`
 }
 
