@@ -13,7 +13,7 @@ import {
   setWorkerUrl,
 } from 'maplibre-gl'
 import adresWorkera from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
-import { type JSX, useEffect, useRef, useState } from 'react'
+import { type JSX, useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import {
   type Geometria,
@@ -109,24 +109,40 @@ const WYKLUCZONY = jestWykluczony(WARTOSC)
 const zrodloHeksow = (res: number) => `heksy-r${res}`
 const SZRAFURA = 'szrafura-braku'
 
-/** Widocznosc nakladki nie zmienia danych ani wybranej warstwy wyniku. */
-function ustawWidocznoscHeksow(mapa: MapaLibre, widoczne: boolean) {
+/** Krycie nakladki nie zmienia danych ani wybranej warstwy wyniku. */
+function ustawKrycieHeksow(mapa: MapaLibre, procent: number) {
+  const krycie = procent / 100
+  const widoczne = procent > 0
   const visibility = widoczne ? 'visible' : 'none'
   for (const { res } of POZIOMY) {
     const id = zrodloHeksow(res)
     for (const warstwa of [id, `${id}-szrafura`, `${id}-linia`, `${id}-obrys-braku`]) {
       if (mapa.getLayer(warstwa)) mapa.setLayoutProperty(warstwa, 'visibility', visibility)
     }
+    if (mapa.getLayer(id))
+      mapa.setPaintProperty(id, 'fill-opacity', [
+        '*',
+        krycie,
+        ['case', WYKLUCZONY, KRYCIE_WYKLUCZONEGO, BRAK, KRYCIE_BRAKU, KRYCIE_DANYCH],
+      ])
+    if (mapa.getLayer(`${id}-szrafura`))
+      mapa.setPaintProperty(`${id}-szrafura`, 'fill-opacity', ['case', BRAK, krycie, 0])
+    if (mapa.getLayer(`${id}-linia`))
+      mapa.setPaintProperty(`${id}-linia`, 'line-opacity', 0.45 * krycie)
+    if (mapa.getLayer(`${id}-obrys-braku`))
+      mapa.setPaintProperty(`${id}-obrys-braku`, 'line-opacity', ['case', BRAK, 0.8 * krycie, 0])
   }
   // Mgla i granica zasiegu tez przeslaniaja podklad podczas ogladania ulic.
   for (const warstwa of ['mgla', 'obrys']) {
     if (mapa.getLayer(warstwa)) mapa.setLayoutProperty(warstwa, 'visibility', visibility)
   }
+  if (mapa.getLayer('mgla')) mapa.setPaintProperty('mgla', 'fill-opacity', 0.78 * krycie)
+  if (mapa.getLayer('obrys')) mapa.setPaintProperty('obrys', 'line-opacity', krycie)
   // OSM ma bardziej czytelne nazwy ulic, gdy nie musi pozostawac tlem dla kolorowych heksow.
   if (mapa.getLayer('osm')?.type === 'raster') {
-    mapa.setPaintProperty('osm', 'raster-saturation', widoczne ? -0.7 : 0)
-    mapa.setPaintProperty('osm', 'raster-brightness-min', widoczne ? 0.12 : 0)
-    mapa.setPaintProperty('osm', 'raster-contrast', widoczne ? -0.1 : 0)
+    mapa.setPaintProperty('osm', 'raster-saturation', -0.7 * krycie)
+    mapa.setPaintProperty('osm', 'raster-brightness-min', 0.12 * krycie)
+    mapa.setPaintProperty('osm', 'raster-contrast', -0.1 * krycie)
   }
 }
 
@@ -177,8 +193,9 @@ export function MapaKrakowa({
   const wybranyRef = useRef(wybrany)
   const [gotowa, setGotowa] = useState(false)
   const [legenda, setLegenda] = useState<HTMLElement | null>(null)
-  const [pokazHeksy, setPokazHeksy] = useState(true)
-  const pokazHeksyRef = useRef(pokazHeksy)
+  const [krycieHeksow, setKrycieHeksow] = useState(100)
+  const krycieHeksowRef = useRef(krycieHeksow)
+  const idKrycia = useId()
   // Wejście z wybranym adresem (link, powrót z karty) pomija intro – kamera od razu przy adresie.
   const [etap, setEtap] = useState<Etap>(() =>
     !wybrany && introDoPokazania() ? 'polska' : 'miasto',
@@ -358,18 +375,18 @@ export function MapaKrakowa({
   )
 
   useEffect(() => {
-    pokazHeksyRef.current = pokazHeksy
+    krycieHeksowRef.current = krycieHeksow
     const mapa = mapaRef.current
     if (!mapa || !gotowa) return
-    ustawWidocznoscHeksow(mapa, pokazHeksy)
-    if (legenda) legenda.hidden = !pokazHeksy
+    ustawKrycieHeksow(mapa, krycieHeksow)
+    if (legenda) legenda.hidden = krycieHeksow === 0
     const podpisMgly = podpisMglyRef.current?.getElement()
-    if (podpisMgly) podpisMgly.hidden = !pokazHeksy
-    if (!pokazHeksy) {
+    if (podpisMgly) podpisMgly.hidden = krycieHeksow === 0
+    if (krycieHeksow === 0) {
       mapa.getCanvas().style.cursor = ''
       dymekRef.current?.remove()
     }
-  }, [gotowa, legenda, pokazHeksy])
+  }, [gotowa, legenda, krycieHeksow])
 
   function zastosujHeksy(
     mapa: MapaLibre,
@@ -399,7 +416,7 @@ export function MapaKrakowa({
         el.className = 'mapa-mgla-podpis'
         el.textContent = 'poza Krakowem – brak danych'
         el.setAttribute('aria-hidden', 'true')
-        el.hidden = !pokazHeksyRef.current
+        el.hidden = krycieHeksowRef.current === 0
         // Nad północną krawędzią: na wąskim ekranie bok obszaru bywa tuż przy brzegu mapy.
         const [[minX], [maxX, maxY]] = g.granice
         podpisMglyRef.current = new Marker({ element: el, anchor: 'bottom', offset: [0, -10] })
@@ -514,18 +531,21 @@ export function MapaKrakowa({
       {etap === 'miasto' && (
         <div className="mapa-ustawienia" role="group" aria-label="Ustawienia mapy">
           <span className="mapa-ustawienia__tytul">Ustawienia mapy</span>
-          <button
-            type="button"
-            className="mapa-ustawienia__przelacznik"
-            aria-pressed={pokazHeksy}
-            onClick={() => setPokazHeksy((wartosc) => !wartosc)}
-          >
-            <span className="mapa-ustawienia__znacznik" aria-hidden="true" />
-            Pokaż heksy
-          </button>
-          {!pokazHeksy && (
-            <span className="mapa-ustawienia__podpowiedz">Przeglądaj ulice na mapie</span>
-          )}
+          <label htmlFor={idKrycia}>Krycie heksów</label>
+          <input
+            id={idKrycia}
+            className="mapa-ustawienia__suwak"
+            type="range"
+            min="0"
+            max="100"
+            step="5"
+            value={krycieHeksow}
+            aria-valuetext={`${krycieHeksow}% krycia heksów`}
+            onChange={(e) => setKrycieHeksow(Number(e.currentTarget.value))}
+          />
+          <output htmlFor={idKrycia} className="mapa-ustawienia__wartosc">
+            {krycieHeksow}%
+          </output>
         </div>
       )}
       {etap !== 'miasto' && (
@@ -538,13 +558,13 @@ export function MapaKrakowa({
         />
       )}
       {legenda &&
-        pokazHeksy &&
+        krycieHeksow > 0 &&
         createPortal(
           <>
             <div className="mapa-legenda__tytul">{podpisWarstwy}</div>
             <div
               className="mapa-legenda__pasek"
-              style={{ background: gradientCss(), opacity: KRYCIE_DANYCH }}
+              style={{ background: gradientCss(), opacity: (KRYCIE_DANYCH * krycieHeksow) / 100 }}
             />
             <div className="mapa-legenda__skala" aria-hidden="true">
               <span>0</span>

@@ -31,47 +31,22 @@
   font-weight: 700;
   white-space: nowrap;
 }
-.mapa-ustawienia__przelacznik {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 44px;
-  padding: 0 10px;
-  border: 1px solid #929da5;
-  border-radius: 7px;
-  background: #fff;
-  font: inherit;
-  font-weight: 600;
-  color: #18202b;
+.mapa-ustawienia__suwak {
+  width: clamp(120px, 18vw, 220px);
+  height: 44px;
+  margin: 0;
+  accent-color: #1f5c46;
   cursor: pointer;
 }
-.mapa-ustawienia__przelacznik[aria-pressed="true"] {
-  border-color: #1f5c46;
-  background: #1f5c46;
-  color: #fff;
-}
-.mapa-ustawienia__przelacznik:focus-visible {
+.mapa-ustawienia__suwak:focus-visible {
   outline: 3px solid #1f5c46;
   outline-offset: 2px;
 }
-.mapa-ustawienia__znacznik {
-  width: 16px;
-  height: 16px;
-  border: 2px solid currentColor;
-  border-radius: 4px;
-}
-.mapa-ustawienia__przelacznik[aria-pressed="true"] .mapa-ustawienia__znacznik::after {
-  content: "";
-  display: block;
-  width: 7px;
-  height: 4px;
-  margin: 2px 1px;
-  border-bottom: 2px solid currentColor;
-  border-left: 2px solid currentColor;
-  transform: rotate(-45deg);
-}
-.mapa-ustawienia__podpowiedz {
-  color: #3d4652;
+.mapa-ustawienia__wartosc {
+  min-width: 4ch;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
 }
 
 .mapa-legenda {
@@ -174,8 +149,8 @@
     left: 8px;
     max-width: calc(100% - 16px);
   }
-  .mapa-ustawienia__podpowiedz {
-    display: none;
+  .mapa-ustawienia__suwak {
+    width: 120px;
   }
   .mapa-legenda {
     min-width: 0;
