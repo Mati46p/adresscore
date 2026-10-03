@@ -33,6 +33,9 @@ export const OPISY_WARSTW_DLA_JEV: Readonly<Record<string, OpisStrukturalny>> = 
   azbest_budynki_100m: {
     co: 'Liczba budynków z azbestem (np. stary eternit na dachu) w promieniu 100 metrów, według rządowej Bazy Azbestowej. Odpowiada na pytania, czy w okolicy jest azbest.',
   },
+  bankomat_odleglosc: {
+    co: `${M}ego bankomatu zaznaczonego na otwartej mapie OpenStreetMap. Odpowiada na pytania, gdzie blisko wypłacić gotówkę.`,
+  },
   bap_srednia: {
     co: 'Średnie roczne stężenie benzo(a)pirenu – rakotwórczego składnika dymu z pieców, gdzie pali się węglem albo drewnem. Odpowiada na pytania o dym z kominów, palenie w piecach i zapach dymu zimą.',
     nie_dla:
@@ -75,6 +78,9 @@ export const OPISY_WARSTW_DLA_JEV: Readonly<Record<string, OpisStrukturalny>> = 
   },
   emitent_odleglosc: {
     co: `${M}ego zakładu z krajowego rejestru zanieczyszczeń (elektrociepłownia, fabryka, spalarnia, oczyszczalnia ścieków, duża ferma). Odpowiada na pytania, czy blisko jest fabryka albo komin przemysłowy.`,
+  },
+  fryzjer_odleglosc: {
+    co: `${M}ego fryzjera albo salonu fryzjerskiego zaznaczonego na otwartej mapie OpenStreetMap. Odpowiada na pytania, czy blisko jest fryzjer.`,
   },
   frekwencja_samorzad_2024: {
     co: 'Jaki procent mieszkańców gminy głosował w wyborach samorządowych w 2024 roku (wynik całej gminy, nie okolicy). Odpowiada na pytania o frekwencję i udział mieszkańców w wyborach.',
@@ -195,6 +201,9 @@ export const OPISY_WARSTW_DLA_JEV: Readonly<Record<string, OpisStrukturalny>> = 
     nie_dla: 'Pytanie, jak bardzo dym z pieców zanieczyszcza powietrze (to benzo(a)piren).',
     przyklady: ['Czy sąsiedzi palą jeszcze węglem?'],
   },
+  piekarnia_odleglosc: {
+    co: `${M}ej piekarni zaznaczonej na otwartej mapie OpenStreetMap. Odpowiada na pytania, czy blisko kupię świeże pieczywo; o zwykłe zakupy spożywcze – sklep.`,
+  },
   pitnik_odleglosc: {
     co: `${M}ego miejskiego pitnika (kranika z wodą pitną w parku albo na placu), tylko Kraków. Odpowiada na pytania, gdzie napić się wody na zewnątrz.`,
   },
@@ -216,6 +225,9 @@ export const OPISY_WARSTW_DLA_JEV: Readonly<Record<string, OpisStrukturalny>> = 
   },
   poczta_1200m: {
     co: 'Czy w promieniu 1,2 kilometra (w linii prostej) jest poczta albo punkt pocztowy zaznaczony na otwartej mapie OpenStreetMap – tak albo nie. Odpowiada na pytania, czy blisko jest poczta, gdzie nadać list albo odebrać przesyłkę.',
+  },
+  poczta_odleglosc: {
+    co: `${M}ej placówki pocztowej (urzędu pocztowego, nie paczkomatu) zaznaczonej na otwartej mapie OpenStreetMap. Odpowiada na pytania, jak daleko jest na pocztę.`,
   },
   powiat_wynagrodzenie_brutto: {
     co: 'Przeciętne miesięczne wynagrodzenie brutto w powiecie (w firmach zatrudniających co najmniej 10 osób), nie zarobki sąsiadów. Odpowiada na pytania, ile się tu zarabia.',
@@ -327,6 +339,9 @@ export const OPISY_WARSTW_DLA_JEV: Readonly<Record<string, OpisStrukturalny>> = 
   },
   swiatlo_nocne_viirs: {
     co: 'Jak jasno jest nocą w okolicy, widziane z satelity – ilość sztucznego światła (łuna miasta, zanieczyszczenie światłem). Odpowiada na pytania, czy nocą jest ciemno i widać gwiazdy, czy wszędzie świeci miasto.',
+  },
+  szkola_odleglosc: {
+    co: `${M}ej szkoły dowolnego rodzaju (podstawowej, średniej, innej) zaznaczonej na otwartej mapie OpenStreetMap. Odpowiada na pytania, czy szkoła jest tuż obok domu; o podstawówkę dla dziecka – szkoła podstawowa.`,
   },
   szkola_podst_odleglosc: {
     co: `${M}ej publicznej szkoły podstawowej. Domyślna odpowiedź na pytania o szkołę i podstawówkę dla dziecka.`,
