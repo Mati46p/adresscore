@@ -4,8 +4,16 @@ import { liczba, opisAdresu } from '@/karta/adres'
 import { KATEGORIE, type KategoriaId } from '@/kontrakty'
 import { Sekcja3D } from '@/miasto3d/Sekcja3D'
 import { useDane } from '@/wynik/dane'
+import { TRYBY } from '@/wynik/persony'
 import type { RozbicieWarstwy, WynikAdresu } from '@/wynik/silnik'
-import { dodajDoPorownania, hrefDla, przejdz, useStan } from '@/wynik/stan'
+import {
+  dodajDoPorownania,
+  hrefDla,
+  przejdz,
+  useStan,
+  ustawPunktBiznesu,
+  ustawTryb,
+} from '@/wynik/stan'
 import { useWynikAdresu } from '@/wynik/useWyniki'
 import { czyWarstwaWyborow } from '@/wynik/wybory'
 import { Etykieta } from './Etykieta'
@@ -85,6 +93,31 @@ export function EkranOkolica() {
         miejsce={adres.dzielnica ? `Dzielnica ${adres.dzielnica}` : `Gmina ${adres.gmina}`}
         atrapa={atrapa}
       />
+
+      <section className="karta okol-wybor-trybu" aria-labelledby="h-wybor-trybu">
+        <h2 id="h-wybor-trybu" className="okol-h2">
+          Pod jakim kątem oceniasz ten adres?
+        </h2>
+        <div className="okol-wybor-trybu__opcje">
+          {TRYBY.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              aria-pressed={stan.tryb === t.id}
+              onClick={() => {
+                ustawTryb(t.id)
+                if (t.id === 'biznes') {
+                  ustawPunktBiznesu('a', { lon: adres.lon, lat: adres.lat })
+                  przejdz('biznes')
+                }
+              }}
+            >
+              <strong>{t.nazwa}</strong>
+              <span>{t.opis}</span>
+            </button>
+          ))}
+        </div>
+      </section>
 
       <PoleZapytajOAdres indeks={stan.wybrany} />
 
@@ -229,7 +262,7 @@ function Naglowek({
           <span
             className="okol-pewnosc-pasek"
             role="meter"
-            aria-label="Pewność wyniku"
+            aria-label="Kompletność danych w wybranych warstwach"
             aria-valuemin={0}
             aria-valuemax={100}
             aria-valuenow={pewnosc}
@@ -241,7 +274,7 @@ function Naglowek({
               }}
             />
           </span>
-          <span className="mono okol-pewnosc-proc">pewność {pewnosc}%</span>
+          <span className="mono okol-pewnosc-proc">kompletność danych {pewnosc}%</span>
         </div>
       </div>
     </section>

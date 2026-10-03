@@ -50,6 +50,9 @@ export interface StanAplikacji {
   ostatniaWarstwa: string | null
   /** Twarde filtry: adres, który ich nie spełnia, jest wykluczony (nie dostaje kary w wyniku). */
   filtry: readonly TwardyFiltr[]
+  branza: string
+  punktA: { lon: number; lat: number } | null
+  punktB: { lon: number; lat: number } | null
   /** Obiekty symulatora (#98), warianty A i B jako tekst `symulacjaUrl.ts`. */
   symulacja: { a: string; b: string }
 }
@@ -67,6 +70,9 @@ let stan: StanAplikacji = {
   trybMapy: 'suma',
   ostatniaWarstwa: null,
   filtry: [],
+  branza: 'sklep',
+  punktA: null,
+  punktB: null,
   symulacja: { a: '', b: '' },
 }
 
@@ -265,7 +271,15 @@ export function pokazOkolice(i: number) {
 }
 
 export function przejdz(ekran: Ekran) {
-  zmien({ ekran })
+  zmien({ ekran, ...(ekran === 'biznes' ? { tryb: 'biznes' as const } : {}) })
+}
+
+export function ustawBranze(branza: string) {
+  zmien({ branza, punktA: null, punktB: null })
+}
+
+export function ustawPunktBiznesu(id: 'a' | 'b', punkt: { lon: number; lat: number } | null) {
+  zmien(id === 'a' ? { punktA: punkt } : { punktB: punkt })
 }
 
 /** Warianty symulatora (#98); zapis do URL tylko na ekranie symulatora. */
@@ -389,6 +403,9 @@ function zUrl(url: StanUrl): Partial<StanAplikacji> {
     filtry: [],
     biznes: url.biznes ?? stan.biznes,
     ...(url.symulacja ? { symulacja: url.symulacja } : {}),
+    branza: url.branza ?? 'sklep',
+    punktA: url.punktA ?? null,
+    punktB: url.punktB ?? null,
   }
 }
 
@@ -427,6 +444,9 @@ function doUrl(s: StanAplikacji): StanUrl {
       s.persona === 'wlasna' ? { wagi: { ...s.wagi }, kierunki: { ...s.kierunki } } : null,
     filtry: [],
     ...(s.ekran === 'symulator' ? { symulacja: s.symulacja } : {}),
+    branza: s.branza,
+    punktA: s.punktA,
+    punktB: s.punktB,
   }
 }
 
@@ -460,6 +480,7 @@ function sciezkaStanu(s: StanAplikacji): string {
     if (slug) return `/adres/${slug}`
   }
   if (s.ekran === 'katalog') return '/katalog'
+  if (s.ekran === 'biznes') return '/' + zapiszHash(doUrl(s))
   return `/${zapiszHash(doUrl(s))}`
 }
 
@@ -500,6 +521,7 @@ if (typeof window !== 'undefined') {
   if (startowy.biznes) stan = { ...stan, biznes: startowy.biznes }
   stan = { ...stan, filtry: [] }
   if (startowy.symulacja) stan = { ...stan, symulacja: startowy.symulacja }
+  if (startowy.ekran === 'biznes') stan = { ...stan, tryb: 'biznes' }
   const odczytajZmianeUrl = () => {
     const url = czytajBiezacyUrl()
     if (!idAdresow) {

@@ -5,7 +5,14 @@ import type { PersonaId, RodzajBiznesu, Tryb } from './persony.ts'
 import { BIZNESY, PERSONY } from './persony.ts'
 import type { Kierunki } from './silnik.ts'
 
-export type Ekran = 'szukaj' | 'okolica' | 'porownanie' | 'metoda' | 'katalog' | 'symulator'
+export type Ekran =
+  | 'szukaj'
+  | 'okolica'
+  | 'porownanie'
+  | 'metoda'
+  | 'katalog'
+  | 'symulator'
+  | 'biznes'
 
 export interface StanUrl {
   ekran: Ekran
@@ -20,6 +27,9 @@ export interface StanUrl {
   ustawienia: { wagi: Record<string, number>; kierunki: Kierunki } | null
   /** Twarde filtry (parametr `f`). */
   filtry: TwardyFiltr[]
+  branza?: string
+  punktA?: { lon: number; lat: number } | null
+  punktB?: { lon: number; lat: number } | null
   /**
    * Obiekty symulatora (#98) jako tekst `symulacjaUrl.ts`, warianty A i B (parametry `a`, `b`).
    * Tylko na ekranie symulatora – gdzie indziej pola nie ma.
@@ -68,6 +78,22 @@ function odkoduj(tekst: string): string | null {
   }
 }
 
+function czytajPunkt(tekst: string | null): { lon: number; lat: number } | null {
+  if (!tekst) return null
+  const czesci = tekst.split(',')
+  if (czesci.length !== 2) return null
+  const lon = Number(czesci[0])
+  const lat = Number(czesci[1])
+  return Number.isFinite(lon) &&
+    Number.isFinite(lat) &&
+    lon >= 19.3 &&
+    lon <= 20.8 &&
+    lat >= 49.7 &&
+    lat <= 50.5
+    ? { lon, lat }
+    : null
+}
+
 export function czytajHash(hash: string): StanUrl {
   const bez = hash.replace(/^#/, '')
   const [sciezka = '', zapytanie = ''] = bez.split('?')
@@ -86,6 +112,8 @@ export function czytajHash(hash: string): StanUrl {
     ekran = 'metoda'
   } else if (czesci[0] === 'katalog') {
     ekran = 'katalog'
+  } else if (czesci[0] === 'biznes') {
+    ekran = 'biznes'
   } else if (czesci[0] === 'symulator') {
     ekran = 'symulator'
   }
@@ -104,6 +132,15 @@ export function czytajHash(hash: string): StanUrl {
     porownanie: cmp ? cmp.split(',').filter(Boolean).slice(0, MAKS_POROWNANIE) : [],
     ustawienia,
     filtry: filtryZTekstu(parametry.get('f')),
+    ...(ekran === 'biznes'
+      ? {
+          branza: /^[a-z_]+$/.test(parametry.get('b') ?? '')
+            ? (parametry.get('b') as string)
+            : 'sklep',
+          punktA: czytajPunkt(parametry.get('a')),
+          punktB: czytajPunkt(parametry.get('c')),
+        }
+      : {}),
     ...(ekran === 'symulator'
       ? { symulacja: { a: parametry.get('a') ?? '', b: parametry.get('b') ?? '' } }
       : {}),
@@ -116,6 +153,7 @@ export function zapiszHash(s: StanUrl): string {
   else if (s.ekran === 'porownanie') sciezka = '/porownanie'
   else if (s.ekran === 'metoda') sciezka = '/metoda'
   else if (s.ekran === 'katalog') sciezka = '/katalog'
+  else if (s.ekran === 'biznes') sciezka = '/biznes'
   else if (s.ekran === 'symulator') sciezka = '/symulator'
   const parametry = new URLSearchParams()
   if (s.persona) parametry.set('p', s.persona)
@@ -134,6 +172,11 @@ export function zapiszHash(s: StanUrl): string {
     .replaceAll('%2C', ',')
     .replaceAll('%3A', ':')
     .replaceAll('%3B', ';')
+  if (s.ekran === 'biznes') {
+    parametry.set('b', s.branza ?? 'sklep')
+    if (s.punktA) parametry.set('a', s.punktA.lon.toFixed(6) + ',' + s.punktA.lat.toFixed(6))
+    if (s.punktB) parametry.set('c', s.punktB.lon.toFixed(6) + ',' + s.punktB.lat.toFixed(6))
+  }
   return `#${sciezka}${q ? `?${q}` : ''}`
 }
 

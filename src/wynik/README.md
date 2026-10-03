@@ -39,8 +39,10 @@ Zasady skali:
 `WynikAdresu`:
 
 - `wynik` 0–100 albo `null`, `litera` A–G albo `null`.
-- `pewnosc` 0–1: udział wagi warstw z danymi w wadze wszystkich liczonych warstw. To jest pasek pewności.
-  Warstwa, której plik się nie wczytał, liczy się do mianownika jako brak danych, więc obniża pewność, nie wynik.
+- `pewnosc` 0–1: udział wagi warstw z danymi w wadze wszystkich liczonych warstw. W UI jest to
+  kompletność danych, nie miara dokładności. Warstwa, której plik się nie wczytał, liczy się do
+  mianownika jako brak danych, więc obniża kompletność; wynik z dostępnych warstw może się zmienić
+  po jej wczytaniu.
 - `warstwy[]`: `ocena`, `waga` (po normalizacji, suma = 1), `wagaUzytkownika` (0–4), `wklad` (suma = `wynik`),
   `wartosc` (surowy pomiar), `etykieta`, `meta` (źródła, `dataDanych`, `rozdzielczosc`, `rozmiar`, `atrapa`),
   `niedostepny` (powód, gdy plik warstwy się nie wczytał; pokaż „warstwa niedostępna", nie „brak danych pod adresem").

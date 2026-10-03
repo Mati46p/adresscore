@@ -207,7 +207,7 @@ function Ograniczenia() {
           <li>
             <strong>Luki w pokryciu.</strong> Rejestry miejskie obejmują Kraków. Dla gmin obwarzanka
             i dla adresów poza zasięgiem warstwy brakuje danych. Pokazujemy to jako szarą kategorię
-            i niższą pewność, nie jako zero. Warstwy z lukami:{' '}
+            i niższą kompletność danych, nie jako zero. Warstwy z lukami:{' '}
             {luki.map(({ w, p }) => `${w.meta.nazwa} (${procent(p)})`).join('; ')}.
           </li>
         )}
@@ -215,7 +215,8 @@ function Ograniczenia() {
           <li>
             <strong>Warstwy niedostępne teraz.</strong> Plik się nie wczytał albo jest liczony dla
             innej wersji adresów: {niedostepne.map((w) => w.meta.nazwa).join('; ')}. Obniżają
-            pewność wyniku, ale nie jego wartość.
+            kompletność danych. Brak danych nie jest liczony jako zero; wynik z dostępnych warstw
+            może się zmienić po uzupełnieniu braków.
           </li>
         )}
         <li>
@@ -308,11 +309,12 @@ export function Metoda() {
             </p>
           </li>
           <li>
-            <h3>5. Podajemy pewność</h3>
+            <h3>5. Podajemy kompletność danych</h3>
             <p>
-              Pewność to udział wag warstw z danymi w wadze wszystkich warstw, które liczysz. Gdy
-              dane są pod każdą warstwą, pewność wynosi 100%. Gdy brakuje połowy wag, wynosi 50%.
-              Warstwa, której plik się nie wczytał, też obniża pewność.
+              Kompletność to udział wag warstw z danymi w wadze wszystkich warstw, które liczysz.
+              Gdy dane są pod każdą warstwą, wynosi 100%. Gdy brakuje połowy wag, wynosi 50%.
+              Warstwa, której plik się nie wczytał, też obniża kompletność. Ten procent nie mierzy
+              dokładności ani aktualności źródeł.
             </p>
           </li>
           <li>
@@ -349,7 +351,7 @@ export function Metoda() {
           <ul className="met-punkty">
             <li>
               <strong>Brak danych to szary, nigdy zero.</strong> Adres bez danych nie dostaje kary.
-              Kategoria bez danych jest szara, a wynik pokazuje niższą pewność.
+              Kategoria bez danych jest szara, a wynik pokazuje niższą kompletność danych.
             </li>
             <li>
               <strong>Kontekst nie wpływa na wynik.</strong> Kategoria „{KATEGORIE.kontekst}"
