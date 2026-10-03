@@ -201,6 +201,10 @@
 .porownanie-tabela thead th:first-child,
 .porownanie-tabela tbody th[scope="row"] {
   min-width: 230px;
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: white;
 }
 .porownanie-tabela th[scope="row"] {
   font-weight: 650;
@@ -213,6 +217,9 @@
   color: #254b3a;
 }
 .porownanie-tabela__wynik {
+  background: #f9fbf9;
+}
+.porownanie-tabela__wynik th[scope="row"] {
   background: #f9fbf9;
 }
 .porownanie-tabela small {
