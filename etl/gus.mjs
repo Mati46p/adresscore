@@ -92,6 +92,23 @@ const potrzebne = new Set(ids.filter(Boolean))
 const zip = await pobierzDoCache(URL, PLIK)
 const siatka = await wczytajSiatke(zip, potrzebne)
 console.log(`GUS NSP 2021: ${siatka.size}/${potrzebne.size} oczek adresowych w źródle`)
+for (const [id, rekord] of siatka) {
+  const razem = rekord.T
+  const mlodzi = rekord.Y_LT15
+  const starsi = rekord.Y_GE65
+  if (razem !== null && razem !== undefined) {
+    if (
+      (mlodzi !== null && mlodzi !== undefined && mlodzi > razem) ||
+      (starsi !== null && starsi !== undefined && starsi > razem) ||
+      (mlodzi !== null &&
+        mlodzi !== undefined &&
+        starsi !== null &&
+        starsi !== undefined &&
+        mlodzi + starsi > razem)
+    )
+      throw new Error(`Niespójne liczebności grup wieku w oczku ${id}`)
+  }
+}
 
 const zrodlo = [
   {
@@ -99,7 +116,7 @@ const zrodlo = [
       'GUS, NSP 2021 – dane o rezydentach w siatce 1 km, udostępnione przez Eurostat INSPIRE; przeliczenie i przypisanie oczka przez adresscore',
     url: URL,
     licencja:
-      'CC BY 4.0 (Eurostat Census Grid 2021); atrybucja GUS i Eurostat, wskazano przetworzenie',
+      'CC BY 4.0 – https://creativecommons.org/licenses/by/4.0/legalcode.pl; atrybucja GUS i Eurostat, wskazano przetworzenie',
     dataDanych: '2021',
     pobrano: dzis(),
   },
@@ -119,7 +136,7 @@ zapiszWskaznik(
     ...baza,
     id: 'ludnosc_1km',
     nazwa: 'Ludność rezydująca w oczku 1 km',
-    opis: 'Liczba rezydentów NSP 2021 w oczku siatki 1 km² zawierającym adres; równa liczbie osób/km². Wartości utajnione są pominięte.',
+    opis: 'Liczba osób według miejsca zwykłego pobytu w NSP 2021 w oczku siatki 1 km² zawierającym adres; liczbowo równa liczbie osób/km². Kontekst z 2021 r., nie bieżąca liczba klientów ani ruch pieszy. Wartości utajnione są pominięte.',
     jednostka: 'osoby/km²',
     zakres: [0, 20000],
   },
@@ -139,7 +156,7 @@ for (const [id, pole, nazwa] of [
       ...baza,
       id,
       nazwa,
-      opis: `Odsetek ${nazwa.toLowerCase()} wśród rezydentów oczka 1 km² z NSP 2021; brak przy utajnieniu licznika lub mianownika.`,
+      opis: `Odsetek ${pole === 'Y_GE65' ? 'osób w wieku 65+' : 'osób w wieku 0–14 lat'} wśród osób zwykle zamieszkałych w oczku 1 km² według NSP 2021; brak przy utajnieniu licznika lub mianownika. Kontekst demograficzny z 2021 r., bez wpływu na wynik adresu.`,
       jednostka: '%',
       zakres: [0, 100],
     },
