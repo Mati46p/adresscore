@@ -1,9 +1,9 @@
 # Pomiar JEV po polsku (#18)
 
-> Najnowszy wynik – wersja końcowa na **zbiorze kontrolnym nr 2**, pisanym na ślepo i mierzonym
-> raz – jest w sekcji „Wersja końcowa (#152)”. Zbiór kontrolny nr 1 mierzyliśmy w „Poprawki
-> trafności (#147)” i „Druga runda (#150)”. Liczby z #18 niżej dotyczą zbioru, na którym potem
-> stroiliśmy.
+> Najnowszy wynik jest w sekcji „Trzy błędy (#153)”: wersja po poprawkach zmierzona raz na
+> **zbiorze kontrolnym nr 3**, pisanym na ślepo. Zbiór nr 2 mierzyliśmy w „Wersja końcowa (#152)”,
+> a zbiór nr 1 w „Poprawki trafności (#147)” i „Druga runda (#150)”. Liczby z #18 niżej dotyczą
+> zbioru, na którym potem stroiliśmy.
 
 Pomiar z 2026-10-03: JEV (TypeSafe, `jev-latest`) kontra reguły słów kluczowych na złożonych,
 potocznych opisach i pytaniach. Zbiory: `zbior-opisz.json` (30 opisów), `zbior-zapytaj.json`
@@ -773,16 +773,278 @@ Bez zmian: jedno wywołanie na tekst, ok. 0,3 s.
 **55 płatnych wywołań** (budżet 60): tylko końcowy pomiar zbioru nr 2 (30 + 25). Strojenia nie
 było; sprawdzenie zgodności z #147 i liczby reguł są bez sieci.
 
+## Trzy błędy (#153)
+
+Pomiar z 2026-10-03. Ta sekcja opisuje poprawki trzech znanych błędów wersji końcowej (#152)
+i jeden pomiar na **nowym zbiorze kontrolnym nr 3**: `kontrolny3-opisz.json` (30 opisów)
+i `kontrolny3-zapytaj.json` (25 pytań). Zbiór napisał na ślepo osobny agent AI, bez dostępu
+do kodu i poleceń. Pozycje mają cechy pułapek, w tym `domownik`, `cudza_sytuacja`,
+`pies_bez_spaceru` i `dwa_z_tematu`.
+
+Zbiór otworzyłem dopiero przy gotowym kodzie i tylko po to, żeby skopiować pliki i sprawdzić id.
+Wszedł bajt w bajt osobnym commitem („Dodaj zbiór kontrolny nr 3…”), wcześniejszym niż commit
+z kodem. Etykiet nie ruszałem.
+
+Jedna zbieżność: pytanie K3-B05 (17 znaków) jest dosłownie takie samo jak K2-B09. Test zbiorów
+zwalnia je tylko z wymogu „inne niż w pozostałych zbiorach”.
+
+Stroiłem na trzech rzeczach: starych zbiorach, własnych zdaniach i liczbach zbiorczych
+przeliczonych z zapisanych przebiegów zbiorów nr 1 i nr 2. Tamtych przebiegów nie powtarzałem
+na żywo i nie czytałem w nich tekstów.
+
+### Co się zmieniło – i dlaczego
+
+**1. Bramka „cudza sytuacja”: para wąskich twierdzeń i odwrócona logika (wariant a).**
+
+Było jedno twierdzenie: „Osoba opisuje własną obecną sytuację…”. Bramka zamykała się poniżej
+0,5, czyli wtedy, gdy **brakowało dowodu** własnej sytuacji. Teraz są dwa twierdzenia:
+
+- `cudza_osoba`: „Osoba szuka mieszkania dla kogoś innego, kto z nią nie mieszka i nie zamieszka
+  (np. dla znajomego, klienta, rodzeństwa). Zakup na wynajem albo jako inwestycja to nie to.”
+- `sytuacja_nieaktualna`: „Tekst mówi wyłącznie o sytuacji wyobrażonej („gdyby…”) albo
+  nieaktualnej (tak było kiedyś), a nie o obecnej ani planowanej.”
+
+Jak działa bramka:
+
+- Zamyka się tylko na **dowód** cudzej sytuacji, czyli gdy któreś twierdzenie ma ocenę ≥ 0,5.
+- Brak odpowiedzi zostawia ją otwartą.
+- Zamknięta działa jak dotąd: profil zostaje bez zmian, a z potrzeb zostają tylko te z noul ≥ 0,9.
+
+Miejsce w limicie 16 pytań zwolniła kategoria „Codzienność pieszo”. JEV ocenia teraz 3
+kategorie. Codzienność podnoszą potrzeby: dzieci, senior, lekarz, sklepy, rower i brak samochodu.
+
+Każdego kandydata sprawdzałem w **pełnym zapytaniu** (16 pytań). To lekcja z #150: twierdzenie,
+które wypadało dobrze osobno, w pełnym zapytaniu odcinało 10 z 30 opisów.
+
+**Dowody bez sieci.** Zapytanie „opisz siebie” w zapisanych przebiegach zbioru nr 1 (#147)
+i nr 2 (#152) jest bajt w bajt takie samo, więc wynik dało się przeliczyć z zapisanych ocen JEV.
+Przeliczenie zgadza się z zapisanym wynikiem w 30/30 opisów na obu zbiorach. Liczby służą tylko
+do porównania wariantów: „kategorie F1” liczyłem wyłącznie z tabeli `POTRZEBY` (zbiory kontrolne
+nie mają jawnych kategorii), a pewność poziomu przyjąłem za 1.
+
+| Wariant | Kontrolny 1: profil / F1 potrzeb / kat. F1 / dokładnie | Kontrolny 2: to samo |
+|---|---|---|
+| Bramka z #147 (stan na `main`) | 63% / 77% / 81% / 37% | 67% / 81% / 86% / 47% |
+| (c) bez bramki | 57% / 77% / 82% / 33% | 70% / 82% / 87% / 50% |
+| Bez pytania o „Codzienność” | 63% / 77% / **81%** / 37% | 67% / 81% / **86%** / 47% |
+| Bez pytania o „Bezpieczeństwo” | 63% / 77% / 78% / 37% | 67% / 81% / 84% / 47% |
+| Bez „Transportu” / bez „Spokoju” | kat. 83% / 79% | kat. 84% / 84% |
+
+Wnioski:
+
+- **(c) Bez bramki** – remis z przesunięciem: na zbiorze nr 1 tracę 2 profile, na zbiorze nr 2
+  zyskuję 1. Ten wariant nie chroni przed cudzą sytuacją, więc go odrzuciłem.
+- **(b) Bramka z #147 plus warunek słabych dowodów** – odrzucona bez pomiaru. W #150 tekst
+  „Pytam dla koleżanki” dał Rodzinę z pewnością 1,00 i psa z oceną 0,92, więc siła dowodów nie
+  odróżnia cudzej sytuacji od własnej.
+- **Wolne miejsce:** pytanie o „Codzienność” kosztuje najmniej – 0 pp kategorii F1 na zbiorze
+  nr 1 i nr 2, −2 pp na wzorcowym (przebieg #18). „Bezpieczeństwo” kosztuje −3 / −2 / −1 pp.
+
+**Dowody na żywo.** Celowane zdania (pisałem je sam), każde w pełnym zapytaniu:
+
+| Zdanie | Bramka z #147 (`wlasna_sytuacja`, < 0,5 zamyka) | **#153: `cudza_osoba`** | Wynik #153 |
+|---|---|---|---|
+| „Od przyszłego miesiąca zamieszka z nami teściowa, ma 84 lata…” | **0,35 – zamknięta**, profil przepada | 0,08 – otwarta | Senior; senior + lekarz |
+| „Pytam dla koleżanki: ona ma dwójkę dzieci i psa…” | 0,04–0,05 (pomiar w #150) | **0,91 – zamknięta** | profil bez zmian, tylko pewne potrzeby |
+| „Kiedyś mieszkaliśmy z dziećmi… to już nieaktualne” | 0,71 – otwarta | 0,09; zamknęła ją `sytuacja_nieaktualna` | profil bez zmian |
+| „W marcu urodzi nam się dziecko…” | 0,94 (pomiar w #150) | 0,07 – otwarta | Rodzina; dzieci + zieleń |
+
+W tym przebiegu skrypt nie wypisywał oceny `sytuacja_nieaktualna`. Widać ją tylko po tym, że
+bramka się zamknęła albo nie. W przebiegu na starym A skrypt wypisywał już obie oceny.
+
+Na starym A sprawdziłem 16 z 30 opisów, bo pełne 30 nie mieściło się w budżecie. Wybrałem
+wszystkie opisy z pułapkami: A06 (cudza sytuacja), A07 (hipoteza), A12 (najemcy), A29
+(teściowie), A27 (dawne dzieci), A10 („Mama z nami zamieszka”), A04, A16 i A24 (plany dziecka),
+A30, a do tego kilka zwykłych.
+
+- Bramka zamknęła się w **0 z 16** opisów. `cudza_osoba` miała najwyżej 0,16,
+  a `sytuacja_nieaktualna` najwyżej 0,08.
+- Dokładnie zrozumianych: 12 z 16. Inwestorzy (A12, A23) mają oceny 0,14 i 0,09 i zostają
+  Inwestorami.
+- **Znane ograniczenie:** tekst mieszany zostawia bramkę otwartą (A06: „Kumpel ma trójkę dzieci
+  i psa… Szukamy z partnerką dla siebie”, ocena 0,16). JEV daje wtedy Rodzinę, dzieci i psa,
+  jak w #18. Bramka ocenia cały tekst, a nie pojedyncze zdanie.
+
+**2. „Z psem do weta”: po jednym zdaniu wykluczenia w dwóch tematach.**
+
+- Twierdzenie zieleni dostało na końcu zdanie „Wizyta u weterynarza albo samo posiadanie psa
+  to nie to.”
+- Twierdzenie zdrowia dostało zdanie „Weterynarz to nie to.”
+- Dopiski warstw i pozostałe 13 tematów zostały bez zmian. Wersja z #150 zmieniała naraz
+  7 twierdzeń i prefiks, więc psuła też inne tematy.
+
+Moje pytanie „Daleko stąd z psem do weta?” przed zmianą nie odtworzyło zieleni ze zbioru
+kontrolnego (0,49, a tam 0,71). Za to dokładało **przychodnię**: temat zdrowia dostał 0,75,
+a w drugim moim pytaniu o weterynarza 0,85.
+
+| Pytanie | Temat | Przed | **Po** |
+|---|---|---|---|
+| „Daleko stąd z psem do weta?” | zieleń / zdrowie | 0,49 / 0,75 → [weterynarz, przychodnia] | **0,43 / < 0,3 → [weterynarz]** |
+| B19 „Jest gdzie wyjść z psem, jakiś skwer albo park?” | zieleń | – | 0,91 → [zieleń] |
+| B23 „zielono, cicho i bezpiecznie wieczorem” | zieleń / hałas / bezpieczeństwo | 0,56 / 0,57 / 0,47 (#147) | 0,51 / 0,58 / 0,44 – wynik bez zmian |
+| B27 „powietrze, hałas, drzewa” | powietrze / hałas / zieleń | 0,71 / 0,84 / 0,88 (#147) | 0,74 / 0,83 / 0,84 – komplet 3/3 |
+
+**3. Dwie warstwy z jednego tematu przez JEV: drugie wywołanie tylko wtedy, gdy trzeba.**
+
+Drugie wywołanie idzie tylko wtedy, gdy spełnione są wszystkie warunki:
+
+- temat z różnymi obiektami (szkoły, zdrowie, sklepy, rower) ma noul ≥ 0,6;
+- z tego tematu jest w odpowiedzi dokładnie jedna warstwa;
+- reguły nie dały drugiej;
+- jest wolne miejsce (mniej niż 3 warstwy);
+- pytanie wygląda na złożone („i”, „oraz”, „albo”, „lub”, przecinek albo kilka pytajników).
+
+Jak działa:
+
+- Drugie wywołanie to `choice` wyłącznie z warstw tego tematu o **innym obiekcie** niż pierwsza
+  warstwa, plus `nie_wiem` („nie pyta o nic więcej z tej grupy”).
+- Druga warstwa wchodzi przy pewności ≥ 0,6 i staje zaraz po pierwszej.
+- Każdy kłopot z drugim wywołaniem zostawia wynik pierwszego.
+- Pozostałe pytania nadal mają **jedno** wywołanie.
+
+Bogatsze słowniki reguł odrzuciłem, bo pomagają tylko na słowa, które ktoś przewidział.
+„Opieka na cały dzień” to żłobek, a „internista” to przychodnia, i żadne z tych słów nie jest
+w regułach.
+
+| Pytanie (moje) | Reguły | **JEV + drugie wywołanie** | Czas |
+|---|---|---|---|
+| „Czy blisko jest przedszkole, a dla młodszego jakaś opieka na cały dzień?” | [przedszkole] | **[przedszkole, żłobek]** (0,94) | 405 + 407 ms |
+| „Jest tu apteka? A jakby trzeba było do internisty, to daleko?” | [apteka] | **[apteka, przychodnia]** (0,90) | 416 + 245 ms |
+| „Czy przedszkole jest blisko, tak żeby dojść pieszo?” (jedna rzecz) | [przedszkole] | [przedszkole]; drugie wywołanie: `nie_wiem` 0,99 | 358 + 306 ms |
+
+Jak często wchodzi drugie wywołanie? Przeliczenie bez sieci z zapisanych odpowiedzi na pierwsze
+wywołanie (teksty tematów sprzed #153, więc w przybliżeniu):
+
+- stary B: 1 z 28 (zapisany przebieg z #146);
+- kontrolny nr 1: 3 z 25;
+- kontrolny nr 2: 3 z 25;
+- zbiór nr 3 (pomiar na żywo): **2 z 25**.
+
+### Wynik nagłówkowy – zbiór kontrolny nr 3 (świeży, na ślepo, mierzony raz)
+
+Jeden przebieg `pomiar.ts --na-zywo --zbior kontrolny3`, 57 wywołań. Po nim nic w kodzie nie
+zmieniłem. JEV oznacza to, co widzi użytkownik: odpowiedź JEV, a poniżej progu – reguły.
+
+**A – „opisz siebie”** (30 opisów):
+
+| | Reguły | **JEV** |
+|---|---|---|
+| Profil trafiony | 63% | **80%** |
+| Potrzeby (10 z twierdzeniem) – P / R / F1 | 74 / 63 / 68% | **74 / 80 / 77%** |
+| Potrzeby – F1 na wszystkich 15 | 67% | 66% |
+| Kategorie ważne – P / R / F1 | 73 / 72 / 72% | **81 / 81 / 81%** |
+| Cały opis zrozumiany dokładnie | 30% | **50%** |
+| „Nic nie zrozumiano” tam, gdzie trzeba | 2/4 | 3/4 |
+| Bramka zamknięta | – | 2 z 30 (obie na pozycjach z cechą `cudza_sytuacja`) |
+| Zapas (reguły zamiast JEV) | – | 1/30 (nieczytelna odpowiedź) |
+
+**B – „zapytaj o adres”** (25 pytań: 13 pojedynczych, 9 złożonych, 3 spoza zakresu):
+
+| | Reguły | **JEV** |
+|---|---|---|
+| Trafna warstwa główna (albo „nie wiem”) | 68% | **92%** |
+| Pytania pojedyncze – warstwa główna trafna | 6/13 | **11/13** |
+| Pokrycie pytań złożonych (do 3 warstw) | 78% | **85%** |
+| Złożone z kompletem tematów | 5/9 | **6/9** |
+| Spoza zakresu → „nie wiem” bez dodatków | 2/3 | **3/3** |
+| Precyzja warstw | 91% | **100%** |
+| Fałszywe dodatki na pojedynczych | 0 | 0 |
+| Średnio warstw na odpowiedź | 1,05 | 1,23 |
+| Zapas (reguły zamiast JEV) | – | 6/25 (pewność wyboru < 0,5, w tym 3 × `nie_wiem`) |
+
+**Przekrój po cechach** (liczby zbiorcze). Każda cecha ma 1–6 pozycji, więc jedna pozycja to
+17–100 pp.
+
+| Cecha | n | Reguły | **JEV** |
+|---|---|---|---|
+| `domownik` (A) – profil / dokładnie | 3 | 33% / 33% | **100%** / 33% |
+| `domownik` (A) – potrzeby P / R | 3 | 80 / 57% | 75 / 86% |
+| `cudza_sytuacja` (A) – profil / dokładnie | 3 | 33% / 0% | **100% / 100%** |
+| `pies_bez_spaceru` (A) – profil / dokładnie / F1 potrzeb | 2 | 100% / 50% / 50% | 100% / 50% / 86% |
+| `dwa_z_tematu` (B) – pokrycie / precyzja | 6 | 67% / 80% | **92% / 100%** (komplet 5 z 6) |
+
+- **`domownik`:** bramka nie zamknęła się w żadnym z 3 opisów, a profil był trafiony 3 razy
+  na 3. „Dokładnie” wyszło 1 z 3, bo JEV pominął 1 potrzebę i dodał 2 nadmiarowe. Bramka nie
+  miała z tym nic wspólnego.
+- **`cudza_sytuacja`:** wszystkie 3 opisy zrozumiane dokładnie. Bramka zamknęła się w 2 z nich,
+  a trzeci JEV zrozumiał dobrze przy otwartej bramce. W pozostałych 27 opisach bramka nie
+  zamknęła się ani razu.
+- **`pies_bez_spaceru`:** ta cecha jest w zbiorze A (opis z psem bez spacerów), a nie w B. JEV
+  nie dodał potrzeby zieleni w żadnym z 2 opisów. Poprawka „weterynarza” dotyczy B, a w B zbioru
+  nr 3 nie ma pytania z tą cechą. Fałszywych dodatków na pojedynczych pytaniach B nie było
+  wcale (0).
+- **`dwa_z_tematu`:** drugie wywołanie weszło w 2 z 6 pytań. Liczę z tych samych odpowiedzi na
+  pierwsze wywołanie, z drugim wywołaniem i bez niego:
+  - pokrycie tej cechy rośnie z 75% do 92%, a komplet z 3 do 5 z 6;
+  - we wszystkich pytaniach złożonych pokrycie rośnie z 74% do 85%, a komplet z 4 do 6 z 9.
+  Bez drugiego wywołania JEV byłby tu prawie na równi z regułami (75% vs 67%).
+
+Mówiąc wprost:
+
+- **W A JEV wygrywa wyraźnie:** dokładnie 50% vs 30%, profil 80% vs 63%. W B wyraźnie wygrywa
+  wybór warstwy: 92% vs 68%.
+- **Pytania złożone – JEV nieco lepszy:** pokrycie 85% vs 78%, komplet 6 vs 5 z 9. To mniej niż
+  jedno pytanie średnio, więc różnica jest na granicy szumu. Tym razem to jednak nie remis,
+  jak w #152.
+- **Część różnicy względem #152 to sam zbiór.** Zbiór nr 3 jest inny niż nr 2, a reguły
+  wypadają na nim podobnie (dokładnie 30% vs 27%, warstwa główna 68% vs 60%).
+- **Zapas w B 6/25 to najwięcej do tej pory** (w #152: 2/25). W 6 pytaniach pewność wyboru
+  warstwy spadła pod 0,5, w 3 z nich przy `nie_wiem`; tam odpowiadają reguły. Nie umiem
+  rozdzielić bez sieci, czy to sprawa zbioru, czy zmienionych twierdzeń zieleni i zdrowia w tym
+  samym zapytaniu. W #146 i #150 zmiana twierdzeń tematów przesuwała pewność wyboru, więc
+  drugiej przyczyny nie wykluczam.
+- **Próg tematu przeliczony z tych samych odpowiedzi** (bez drugich wywołań): przy 0,5 pokrycie
+  78%, przy 0,6 – 74%, przy 0,8 – 65%; precyzja wszędzie 100%. Progu nie zmieniałem.
+
+### Opóźnienie i koszt
+
+| Przebieg (kontrolny nr 3) | p50 / p95 / max |
+|---|---|
+| A (16 pytań w zapytaniu) | 258 / 375 / 395 ms |
+| B – pytania z jednym wywołaniem (23) | 328 / 385 / 720 ms |
+| B – pytania z drugim wywołaniem (2) | 569 / 620 / 620 ms |
+| Razem (czas na pytanie) | 303 / 569 / 720 ms |
+
+- Drugie wywołanie dokłada ok. **250–400 ms**, ale tylko w pytaniach, które go potrzebują: 2
+  z 25 na zbiorze nr 3, a w przeliczeniach starszych zbiorów 1–3 pytania na 25–28.
+- Pozostałe pytania mają jedno wywołanie i trwają ok. 0,3 s, jak dotąd.
+- Wywołania idą po kolei, więc najgorszy przypadek to dwa timeouty klienta (2 × 1,5 s). W pomiarze
+  się nie zdarzył.
+
+**Wywołania na żywo: 91** (budżet 95):
+
+- strojenie, razem 34:
+  - celowane zdania A na starej bramce – 2;
+  - celowane zdania A na nowej bramce – 4;
+  - stary A – 16;
+  - weterynarz przed zmianą – 2;
+  - stary B19, B23, B27 – 3;
+  - celowane pytania B – 4, plus 3 drugie wywołania;
+- zbiór nr 3 – 57 (30 + 25 + 2 drugie wywołania).
+
+Przeliczenia bez sieci nic nie kosztowały: bramka, kategorie, częstość drugiego wywołania
+i wariant bez drugiego wywołania. `zgodnosc147.ts` pokazuje teraz zapytanie inne niż w #147.
+Tak ma być, bo zmieniło się to, co widzi JEV.
+
 ## Na slajd
 
-Liczby ze **zbioru kontrolnego nr 2**: napisał go na ślepo osobny agent AI, bez dostępu do kodu
-i poleceń, a wersję końcową zmierzyliśmy na nim raz, bez poprawek po pomiarze. To 30 opisów
-i 25 pytań, więc to wynik orientacyjny. Zdania z #18, #147 i #150 dotyczyły zbiorów, na których
-już coś wybieraliśmy; zastępuje je ta wersja. Zdania mówią o pełnym zbiorze; bez jedynej
-pozycji naśladującej mowę („tylko pisane”) liczby są prawie te same (8 z 10, 45%, 96%).
+Liczby pochodzą ze **zbioru kontrolnego nr 3** (#153). Napisał go na ślepo osobny agent AI, bez
+dostępu do kodu i poleceń. Wersję po poprawkach zmierzyliśmy na nim raz i potem niczego nie
+poprawialiśmy. To 30 opisów i 25 pytań, więc wynik jest orientacyjny.
+
+Zdania z #152 (zbiór nr 2) wymieniłem tam, gdzie zbiór nr 3 ich nie potwierdza:
+
+- Profil: na zbiorze nr 2 był remis (67%), na nr 3 JEV trafia częściej (80% vs 63%). Część tej
+  różnicy daje poprawiona bramka – opisy z domownikiem trafione 3 na 3.
+- Pytania złożone: na zbiorze nr 2 był remis (69%), na nr 3 JEV jest nieco lepszy (85% vs 78%)
+  dzięki drugiemu wywołaniu.
+
+Zdanie o 8 z 10 potrzeb zbiór nr 3 potwierdza (80% vs 63%), więc zostaje.
 
 - Na nowych opisach JEV wyłapuje 8 z 10 wymienionych potrzeb, a reguły słów kluczowych 6 z 10.
-- Cały opis (profil i komplet potrzeb) JEV rozumie dokładnie w prawie połowie przypadków (47%),
-  reguły w co czwartym (27%); sam profil oba systemy trafiają równie często (67%).
-- Na pytanie o adres JEV wskazuje właściwe dane w 96% przypadków (reguły 60%) i odpowiada
-  w 0,3 sekundy; przy pytaniach o kilka rzeczy naraz nie jest lepszy od reguł.
+- Cały opis (profil i komplet potrzeb) JEV rozumie dokładnie w połowie przypadków (50%), reguły
+  w niecałej jednej trzeciej (30%). Profil JEV trafia w 80% przypadków, reguły w 63%.
+- Na pytanie o adres JEV wskazuje właściwe dane w 92% przypadków (reguły 68%). Zwykle
+  odpowiada w 0,3 sekundy, a gdy pytanie dotyczy dwóch rzeczy z jednej grupy (np. przedszkole
+  i żłobek), w ok. 0,6 sekundy. Przy pytaniach o kilka rzeczy naraz pokrywa 85% tematów, reguły
+  78% – różnica mniejsza niż jedno pytanie.
