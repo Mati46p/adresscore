@@ -173,6 +173,7 @@ const NAZWY_ROZDZIELCZOSCI: Record<WskaznikMeta['rozdzielczosc'], string> = {
   siatka: 'siatka',
   rejon: 'rejon',
   gmina: 'gmina',
+  powiat: 'powiat',
 }
 
 /** „adres”, „heks 1 km”, „rejon wielokąt pasma mapy akustycznej”. */
