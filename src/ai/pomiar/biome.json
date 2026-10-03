@@ -13,6 +13,8 @@
       "!kontrolny3-zapytaj.json",
       "!kontrolny4-opisz.json",
       "!kontrolny4-zapytaj.json",
+      "!kontrolny5-opisz.json",
+      "!kontrolny5-zapytaj.json",
       "!przebiegi/**"
     ]
   }

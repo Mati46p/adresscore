@@ -97,7 +97,7 @@ describe('zbiór wzorcowy „zapytaj o adres”', () => {
   })
 })
 
-// Zbiory kontrolne: nr 1 (#147), nr 2 (#152), nr 3 (#153) i nr 4 (#157), napisane na ślepo przez osobnego agenta,
+// Zbiory kontrolne: nr 1 (#147), nr 2 (#152), nr 3 (#153), nr 4 (#157) i nr 5 (#163), napisane na ślepo przez osobnego agenta,
 // bez dostępu do kodu. Etykiet nie poprawiamy – test pilnuje tylko, że id są znane, a pomiar
 // je zrozumie, i że teksty nie powtarzają się między zbiorami.
 const katalogWskaznikow = 'public/dane/wskazniki'
@@ -140,6 +140,14 @@ const ZBIORY_KONTROLNE = [
     nazwa: 'kontrolny nr 4',
     opisz: 'kontrolny4-opisz.json',
     zapytaj: 'kontrolny4-zapytaj.json',
+    nA: 40,
+    nB: 35,
+  },
+  // #163: piąty zbiór na ślepo (40 opisów, 35 pytań), cecha `bliska_pomylka` – opcje, które JEV myli.
+  {
+    nazwa: 'kontrolny nr 5',
+    opisz: 'kontrolny5-opisz.json',
+    zapytaj: 'kontrolny5-zapytaj.json',
     nA: 40,
     nB: 35,
   },
