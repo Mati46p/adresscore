@@ -4,5 +4,7 @@
   "installCommand": "pnpm install --frozen-lockfile",
   "buildCommand": "pnpm build",
   "outputDirectory": "dist",
-  "rewrites": [{ "source": "/((?!assets/).*)", "destination": "/index.html" }]
+  "git": { "deploymentEnabled": { "main": true, "**": false } },
+  "ignoreCommand": "git log -1 --pretty=%B | grep -q '\\[wdroz\\]' && exit 1 || exit 0",
+  "rewrites": [{ "source": "/((?!assets/|api/).*)", "destination": "/index.html" }]
 }

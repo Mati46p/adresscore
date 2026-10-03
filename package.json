@@ -15,7 +15,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "verify": "pnpm lint && pnpm typecheck && pnpm build",
     "db:start": "supabase start",
-    "db:push": "supabase db push"
+    "db:push": "supabase db push",
+    "zadanie": "node scripts/zadanie.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.2",
