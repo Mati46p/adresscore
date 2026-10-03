@@ -23,6 +23,16 @@ BRANZE = {
     "weterynarz": ("Gabinet weterynaryjny", 1500),
     "silownia": ("Siłownia lub fitness", 1500),
     "restauracja": ("Restauracja lub fast food", 900),
+    "dentysta": ("Gabinet stomatologiczny", 1200),
+    "optyk": ("Optyk", 1500),
+    "drogeria": ("Drogeria", 1000),
+    "cukiernia": ("Cukiernia", 1000),
+    "mieso": ("Sklep mięsny", 1000),
+    "warzywniak": ("Warzywniak", 800),
+    "pralnia": ("Pralnia", 1500),
+    "zoologiczny": ("Sklep zoologiczny", 1500),
+    "bar": ("Bar lub pub", 900),
+    "lodziarnia": ("Lodziarnia", 900),
 }
 
 
@@ -44,6 +54,16 @@ def branze(tags):
         *(['weterynarz'] if amenity == 'veterinary' else []),
         *(['silownia'] if leisure in {'fitness_centre', 'sports_centre'} and tags.get('sport') in {None, 'fitness', 'yoga', 'crossfit'} else []),
         *(['restauracja'] if amenity in {'restaurant', 'fast_food'} else []),
+        *(['dentysta'] if amenity == 'dentist' or healthcare == 'dentist' else []),
+        *(['optyk'] if shop == 'optician' else []),
+        *(['drogeria'] if shop == 'chemist' else []),
+        *(['cukiernia'] if shop in {'confectionery', 'pastry'} else []),
+        *(['mieso'] if shop == 'butcher' else []),
+        *(['warzywniak'] if shop == 'greengrocer' else []),
+        *(['pralnia'] if shop in {'laundry', 'dry_cleaning'} else []),
+        *(['zoologiczny'] if shop == 'pet' else []),
+        *(['bar'] if amenity in {'bar', 'pub'} else []),
+        *(['lodziarnia'] if amenity == 'ice_cream' or shop == 'ice_cream' else []),
     ]
 
 
