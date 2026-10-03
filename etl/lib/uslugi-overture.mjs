@@ -13,6 +13,7 @@ import {
   kategorieOverture,
   klasyfikujOverture,
   OVERTURE_MIN_CONFIDENCE,
+  zakonczeniaKategoriiOverture,
 } from './uslugi-katalog.mjs'
 import { CACHE } from './wspolne.mjs'
 
@@ -79,13 +80,18 @@ export async function punktyOverture({ wydanie = null } = {}) {
   const c = await polacz('spatial')
   const kategorie = kategorieOverture()
   const lista = kategorie.map((k) => `'${sq(k)}'`).join(',')
+  // Reguły z gwiazdką (`*_restaurant`) to kategorie o danym zakończeniu, więc wstępny filtr też je zna.
+  const wKategoriach = [
+    `kat in (${lista})`,
+    ...zakonczeniaKategoriiOverture().map((z) => `ends_with(kat, '${sq(z)}')`),
+  ].join(' or ')
   const zrodlo = `read_parquet('${sq(plik)}')`
   const wiersze = async (sql) => (await c.runAndReadAll(sql)).getRowObjectsJson()
   const [{ n }] = await wiersze(`select count(*) as n from ${zrodlo}`)
   const surowe = await wiersze(
     `select kat, coalesce(nazwa, marka) as nazwa, lat, lon, confidence
      from ${zrodlo}
-     where kat in (${lista}) and confidence >= ${OVERTURE_MIN_CONFIDENCE}
+     where (${wKategoriach}) and confidence >= ${OVERTURE_MIN_CONFIDENCE}
        and coalesce(status, 'open') = 'open'`,
   )
   const punkty = []

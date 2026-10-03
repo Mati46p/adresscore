@@ -68,9 +68,16 @@ export function zrodlaWPliku(klastry) {
 export const opisZrodla = (zrodlo, branza) =>
   OPISY_ZRODEL[zrodlo === 'rejestr' ? branza.rejestr : zrodlo]
 
-/** Atrybucja i licencja pliku zbudowane z faktycznie użytych źródeł. */
-export function licencjaPliku(zrodla, branza) {
-  const opisy = zrodla.map((z) => opisZrodla(z, branza)).filter(Boolean)
+/**
+ * Atrybucja i licencja pliku zbudowane z faktycznie użytych źródeł. `zrodlaFlag` to źródła flag, które
+ * nie tworzą punktów (np. `nfz` przy dentyście): w pliku jest po nich sam bit, ale licencja wymaga
+ * wskazania źródła, więc idą do atrybucji i opisu licencji tak samo jak źródła punktów.
+ */
+export function licencjaPliku(zrodla, branza, zrodlaFlag = []) {
+  const opisy = [
+    ...zrodla.map((z) => opisZrodla(z, branza)),
+    ...zrodlaFlag.map((z) => OPISY_ZRODEL[z]),
+  ].filter(Boolean)
   const atrybucja = opisy.map((o) => o.atrybucja).join('; ')
   const czesci = []
   if (zrodla.includes('osm'))
@@ -80,6 +87,10 @@ export function licencjaPliku(zrodla, branza) {
   for (const z of zrodla.filter((x) => x !== 'osm')) {
     const o = opisZrodla(z, branza)
     if (o) czesci.push(`${o.nazwa}: ${o.licencja}.`)
+  }
+  for (const z of zrodlaFlag) {
+    const o = OPISY_ZRODEL[z]
+    if (o) czesci.push(`Flaga z innego źródła, ${o.nazwa}: ${o.licencja}.`)
   }
   return { licencja: czesci.join(' '), atrybucja }
 }
@@ -99,7 +110,16 @@ export function zbudujPlikBranzy(branza, klastry) {
       nazwa: nazwaKlastra(k),
     }))
     .sort((a, b) => a.lat - b.lat || a.lon - b.lon || a.zr - b.zr)
-  const { licencja, atrybucja } = licencjaPliku(zrodlaWPliku(klastry), branza)
+  // Flagi z innego źródła niż punkty (nfz) trafiają do atrybucji tylko wtedy, gdy ktoś je w pliku ma.
+  const zrodlaFlag = [
+    ...new Set(
+      flagiBranzy
+        .filter((f) => klastry.some((k) => k.flagi.has(f)))
+        .map((f) => branza.flagi[f].zrodlo)
+        .filter(Boolean),
+    ),
+  ]
+  const { licencja, atrybucja } = licencjaPliku(zrodlaWPliku(klastry), branza, zrodlaFlag)
   const kolumny = {
     lon: wiersze.map((w) => w.lon),
     lat: wiersze.map((w) => w.lat),
@@ -129,6 +149,8 @@ export function liczbyBranzy({ wejscie, klastry, wPliku }) {
   for (const p of wejscie) surowe[p.zrodlo] = (surowe[p.zrodlo] ?? 0) + 1
   const wgZrodel = {}
   for (const k of wPliku) for (const z of k.zrodla) wgZrodel[z] = (wgZrodel[z] ?? 0) + 1
+  const zFlaga = {}
+  for (const k of wPliku) for (const f of k.flagi) zFlaga[f] = (zFlaga[f] ?? 0) + 1
   const tylkoJedno = {}
   let wieleZrodel = 0
   for (const k of wPliku) {
@@ -145,6 +167,8 @@ export function liczbyBranzy({ wejscie, klastry, wPliku }) {
     wPlikuWgZrodel: wgZrodel,
     tylkoJednoZrodlo: tylkoJedno,
     potwierdzoneWielomaZrodlami: wieleZrodel,
+    // Ile punktów w pliku ma daną flagę branży (barber, nfz, fast_food).
+    zFlaga,
     // Punkty, które nie są wyłącznie adresem z CEIDG: rdzeń do liczenia konkurencji w zasięgu pieszym.
     bezSamegoCeidg: wPliku.length - (tylkoJedno.ceidg ?? 0),
   }
@@ -213,8 +237,15 @@ export function zlozWyjscie({ wejscie, meta }) {
       licencja: plik.licencja,
       atrybucja: plik.atrybucja,
       liczby: liczbyBranzy({ wejscie: pts, klastry, wPliku }),
-      ...(b.zrodloPrawdy
-        ? { pokrycie: pokrycieWzgledemPrawdy({ wejscie: pts, klastry, prawda: b.zrodloPrawdy }) }
+      // Pokrycie liczymy względem źródła prawdy (plik filtrowany) albo źródła kontrolnego (plik pełny).
+      ...((b.zrodloPrawdy ?? b.kontrolaPokrycia)
+        ? {
+            pokrycie: pokrycieWzgledemPrawdy({
+              wejscie: pts,
+              klastry,
+              prawda: b.zrodloPrawdy ?? b.kontrolaPokrycia,
+            }),
+          }
         : {}),
     })
   }
@@ -234,7 +265,7 @@ export function zlozWyjscie({ wejscie, meta }) {
       opis: 'Pliki kolumnowe <branza>.json: kolumny lon, lat (WGS84, 5 miejsc), zr (maska bitowa źródeł), flagi (maska flag branży, tylko gdy branża je ma) i nazwa (null, gdy brak albo mogłaby być daną osoby fizycznej). Same punkty, bez wskaźników na adres.',
       bityZrodel: BITY_ZRODEL,
       uwagaRejestr:
-        'Bit rejestr znaczy rejestr właściwy dla branży: apteka – Rejestr Aptek, poz – RPWDL (patrz mapowanie.rejestr).',
+        'Bit rejestr znaczy rejestr właściwy dla branży: apteka – Rejestr Aptek; poz, dentysta, fizjoterapia i laboratorium – RPWDL (patrz mapowanie.rejestr).',
     },
     progiDedupu: DEDUP_PROGI,
     zrodla,
@@ -297,6 +328,13 @@ export function sprawdzWyjscie({ pliki, bbox, minima = {}, katalog = null }) {
       const ile = wpis.liczby.surowe[zrodlo] ?? 0
       if (ile < min)
         bledy.push(`${wpis.id}: źródło ${zrodlo} dało ${ile} punktów, poniżej strażnika ${min}`)
+    }
+    // Flaga z osobnego źródła (nfz) też ma strażnika: brak odpowiedzi API albo zła zgodność adresów
+    // dałyby plik bez flag i bez żadnego błędu.
+    for (const [flaga, min] of Object.entries(BRANZE_PO_ID[wpis.id]?.minFlag ?? {})) {
+      const ile = wpis.liczby.zFlaga?.[flaga] ?? 0
+      if (ile < min)
+        bledy.push(`${wpis.id}: flaga ${flaga} ma ${ile} punktów, poniżej strażnika ${min}`)
     }
   }
   return bledy

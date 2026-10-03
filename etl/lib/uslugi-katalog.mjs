@@ -1,12 +1,13 @@
-// Katalog branż usług dla trybu „Biznes" (#104): dane, nie logika. Jedno miejsce, z którego
-// ETL (etl/uslugi.mjs) bierze mapowanie kategorii OSM, Overture Places i PKD z CEIDG oraz
+// Katalog branż usług dla trybu „Biznes" (#104, rozszerzony w #160): dane, nie logika. Jedno miejsce,
+// z którego ETL (etl/uslugi.mjs) bierze mapowanie kategorii OSM, Overture Places i PKD z CEIDG oraz
 // zasięg pieszy. Nowa branża = nowy wpis w BRANZE (plus test), bez zmian w potoku.
 // Paczkomat jest poza katalogiem celowo: robi go #124 (InPost + OSM).
 
 /**
  * Bity źródeł w kolumnie `zr` plików punktów. Kolejność jest kontraktem z frontem:
  * nie zmieniaj istniejących, nowe źródło dopisz na końcu.
- * `rejestr` to rejestr urzędowy właściwy dla branży (apteka: Rejestr Aptek, POZ: RPWDL).
+ * `rejestr` to rejestr urzędowy właściwy dla branży (apteka: Rejestr Aptek; POZ, dentysta,
+ * fizjoterapia i laboratorium: RPWDL).
  */
 export const BITY_ZRODEL = { osm: 1, overture: 2, rejestr: 4, ceidg: 8 }
 
@@ -50,12 +51,26 @@ export const OPISY_ZRODEL = {
   },
   rpwdl: {
     nazwa:
-      'Rejestr Podmiotów Wykonujących Działalność Leczniczą – poradnie (gabinety) lekarza POZ (Centrum e-Zdrowia)',
+      'Rejestr Podmiotów Wykonujących Działalność Leczniczą – komórki organizacyjne podmiotów leczniczych (Centrum e-Zdrowia)',
     url: 'https://dane.gov.pl/pl/dataset/728,rejestr-podmiotow-wykonujacych-dzialalnosc-lecznicza',
     licencja: 'CC BY 4.0',
     licencjaUrl: 'https://creativecommons.org/licenses/by/4.0/',
     atrybucja: 'Centrum e-Zdrowia, RPWDL (CC BY 4.0)',
     uwagi: 'Adresy geokodowane usługą GUGiK UUG.',
+  },
+  // NFZ nie jest źródłem punktów, tylko flagi `nfz` dentysty (patrz BRANZE.dentysta.flagi): w pliku nie ma
+  // żadnych nazw, adresów ani terminów z NFZ, ale regulamin API każe wskazać źródło, więc atrybucja idzie
+  // do pliku dentysty i do katalog.json.
+  nfz: {
+    nazwa: 'Narodowy Fundusz Zdrowia – Informator o Terminach Leczenia (API Terminy Leczenia)',
+    url: 'https://api.nfz.gov.pl/',
+    licencja:
+      'CC BY 4.0 (metadane zbioru API Terminy Leczenia na dane.gov.pl); regulamin API wymaga wskazania źródła https://api.nfz.gov.pl/ i zakazuje modyfikowania danych',
+    licencjaUrl: 'https://dane.gov.pl/pl/dataset/1455,informator-o-terminach-leczenia',
+    atrybucja:
+      'Narodowy Fundusz Zdrowia, Informator o Terminach Leczenia (https://api.nfz.gov.pl/)',
+    uwagi:
+      'Tylko do flagi `nfz` dentysty: miejsce udzielania świadczeń stomatologicznych jest w Informatorze, więc ma umowę z NFZ. Brak flagi nie dowodzi braku umowy. W plikach jest sam bit, bez nazw, adresów, współrzędnych i terminów z NFZ.',
   },
   ceidg: {
     nazwa: 'CEIDG – Centralna Ewidencja i Informacja o Działalności Gospodarczej (API v3)',
@@ -102,10 +117,17 @@ export const OBSZARY_CEIDG = [
  *   PKD: kod z kropkami (do API CEIDG bez kropek).
  * `zasiegPieszyM` to założenie robocze (ok. 80 m/min, 6–15 minut), do kalibracji w trybie Biznes.
  * `zrodloPrawdy`: tylko punkty potwierdzone w tym źródle trafiają do pliku (pozostałe służą do kontroli).
+ * `kodyRpwdl`: kody resortowe VIII części (`kodResortVIII` w komórkach RPWDL), które tworzą punkty
+ * `rejestr` branży (poza POZ, który ma własną ścieżkę z #8). `kontrolaPokrycia`: źródło, względem
+ * którego katalog.json liczy pokrycie OSM i Overture, choć plik zostaje pełny (inaczej niż przy
+ * `zrodloPrawdy`). `flagi`: `{ osm, overture }` to reguły jak wyżej; wpis z `zrodlo` (np. `nfz`) opisuje
+ * flagę z innego źródła niż punkty, więc reguł nie ma, a ETL ustawia ją sam. Kolejność flag to kolejność bitów.
  * `minPunktow`: strażnik – poniżej tej liczby punktów w pliku ETL kończy się błędem (źródło zwróciło
  * coś uciętego albo zmieniło format), a nie cicho zapisuje pusty plik. `minZrodel`: to samo per źródło
  * (punkty wejściowe branży), żeby jedno źródło nie zerowało się po cichu za plecami pozostałych.
- * Wartości to ok. 30–60% pomiaru z 2026-10-03.
+ * `minFlag`: strażnik liczby punktów z daną flagą (np. `nfz`), bo flaga z osobnego źródła mogłaby zniknąć
+ * po cichu (API niedostępne, adresy się nie zgadzają), a plik i tak przeszedłby kontrolę.
+ * Wartości to ok. 30–60% pomiaru z 2026-10-03 (branże z #160: ok. 50%).
  */
 export const BRANZE = [
   {
@@ -191,6 +213,175 @@ export const BRANZE = [
     uwagi:
       'RPWDL (poradnie i gabinety lekarza POZ) plus punkty z OSM i Overture rozpoznane jako POZ: po specjalizacji (general, family, primary_care, paediatrics, internal) albo po nazwie (przychodnia, ośrodek zdrowia, NZOZ, lekarz rodzinny). Gabinety specjalistyczne, stomatologia i rehabilitacja odpadają.',
   },
+  // --- Branże z #160 (2026-10-03). CEIDG zostaje wyłączony, więc `pkd` jest puste. Wartości minPunktow
+  // i minZrodel to ok. 50% zmierzonej liczby (bieg z 2026-10-03, całe BBOX).
+  {
+    id: 'dentysta',
+    minPunktow: 400,
+    minZrodel: { osm: 130, overture: 130, rejestr: 380 },
+    minFlag: { nfz: 75 },
+    nazwa: 'Dentysta',
+    zasiegPieszyM: 1000,
+    osm: ['amenity=dentist', 'healthcare=dentist'],
+    overture: [
+      'dental_clinic',
+      'general_dentistry',
+      'pediatric_dentistry',
+      'orthodontics',
+      'cosmetic_dentistry',
+    ],
+    pkd: [],
+    rejestr: 'rpwdl',
+    kodyRpwdl: ['1800', '1801', '1820', '1830', '1840'],
+    kontrolaPokrycia: 'rejestr',
+    flagi: { nfz: { osm: [], overture: [], zrodlo: 'nfz' } },
+    uwagi:
+      'Gabinety stomatologiczne: RPWDL (poradnie stomatologiczne, także dla dzieci, ortodontyczne, protetyki i chirurgii stomatologicznej), OSM i Overture. Flaga nfz: miejsce jest w Informatorze o Terminach Leczenia NFZ (umowa z NFZ); brak flagi nie dowodzi braku umowy. Pracownie protetyki (technicy dentystyczni) odpadają.',
+  },
+  {
+    id: 'fizjoterapia',
+    minPunktow: 295,
+    minZrodel: { osm: 28, overture: 80, rejestr: 295 },
+    nazwa: 'Fizjoterapia',
+    zasiegPieszyM: 1000,
+    osm: ['healthcare=physiotherapist', 'healthcare=rehabilitation'],
+    overture: ['physical_therapy'],
+    pkd: [],
+    rejestr: 'rpwdl',
+    kodyRpwdl: ['1300', '1310', '1320'],
+    kontrolaPokrycia: 'rejestr',
+    uwagi:
+      'Gabinety fizjoterapii i rehabilitacji: RPWDL (poradnie rehabilitacyjne, działy i pracownie fizjoterapii, masażu leczniczego), OSM (physiotherapist, rehabilitation) i Overture (physical_therapy). Masaże kosmetyczne i spa odpadają.',
+  },
+  {
+    id: 'laboratorium',
+    minPunktow: 210,
+    minZrodel: { osm: 26, overture: 25, rejestr: 230 },
+    nazwa: 'Laboratorium i punkt pobrań',
+    zasiegPieszyM: 1500,
+    osm: ['healthcare=laboratory', 'healthcare=sample_collection'],
+    // W Overture laboratoria diagnostyczne siedzą w b2b_clinical_lab (Diagnostyka) i laboratory_testing,
+    // razem z szumem (paczkomaty przy stacjach, laboratoria budowlane), więc obie przechodzą przez filtr `lab`.
+    overture: ['b2b_clinical_lab?lab', 'laboratory_testing?lab'],
+    pkd: [],
+    rejestr: 'rpwdl',
+    kodyRpwdl: ['7100', '7110'],
+    kontrolaPokrycia: 'rejestr',
+    uwagi:
+      'Medyczne laboratoria diagnostyczne i punkty pobrań materiałów do badań: RPWDL (7100 i 7110) plus OSM i Overture rozpoznane jako laboratorium medyczne po nazwie. Laboratoria badawcze i budowlane odpadają.',
+  },
+  {
+    id: 'silownia',
+    minPunktow: 195,
+    minZrodel: { osm: 65, overture: 145 },
+    nazwa: 'Siłownia i fitness',
+    zasiegPieszyM: 1000,
+    osm: ['leisure=fitness_centre'],
+    overture: ['gym'],
+    pkd: [],
+    uwagi:
+      'Siłownie i kluby fitness (OSM fitness_centre, Overture gym). Siłownie plenerowe (fitness_station), trenerzy personalni, joga i sztuki walki są poza branżą.',
+  },
+  {
+    id: 'weterynarz',
+    minPunktow: 105,
+    minZrodel: { osm: 60, overture: 73 },
+    nazwa: 'Weterynarz',
+    zasiegPieszyM: 1500,
+    osm: ['amenity=veterinary'],
+    overture: ['veterinarian'],
+    pkd: [],
+    uwagi: 'Gabinety i lecznice weterynaryjne (OSM veterinary, Overture veterinarian).',
+  },
+  {
+    id: 'restauracja',
+    minPunktow: 1580,
+    minZrodel: { osm: 1050, overture: 1045 },
+    nazwa: 'Restauracja i fast food',
+    zasiegPieszyM: 500,
+    osm: ['amenity=restaurant', 'amenity=fast_food'],
+    // W Overture restauracje mają kategorię według kuchni (pizza_restaurant, polish_restaurant i ok. 80 innych
+    // `*_restaurant`), więc gwiazdka bierze wszystkie z takim zakończeniem, także nowe w kolejnych wydaniach.
+    overture: ['restaurant', '*_restaurant', 'steakhouse', 'diner', 'bistro', 'sandwich_shop'],
+    pkd: [],
+    flagi: {
+      fast_food: {
+        osm: ['amenity=fast_food'],
+        overture: [
+          'fast_food_restaurant',
+          'burger_restaurant',
+          'doner_kebab_restaurant',
+          'hot_dog_restaurant',
+          'sandwich_shop',
+        ],
+      },
+    },
+    uwagi:
+      'Restauracje i lokale szybkiej obsługi (OSM restaurant i fast_food, Overture restaurant i kategorie kuchni). Flaga fast_food: OSM amenity=fast_food albo Overture fast_food_restaurant, burger, kebab, hot dog i kanapki; to przybliżenie, bo Overture nie rozdziela burgerowni od restauracji. Bary, puby, kawiarnie i cukiernie są poza branżą.',
+  },
+  {
+    id: 'warsztat',
+    minPunktow: 460,
+    minZrodel: { osm: 198, overture: 293 },
+    nazwa: 'Warsztat samochodowy',
+    zasiegPieszyM: 1500,
+    osm: ['shop=car_repair'],
+    overture: ['automotive_repair', 'auto_body_shop'],
+    pkd: [],
+    uwagi:
+      'Warsztaty i serwisy samochodowe (OSM car_repair, Overture automotive_repair i blacharsko-lakiernicze). Wulkanizacje (shop=tyres), warsztaty motocyklowe i detailing są poza branżą.',
+  },
+  {
+    id: 'myjnia',
+    minPunktow: 155,
+    minZrodel: { osm: 130, overture: 37 },
+    nazwa: 'Myjnia samochodowa',
+    zasiegPieszyM: 2000,
+    osm: ['amenity=car_wash'],
+    // W kategorii car_wash Overture trafiają paczkomaty i stacje paliw (np. „ORLEN Paczka"), więc filtr `myjnia`.
+    overture: ['car_wash?myjnia'],
+    pkd: [],
+    uwagi:
+      'Myjnie samochodowe (OSM car_wash, Overture car_wash bez paczkomatów i stacji paliw). Studia detailingu bez myjni są poza branżą.',
+  },
+  {
+    id: 'salon_kosmetyczny',
+    minPunktow: 595,
+    minZrodel: { osm: 225, overture: 413 },
+    nazwa: 'Salon kosmetyczny',
+    zasiegPieszyM: 800,
+    osm: ['shop=beauty'],
+    // W OSM shop=beauty obejmuje też paznokcie i kosmetologię, więc w Overture razem z beauty_salon idą
+    // nail_salon i skin_care_and_makeup (kosmetolodzy). Kategoria spa miesza salony fryzjerskie, więc odpada.
+    overture: ['beauty_salon', 'nail_salon', 'skin_care_and_makeup'],
+    pkd: [],
+    uwagi:
+      'Salony kosmetyczne, paznokci i kosmetologia (OSM shop=beauty, Overture beauty_salon, nail_salon, skin_care_and_makeup). Fryzjerzy mają własną branżę, a drogerie i sklepy z kosmetykami są poza nią.',
+  },
+  {
+    id: 'kwiaciarnia',
+    minPunktow: 218,
+    minZrodel: { osm: 135, overture: 128 },
+    nazwa: 'Kwiaciarnia',
+    zasiegPieszyM: 800,
+    osm: ['shop=florist'],
+    overture: ['flowers_and_gifts_store', 'florist'],
+    pkd: [],
+    uwagi:
+      'Kwiaciarnie (OSM florist, Overture flowers_and_gifts_store i florist). Kategoria Overture obejmuje także sklepy z upominkami, więc liczba może być lekko zawyżona.',
+  },
+  {
+    id: 'optyk',
+    minPunktow: 105,
+    minZrodel: { osm: 72, overture: 50 },
+    nazwa: 'Optyk',
+    zasiegPieszyM: 800,
+    osm: ['shop=optician'],
+    overture: ['eyewear_store'],
+    pkd: [],
+    uwagi:
+      'Salony optyczne (OSM optician, Overture eyewear_store). Gabinety okulistyczne i optometryczne są poza branżą.',
+  },
 ]
 
 export const BRANZE_PO_ID = Object.fromEntries(BRANZE.map((b) => [b.id, b]))
@@ -268,11 +459,40 @@ export function czyPozOsm(tagi) {
   return nazwaPozPodobna(tagi.name)
 }
 
-/** Filtry nazwane z napisowych reguł katalogu (`?poz`). */
+// --- Filtry laboratorium i myjni (#160) -----------------------------------------------------------
+// Kategorie Overture `b2b_clinical_lab`, `laboratory_testing` i `car_wash` mają szum: obok laboratoriów
+// diagnostycznych (Diagnostyka, ALAB) są laboratoria budowlane i paczkomaty przy stacjach paliw, a
+// obok myjni – te same paczkomaty i stacje („ORLEN Paczka", „Stacja Paliw ORLEN"). Filtr rozstrzyga
+// po nazwie i woli pominąć, niż dopisać.
+
+const NAZWA_LAB =
+  /laborat|diagnost|pobra|badan|badaj|alab|synevo|genet|\bdna\b|medyczn|medic|analityczn/
+const NAZWA_SZUM_AUTO_LAB = /budown|paczk|stacj\w* paliw/
+
+/** Czy nazwa wygląda na medyczne laboratorium albo punkt pobrań (bez laboratoriów budowlanych i paczkomatów). */
+export function nazwaLabPodobna(nazwa) {
+  const n = bezOgonkow(nazwa)
+  return Boolean(n) && NAZWA_LAB.test(n) && !NAZWA_SZUM_AUTO_LAB.test(n)
+}
+
+/** Czy nazwa NIE jest paczkomatem ani stacją paliw (te trafiają do `car_wash` w Overture jako szum). */
+export function nazwaMozeBycMyjnia(nazwa) {
+  return !/paczk|stacj\w* paliw/.test(bezOgonkow(nazwa))
+}
+
+/** Filtry nazwane z napisowych reguł katalogu (`?poz`, `?lab`, `?myjnia`). */
 export const FILTRY = {
   poz: {
     osm: czyPozOsm,
     overture: (punkt) => nazwaPozPodobna(punkt.nazwa),
+  },
+  lab: {
+    osm: () => true,
+    overture: (punkt) => nazwaLabPodobna(punkt.nazwa),
+  },
+  myjnia: {
+    osm: () => true,
+    overture: (punkt) => nazwaMozeBycMyjnia(punkt.nazwa),
   },
 }
 
@@ -314,13 +534,22 @@ export function klasyfikujOsm(tagi) {
   return wynik
 }
 
+/**
+ * Czy kategoria Overture pasuje do wartości reguły: dokładnie, a przy gwiazdce na początku
+ * (`*_restaurant`) każda kategoria o takim zakończeniu.
+ */
+export const pasujeKategoriaOverture = (wartosc, kat) =>
+  wartosc.startsWith('*') ? kat.endsWith(wartosc.slice(1)) : kat === wartosc
+
 /** To samo dla miejsca Overture { kat (taxonomy.primary), nazwa }. */
 export function klasyfikujOverture(miejsce) {
   const wynik = []
   for (const b of BRANZE) {
     const trafia = b.overture?.some((r) => {
       const { wartosc, filtr } = rozbierzRegule(r)
-      return miejsce.kat === wartosc && (!filtr || FILTRY[filtr].overture(miejsce))
+      return (
+        pasujeKategoriaOverture(wartosc, miejsce.kat) && (!filtr || FILTRY[filtr].overture(miejsce))
+      )
     })
     if (!trafia) continue
     const flagi = Object.entries(b.flagi ?? {})
@@ -360,10 +589,22 @@ export function kluczeOsm() {
   return [...klucze]
 }
 
-/** Kategorie Overture potrzebne do wstępnego filtra (bez sufiksów `?filtr`). */
+const wartosciOverture = () =>
+  BRANZE.flatMap((b) => (b.overture ?? []).map((r) => rozbierzRegule(r).wartosc))
+
+/** Kategorie Overture (dokładne nazwy) potrzebne do wstępnego filtra (bez sufiksów `?filtr`). */
 export function kategorieOverture() {
+  return [...new Set(wartosciOverture().filter((w) => !w.startsWith('*')))]
+}
+
+/** Zakończenia kategorii Overture z reguł z gwiazdką (`*_restaurant` → `_restaurant`). */
+export function zakonczeniaKategoriiOverture() {
   return [
-    ...new Set(BRANZE.flatMap((b) => (b.overture ?? []).map((r) => rozbierzRegule(r).wartosc))),
+    ...new Set(
+      wartosciOverture()
+        .filter((w) => w.startsWith('*'))
+        .map((w) => w.slice(1)),
+    ),
   ]
 }
 
@@ -384,6 +625,7 @@ export function opisBranzy(b) {
       flagi: b.flagi ?? {},
       rejestr: b.rejestr ?? null,
       zrodloPrawdy: b.zrodloPrawdy ?? null,
+      ...(b.kodyRpwdl ? { kodyRpwdl: b.kodyRpwdl } : {}),
     },
     uwagi: b.uwagi,
   }
