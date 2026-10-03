@@ -141,7 +141,7 @@ export function MapaLuk({
 }
 
 /** Legenda: kierunek skali i podstawa procentu wypisane słowami; paleta tylko jako wypełnienie. */
-function LegendaLuk({ tytul }: { tytul: string }): JSX.Element {
+export function LegendaLuk({ tytul }: { tytul: string }): JSX.Element {
   return (
     <>
       <div className="mapa-legenda__tytul">{tytul}</div>
