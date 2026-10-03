@@ -36,8 +36,8 @@ test('brak pomiaru albo oceny nie tworzy pozornej oszczędności', () => {
   assert.deepEqual(policzScenariusze([warstwa(280, 20)]), [])
 })
 
-test('scenariusz nie pojawia się dla mocnej warstwy lub obcej jednostki', () => {
-  assert.deepEqual(policzScenariusze([warstwa(780, 80)]), [])
+test('scenariusz wymaga właściwej jednostki i pokazuje mierzalną zmianę niezależnie od progu oceny', () => {
+  assert.equal(policzScenariusze([warstwa(780, 80)]).length, 1)
   assert.deepEqual(
     policzScenariusze([{ ...warstwa(780, 20), meta: { ...meta, jednostka: 'min' } }]),
     [],

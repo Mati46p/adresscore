@@ -74,8 +74,8 @@ export function CoByToZmienilo({ warstwy }: CoByToZmieniloProps) {
         <span className="dzialanie-kicker">CO BY TO ZMIENIŁO?</span>
         <h2 id="dzialanie-tytul">Bliżej na co dzień</h2>
         <p>
-          Sprawdź scenariusz dla słabszych warstw okolicy. Liczymy możliwy czas w drodze, gdy
-          codzienny cel znajdzie się bliżej.
+          Sprawdź scenariusze dla mierzalnych warstw okolicy, zaczynając od najniższej oceny.
+          Liczymy modelową różnicę czasu, gdy codzienny cel znajdzie się bliżej.
         </p>
       </div>
       {scenariusze.length === 0 ? (

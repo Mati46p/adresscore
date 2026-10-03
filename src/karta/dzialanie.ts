@@ -81,7 +81,7 @@ export function normalizujZalozenia(zalozenia: ZalozeniaDzialania): ZalozeniaDzi
 }
 
 /**
- * Scenariusze tylko dla mierzalnych, słabszych warstw. Nie zgadujemy kosztu inwestycji
+ * Scenariusze dla mierzalnych warstw, posortowane od najsłabszej oceny. Nie zgadujemy kosztu inwestycji
  * ani przyszłego wyniku – pokazujemy model czasu wynikający z jawnych założeń.
  * Brak danych lub niezgodna jednostka = brak scenariusza.
  */
@@ -98,8 +98,7 @@ export function policzScenariusze(
       !Number.isFinite(warstwa.wartosc) ||
       warstwa.wartosc <= szablon.celMetry ||
       warstwa.meta.jednostka !== 'm' ||
-      warstwa.ocena === null ||
-      warstwa.ocena >= 70
+      warstwa.ocena === null
     )
       return []
 
