@@ -1,0 +1,43 @@
+.m3d {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+.m3d-mapa {
+  position: relative;
+  height: 420px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--ramka);
+  background: var(--powierzchnia-2);
+}
+.m3d-zaslepka {
+  display: grid;
+  place-items: center;
+  margin-top: 12px;
+  color: var(--tekst-3);
+}
+.m3d-komunikat {
+  margin: 0;
+  color: var(--tekst-2);
+}
+.m3d-opis p {
+  margin: 0;
+  color: var(--tekst-2);
+}
+.m3d-opis .m3d-zrodla {
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--tekst-3);
+}
+.m3d-dymek {
+  white-space: pre-line;
+  font-size: 13px;
+  line-height: 1.4;
+  border-radius: 8px;
+}
+@media (max-width: 860px) {
+  .m3d-mapa {
+    height: 320px;
+  }
+}

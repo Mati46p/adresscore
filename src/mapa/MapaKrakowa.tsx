@@ -79,7 +79,7 @@ const GRANICE_WIDOKU: [[number, number], [number, number]] = [
   [27.0, 56.2],
 ]
 
-const STYL: StyleSpecification = {
+export const STYL: StyleSpecification = {
   version: 8,
   sources: {
     osm: {
@@ -109,7 +109,7 @@ const WYKLUCZONY = jestWykluczony(WARTOSC)
 const zrodloHeksow = (res: number) => `heksy-r${res}`
 const SZRAFURA = 'szrafura-braku'
 
-const POLSKIE_NAPISY = {
+export const POLSKIE_NAPISY = {
   'NavigationControl.ZoomIn': 'Przybliż',
   'NavigationControl.ZoomOut': 'Oddal',
   'NavigationControl.ResetBearing': 'Obróć na północ',

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { liczba, opisAdresu } from '@/karta/adres'
 import { KATEGORIE, type KategoriaId } from '@/kontrakty'
+import { Sekcja3D } from '@/miasto3d/Sekcja3D'
 import { useDane } from '@/wynik/dane'
 import type { RozbicieWarstwy, WynikAdresu } from '@/wynik/silnik'
 import { dodajDoPorownania, hrefDla, przejdz, useStan } from '@/wynik/stan'
@@ -96,6 +97,8 @@ export function EkranOkolica() {
         </div>
         <CoByToZmienilo warstwy={wynik.warstwy} />
       </section>
+
+      <Sekcja3D />
 
       <Rozbicie warstwy={warstwyWyniku} wynik={wynik.wynik} />
 
