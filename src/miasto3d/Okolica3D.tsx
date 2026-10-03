@@ -1,7 +1,13 @@
 // Okolica adresu w 3D: MapLibre (ten sam podkład co mapa) + deck.gl nałożony w tej samej
 // kamerze. Ciężki moduł – ładuje go leniwie Sekcja3D, dopiero gdy sekcja jest na ekranie.
-// Lot kamery (#19) i cień od słońca (#21) dokładają się tutaj: `efekty` i `ustawKamere`.
-import { AmbientLight, DirectionalLight, LightingEffect, type PickingInfo } from '@deck.gl/core'
+// Cień od słońca (#21): światło z PanelCienia, efekt deck.gl odtwarzany przy zmianie czasu.
+import {
+  AmbientLight,
+  DirectionalLight,
+  LightingEffect,
+  type PickingInfo,
+  _SunLight as SunLight,
+} from '@deck.gl/core'
 import { PathLayer, SolidPolygonLayer } from '@deck.gl/layers'
 import { MapboxOverlay } from '@deck.gl/mapbox'
 import { AttributionControl, Map as MapaLibre, NavigationControl } from 'maplibre-gl'
@@ -21,6 +27,7 @@ import {
   wysokoscBryly,
 } from './laczenie'
 import './miasto3d.css'
+import { PanelCienia, type Swiatlo, useSwiatlo } from './PanelCienia'
 
 const AKCENT = naRgba('#1F5C46')
 const NAPISY = {
@@ -32,9 +39,10 @@ const NAPISY = {
 const BIEL = naRgba('#FFFFFF')
 const ADRESY = ['adres', 'adresy', 'adresów'] as const
 
-// Stałe światło do czasu #21: rozproszone + kierunkowe z południowego zachodu, żeby ściany
-// różniły się jasnością i bryły czytały się jako bryły, a nie płaskie plamy.
-const SWIATLO = new LightingEffect({
+// Stałe światło trybu lekkiego (telefon, cień wyłączony bezpiecznikiem): rozproszone +
+// kierunkowe z południowego zachodu, żeby ściany różniły się jasnością i bryły czytały się
+// jako bryły, a nie płaskie plamy.
+const SWIATLO_STALE = new LightingEffect({
   otoczenie: new AmbientLight({ color: [255, 255, 255], intensity: 1.6 }),
   kierunkowe: new DirectionalLight({
     color: [255, 255, 255],
@@ -42,6 +50,39 @@ const SWIATLO = new LightingEffect({
     direction: [1, 2, -3],
   }),
 })
+
+/** Światło od słońca o wybranej chwili; w nocy tylko przygaszone rozproszone. */
+function efektSwiatla(s: Swiatlo | null): LightingEffect {
+  if (!s) return SWIATLO_STALE
+  if (s.noc) {
+    return new LightingEffect({
+      otoczenie: new AmbientLight({ color: [200, 210, 235], intensity: 1.1 }),
+    })
+  }
+  const efekt = new LightingEffect({
+    otoczenie: new AmbientLight({ color: [255, 255, 255], intensity: 1.2 }),
+    slonce: new SunLight({
+      timestamp: s.znacznik,
+      color: [255, 250, 235],
+      intensity: 1.35,
+      _shadow: s.cien,
+    }),
+  })
+  efekt.shadowColor = [0, 0, 0, 0.35]
+  return efekt
+}
+
+/** Kwadrat ok. 1,4 km wokół adresu: przezroczysta ziemia, na którą padają cienie. */
+function ziemia(lon: number, lat: number): [number, number][] {
+  const dLat = 700 / 111_320
+  const dLon = dLat / Math.cos(lat * (Math.PI / 180))
+  return [
+    [lon - dLon, lat - dLat],
+    [lon + dLon, lat - dLat],
+    [lon + dLon, lat + dLat],
+    [lon - dLon, lat + dLat],
+  ]
+}
 
 type Stan =
   | { stan: 'ladowanie' }
@@ -82,6 +123,7 @@ export default function Okolica3D() {
         )
       : []
   const wybranyBudynek = adres ? budynekAdresu(budynki, adres) : null
+  const swiatlo = useSwiatlo(lon ?? 0, lat ?? 0)
 
   if (!adres || lon === null || lat === null) return null
 
@@ -90,7 +132,14 @@ export default function Okolica3D() {
 
   return (
     <div className="m3d">
-      <Scena lon={lon} lat={lat} budynki={budynki} wybrany={wybranyBudynek} />
+      <Scena
+        lon={lon}
+        lat={lat}
+        budynki={budynki}
+        wybrany={wybranyBudynek}
+        swiatlo={swiatlo.swiatlo}
+      />
+      {budynki.length > 0 && <PanelCienia {...swiatlo} />}
       {budynkiStan.stan === 'ladowanie' && <p className="m3d-komunikat">Wczytuję budynki…</p>}
       {budynkiStan.stan === 'blad' && (
         <p className="m3d-komunikat">Nie udało się wczytać budynków. Spróbuj odświeżyć stronę.</p>
@@ -117,11 +166,14 @@ function Scena({
   lat,
   budynki,
   wybrany,
+  swiatlo,
 }: {
   lon: number
   lat: number
   budynki: BudynekOkolicy[]
   wybrany: BudynekOkolicy | null
+  /** null = tryb lekki: stałe światło, bez cienia. */
+  swiatlo: Swiatlo | null
 }) {
   const kontener = useRef<HTMLDivElement>(null)
   const mapaRef = useRef<MapaLibre | null>(null)
@@ -145,7 +197,7 @@ function Scena({
     })
     mapa.addControl(new AttributionControl({ compact: true }), 'bottom-right')
     mapa.addControl(new NavigationControl({ visualizePitch: true }), 'top-right')
-    const nakladka = new MapboxOverlay({ interleaved: false, effects: [SWIATLO], layers: [] })
+    const nakladka = new MapboxOverlay({ interleaved: false, layers: [] })
     mapa.addControl(nakladka)
     mapaRef.current = mapa
     nakladkaRef.current = nakladka
@@ -160,12 +212,38 @@ function Scena({
     mapaRef.current?.jumpTo({ center: [lon, lat] })
   }, [lon, lat])
 
+  const cien = swiatlo?.cien === true && !swiatlo.noc
   useEffect(() => {
     nakladkaRef.current?.setProps({
-      layers: warstwy(budynki, wybrany),
+      layers: [
+        // Ziemia tylko przy cieniu: bez niej cienie nie mają na co paść (podkład to MapLibre).
+        ...(cien
+          ? [
+              new SolidPolygonLayer<[number, number][]>({
+                id: 'ziemia',
+                data: [ziemia(lon, lat)],
+                getPolygon: (p) => p,
+                getFillColor: [0, 0, 0, 0],
+              }),
+            ]
+          : []),
+        ...warstwy(budynki, wybrany),
+      ],
       getTooltip: dymek,
     })
-  }, [budynki, wybrany])
+  }, [budynki, wybrany, cien, lon, lat])
+
+  // Efekt odtwarzany przy każdej zmianie czasu: deck nie przerysowuje sceny, gdy zmienia się
+  // tylko znacznik wewnątrz istniejącego światła.
+  const znacznik = swiatlo?.znacznik
+  const noc = swiatlo?.noc
+  const zSlonca = swiatlo !== null
+  useEffect(() => {
+    const efekt = efektSwiatla(
+      zSlonca && znacznik !== undefined ? { znacznik, cien, noc: noc === true } : null,
+    )
+    nakladkaRef.current?.setProps({ effects: [efekt] })
+  }, [zSlonca, znacznik, cien, noc])
 
   return (
     <div
