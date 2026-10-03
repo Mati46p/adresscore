@@ -1,6 +1,6 @@
 // Strategiczna mapa hałasu Krakowa 2022: najwyższe pasmo LDWN spośród dróg,
 // torów i przemysłu. Uruchom po aktualizacji adresów: node etl/halas.mjs.
-// Przez HTTP Range pobiera tylko trzy potrzebne pliki z archiwum ~614 MB.
+// Przez HTTP Range pobiera drogi i tory z ZIP; przemysł bezpośrednio z REST.
 import { spawn } from 'node:child_process'
 import {
   closeSync,
@@ -8,7 +8,6 @@ import {
   existsSync,
   mkdirSync,
   openSync,
-  readFileSync,
   readSync,
   renameSync,
   statSync,
@@ -24,9 +23,9 @@ import { katalogZip, wypakujZdalnie } from './halas-zip.mjs'
 import { CACHE, dzis, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
 
 const URL = 'https://msip.um.krakow.pl/Dane/Mapa_Halasu_2022_JSON.zip'
-// ZIP gubi ISOV1/ISOV2 dla przemysłu; REST ma atrybuty (geometrii nie pobieramy drugi raz).
-const URL_PRZEM_ATRYBUTY =
-  'https://msip.um.krakow.pl/arcgis/rest/services/Mapa_halasu_2022/8_2_MH_2022_IMISJA_5/MapServer/8/query?where=1%3D1&outFields=ISOV1%2CISOV2%2CShape_Area%2CShape_Length&returnGeometry=false&f=json'
+// ZIP przemysłu ma 649 pustych geometrii; REST publikuje 286 pasm >=55 dB z geometrią.
+const REST_PRZEM =
+  'https://msip.um.krakow.pl/arcgis/rest/services/Mapa_halasu_2022/8_2_MH_2022_IMISJA_5/MapServer/8/query'
 const WARSTWY = [
   {
     id: 'drogi',
@@ -54,42 +53,52 @@ function cytuj(s) {
   return `'${s.replaceAll("'", "''")}'`
 }
 
+async function pobierzPrzemysl(cel) {
+  const baza = {
+    where: 'ISOV1>=55',
+    outFields: 'ISOV1,ISOV2',
+    returnGeometry: 'true',
+    outSR: '2178',
+    geometryPrecision: '2',
+    maxAllowableOffset: '1',
+    orderByFields: 'OBJECTID ASC',
+  }
+  const url = (parametry) => `${REST_PRZEM}?${new URLSearchParams(parametry)}`
+  const policz = await fetch(url({ where: baza.where, returnCountOnly: 'true', f: 'json' }))
+  if (!policz.ok) throw new Error(`Liczba pasm przemysłowych: HTTP ${policz.status}`)
+  const { count } = await policz.json()
+  if (!Number.isInteger(count) || count < 200)
+    throw new Error('Nieoczekiwana liczba pasm przemysłowych')
+  const cechy = []
+  let crs = null
+  for (let offset = 0; offset < count; offset += 50) {
+    const odpowiedz = await fetch(
+      url({ ...baza, resultOffset: String(offset), resultRecordCount: '50', f: 'geojson' }),
+    )
+    if (!odpowiedz.ok) throw new Error(`Pasmo przemysłowe od ${offset}: HTTP ${odpowiedz.status}`)
+    const strona = await odpowiedz.json()
+    if (
+      !Array.isArray(strona.features) ||
+      strona.features.length !== Math.min(50, count - offset)
+    ) {
+      throw new Error(`Niepełna strona przemysłu od ${offset}`)
+    }
+    if (!strona.features.every((f) => f.geometry && Number.isFinite(f.properties?.ISOV1))) {
+      throw new Error(`Brak geometrii lub pasma przemysłu od ${offset}`)
+    }
+    crs ??= strona.crs
+    cechy.push(...strona.features)
+  }
+  writeFileSync(cel, JSON.stringify({ type: 'FeatureCollection', crs, features: cechy }))
+}
+
 async function wypakuj(archiwum, katalog, warstwa) {
   const cel = join(CACHE, `halas_2022_${warstwa.id}_LDWN.geojson`)
   if (existsSync(cel) && statSync(cel).size > 1_000) return cel
   const tymczasowy = `${cel}.tmp`
   try {
     if (warstwa.id === 'przemysl') {
-      const wpis = (katalog ?? (await katalogZip(URL))).get(warstwa.sciezka)
-      if (!wpis) throw new Error('Brak warstwy przemysłowej w ZIP')
-      const surowy = `${tymczasowy}.raw`
-      await wypakujZdalnie(URL, wpis, surowy)
-      try {
-        const dane = JSON.parse(readFileSync(surowy, 'utf8'))
-        const odpowiedz = await fetch(URL_PRZEM_ATRYBUTY)
-        if (!odpowiedz.ok) throw new Error(`Atrybuty przemysłowe: HTTP ${odpowiedz.status}`)
-        const atrybuty = await odpowiedz.json()
-        if (atrybuty.exceededTransferLimit || atrybuty.features?.length !== dane.features?.length) {
-          throw new Error('Niepełne atrybuty przemysłowe MSIP REST')
-        }
-        const klucz = (pole, obwod) => `${Number(pole).toFixed(2)}|${Number(obwod).toFixed(2)}`
-        const indeks = new Map(
-          atrybuty.features.map(({ attributes: a }) => [
-            klucz(a.Shape_Area, a.Shape_Length),
-            { isov1: a.ISOV1, isov2: a.ISOV2 },
-          ]),
-        )
-        if (indeks.size !== dane.features.length) throw new Error('Niejednoznaczny klucz geometrii')
-        for (const obiekt of dane.features) {
-          const p = obiekt.properties
-          const pasmo = indeks.get(klucz(p['st_area(shape)'], p['st_length(shape)']))
-          if (!pasmo) throw new Error('Brak atrybutów dla wielokąta przemysłowego')
-          obiekt.properties = pasmo
-        }
-        writeFileSync(tymczasowy, JSON.stringify(dane))
-      } finally {
-        if (existsSync(surowy)) unlinkSync(surowy)
-      }
+      await pobierzPrzemysl(tymczasowy)
     } else if (archiwum) {
       const proces = spawn('unzip', ['-p', archiwum, warstwa.sciezka], {
         stdio: ['ignore', 'pipe', 'pipe'],
@@ -192,7 +201,7 @@ async function main() {
         id: 'halas_ldwn',
         kategoria: 'spokoj',
         nazwa: 'Najwyższe pasmo hałasu (LDWN)',
-        opis: 'Najwyższe pasmo LDWN spośród hałasu drogowego, szynowego i przemysłowego. Mapa imisyjna 2022, 4 m nad terenem. Wartość liczbowa jest reprezentantem pasma dla punktacji, nie dokładnym pomiarem ani sumą hałasu. Na granicy pasm wybieramy wyższe. Brak liczby może oznaczać poziom poniżej prezentowanego zakresu albo brak pokrycia mapą; nie pozwala wywnioskować dokładnego poziomu hałasu.',
+        opis: 'Najwyższe opublikowane pasmo LDWN spośród hałasu drogowego, szynowego i przemysłowego; nie opisuje całego hałasu Krakowa. Mapa imisyjna 2022, 4 m nad terenem. Wartość liczbowa reprezentuje pasmo dla punktacji, nie dokładny pomiar ani sumę hałasu. Na granicy pasm wybieramy wyższe. Brak liczby może oznaczać poziom poniżej prezentowanego zakresu albo brak pokrycia mapą. Geometrię przemysłu pobrano z tolerancją 1 m.',
         jednostka: 'dB',
         kierunek: 'mniej-lepiej',
         rozdzielczosc: 'rejon',
@@ -201,8 +210,15 @@ async function main() {
         zadanie: 4,
         zrodla: [
           {
-            nazwa: 'Gmina Miejska Kraków, Portal MSIP Obserwatorium — Mapa hałasu 2022',
+            nazwa: 'Gmina Miejska Kraków, MSIP — Mapa hałasu 2022 (drogi, tory)',
             url: 'https://msip.krakow.pl/dataset/1361',
+            licencja: 'Regulamin MSIP: https://msip.krakow.pl/getPdf?dok_id=288055',
+            dataDanych: '2022',
+            pobrano: dzis(),
+          },
+          {
+            nazwa: 'Gmina Miejska Kraków, MSIP — hałas przemysłowy LDWN 2022',
+            url: 'https://msip.um.krakow.pl/arcgis/rest/services/Mapa_halasu_2022/8_2_MH_2022_IMISJA_5/MapServer/8',
             licencja: 'Regulamin MSIP: https://msip.krakow.pl/getPdf?dok_id=288055',
             dataDanych: '2022',
             pobrano: dzis(),
