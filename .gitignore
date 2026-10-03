@@ -8,3 +8,5 @@ supabase/.temp
 supabase/.branches
 *.log
 .noc
+docs/warianty/
+etl/.cache
