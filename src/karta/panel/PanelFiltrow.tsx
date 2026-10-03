@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { KATEGORIE, type KategoriaId } from '@/kontrakty'
+import { KATEGORIE, type KategoriaId, type WskaznikMeta } from '@/kontrakty'
 import { useDane } from '@/wynik/dane'
 import { PERSONY, type PersonaId, TRYBY } from '@/wynik/persony'
 import {
@@ -15,11 +15,21 @@ import './panel.css'
 
 const SEGMENTY_WAGI = Array.from({ length: WAGA_MAX + 1 }, (_, n) => n)
 
-const KIERUNKI: readonly { id: KierunekOceny; znak: string; opis: string }[] = [
-  { id: 'wiecej-lepiej', znak: '↑', opis: 'Więcej lepiej' },
-  { id: 'mniej-lepiej', znak: '↓', opis: 'Mniej lepiej' },
-  { id: 'optimum', znak: '≈', opis: 'Środek najlepszy' },
+const KIERUNKI: readonly { id: KierunekOceny; znak: string }[] = [
+  { id: 'wiecej-lepiej', znak: '↑' },
+  { id: 'mniej-lepiej', znak: '↓' },
+  { id: 'optimum', znak: '≈' },
 ]
+
+function etykietaKierunku(meta: WskaznikMeta, kierunek: KierunekOceny): string {
+  if (kierunek === 'optimum') return 'Umiarkowanie = lepiej'
+  const mniej = kierunek === 'mniej-lepiej'
+  if (meta.id.endsWith('_odleglosc')) return mniej ? 'Bliżej lepiej' : 'Dalej lepiej'
+  if (meta.id === 'powodz_1proc') return mniej ? 'Płycej lepiej' : 'Głębiej lepiej'
+  if (meta.jednostka === 'min' || meta.jednostka === 'h')
+    return mniej ? 'Krócej lepiej' : 'Dłużej lepiej'
+  return mniej ? 'Mniej = lepiej' : 'Więcej = lepiej'
+}
 
 const OPIS_TRYBU: Record<string, string> = {
   kupuje:
@@ -32,8 +42,11 @@ const OPIS_TRYBU: Record<string, string> = {
 // zmianie (stan wtedy trzyma tylko 'wlasna'). Zmienna modułu przeżywa zmianę ekranu.
 let ostatniaPersona: PersonaId = 'rodzina'
 
-function opisDomyslny(k: string): string {
-  return (KIERUNKI.find((x) => x.id === k)?.opis ?? k).toLowerCase()
+function opisDomyslny(meta: WskaznikMeta): string {
+  return etykietaKierunku(
+    meta,
+    meta.kierunek === 'neutralny' ? 'optimum' : meta.kierunek,
+  ).toLowerCase()
 }
 
 function opisZrodla(w: WskaznikPrzygotowany): string {
@@ -264,7 +277,7 @@ function Warstwa({
                   type="button"
                   className="seg panel-kier"
                   aria-pressed={kierunek === k.id}
-                  aria-label={`${k.opis}: ${meta.nazwa}`}
+                  aria-label={`${etykietaKierunku(meta, k.id)}: ${meta.nazwa}`}
                   // Kierunek z kontraktu nie trafia do stanu – nadpisanie zostaje tylko, gdy różni się
                   // od domyślnego, więc „Przywróć wagi profilu" i link w URL zostają czyste.
                   onClick={() =>
@@ -274,7 +287,7 @@ function Warstwa({
                     )
                   }
                 >
-                  <span aria-hidden="true">{k.znak}</span> {k.opis}
+                  <span aria-hidden="true">{k.znak}</span> {etykietaKierunku(meta, k.id)}
                 </button>
               ))}
             </div>
@@ -285,9 +298,7 @@ function Warstwa({
             </p>
           )}
           {!neutralna && kierunek !== meta.kierunek && (
-            <p className="panel-kierunek">
-              Zmieniony kierunek – domyślnie {opisDomyslny(meta.kierunek)}.
-            </p>
+            <p className="panel-kierunek">Zmieniony kierunek – domyślnie {opisDomyslny(meta)}.</p>
           )}
         </>
       )}
