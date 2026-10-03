@@ -1,7 +1,7 @@
 // Uruchom: node --test src/wynik/
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { PERSONY, ustawieniaPersony } from './persony.ts'
+import { PERSONY, TRYBY, ustawieniaPersony } from './persony.ts'
 import { czytajHash, zapiszHash } from './url.ts'
 
 const manifest = [
@@ -9,12 +9,14 @@ const manifest = [
   { id: 'inwestycje_500m', kategoria: 'przyszlosc' },
   { id: 'cena_m2_mediana', kategoria: 'kontekst' },
   { id: 'nowa_warstwa', kategoria: 'transport' },
+  { id: 'sklep_odleglosc', kategoria: 'codziennosc' },
+  { id: 'ludnosc_1km', kategoria: 'kontekst' },
 ] as const
 
 describe('persony', () => {
   it('wagi w zakresie 0–4 dla każdej persony i trybu', () => {
     for (const p of PERSONY) {
-      for (const tryb of ['kupuje', 'wynajmuje'] as const) {
+      for (const tryb of TRYBY.map((t) => t.id)) {
         const { wagi } = ustawieniaPersony(p.id, tryb, manifest)
         for (const w of Object.values(wagi)) assert.ok(w >= 0 && w <= 4)
       }
@@ -46,9 +48,27 @@ describe('persony', () => {
       'wiecej-lepiej',
     )
   })
+
+  it('tryb sklepu liczy tylko konkurencję i ludność, niezależnie od persony mieszkaniowej', () => {
+    for (const p of PERSONY) {
+      const { wagi, kierunki } = ustawieniaPersony(p.id, 'biznes', manifest)
+      assert.equal(wagi.sklep_odleglosc, 4)
+      assert.equal(wagi.ludnosc_1km, 4)
+      assert.equal(kierunki.sklep_odleglosc, 'wiecej-lepiej')
+      assert.equal(kierunki.ludnosc_1km, 'wiecej-lepiej')
+      assert.equal(wagi.halas_ldwn, 0)
+      assert.equal(wagi.nowa_warstwa, 0)
+    }
+    assert.equal(ustawieniaPersony('rodzina', 'kupuje', manifest).wagi.ludnosc_1km, 0)
+  })
 })
 
 describe('hash URL', () => {
+  it('zapisuje i odczytuje tryb biznesowy', () => {
+    const url = czytajHash('#/?t=biznes')
+    assert.equal(url.tryb, 'biznes')
+    assert.match(zapiszHash(url), /t=biznes/)
+  })
   it('zapis i odczyt są odwracalne', () => {
     const s = {
       ekran: 'okolica' as const,

@@ -1,5 +1,6 @@
 import { lazy, Suspense, useState } from 'react'
 import { useDane } from '@/wynik/dane'
+import { WARSTWY_BIZNESU } from '@/wynik/persony'
 import { kierunekEfektywny } from '@/wynik/silnik'
 import {
   dodajDoPorownania,
@@ -28,6 +29,7 @@ const BRAK_HEKSOW: ReadonlyMap<string, number | null> = new Map()
 /** Ekran 1 wg docs/makieta/Main.dc.html: panel filtrów po lewej, mapa po prawej. */
 export function EkranSzukaj() {
   const dane = useDane()
+  const tryb = useStan((s) => s.tryb)
   const warstwa = useStan((s) => s.warstwa)
   const wybrany = useStan((s) => s.wybrany)
   const porownanie = useStan((s) => s.porownanie)
@@ -47,7 +49,11 @@ export function EkranSzukaj() {
   // warstwa neutralna z kierunkiem nadanym przez personę wchodzi do wyniku, więc ma przycisk.
   const warstwy =
     dane.stan === 'gotowe'
-      ? dane.wskazniki.filter((w) => kierunekEfektywny(w.meta, kierunki) !== null)
+      ? dane.wskazniki.filter(
+          (w) =>
+            kierunekEfektywny(w.meta, kierunki) !== null &&
+            (tryb !== 'biznes' || WARSTWY_BIZNESU.some((id) => id === w.meta.id)),
+        )
       : []
 
   return (
@@ -55,10 +61,15 @@ export function EkranSzukaj() {
       <div className="szukaj-lewa">
         <div className="szukaj-wyszukaj">
           <div className="panel-wstep">
-            <h1 tabIndex={-1}>Znajdź okolicę w Krakowie</h1>
+            <h1 tabIndex={-1}>
+              {tryb === 'biznes'
+                ? 'Znajdź miejsce na sklep spożywczy'
+                : 'Znajdź okolicę w Krakowie'}
+            </h1>
             <p>
-              Profil i wagi poniżej od razu przeliczają kolory na mapie. Kliknij mapę, żeby zobaczyć
-              okolicę i dodać jej heks do porównania.
+              {tryb === 'biznes'
+                ? 'Wagi konkurencji i liczby stałych mieszkańców przeliczają kolory na mapie. Kliknij heks, aby obejrzeć adres i porównać okolice.'
+                : 'Profil i wagi poniżej od razu przeliczają kolory na mapie. Kliknij mapę, żeby zobaczyć okolicę i dodać jej heks do porównania.'}
             </p>
           </div>
         </div>

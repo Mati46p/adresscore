@@ -66,6 +66,18 @@ let slugPoIndeks: readonly string[] = []
 let metaWskaznikow: readonly Pick<WskaznikMeta, 'id' | 'kategoria'>[] = []
 let oczekujacyUrl: StanUrl | null = null
 let odczytujemyHistorie = false
+type UstawieniaTrybu = Pick<StanAplikacji, 'persona' | 'wagi' | 'kierunki' | 'filtry'>
+let mieszkaniePrzedBiznesem: UstawieniaTrybu | null = null
+let ostatniBiznes: UstawieniaTrybu | null = null
+
+function ustawieniaBiezacegoTrybu(): UstawieniaTrybu {
+  return {
+    persona: stan.persona,
+    wagi: stan.wagi,
+    kierunki: stan.kierunki,
+    filtry: stan.filtry,
+  }
+}
 
 export function pobierzStan(): StanAplikacji {
   return stan
@@ -104,6 +116,42 @@ export function wybierzPersone(persona: PersonaId) {
 }
 
 export function ustawTryb(tryb: Tryb) {
+  if (tryb === stan.tryb) return
+  if (tryb === 'biznes') {
+    mieszkaniePrzedBiznesem = ustawieniaBiezacegoTrybu()
+    const zapis = ostatniBiznes
+    const domyslne = ustawieniaPersony(PERSONA_DOMYSLNA, 'biznes', metaWskaznikow)
+    return zmien({
+      tryb,
+      persona: zapis?.persona ?? PERSONA_DOMYSLNA,
+      wagi: zapis?.wagi ?? domyslne.wagi,
+      kierunki: zapis?.kierunki ?? domyslne.kierunki,
+      filtry: zapis?.filtry ?? [],
+      warstwa: 'wynik',
+      trybMapy: 'suma',
+      ostatniaWarstwa: null,
+    })
+  }
+  if (stan.tryb === 'biznes') {
+    ostatniBiznes = ustawieniaBiezacegoTrybu()
+    const zapis = mieszkaniePrzedBiznesem
+    const persona = zapis?.persona ?? (stan.persona === 'wlasna' ? PERSONA_DOMYSLNA : stan.persona)
+    const domyslne = ustawieniaPersony(
+      persona === 'wlasna' ? PERSONA_DOMYSLNA : persona,
+      tryb,
+      metaWskaznikow,
+    )
+    return zmien({
+      tryb,
+      persona,
+      wagi: persona === 'wlasna' && zapis ? zapis.wagi : domyslne.wagi,
+      kierunki: persona === 'wlasna' && zapis ? zapis.kierunki : domyslne.kierunki,
+      filtry: zapis?.filtry ?? [],
+      warstwa: 'wynik',
+      trybMapy: 'suma',
+      ostatniaWarstwa: null,
+    })
+  }
   if (stan.persona === 'wlasna') return zmien({ tryb })
   const { wagi, kierunki } = ustawieniaPersony(stan.persona, tryb, metaWskaznikow)
   zmien({ tryb, wagi, kierunki })

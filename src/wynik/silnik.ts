@@ -244,6 +244,7 @@ export function kierunekEfektywny(meta: WskaznikMeta, kierunki?: Kierunki): Kier
 export const KONTEKST_DO_WYNIKU: Readonly<Record<string, KategoriaId>> = {
   cena_m2_mediana: 'przyszlosc',
   drzewa_100m: 'codziennosc',
+  ludnosc_1km: 'codziennosc',
 }
 
 function kategoriaWarstwy(meta: WskaznikMeta, liczona: boolean): KategoriaId {

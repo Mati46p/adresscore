@@ -91,7 +91,7 @@ export function czytajHash(hash: string): StanUrl {
     ekran,
     idAdresu,
     persona: PERSONY.some((x) => x.id === p) ? (p as PersonaId) : null,
-    tryb: t === 'kupuje' || t === 'wynajmuje' ? t : null,
+    tryb: t === 'kupuje' || t === 'wynajmuje' || t === 'biznes' ? t : null,
     porownanie: cmp ? cmp.split(',').filter(Boolean).slice(0, MAKS_POROWNANIE) : [],
     ustawienia,
     filtry: filtryZTekstu(parametry.get('f')),

@@ -66,6 +66,20 @@ const wszystkie = [halas, zielen, sklep, cena, budowy]
 const wagi = { halas: 2, zielen: 1, sklep: 1, cena: 4, budowy: 3 }
 
 describe('dobrowolne punktowanie kontekstu i stref 0/1', () => {
+  it('ludność NSP liczy się z kierunkiem biznesowym, ale przy wadze 0 nie zmienia mieszkania', () => {
+    const ludnosc = wsk(
+      { id: 'ludnosc_1km', kategoria: 'kontekst', kierunek: 'neutralny', zakres: [0, 1000] },
+      [0, 1000],
+    )
+    const baza = wsk({ id: 'baza', zakres: [0, 100] }, [50, 50])
+    const kierunki = { ludnosc_1km: 'wiecej-lepiej' as const }
+    assert.equal(wynikAdresu(1, [baza, ludnosc], { baza: 2, ludnosc_1km: 0 }, kierunki).wynik, 50)
+    const biznes = wynikAdresu(1, [ludnosc], { ludnosc_1km: 4 }, kierunki)
+    assert.equal(biznes.wynik, 100)
+    assert.equal(biznes.warstwy[0]?.kategoria, 'codziennosc')
+    assert.equal(wynikAdresu(0, [ludnosc], { ludnosc_1km: 4 }, kierunki).wynik, 0)
+  })
+
   it('strefa ocenia 1 i 0 zgodnie z wyborem, bez kierunku pozostaje neutralna', () => {
     const strefa = wsk(
       { id: 'sct_w_strefie', kategoria: 'transport', kierunek: 'neutralny', zakres: [0, 1] },

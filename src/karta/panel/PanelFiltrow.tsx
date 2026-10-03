@@ -2,7 +2,7 @@ import { useEffect, useId, useState } from 'react'
 import { KATEGORIE, type KategoriaId, type WskaznikMeta } from '@/kontrakty'
 import { useDane } from '@/wynik/dane'
 import { opisFiltru, type TwardyFiltr, type Warunek } from '@/wynik/filtry'
-import { PERSONY, type PersonaId, TRYBY } from '@/wynik/persony'
+import { PERSONY, type PersonaId, TRYBY, type Tryb, WARSTWY_BIZNESU } from '@/wynik/persony'
 import {
   type KierunekOceny,
   KOLEJNOSC_KATEGORII,
@@ -35,11 +35,13 @@ const KIERUNKI: readonly { id: KierunekOceny; znak: string }[] = [
   { id: 'optimum', znak: '≈' },
 ]
 
-const OPIS_TRYBU: Record<string, string> = {
+const OPIS_TRYBU: Record<Tryb, string> = {
   kupuje:
     'Mocniej liczy się przyszłość okolicy i ryzyko (waga +1). Cena m² jest informacyjna, dopóki samodzielnie nie włączysz jej w sekcji Kontekst po podłączeniu danych RCN.',
   wynajmuje:
     'Mocniej liczy się dojazd (waga +1), słabiej przyszłość okolicy (waga −1). Szacunek czynszu: wkrótce – nie mamy jeszcze danych o najmie.',
+  biznes:
+    'Sklep spożywczy: dalej od istniejącego sklepu i więcej stałych mieszkańców w polu 1 km² z NSP 2021 to wyższy wynik. Liczba mieszkańców nie mierzy ruchu pieszych ani sprzedaży.',
 }
 
 // Panel pamięta ostatni wybrany profil, żeby „Przywróć wagi profilu" działało po ręcznej
@@ -80,7 +82,11 @@ export function PanelFiltrow() {
   }, [persona])
 
   const wskazniki = dane.stan === 'gotowe' ? dane.wskazniki : []
-  const liczone = wskazniki.filter(
+  const warstwyPanelu =
+    tryb === 'biznes'
+      ? wskazniki.filter((w) => WARSTWY_BIZNESU.some((id) => id === w.meta.id))
+      : wskazniki
+  const liczone = warstwyPanelu.filter(
     (w) => w.meta.kategoria !== 'kontekst' || KONTEKST_DO_WYNIKU[w.meta.id],
   )
   const aktywne = liczone.filter(
@@ -158,30 +164,41 @@ export function PanelFiltrow() {
         </p>
       </section>
 
-      <section aria-labelledby="h-persona" className="panel-sekcja">
-        <h2 id="h-persona" className="etykieta-sekcji">
-          Profil (ustawia wagi poniżej)
-        </h2>
-        <div className="panel-chipy">
-          {PERSONY.map((p) => (
-            <button
-              key={p.id}
-              type="button"
-              className="seg panel-chip"
-              title={p.opis}
-              aria-pressed={persona === p.id}
-              onClick={() => wybierzPersone(p.id)}
-            >
-              {p.nazwa}
-            </button>
-          ))}
-        </div>
-        <p className="panel-uwaga" aria-live="polite">
-          {persona === 'wlasna'
-            ? 'Własne ustawienia – wagi lub kierunki zmienione ręcznie.'
-            : opisPersony}
-        </p>
-      </section>
+      {tryb === 'biznes' &&
+        dane.stan === 'gotowe' &&
+        WARSTWY_BIZNESU.some((id) => !wskazniki.some((w) => w.meta.id === id)) && (
+          <p className="panel-uwaga" role="status">
+            Dostępne warstwy biznesowe: {warstwyPanelu.length} z {WARSTWY_BIZNESU.length}. Brakująca
+            warstwa nie wpływa na wynik.
+          </p>
+        )}
+
+      {tryb !== 'biznes' && (
+        <section aria-labelledby="h-persona" className="panel-sekcja">
+          <h2 id="h-persona" className="etykieta-sekcji">
+            Profil (ustawia wagi poniżej)
+          </h2>
+          <div className="panel-chipy">
+            {PERSONY.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                className="seg panel-chip"
+                title={p.opis}
+                aria-pressed={persona === p.id}
+                onClick={() => wybierzPersone(p.id)}
+              >
+                {p.nazwa}
+              </button>
+            ))}
+          </div>
+          <p className="panel-uwaga" aria-live="polite">
+            {persona === 'wlasna'
+              ? 'Własne ustawienia – wagi lub kierunki zmienione ręcznie.'
+              : opisPersony}
+          </p>
+        </section>
+      )}
 
       <section aria-labelledby="h-wagi" className="panel-sekcja">
         <div className="panel-wagi-glowa">
@@ -194,33 +211,36 @@ export function PanelFiltrow() {
         </div>
         <p className="panel-uwaga">
           Waga 0–4 mówi, jak ważna jest dla Ciebie warstwa: 0 – pomijam, 4 – bardzo ważne. Kierunek
-          wskazuje, które miejsca wolisz. Warstwy kontekstu liczą się dopiero po włączeniu.
+          wskazuje, które miejsca wolisz.
+          {tryb !== 'biznes' && ' Warstwy kontekstu liczą się dopiero po włączeniu.'}
         </p>
-        <div className="panel-akcje">
-          <button
-            type="button"
-            className="seg panel-akcja"
-            disabled={persona !== 'wlasna'}
-            onClick={() => wybierzPersone(ostatniaPersona)}
-          >
-            Przywróć wagi profilu
-          </button>
-        </div>
+        {tryb !== 'biznes' && (
+          <div className="panel-akcje">
+            <button
+              type="button"
+              className="seg panel-akcja"
+              disabled={persona !== 'wlasna'}
+              onClick={() => wybierzPersone(ostatniaPersona)}
+            >
+              Przywróć wagi profilu
+            </button>
+          </div>
+        )}
 
         {dane.stan === 'ladowanie' && <p className="panel-uwaga">Wczytuję warstwy…</p>}
         {dane.stan === 'blad' && <p className="panel-uwaga">Nie udało się wczytać warstw.</p>}
         {KOLEJNOSC_KATEGORII.map((kat, i) => {
-          const warstwy = wskazniki.filter((w) => w.meta.kategoria === kat)
+          const warstwy = warstwyPanelu.filter((w) => w.meta.kategoria === kat)
           if (warstwy.length === 0) return null
           return (
             <GrupaWarstw
-              key={kat}
+              key={`${tryb}-${kat}`}
               kategoria={kat}
               warstwy={warstwy}
               wagi={wagi}
               kierunki={kierunki}
               filtry={filtry}
-              poczatkowoOtwarta={i === 0}
+              poczatkowoOtwarta={tryb === 'biznes' || i === 0}
             />
           )
         })}

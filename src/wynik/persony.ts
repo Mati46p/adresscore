@@ -5,7 +5,10 @@ import type { WskaznikMeta } from '../kontrakty/index.ts'
 import type { Kierunki, Wagi } from './silnik.ts'
 
 export type PersonaId = 'rodzina' | 'singiel' | 'senior' | 'inwestor' | 'od-zera'
-export type Tryb = 'kupuje' | 'wynajmuje'
+export type Tryb = 'kupuje' | 'wynajmuje' | 'biznes'
+
+/** Warstwy mające sens przy wyborze miejsca na sklep spożywczy. */
+export const WARSTWY_BIZNESU = ['sklep_odleglosc', 'ludnosc_1km'] as const
 
 export interface Persona {
   id: PersonaId
@@ -99,6 +102,11 @@ export const TRYB_DOMYSLNY: Tryb = 'kupuje'
 export const TRYBY: readonly { id: Tryb; nazwa: string; opis: string }[] = [
   { id: 'kupuje', nazwa: 'Kupuję', opis: 'Na lata: liczy się przyszłość okolicy i ryzyko' },
   { id: 'wynajmuje', nazwa: 'Wynajmuję', opis: 'Na teraz: liczy się dojazd i codzienność' },
+  {
+    id: 'biznes',
+    nazwa: 'Miejsca do założenia biznesu',
+    opis: 'Sklep spożywczy: konkurencja i liczba mieszkańców',
+  },
 ]
 
 // Kupujący zostaje na dekady, więc mocniej waży to, co się zmieni i co może zalać mieszkanie.
@@ -109,6 +117,7 @@ export const MODYFIKATORY_TRYBU: Readonly<
 > = {
   kupuje: { przyszlosc: 1, bezpieczenstwo: 1 },
   wynajmuje: { przyszlosc: -1, transport: 1 },
+  biznes: {},
 }
 
 export function znajdzPersone(id: string | null | undefined): Persona | undefined {
@@ -124,6 +133,17 @@ export function ustawieniaPersony(
   tryb: Tryb,
   wskazniki: readonly Pick<WskaznikMeta, 'id' | 'kategoria'>[],
 ): { wagi: Record<string, number>; kierunki: Kierunki } {
+  if (tryb === 'biznes') {
+    const znane = new Set(wskazniki.map((w) => w.id))
+    const wagi = Object.fromEntries(wskazniki.map((w) => [w.id, 0]))
+    const kierunki: Record<string, Kierunki[string]> = {}
+    for (const id of WARSTWY_BIZNESU) {
+      if (!znane.has(id)) continue
+      wagi[id] = 4
+      kierunki[id] = 'wiecej-lepiej'
+    }
+    return { wagi, kierunki }
+  }
   const persona = znajdzPersone(personaId) ?? (PERSONY[0] as Persona)
   const wagi: Record<string, number> = {}
   const kierunki: Record<string, Kierunki[string]> = {}
