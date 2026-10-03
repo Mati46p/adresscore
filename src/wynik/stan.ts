@@ -47,6 +47,8 @@ export interface StanAplikacji {
   ostatniaWarstwa: string | null
   /** Twarde filtry: adres, który ich nie spełnia, jest wykluczony (nie dostaje kary w wyniku). */
   filtry: readonly TwardyFiltr[]
+  /** Obiekty symulatora (#98), warianty A i B jako tekst `symulacjaUrl.ts`. */
+  symulacja: { a: string; b: string }
 }
 
 let stan: StanAplikacji = {
@@ -61,6 +63,7 @@ let stan: StanAplikacji = {
   trybMapy: 'suma',
   ostatniaWarstwa: null,
   filtry: [],
+  symulacja: { a: '', b: '' },
 }
 
 const sluchacze = new Set<() => void>()
@@ -246,6 +249,12 @@ export function przejdz(ekran: Ekran) {
   zmien({ ekran })
 }
 
+/** Warianty symulatora (#98); zapis do URL tylko na ekranie symulatora. */
+export function ustawSymulacje(symulacja: { a: string; b: string }) {
+  if (symulacja.a === stan.symulacja.a && symulacja.b === stan.symulacja.b) return
+  zmien({ symulacja })
+}
+
 export function dodajDoPorownania(i: number) {
   if (stan.porownanie.includes(i) || stan.porownanie.length >= MAKS_POROWNANIE) return
   zmien({ porownanie: [...stan.porownanie, i] })
@@ -357,6 +366,7 @@ function zUrl(url: StanUrl): Partial<StanAplikacji> {
     wybrany: url.ekran === 'okolica' ? wybrany : stan.wybrany,
     porownanie: url.porownanie.map((id) => indeksPoId.get(id)).filter((i) => i !== undefined),
     filtry: url.filtry,
+    ...(url.symulacja ? { symulacja: url.symulacja } : {}),
   }
 }
 
@@ -392,6 +402,7 @@ function doUrl(s: StanAplikacji): StanUrl {
     ustawienia:
       s.persona === 'wlasna' ? { wagi: { ...s.wagi }, kierunki: { ...s.kierunki } } : null,
     filtry: [...s.filtry],
+    ...(s.ekran === 'symulator' ? { symulacja: s.symulacja } : {}),
   }
 }
 
@@ -463,11 +474,16 @@ if (typeof window !== 'undefined') {
   if (startowy.persona) stan = { ...stan, persona: startowy.persona }
   if (startowy.tryb) stan = { ...stan, tryb: startowy.tryb }
   stan = { ...stan, filtry: startowy.filtry }
+  if (startowy.symulacja) stan = { ...stan, symulacja: startowy.symulacja }
   const odczytajZmianeUrl = () => {
     const url = czytajBiezacyUrl()
     if (!idAdresow) {
       oczekujacyUrl = url
-      return zmien({ ekran: url.ekran, filtry: url.filtry })
+      return zmien({
+        ekran: url.ekran,
+        filtry: url.filtry,
+        ...(url.symulacja ? { symulacja: url.symulacja } : {}),
+      })
     }
     const latka: Partial<StanAplikacji> = zUrl(url)
     const persona = url.ustawienia ? 'wlasna' : (url.persona ?? PERSONA_DOMYSLNA)
