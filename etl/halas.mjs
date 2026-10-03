@@ -1,6 +1,10 @@
 // Strategiczna mapa hałasu Krakowa 2022: najwyższe pasmo LDWN spośród dróg,
 // torów i przemysłu. Uruchom po aktualizacji adresów: node etl/halas.mjs.
 // Przez HTTP Range pobiera drogi i tory z ZIP; przemysł bezpośrednio z REST.
+//
+// Warstwy dróg i torów pokrywają całe miasto: poza pasmami od 55 dB leży poligon „poniżej 55 dB”
+// (uzasadnienie w etl/halas-pasma.mjs). Adres w nim dostaje wartość ciszy, a null zostaje tylko
+// dla adresów poza Krakowem i dla faktycznych luk obliczeń (adres bez żadnego poligonu).
 import { spawn } from 'node:child_process'
 import {
   closeSync,
@@ -18,12 +22,23 @@ import { join } from 'node:path'
 import { pipeline } from 'node:stream/promises'
 import { DuckDBInstance } from '@duckdb/node-api'
 import proj4 from 'proj4'
-import { pasmoLdwn } from './halas-pasma.mjs'
+import {
+  etykietaAdresu,
+  MAX_UDZIAL_LUK,
+  najwyzszePasmo,
+  PROG_LDWN,
+  pasmoLdwn,
+  trafienieZWiersza,
+  WARTOSC_PONIZEJ_PROGU,
+  ZAKRES_LDWN,
+} from './halas-pasma.mjs'
 import { katalogZip, wypakujZdalnie } from './halas-zip.mjs'
 import { CACHE, dzis, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
 
 const URL = 'https://msip.um.krakow.pl/Dane/Mapa_Halasu_2022_JSON.zip'
 // ZIP przemysłu ma 649 pustych geometrii; REST publikuje 286 pasm >=55 dB z geometrią.
+// Poligonów „poniżej 55 dB” przemysłu (363) nie pobieramy: pokrycie miasta dowodzą już drogi
+// i tory, a przemysł może tylko podnieść pasmo adresu.
 const REST_PRZEM =
   'https://msip.um.krakow.pl/arcgis/rest/services/Mapa_halasu_2022/8_2_MH_2022_IMISJA_5/MapServer/8/query'
 const WARSTWY = [
@@ -31,13 +46,16 @@ const WARSTWY = [
     id: 'drogi',
     nazwa: 'drogowy',
     sciezka: 'Mapa_imisyjna_2022_JSON/halas_2022_imisja_dr_LDWN.geojson',
+    cale: true,
   },
   {
     id: 'tory',
     nazwa: 'szynowy',
     sciezka: 'Mapa_imisyjna_2022_JSON/halas_2022_imisja_szyn_LDWN.geojson',
+    cale: true,
   },
   {
+    // Tylko pasma >=55 dB, więc pokrywa wyłącznie adresy w pasmach przemysłu.
     id: 'przemysl',
     nazwa: 'przemysłowy',
     sciezka: 'Mapa_imisyjna_2022_JSON/halas_2022_imisja_przem_LDWN.geojson',
@@ -143,7 +161,9 @@ async function main() {
   const katalog = archiwum ? null : await katalogZip(URL)
   const csv = join(CACHE, 'halas_adresy_2178.csv')
   const wiersze = ['i,x,y']
+  let liczbaKrakow = 0
   for (const adres of adresy) {
+    if (adres.gmina === 'Kraków') liczbaKrakow++
     if (adres.gmina !== 'Kraków' || !Number.isFinite(adres.lon) || !Number.isFinite(adres.lat))
       continue
     const [x, y] = proj4('EPSG:4326', 'EPSG:2178', [adres.lon, adres.lat])
@@ -161,63 +181,106 @@ async function main() {
     await polaczenie.run(
       `CREATE TABLE adresy AS SELECT i::INTEGER AS i, ST_Point(x, y) AS geom FROM read_csv_auto(${cytuj(csv)})`,
     )
-    const wyniki = WARSTWY.map(() => Array(adresy.length).fill(null))
-    for (let n = 0; n < WARSTWY.length; n++) {
-      const warstwa = WARSTWY[n]
+    // Wszystkie poligony pod adresem, także „poniżej 55 dB”: wybór wyższego pasma i rozpoznanie
+    // ciszy robi najwyzszePasmo (czysta funkcja z testem). Adres bez żadnego poligonu to luka.
+    const trafienia = new Map()
+    for (const warstwa of WARSTWY) {
       const plik = await wypakuj(archiwum, katalog, warstwa)
       console.log(`Dopasowuję ${warstwa.nazwa} LDWN…`)
+      // Poligony najpierw do tabeli. Pomiar (#115): złączenie wprost z ST_Read nie dało wyniku
+      // dla warstwy dróg w godzinę (dysk czytany bez przerwy, procesor prawie bezczynny), a po
+      // zapisaniu do tabeli zajmuje ok. minuty na 10 tys. adresów.
+      // Aliasy małymi literami są konieczne: REST oddaje ISOV1/ISOV2 wielkimi, ZIP małymi,
+      // a DuckDB zachowuje wielkość liter nazwy kolumny w wyniku. Bez aliasu przemysł z REST
+      // miał rekord.isov1 === undefined i wszystkie jego pasma po cichu przepadały.
+      await polaczenie.run(
+        `CREATE OR REPLACE TABLE poligony AS SELECT isov1 AS isov1, isov2 AS isov2, geom FROM ST_Read(${cytuj(plik)})`,
+      )
       const sql = `
-        SELECT a.i, max(p.isov1) AS isov1, arg_max(p.isov2, p.isov1) AS isov2
+        SELECT a.i AS i, p.isov1 AS isov1, p.isov2 AS isov2
         FROM adresy a
-        JOIN ST_Read(${cytuj(plik)}) p ON ST_Intersects(p.geom, a.geom)
-        GROUP BY a.i
+        JOIN poligony p ON ST_Intersects(p.geom, a.geom)
       `
       const czytnik = await polaczenie.runAndReadAll(sql)
+      const wObszarze = new Set()
+      let nieznane = 0
       for (const rekord of czytnik.getRowObjectsJS()) {
-        const pasmo = pasmoLdwn(Number(rekord.isov1), Number(rekord.isov2))
-        if (pasmo) wyniki[n][Number(rekord.i)] = pasmo
+        const i = Number(rekord.i)
+        const trafienie = trafienieZWiersza(rekord, warstwa.nazwa)
+        if (!pasmoLdwn(trafienie.isov1, trafienie.isov2)) nieznane++
+        const lista = trafienia.get(i) ?? []
+        lista.push(trafienie)
+        trafienia.set(i, lista)
+        wObszarze.add(i)
       }
-      console.log(`${warstwa.nazwa}: ${wyniki[n].filter(Boolean).length}/${adresy.length} adresów`)
+      console.log(
+        `${warstwa.nazwa}: ${wObszarze.size}/${liczbaKrakow} adresów Krakowa w poligonach` +
+          (nieznane ? `; ${nieznane} trafień w poligony o nieznanym przedziale (pominięte)` : ''),
+      )
+      // Warstwa dróg i torów obejmuje całe miasto. Mniej to błąd (uszkodzony plik, zły układ
+      // współrzędnych), nie cisza: bez tej kontroli warstwa po cichu nic nie wnosiłaby do wyniku.
+      if (warstwa.cale && wObszarze.size < (1 - MAX_UDZIAL_LUK) * liczbaKrakow) {
+        throw new Error(
+          `Warstwa ${warstwa.nazwa} obejmuje ${wObszarze.size} z ${liczbaKrakow} adresów Krakowa, a powinna całe miasto`,
+        )
+      }
     }
 
     const wartosci = []
     const etykiety = []
+    const rozklad = new Map()
+    const luki = []
     for (const adres of adresy) {
-      const trafienia = WARSTWY.map((warstwa, n) => ({ warstwa, pasmo: wyniki[n][adres.i] }))
-        .filter((trafienie) => trafienie.pasmo)
-        .sort((a, b) => b.pasmo.wartosc - a.pasmo.wartosc)
-      if (!trafienia.length) {
+      const pasmo = najwyzszePasmo(trafienia.get(adres.i) ?? [])
+      if (!pasmo) {
         wartosci.push(null)
         etykiety.push(null)
+        if (adres.gmina === 'Kraków') luki.push(adres)
         continue
       }
-      const { warstwa, pasmo } = trafienia[0]
       wartosci.push(pasmo.wartosc)
-      etykiety.push(`${pasmo.etykieta}; hałas ${warstwa.nazwa}; 4 m nad terenem`)
+      etykiety.push(etykietaAdresu(pasmo))
+      rozklad.set(pasmo.wartosc, (rozklad.get(pasmo.wartosc) ?? 0) + 1)
     }
+    console.log(`Rozkład wartości (dB: liczba adresów Krakowa, razem ${liczbaKrakow}):`)
+    for (const [wartosc, liczba] of [...rozklad].sort((a, b) => a[0] - b[0]))
+      console.log(`  ${wartosc}: ${liczba}`)
+    console.log(`Luki obliczeń w Krakowie (adres bez żadnego poligonu): ${luki.length}`)
+    for (const adres of luki.slice(0, 10))
+      console.log(
+        `  ${adres.ulica ?? ''} ${adres.nr ?? ''}, ${adres.dzielnica ?? ''} (${adres.lon}, ${adres.lat})`,
+      )
+    if (luki.length > MAX_UDZIAL_LUK * liczbaKrakow) {
+      throw new Error(
+        `Mapa powinna pokrywać cały Kraków, a ${luki.length} z ${liczbaKrakow} adresów nie ma żadnego poligonu. Sprawdź, czy najniższy poligon dróg i torów ma ISOV2 = ${PROG_LDWN}.`,
+      )
+    }
+    const lukaOpis = luki.length
+      ? ` albo lukę obliczeń mapy w Krakowie (${luki.length} adresów bez żadnego poligonu)`
+      : ''
 
     zapiszWskaznik(
       {
         id: 'halas_ldwn',
         kategoria: 'spokoj',
         nazwa: 'Najwyższe pasmo hałasu (LDWN)',
-        opis: 'Najwyższe opublikowane pasmo LDWN spośród hałasu drogowego, szynowego i przemysłowego; nie opisuje całego hałasu Krakowa. Mapa imisyjna 2022, 4 m nad terenem. Wartość liczbowa reprezentuje pasmo dla punktacji, nie dokładny pomiar ani sumę hałasu. Na granicy pasm wybieramy wyższe. Brak liczby może oznaczać poziom poniżej prezentowanego zakresu albo brak pokrycia mapą. Geometrię przemysłu pobrano z tolerancją 1 m.',
+        opis: `Najwyższe opublikowane pasmo LDWN spośród hałasu drogowego, szynowego i przemysłowego; nie opisuje całego hałasu Krakowa. Mapa imisyjna 2022, 4 m nad terenem. Wartość liczbowa reprezentuje pasmo dla punktacji, nie dokładny pomiar ani sumę hałasu. Na granicy pasm wybieramy wyższe. Adres w obszarze obliczeń mapy, ale poza pasmami od ${PROG_LDWN} dB, dostaje ${WARTOSC_PONIZEJ_PROGU} dB (dolny kraniec skali, najlepsza ocena) z etykietą „poniżej ${PROG_LDWN} dB”: to reprezentant przedziału, nie pomiar ciszy. Brak liczby oznacza adres poza Krakowem (mapa obejmuje tylko miasto)${lukaOpis}. Geometrię przemysłu pobrano z tolerancją 1 m.`,
         jednostka: 'dB',
         kierunek: 'mniej-lepiej',
         rozdzielczosc: 'rejon',
         rozmiar: 'wielokąt pasma mapy akustycznej',
-        zakres: [50, 80],
+        zakres: ZAKRES_LDWN,
         zadanie: 4,
         zrodla: [
           {
-            nazwa: 'Gmina Miejska Kraków, MSIP — Mapa hałasu 2022 (drogi, tory)',
+            nazwa: 'Gmina Miejska Kraków, MSIP – Mapa hałasu 2022 (drogi, tory)',
             url: 'https://msip.krakow.pl/dataset/1361',
             licencja: 'Regulamin MSIP: https://msip.krakow.pl/getPdf?dok_id=288055',
             dataDanych: '2022',
             pobrano: dzis(),
           },
           {
-            nazwa: 'Gmina Miejska Kraków, MSIP — hałas przemysłowy LDWN 2022',
+            nazwa: 'Gmina Miejska Kraków, MSIP – hałas przemysłowy LDWN 2022',
             url: 'https://msip.um.krakow.pl/arcgis/rest/services/Mapa_halasu_2022/8_2_MH_2022_IMISJA_5/MapServer/8',
             licencja: 'Regulamin MSIP: https://msip.krakow.pl/getPdf?dok_id=288055',
             dataDanych: '2022',

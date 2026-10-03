@@ -1,31 +1,24 @@
 import { useDane } from '@/wynik/dane'
-import { hrefDla, useStan } from '@/wynik/stan'
+import { rankingUlic } from '@/wynik/rankingUlic'
+import { slugUlicy } from '@/wynik/slug'
+import { dodajDoPorownania, hrefDla, useStan, usunZPorownania } from '@/wynik/stan'
+import { MAKS_POROWNANIE } from '@/wynik/url'
 import { useWyniki } from '@/wynik/useWyniki'
 import { liczba, opisAdresu } from './adres'
 
-const ILE = 5
-
-/** „Najlepiej pasujące teraz" z makiety – pięć adresów z najwyższą wartością aktywnej warstwy. */
+/** Pięć ulic z najwyższą średnią oceną adresów dla aktualnych wag lub wybranej warstwy. */
 export function Ranking() {
   const dane = useDane()
   const wyniki = useWyniki()
   const stan = useStan((s) => s)
   if (dane.stan !== 'gotowe' || !wyniki) return <p className="komunikat">Wczytuję dane…</p>
 
-  // Jedno przejście zamiast sortowania 70 tys. wyników przy każdej zmianie wagi.
-  const najlepsze: number[] = []
-  const v = wyniki.naAdres
-  const wykluczony = wyniki.wykluczenia.wykluczony
-  for (let i = 0; i < v.length; i++) {
-    const x = v[i] as number
-    const heks = dane.adresy[i]?.h3
-    if (x !== x || wykluczony[i] || !heks || wyniki.heksy.get(heks) == null) continue
-    if (najlepsze.length < ILE || x > (v[najlepsze[ILE - 1] as number] as number)) {
-      najlepsze.push(i)
-      najlepsze.sort((a, b) => (v[b] as number) - (v[a] as number))
-      if (najlepsze.length > ILE) najlepsze.pop()
-    }
-  }
+  const najlepsze = rankingUlic(
+    dane.adresy,
+    wyniki.naAdres,
+    wyniki.wykluczenia.wykluczony,
+    wyniki.heksy,
+  )
   const atrapa = dane.plikAdresow.atrapa || dane.wskazniki.some((w) => w.meta.atrapa)
 
   return (
@@ -36,39 +29,74 @@ export function Ranking() {
     >
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
         <h2 id="h-ranking" className="etykieta-sekcji">
-          Najlepiej pasujące teraz · {wyniki.podpis}
+          Najlepiej pasujące ulice · {wyniki.podpis}
         </h2>
         {atrapa && <span className="atrapa">dane przykładowe</span>}
+        {stan.porownanie.length > 0 && (
+          <a className="ranking-porownaj" href={hrefDla(stan, { ekran: 'porownanie' })}>
+            Porównaj wybrane ({stan.porownanie.length}/{MAKS_POROWNANIE})
+          </a>
+        )}
       </div>
       {najlepsze.length === 0 ? (
-        <p style={{ margin: 0, color: 'var(--tekst-2)' }}>
-          {wyniki.wykluczenia.liczbaWykluczonych > 0
-            ? 'Twarde filtry wykluczyły wszystkie adresy z wynikiem. Poluzuj próg.'
-            : 'Ustaw wagi, żeby policzyć wynik.'}
-        </p>
+        <p style={{ margin: 0, color: 'var(--tekst-2)' }}>Ustaw wagi, żeby policzyć wynik.</p>
       ) : (
-        <ol className="lista-wynikow">
-          {najlepsze.map((i) => {
-            const adres = dane.adresy[i]
-            if (!adres) return null
-            return (
-              <li key={i}>
-                <a
-                  className="pozycja-wyniku"
-                  href={hrefDla(stan, { ekran: 'okolica', wybrany: i })}
-                >
-                  <span className="plakietka-wyniku">{liczba(v[i])}</span>
-                  <span>
-                    {opisAdresu(adres)}
-                    {adres.dzielnica && (
-                      <span style={{ color: 'var(--tekst-3)' }}> · {adres.dzielnica}</span>
-                    )}
-                  </span>
-                </a>
-              </li>
-            )
-          })}
-        </ol>
+        <>
+          <p style={{ margin: 0, color: 'var(--tekst-2)' }}>
+            Wynik ulicy to średnia ocen adresów z dostępnymi danymi.
+          </p>
+          <ol className="lista-wynikow">
+            {najlepsze.map((ulica) => {
+              const wybranyAdres = stan.porownanie.find((i) => {
+                const wybrany = dane.adresy[i]
+                return wybrany && slugUlicy(wybrany) === ulica.slug
+              })
+              const dodano = wybranyAdres !== undefined
+              const adresPorownania = dane.adresy[wybranyAdres ?? ulica.adresDoPorownania]
+              const pelne = stan.porownanie.length >= MAKS_POROWNANIE
+              return (
+                <li className="ranking-ulica" key={ulica.slug}>
+                  <a className="pozycja-wyniku" href={`/katalog/${ulica.slug}`}>
+                    <span className="plakietka-wyniku">{liczba(ulica.wynik)}</span>
+                    <span className="ranking-ulica__opis">
+                      <span>
+                        {ulica.nazwa}, {ulica.miejscowosc}
+                        {ulica.dzielnica && (
+                          <span style={{ color: 'var(--tekst-3)' }}> · {ulica.dzielnica}</span>
+                        )}
+                      </span>
+                      {adresPorownania && (
+                        <small>Do porównania: {opisAdresu(adresPorownania)}</small>
+                      )}
+                    </span>
+                  </a>
+                  <button
+                    className="ranking-ulica__dodaj"
+                    type="button"
+                    aria-pressed={dodano}
+                    aria-label={`${dodano ? 'Usuń z porównania' : 'Dodaj do porównania'} adres ${adresPorownania ? opisAdresu(adresPorownania) : ulica.nazwa}`}
+                    title={
+                      adresPorownania
+                        ? `Porównywany adres: ${opisAdresu(adresPorownania)}`
+                        : undefined
+                    }
+                    disabled={!dodano && pelne}
+                    onClick={() => {
+                      if (wybranyAdres !== undefined) usunZPorownania(wybranyAdres)
+                      else dodajDoPorownania(ulica.adresDoPorownania)
+                    }}
+                  >
+                    {dodano
+                      ? 'Usuń z porównania'
+                      : pelne
+                        ? 'Limit 5 adresów'
+                        : 'Dodaj do porównania'}
+                  </button>
+                </li>
+              )
+            })}
+          </ol>
+        </>
       )}
     </section>
   )

@@ -75,7 +75,7 @@ if __name__ == '__main__':
         raise ValueError('Brak daty stanu OSM w PBF')
     eksport = Eksport()
     eksport.apply_file(plik, locations=True)
-    katalog = Path(__file__).resolve().parent.parent / 'public/dane/uslugi'
+    katalog = Path(__file__).resolve().parent.parent / 'public/dane/biznes'
     katalog.mkdir(parents=True, exist_ok=True)
     lista = []
     for id, (nazwa, zasieg) in BRANZE.items():

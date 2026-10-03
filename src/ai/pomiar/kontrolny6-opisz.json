@@ -1,0 +1,1796 @@
+{
+ "opis": "Zestaw kontrolny nr 6 (opisy, „opisz siebie”), 2026-10-03. Napisany na ślepo przez agenta AI bez dostępu do kodu aplikacji, jej promptów ani wcześniejszych zestawów; jedyne wejścia: etykiety.txt i warstwy.txt. Teksty udają wpisywanie z klawiatury/telefonu (literówki, brak polskich znaków, slang, zdania ciągnięte), bez autokorekt typowych dla mowy. Konwencja „w imieniu”: etykietujemy przyszłego mieszkańca. 150 pozycji, Kraków i gminy obwarzanka.",
+ "zasady": "persona i potrzeby opisują osobę, która zamieszka pod adresem (przy szukaniu dla kogoś – tę osobę). persona null bez potrzeb tylko gdy nikt naprawdę nie szuka (opinia, ciekawość, hipoteza bez planu, nieaktualna przeszłość) albo gdy wpis nie daje żadnego sygnału (bez_sygnalu). persona null z potrzebami, gdy ktoś szuka, ale profil nie pasuje do żadnej z czterech person (np. para bez dzieci). Senior → persona senior i potrzeba senior; osoba wyraźnie mieszkająca sama → potrzeba singiel (persona singiel, chyba że jest seniorem). Domownik-senior (np. mieszkam z mamą 88) → potrzeba senior, persona osoby szukającej. bliska_pomylka: rzecz wspomniana, ale niechciana/nieposiadana (cudzy pies, dorosłe dzieci gdzie indziej, auto właściciela auta, „hałas mi nie przeszkadza”) – NIE dostaje etykiety. Posiadanie auta nie daje bez_samochodu; przystanek sam w sobie też nie. Etykietujemy to, co ostrożny człowiek wywnioskuje, bez nadinterpretacji. Cechy stylu (bez_diakrytykow, krotki, dlugi) liczone automatycznie.",
+ "pozycje": [
+  {
+   "id": "K6-A001",
+   "tekst": "pomagam koledze z pracy ktory jest niewidomy, szuka wynajmu gdzie dojdzie sam do przystanku i bedzie oswietlone, bez ruchliwych skrzyzowan po drodze",
+   "persona": null,
+   "potrzeby": [
+    "bez_samochodu",
+    "bezpieczenstwo"
+   ],
+   "cechy": [
+    "w_imieniu",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A002",
+   "tekst": "Rodzice (62 i 65, oboje na emeryturze) sprzedają dom w Bochni i chcą coś w Krakowie, żeby mieć blisko na lotnisko, bo latają do nas do Dublina co 2 miesiące",
+   "persona": "senior",
+   "potrzeby": [
+    "senior",
+    "lotnisko"
+   ],
+   "cechy": [
+    "w_imieniu"
+   ]
+  },
+  {
+   "id": "K6-A003",
+   "tekst": "co roku latam 30+ razy (konsultant SAP), zona i ja bez dzieci, musimy byc blisko Balic",
+   "persona": null,
+   "potrzeby": [
+    "lotnisko"
+   ],
+   "cechy": [
+    "zwykly",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A004",
+   "tekst": "Niedawno zostałam wdową, chcę mieszkanie mniejsze, bliżej córki w Bronowicach, mam 73 lata i nie mam samochodu",
+   "persona": "senior",
+   "potrzeby": [
+    "senior",
+    "singiel",
+    "bez_samochodu"
+   ],
+   "cechy": [
+    "zwykly"
+   ]
+  },
+  {
+   "id": "K6-A005",
+   "tekst": "Prowadzę firmę z biurem przy Rondzie Grunwaldzkim, mam dwoje małych dzieci i żonę, chcemy dom max 25 min od biura",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci",
+    "praca_centrum"
+   ],
+   "cechy": [
+    "zwykly"
+   ]
+  },
+  {
+   "id": "K6-A006",
+   "tekst": "mieszkanie 2 pokoje, 50-55m2, balkon, budzet do 720 tys",
+   "persona": null,
+   "potrzeby": [],
+   "cechy": [
+    "bez_sygnalu",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A007",
+   "tekst": "Zależy mi tylko na tym, żeby w okolicy nie było przestępczości, po włamaniu do poprzedniego mieszkania mam traumę",
+   "persona": null,
+   "potrzeby": [
+    "bezpieczenstwo"
+   ],
+   "cechy": [
+    "zwykly"
+   ]
+  },
+  {
+   "id": "K6-A008",
+   "tekst": "Pracuję na zmianę w Krakowie i w Katowicach, szukam mieszkania z dala od autostrady, bo bardzo źle śpię przy szumie",
+   "persona": null,
+   "potrzeby": [
+    "cisza"
+   ],
+   "cechy": [
+    "zwykly"
+   ]
+  },
+  {
+   "id": "K6-A009",
+   "tekst": "szukam lokum dla syna z niepełnosprawnością intelektualną, będzie mieszkał samodzielnie z asystentem dochodzącym. ważne żeby okolica była spokojna i bezpieczna, i żeby miał tramwaj bo nie prowadzi",
+   "persona": "singiel",
+   "potrzeby": [
+    "singiel",
+    "cisza",
+    "bezpieczenstwo",
+    "bez_samochodu"
+   ],
+   "cechy": [
+    "w_imieniu",
+    "dlugi"
+   ]
+  },
+  {
+   "id": "K6-A010",
+   "tekst": "Elektryka mam, więc ładowarka by się przydała, ale to nie warunek. Najważniejsze, żeby było blisko szkoły dla syna (7 lat).",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci"
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K6-A011",
+   "tekst": "85 lat, jeszcze sama gotuje i robie zakupy, nie dam sie",
+   "persona": "senior",
+   "potrzeby": [
+    "senior"
+   ],
+   "cechy": [
+    "profil_glowny",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A012",
+   "tekst": "Opiekuje sie babcia z doskoku, wiec chce mieszkac max 10 min od niej na Bieżanowie, a sama pracuje w centrum",
+   "persona": null,
+   "potrzeby": [
+    "praca_centrum"
+   ],
+   "cechy": [
+    "zwykly"
+   ]
+  },
+  {
+   "id": "K6-A013",
+   "tekst": "kupuje mieszkanie pod wynajem dla studentow medycyny, chce blisko Collegium Medicum i szpitala w Prokocimiu",
+   "persona": "inwestor",
+   "potrzeby": [
+    "inwestycja"
+   ],
+   "cechy": [
+    "zwykly",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A014",
+   "tekst": "wnuki odwiedzaja nas raz w roku na swieta, wiec szkoly i przedszkola nie maja znaczenia. chcemy ciszy na starosc",
+   "persona": "senior",
+   "potrzeby": [
+    "senior",
+    "cisza"
+   ],
+   "cechy": [
+    "bliska_pomylka",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A015",
+   "tekst": "mam 82 lata i jestem wdowa",
+   "persona": "senior",
+   "potrzeby": [
+    "senior",
+    "singiel"
+   ],
+   "cechy": [
+    "profil_glowny",
+    "bez_diakrytykow",
+    "krotki"
+   ]
+  },
+  {
+   "id": "K6-A016",
+   "tekst": "chce cos z duzymi oknami i wysokim sufitem, kamienica albo loft, reszta mi obojetna",
+   "persona": null,
+   "potrzeby": [],
+   "cechy": [
+    "bez_sygnalu",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A017",
+   "tekst": "Gram na perkusji w domu, więc szukam domu wolnostojącego z dala od sąsiadów, okolice Świątnik Górnych, cicho i zielono",
+   "persona": null,
+   "potrzeby": [
+    "cisza",
+    "zielen"
+   ],
+   "cechy": [
+    "zwykly"
+   ]
+  },
+  {
+   "id": "K6-A018",
+   "tekst": "syn ma 6 lat i autyzm, nie znosi halasu, szukamy czegos spokojnego z dobra szkola integracyjna niedaleko",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci",
+    "cisza"
+   ],
+   "cechy": [
+    "domownik",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A019",
+   "tekst": "zona w ciazy, pierwsze dziecko w drodze, ona pracuje w szpitalu na Prądniku a ja w centrum przy Plantach",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci",
+    "praca_centrum"
+   ],
+   "cechy": [
+    "domownik"
+   ]
+  },
+  {
+   "id": "K6-A020",
+   "tekst": "mam auto i jeżdżę nim wszędzie, więc komunikacja mi obojętna, za to chcę ciszy i lasu w pobliżu",
+   "persona": null,
+   "potrzeby": [
+    "cisza",
+    "zielen"
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K6-A021",
+   "tekst": "Kupuję mieszkanie dla teściów, przeprowadzają się z Tarnowa żeby być bliżej wnuków. Oboje po 70, teść ma cukrzycę i co chwile jakieś badania",
+   "persona": "senior",
+   "potrzeby": [
+    "senior",
+    "zdrowie"
+   ],
+   "cechy": [
+    "w_imieniu"
+   ]
+  },
+  {
+   "id": "K6-A022",
+   "tekst": "Szukam dla brata, wraca z Norwegii z żoną i dwójką małych dzieci, chcą gdzieś pod Krakowem gdzie jest przedszkole i trochę zieleni. On pracuje zdalnie.",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci",
+    "zielen"
+   ],
+   "cechy": [
+    "w_imieniu"
+   ]
+  },
+  {
+   "id": "K6-A023",
+   "tekst": "Szukamy domu z dużą działką, mąż ma pszczoły, ja chciałabym kiedyś konie, dzieci nastoletnie",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci",
+    "zielen"
+   ],
+   "cechy": [
+    "zwykly"
+   ]
+  },
+  {
+   "id": "K6-A024",
+   "tekst": "Para gejów 35+, oboje pracujemy w centrum, chcemy mieszkać tam, gdzie jest tolerancyjnie i bezpiecznie",
+   "persona": null,
+   "potrzeby": [
+    "praca_centrum",
+    "bezpieczenstwo"
+   ],
+   "cechy": [
+    "zwykly"
+   ]
+  },
+  {
+   "id": "K6-A025",
+   "tekst": "jestem po 70tce, mam nadcisnienie i kardiologa co miesiac, szukam mieszkania z winda blisko przychodni i parku do spacerow",
+   "persona": "senior",
+   "potrzeby": [
+    "senior",
+    "zdrowie",
+    "zielen"
+   ],
+   "cechy": [
+    "zwykly",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A026",
+   "tekst": "jako lekarka rezydentka mam dyzury po 24h, potrzebuje ciszy w dzien zeby odespac. auto mam, wiec dojazd ogarne",
+   "persona": null,
+   "potrzeby": [
+    "cisza"
+   ],
+   "cechy": [
+    "zwykly",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A027",
+   "tekst": "chcemy przeprowadzic sie na wies pod Krakowem, ale corka ma cukrzyce typu 1 i musimy miec przychodnie i apteke blisko",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci",
+    "zdrowie"
+   ],
+   "cechy": [
+    "zwykly",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A028",
+   "tekst": "jestem z Gdańska, wpadłem z ciekawości zobaczyć co pokaże dla adresu mojej babci w Podgórzu, nigdzie się nie wybieram",
+   "persona": null,
+   "potrzeby": [],
+   "cechy": [
+    "nikt_nie_szuka"
+   ]
+  },
+  {
+   "id": "K6-A029",
+   "tekst": "mieszkam z partnerka, ona pracuje na nocki w Szpitalu Uniwersyteckim w Prokocimiu i musi spac w dzien, wiec cisza to priorytet",
+   "persona": null,
+   "potrzeby": [
+    "cisza"
+   ],
+   "cechy": [
+    "domownik",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A030",
+   "tekst": "Szukamy mieszkania na start z mężem, oboje jeździmy rowerem do pracy na Grzegórzki, auta nie mamy i nie chcemy mieć",
+   "persona": null,
+   "potrzeby": [
+    "rower",
+    "bez_samochodu",
+    "praca_centrum"
+   ],
+   "cechy": [
+    "zwykly"
+   ]
+  },
+  {
+   "id": "K6-A031",
+   "tekst": "wielodzietni, piatka dzieciakow, potrzebujemy metrazu nie luksusu",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci"
+   ],
+   "cechy": [
+    "profil_glowny",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A032",
+   "tekst": "biegam ultra, chcę las 5 minut od drzwi i czyste powietrze żeby trenować zimą, do tego mieszkam sama",
+   "persona": "singiel",
+   "potrzeby": [
+    "zielen",
+    "powietrze",
+    "singiel"
+   ],
+   "cechy": [
+    "zwykly"
+   ]
+  },
+  {
+   "id": "K6-A033",
+   "tekst": "Jestem fotografem przyrody, chcę mieszkać blisko Puszczy Niepołomickiej, wszystko inne drugorzędne",
+   "persona": null,
+   "potrzeby": [
+    "zielen"
+   ],
+   "cechy": [
+    "zwykly"
+   ]
+  },
+  {
+   "id": "K6-A034",
+   "tekst": "student pierwszego roku, pierwszy raz sam na swoim",
+   "persona": "singiel",
+   "potrzeby": [
+    "singiel"
+   ],
+   "cechy": [
+    "profil_glowny",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A035",
+   "tekst": "studentka ASP, budzet ok 1800 za pokoj, chce w miare blisko Matejki zeby nie tracic czasu na dojazdy, mam rower",
+   "persona": "singiel",
+   "potrzeby": [
+    "rower"
+   ],
+   "cechy": [
+    "zwykly",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A036",
+   "tekst": "szukam dla siostry: ma owczarka niemieckiego, pracuje przy Wielopolu i nie ma prawka",
+   "persona": null,
+   "potrzeby": [
+    "pies",
+    "praca_centrum",
+    "bez_samochodu"
+   ],
+   "cechy": [
+    "w_imieniu",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A037",
+   "tekst": "dla babci szukamy, ma astme i w Nowej Hucie sie dusi zima. cos gdzie powietrze lepsze, moze Wola Justowska? ona ma 84",
+   "persona": "senior",
+   "potrzeby": [
+    "senior",
+    "powietrze"
+   ],
+   "cechy": [
+    "w_imieniu",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A038",
+   "tekst": "pracuje na Kazimierzu ale tylko 1 dzien w tygodniu, reszta zdalnie, wiec dojazd mnie nie obchodzi. marze o duzym psie i ogrodzie dla niego",
+   "persona": null,
+   "potrzeby": [
+    "pies",
+    "zielen"
+   ],
+   "cechy": [
+    "bliska_pomylka",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A039",
+   "tekst": "Psy sąsiadów mi nie przeszkadzają, sam nie mam. Ważna winda, bo mam 76 lat i wnoszenie zakupów to dramat, plus sklep blisko.",
+   "persona": "senior",
+   "potrzeby": [
+    "senior",
+    "sklepy"
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K6-A040",
+   "tekst": "pracuje w kombinacie w Nowej Hucie na zmiany, mam 50 lat i astme, wiec pyl z huty to problem, chce mieszkac gdzie indziej. mieszkam z zona",
+   "persona": null,
+   "potrzeby": [
+    "powietrze"
+   ],
+   "cechy": [
+    "zwykly",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A041",
+   "tekst": "wdowiec 79l",
+   "persona": "senior",
+   "potrzeby": [
+    "senior",
+    "singiel"
+   ],
+   "cechy": [
+    "profil_glowny",
+    "bez_diakrytykow",
+    "krotki"
+   ]
+  },
+  {
+   "id": "K6-A042",
+   "tekst": "Przedszkole obok? Moje dzieci mają 25 i 28 lat :) Szukamy z mężem czegoś mniejszego po sprzedaży domu w Zabierzowie, oboje jeszcze pracujemy, ja w centrum.",
+   "persona": null,
+   "potrzeby": [
+    "praca_centrum"
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K6-A043",
+   "tekst": "Szukam czegos z dobrym powietrzem dla siebie i synka (3 lata), jestem samotna mama, auta nie mam",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci",
+    "powietrze",
+    "bez_samochodu"
+   ],
+   "cechy": [
+    "zwykly",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A044",
+   "tekst": "gdybym wygral w lotto to bym kupil dom w Tyńcu nad Wislą z widokiem na opactwo, ale nie gram wiec luz",
+   "persona": null,
+   "potrzeby": [],
+   "cechy": [
+    "nikt_nie_szuka"
+   ]
+  },
+  {
+   "id": "K6-A045",
+   "tekst": "Córka zaczyna studia na AGH od października, chcemy jej kupić kawalerkę żeby mogła dojeżdżać rowerem na zajęcia. Ma być bezpiecznie bo wraca późno z treningów.",
+   "persona": "singiel",
+   "potrzeby": [
+    "rower",
+    "bezpieczenstwo",
+    "singiel"
+   ],
+   "cechy": [
+    "w_imieniu"
+   ]
+  },
+  {
+   "id": "K6-A046",
+   "tekst": "brat (19) mieszka z nami i dojeżdża na UEK, nie ma prawka, więc tramwaj albo autobus musi być blisko. my z żoną jeździmy autem",
+   "persona": null,
+   "potrzeby": [
+    "bez_samochodu"
+   ],
+   "cechy": [
+    "domownik"
+   ]
+  },
+  {
+   "id": "K6-A047",
+   "tekst": "dzieci juz dorosle, mieszkaja w Londynie i Gdyni, my z mezem zostajemy we dwoje, oboje 67",
+   "persona": "senior",
+   "potrzeby": [
+    "senior"
+   ],
+   "cechy": [
+    "bliska_pomylka",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A048",
+   "tekst": "Mąż jeździ na wózku po wypadku, potrzebujemy parteru albo windy i przychodni bez barier w pobliżu. Ja dojeżdżam do pracy na Kazimierz.",
+   "persona": null,
+   "potrzeby": [
+    "zdrowie",
+    "praca_centrum"
+   ],
+   "cechy": [
+    "domownik"
+   ]
+  },
+  {
+   "id": "K6-A049",
+   "tekst": "Dwoje pracujących, 2 dzieci, 1 auto, więc jedno z nas musi jeździć komunikacją do pracy w centrum",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci",
+    "praca_centrum",
+    "bez_samochodu"
+   ],
+   "cechy": [
+    "zwykly"
+   ]
+  },
+  {
+   "id": "K6-A050",
+   "tekst": "Pracuje w szpitalu na Prądniku jako lekarz, wiec przychodnia blisko to dla mnie zero wartosci haha. chce do pracy rowerem",
+   "persona": null,
+   "potrzeby": [
+    "rower"
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K6-A051",
+   "tekst": "Szukam lokalu pod wynajem dla turystów niedaleko Wawelu, ale nie w samym zgiełku",
+   "persona": "inwestor",
+   "potrzeby": [
+    "inwestycja"
+   ],
+   "cechy": [
+    "zwykly"
+   ]
+  },
+  {
+   "id": "K6-A052",
+   "tekst": "szukam taniej kawalerki w Nowej Hucie, mam rente 1900 zl, jestem po 60 i sam",
+   "persona": "senior",
+   "potrzeby": [
+    "senior",
+    "singiel"
+   ],
+   "cechy": [
+    "zwykly",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A053",
+   "tekst": "Szukam mieszkania blisko Wisły, żeby jeździć rowerem bulwarami do pracy na Kazimierzu",
+   "persona": null,
+   "potrzeby": [
+    "rower",
+    "praca_centrum"
+   ],
+   "cechy": [
+    "zwykly"
+   ]
+  },
+  {
+   "id": "K6-A054",
+   "tekst": "Dzień dobry, chciałabym zmienić mieszkanie. Proszę o propozycje.",
+   "persona": null,
+   "potrzeby": [],
+   "cechy": [
+    "bez_sygnalu"
+   ]
+  },
+  {
+   "id": "K6-A055",
+   "tekst": "Pracuję w biurze nieruchomości i chcę zobaczyć, jak ta aplikacja opisuje okolice, zanim polecę ją klientom.",
+   "persona": null,
+   "potrzeby": [],
+   "cechy": [
+    "nikt_nie_szuka"
+   ]
+  },
+  {
+   "id": "K6-A056",
+   "tekst": "moja zona biega maratony a ja jezdze rowerem do roboty w Zabierzowie, dzieci nie mamy, chcemy blisko lasu",
+   "persona": null,
+   "potrzeby": [
+    "zielen",
+    "rower"
+   ],
+   "cechy": [
+    "domownik",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A057",
+   "tekst": "jestem singielka po 30tce, korpo, zero dzieci, zero zwierzat, zero czasu",
+   "persona": "singiel",
+   "potrzeby": [
+    "singiel"
+   ],
+   "cechy": [
+    "profil_glowny",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A058",
+   "tekst": "zmieniam wynajem bo wlasciciel sprzedaje, musze sie wyniesc do konca listopada",
+   "persona": null,
+   "potrzeby": [],
+   "cechy": [
+    "bez_sygnalu",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A059",
+   "tekst": "dorabiam jako kurier wieczorami, najwazniejsze zeby bylo bezpiecznie po zmroku bo wracam o 23, i paczkomat obok lol",
+   "persona": null,
+   "potrzeby": [
+    "bezpieczenstwo",
+    "sklepy"
+   ],
+   "cechy": [
+    "zwykly",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A060",
+   "tekst": "chce zamienic dom w Bibicach na mieszkanie, mam 77 lat i nie dam juz rady odsniezac. W miescie zebym miala wszystko blisko: sklep, apteka, kosciol",
+   "persona": "senior",
+   "potrzeby": [
+    "senior",
+    "sklepy",
+    "zdrowie"
+   ],
+   "cechy": [
+    "zwykly",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A061",
+   "tekst": "Muzyk orkiestrowy, gram wieczorami w Filharmonii, rano śpię. Szukam cichego mieszkania w zasięgu piechoty od Zwierzynieckiej",
+   "persona": null,
+   "potrzeby": [
+    "cisza",
+    "praca_centrum"
+   ],
+   "cechy": [
+    "zwykly"
+   ]
+  },
+  {
+   "id": "K6-A062",
+   "tekst": "zakupy robię raz w tygodniu autem w hipermarkecie, więc sklep pod domem mi zbędny. Szukam domu z ogrodem w gminie Michałowice dla nas i dwóch córek",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci",
+    "zielen"
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K6-A063",
+   "tekst": "moj szef twierdzi ze Bronowice to najlepsza dzielnica a ja ze Grzegorzki. kto ma racje? idzie o piwo",
+   "persona": null,
+   "potrzeby": [],
+   "cechy": [
+    "nikt_nie_szuka",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A064",
+   "tekst": "Szukam dla siebie i partnera kawalerki w Podgórzu, mamy jamnika, oboje pracujemy w centrum",
+   "persona": null,
+   "potrzeby": [
+    "pies",
+    "praca_centrum"
+   ],
+   "cechy": [
+    "zwykly"
+   ]
+  },
+  {
+   "id": "K6-A065",
+   "tekst": "jestem weterynarzem, mam 3 psy i 2 koty, potrzebuje domu z ogrodzonym ogrodem gdzies w Zielonkach",
+   "persona": null,
+   "potrzeby": [
+    "pies",
+    "zielen"
+   ],
+   "cechy": [
+    "zwykly",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A066",
+   "tekst": "Mój chłopak ma border collie, który potrzebuje masę ruchu, ja mam kota i pracuję na Starym Mieście. Szukamy czegoś razem.",
+   "persona": null,
+   "potrzeby": [
+    "pies",
+    "praca_centrum"
+   ],
+   "cechy": [
+    "domownik"
+   ]
+  },
+  {
+   "id": "K6-A067",
+   "tekst": "Para z bobasem 4 mies., pierwsze wspólne mieszkanie",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci"
+   ],
+   "cechy": [
+    "profil_glowny"
+   ]
+  },
+  {
+   "id": "K6-A068",
+   "tekst": "ciekawe czy w Krakowie jeszcze ktos kupuje za gotowke, bo ceny jak w Warszawie juz. tak tylko pytam",
+   "persona": null,
+   "potrzeby": [],
+   "cechy": [
+    "nikt_nie_szuka",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A069",
+   "tekst": "student informatyki, wynajme pokoj gdziekolwiek byle byl szybki dojazd na AGH tramwajem i sklep obok bo nie gotuje lol",
+   "persona": "singiel",
+   "potrzeby": [
+    "bez_samochodu",
+    "sklepy"
+   ],
+   "cechy": [
+    "zwykly",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A070",
+   "tekst": "pielegniarka, 58 lat, chce jeszcze kilka lat pracowac w szpitalu Rydygiera i nie chce juz jezdzic autem po nocy, wiec tramwaj musi byc blisko",
+   "persona": null,
+   "potrzeby": [
+    "bez_samochodu"
+   ],
+   "cechy": [
+    "zwykly",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A071",
+   "tekst": "mama chce sie przeprowadzic blizej mnie do Wieliczki, ma 68 lat, kocha ogrod i spokoj, ma kota",
+   "persona": "senior",
+   "potrzeby": [
+    "senior",
+    "zielen",
+    "cisza"
+   ],
+   "cechy": [
+    "w_imieniu",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A072",
+   "tekst": "mam kredyt na mieszkanie w Katowicach, ktore wynajmuje, ale teraz szukam dla siebie w Krakowie blisko Rynku, bo tam pracuje",
+   "persona": null,
+   "potrzeby": [
+    "praca_centrum"
+   ],
+   "cechy": [
+    "bliska_pomylka",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A073",
+   "tekst": "po rozwodzie, 45 lat, teraz bede sam, pierwszy raz od 20 lat",
+   "persona": "singiel",
+   "potrzeby": [
+    "singiel"
+   ],
+   "cechy": [
+    "profil_glowny",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A074",
+   "tekst": "w nocy gram jako DJ w klubach na Kazimierzu, wiec halas z ulicy to dla mnie zadna kara, spie w dzien przy zaslonietych oknach. chce miec do pracy pieszo",
+   "persona": null,
+   "potrzeby": [
+    "praca_centrum"
+   ],
+   "cechy": [
+    "bliska_pomylka",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A075",
+   "tekst": "osoba na wozku, 38 lat, mieszkam sam, potrzebuje przychodni bez barier i niskopodlogowego tramwaju",
+   "persona": "singiel",
+   "potrzeby": [
+    "zdrowie",
+    "bez_samochodu",
+    "singiel"
+   ],
+   "cechy": [
+    "zwykly",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A076",
+   "tekst": "pracuje na Kazimierzu, nie mam samochodu, kocham koncerty i knajpy, mam 27 lat i mieszkam sam od 5 lat",
+   "persona": "singiel",
+   "potrzeby": [
+    "praca_centrum",
+    "bez_samochodu",
+    "singiel"
+   ],
+   "cechy": [
+    "zwykly",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A077",
+   "tekst": "jestem w ciazy z drugim dzieckiem, mamy 1 pokoj na Kurdwanowie i juz sie nie miescimy. szukamy 3 pokoi blisko zlobka",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci"
+   ],
+   "cechy": [
+    "zwykly",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A078",
+   "tekst": "dla corki z zieciem szukamy, spodziewaja sie blizniakow w marcu, chcemy im pomoc kupic 3 pokoje z placem zabaw w okolicy, Ruczaj albo Bronowice",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci"
+   ],
+   "cechy": [
+    "w_imieniu",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A079",
+   "tekst": "pies? nie. kot? nie. dzieci? nie. maz? tez nie haha. tylko ja i moje 3 rowery szosowe",
+   "persona": "singiel",
+   "potrzeby": [
+    "singiel",
+    "rower"
+   ],
+   "cechy": [
+    "bliska_pomylka",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A080",
+   "tekst": "Ja i mój mąż, cztery lata starszy, oboje od dawna na emeryturze.",
+   "persona": "senior",
+   "potrzeby": [
+    "senior"
+   ],
+   "cechy": [
+    "profil_glowny"
+   ]
+  },
+  {
+   "id": "K6-A081",
+   "tekst": "Mamy trójkę dzieci, najstarszy ma alergię na pyłki, więc nie musi być dużo drzew, ale smogu też nie chcemy",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci",
+    "powietrze"
+   ],
+   "cechy": [
+    "zwykly"
+   ]
+  },
+  {
+   "id": "K6-A082",
+   "tekst": "corka ma silna astme, pulmonolog kazal uciekac od smogu. jestesmy w trojke, ja pracuje zdalnie, maz w Skawinie",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci",
+    "powietrze"
+   ],
+   "cechy": [
+    "domownik",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A083",
+   "tekst": "kupuję mieszkanie jako lokatę, ale może za 10 lat sama w nim zamieszkam na emeryturze. więc spokojna okolica i lekarz w pobliżu",
+   "persona": "inwestor",
+   "potrzeby": [
+    "inwestycja",
+    "cisza",
+    "zdrowie"
+   ],
+   "cechy": [
+    "zwykly"
+   ]
+  },
+  {
+   "id": "K6-A084",
+   "tekst": "Nie jestem emerytem, choć mam 64, pracuję jeszcze na pełen etat w urzędzie przy Wielickiej. Chcę mieć blisko tramwaj, nie lubię prowadzić.",
+   "persona": null,
+   "potrzeby": [
+    "bez_samochodu"
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K6-A085",
+   "tekst": "Nauczycielka w podstawówce w Skawinie, mieszkam z synem (12), szukamy czegoś w Skawinie lub blisko, ważna dobra szkoła dla niego",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci"
+   ],
+   "cechy": [
+    "zwykly"
+   ]
+  },
+  {
+   "id": "K6-A086",
+   "tekst": "sasiad ma psa ktory szczeka cala noc, ja psa nie mam i nie chce, chce po prostu spokoju",
+   "persona": null,
+   "potrzeby": [
+    "cisza"
+   ],
+   "cechy": [
+    "bliska_pomylka",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A087",
+   "tekst": "PhD student from India, solo, pierwszy rok w Polsce, uczę się polskiego",
+   "persona": "singiel",
+   "potrzeby": [
+    "singiel"
+   ],
+   "cechy": [
+    "profil_glowny"
+   ]
+  },
+  {
+   "id": "K6-A088",
+   "tekst": "w 2019 szukalismy domu w Skawinie bo blisko do pracy w elektrowni, ale juz dawno kupilismy w Libertowie i jest ok",
+   "persona": null,
+   "potrzeby": [],
+   "cechy": [
+    "nikt_nie_szuka",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A089",
+   "tekst": "Mieszkam z mamą (88), opiekuję się nią na stałe. Ona prawie nie wychodzi, ale lekarz musi móc szybko dojechać, a ja potrzebuję sklepu w 5 minut, żeby jej nie zostawiać na długo.",
+   "persona": null,
+   "potrzeby": [
+    "senior",
+    "zdrowie",
+    "sklepy"
+   ],
+   "cechy": [
+    "domownik",
+    "dlugi"
+   ]
+  },
+  {
+   "id": "K6-A090",
+   "tekst": "Mamy z żoną dwoje dzieci i owczarka australijskiego, szukamy szeregowca w Wieliczce albo Niepołomicach, przedszkole i zielone tereny konieczne",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci",
+    "pies",
+    "zielen"
+   ],
+   "cechy": [
+    "zwykly"
+   ]
+  },
+  {
+   "id": "K6-A091",
+   "tekst": "Wnuk zamieszka ze mną na czas liceum, ma 15 lat. Chcę, żeby miał blisko do dobrego liceum i żeby wieczorem było jasno na ulicy. Ja mam 71.",
+   "persona": "senior",
+   "potrzeby": [
+    "senior",
+    "dzieci",
+    "bezpieczenstwo"
+   ],
+   "cechy": [
+    "domownik"
+   ]
+  },
+  {
+   "id": "K6-A092",
+   "tekst": "hej co polecacie? jestem zielony w temacie nieruchomosci",
+   "persona": null,
+   "potrzeby": [],
+   "cechy": [
+    "bez_sygnalu",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A093",
+   "tekst": "Partner jest stewardem, lata z Balic, ja jestem freelancerką, więc to on dyktuje lokalizację",
+   "persona": null,
+   "potrzeby": [
+    "lotnisko"
+   ],
+   "cechy": [
+    "domownik"
+   ]
+  },
+  {
+   "id": "K6-A094",
+   "tekst": "Smog mi nie przeszkadza, palę od 30 lat (wiem, wiem). Chcę mieć całodobowy sklep pod blokiem.",
+   "persona": null,
+   "potrzeby": [
+    "sklepy"
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K6-A095",
+   "tekst": "Chcę kupić mieszkanie dla siebie po wyjściu z domu dziecka, mam 19 lat i dostałam wsparcie. Pracuję w sklepie w Galerii Krakowskiej",
+   "persona": "singiel",
+   "potrzeby": [
+    "singiel",
+    "praca_centrum"
+   ],
+   "cechy": [
+    "zwykly"
+   ]
+  },
+  {
+   "id": "K6-A096",
+   "tekst": "jezdze na desce i rolkach, chce blisko skateparku i drog rowerowych, mam 20 lat",
+   "persona": "singiel",
+   "potrzeby": [
+    "rower"
+   ],
+   "cechy": [
+    "zwykly",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A097",
+   "tekst": "mam 2 labradory i pracuje jako lesniczy, wiec raczej wies, Zabierzow, Krzeszowice, cos w ten desen",
+   "persona": null,
+   "potrzeby": [
+    "pies",
+    "zielen"
+   ],
+   "cechy": [
+    "zwykly",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A098",
+   "tekst": "kupuje trzecie mieszkanie, poprzednie dwa wynajmuje studentom na Kurdwanowie",
+   "persona": "inwestor",
+   "potrzeby": [
+    "inwestycja"
+   ],
+   "cechy": [
+    "profil_glowny",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A099",
+   "tekst": "Samotny ojciec, dwóch chłopaków w podstawówce, co drugi weekend jeszcze najmłodsza córka",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci"
+   ],
+   "cechy": [
+    "profil_glowny"
+   ]
+  },
+  {
+   "id": "K6-A100",
+   "tekst": "hałas mi nie przeszkadza, mieszkałem przy Alejach 10 lat. Ważne, że do pracy na Rynku mam 10 minut pieszo",
+   "persona": null,
+   "potrzeby": [
+    "praca_centrum"
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K6-A101",
+   "tekst": "Szukam domu dla siebie i żony na emeryturę, oboje po 65, kochamy wędrówki, chcemy widok na las i świeże powietrze, nie w mieście",
+   "persona": "senior",
+   "potrzeby": [
+    "senior",
+    "zielen",
+    "powietrze"
+   ],
+   "cechy": [
+    "zwykly"
+   ]
+  },
+  {
+   "id": "K6-A102",
+   "tekst": "flipper. kupic tanio, wyremontowac, sprzedac w 6 mies",
+   "persona": "inwestor",
+   "potrzeby": [
+    "inwestycja"
+   ],
+   "cechy": [
+    "profil_glowny",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A103",
+   "tekst": "mam 66 lat, jeszcze tlumacze zdalnie, chce na wies pod Krakowem ale z busem do miasta bo za kilka lat juz nie bede jezdzic autem",
+   "persona": "senior",
+   "potrzeby": [
+    "senior",
+    "bez_samochodu"
+   ],
+   "cechy": [
+    "zwykly",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A104",
+   "tekst": "Nie chcemy już oddychać tym syfem w Krakowie zimą, szukamy domu tam, gdzie nie palą węglem. Dwójka dzieci w podstawówce.",
+   "persona": "rodzina",
+   "potrzeby": [
+    "powietrze",
+    "dzieci"
+   ],
+   "cechy": [
+    "zwykly"
+   ]
+  },
+  {
+   "id": "K6-A105",
+   "tekst": "przeprowadzka z Wroclawia, 3 osoby dorosle i duzy berneńczyk, szukamy wynajmu z ogrodem w Liszkach albo Czernichowie",
+   "persona": null,
+   "potrzeby": [
+    "pies",
+    "zielen"
+   ],
+   "cechy": [
+    "zwykly"
+   ]
+  },
+  {
+   "id": "K6-A106",
+   "tekst": "Brat namawiał, żebym kupiła na wynajem, ale nie, to ma być mój dom. Mam 41 lat, mieszkam sama, lubię spokój.",
+   "persona": "singiel",
+   "potrzeby": [
+    "singiel",
+    "cisza"
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K6-A107",
+   "tekst": "lotnisko w Balicach mnie nie interesuje, latam raz na 5 lat. szukam czegos taniego tylko dla siebie",
+   "persona": "singiel",
+   "potrzeby": [
+    "singiel"
+   ],
+   "cechy": [
+    "bliska_pomylka",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A108",
+   "tekst": "Interesuje mnie dom albo segment, ok. 120 m2, z garażem, termin elastyczny",
+   "persona": null,
+   "potrzeby": [],
+   "cechy": [
+    "bez_sygnalu"
+   ]
+  },
+  {
+   "id": "K6-A109",
+   "tekst": "Mam 23 lata, robię magisterkę na UJ i dorabiam w kawiarni na Starym Mieście",
+   "persona": "singiel",
+   "potrzeby": [
+    "praca_centrum"
+   ],
+   "cechy": [
+    "profil_glowny"
+   ]
+  },
+  {
+   "id": "K6-A110",
+   "tekst": "przeprowadzamy sie z Warszawy, ja programista zdalnie, zona w ciazy, chcemy pod Krakowem z ogrodem ale zeby do lotniska bylo blisko bo latam do klientow",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci",
+    "zielen",
+    "lotnisko"
+   ],
+   "cechy": [
+    "zwykly",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A111",
+   "tekst": "lokata kapitalu na 10 lat, sam tam nie zamieszkam",
+   "persona": "inwestor",
+   "potrzeby": [
+    "inwestycja"
+   ],
+   "cechy": [
+    "profil_glowny",
+    "bez_diakrytykow",
+    "krotki"
+   ]
+  },
+  {
+   "id": "K6-A112",
+   "tekst": "Kiedyś mieszkałam na Azorach z mężem i dziećmi, było super blisko szkoły. Teraz dzieci duże, męża już nie ma, ja mieszkam w DPS-ie i nigdzie się nie ruszam. Tak sobie wspominam.",
+   "persona": null,
+   "potrzeby": [],
+   "cechy": [
+    "nikt_nie_szuka",
+    "dlugi"
+   ]
+  },
+  {
+   "id": "K6-A113",
+   "tekst": "emeryt, 74, wiecej nie powiem",
+   "persona": "senior",
+   "potrzeby": [
+    "senior"
+   ],
+   "cechy": [
+    "profil_glowny",
+    "bez_diakrytykow",
+    "krotki"
+   ]
+  },
+  {
+   "id": "K6-A114",
+   "tekst": "szukam mieszkania dla mamy, ma 79 lat i chodzi o kulach. musi byc winda albo parter i przychodnia blisko bo co tydzien ma kontrole",
+   "persona": "senior",
+   "potrzeby": [
+    "senior",
+    "zdrowie"
+   ],
+   "cechy": [
+    "w_imieniu",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A115",
+   "tekst": "Jako osoba z depresją potrzebuję zieleni za oknem i ciszy, nie przy ruchliwej ulicy",
+   "persona": null,
+   "potrzeby": [
+    "zielen",
+    "cisza"
+   ],
+   "cechy": [
+    "zwykly"
+   ]
+  },
+  {
+   "id": "K6-A116",
+   "tekst": "Szukam dla naszego najmłodszego (24), dostał prace w korpo na Rondzie Mogilskim, chce mieszkać sam i jeździć rowerem",
+   "persona": "singiel",
+   "potrzeby": [
+    "praca_centrum",
+    "singiel",
+    "rower"
+   ],
+   "cechy": [
+    "w_imieniu"
+   ]
+  },
+  {
+   "id": "K6-A117",
+   "tekst": "Mam samochód służbowy i parking przy biurze, więc dojazd autem mi pasuje. Szukam mieszkania z dobrym powietrzem, mam alergię.",
+   "persona": null,
+   "potrzeby": [
+    "powietrze"
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K6-A118",
+   "tekst": "Fundusz rodzinny, szukamy 2-3 lokali na wynajem długoterminowy w okolicach nowych linii tramwajowych",
+   "persona": "inwestor",
+   "potrzeby": [
+    "inwestycja"
+   ],
+   "cechy": [
+    "profil_glowny"
+   ]
+  },
+  {
+   "id": "K6-A119",
+   "tekst": "Nie inwestuję, kupuję dla siebie na całe życie. Chcę zieleni i spokoju, pracuję zdalnie.",
+   "persona": null,
+   "potrzeby": [
+    "zielen",
+    "cisza"
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K6-A120",
+   "tekst": "pracuje na lotnisku w obsludze naziemnej, zmiany od 4 rano, wiec mieszkac musze max 15 min od Balic",
+   "persona": null,
+   "potrzeby": [
+    "lotnisko"
+   ],
+   "cechy": [
+    "zwykly",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A121",
+   "tekst": "Mamy trójkę dzieci (2, 5 i 9 lat) i to chyba wszystko mówi.",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci"
+   ],
+   "cechy": [
+    "profil_glowny"
+   ]
+  },
+  {
+   "id": "K6-A122",
+   "tekst": "inwestycyjnie: kawalerki blisko kampusu UJ na Ruczaju, szukam tam gdzie ceny jeszcze rosna",
+   "persona": "inwestor",
+   "potrzeby": [
+    "inwestycja"
+   ],
+   "cechy": [
+    "zwykly",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A123",
+   "tekst": "tata po udarze, juz nie da rady na wsi pod Myślenicami... szukamy mu czegos malego w krakowie blisko nas, sklep pod nosem i lekarz",
+   "persona": "senior",
+   "potrzeby": [
+    "senior",
+    "sklepy",
+    "zdrowie"
+   ],
+   "cechy": [
+    "w_imieniu"
+   ]
+  },
+  {
+   "id": "K6-A124",
+   "tekst": "Uważam, że Kraków powinien wymusić zakaz pieców na węgiel w całym obwarzanku, bo smog przychodzi z gmin. To moja opinia, nie szukam niczego.",
+   "persona": null,
+   "potrzeby": [],
+   "cechy": [
+    "nikt_nie_szuka"
+   ]
+  },
+  {
+   "id": "K6-A125",
+   "tekst": "Uprawiam wspinaczkę, chcę mieć blisko skałki, Dolinki Podkrakowskie byłyby idealne. Mieszkam sam, pracuję zdalnie.",
+   "persona": "singiel",
+   "potrzeby": [
+    "zielen",
+    "singiel"
+   ],
+   "cechy": [
+    "zwykly"
+   ]
+  },
+  {
+   "id": "K6-A126",
+   "tekst": "nasz syn ma 16 lat i gra w hokeja, treningi o 6 rano, chcemy blisko lodowiska i dobrego liceum",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci"
+   ],
+   "cechy": [
+    "zwykly",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A127",
+   "tekst": "mieszkamy z tesciowa ktora ma demencje i czasem wychodzi sama z domu, okolica musi byc bezpieczna, bez glownej ulicy pod oknem",
+   "persona": null,
+   "potrzeby": [
+    "senior",
+    "bezpieczenstwo"
+   ],
+   "cechy": [
+    "domownik",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A128",
+   "tekst": "Wróciłam z Wielkiej Brytanii, chcę ulokować oszczędności w mieszkaniu, które kiedyś może przejmie syn",
+   "persona": "inwestor",
+   "potrzeby": [
+    "inwestycja"
+   ],
+   "cechy": [
+    "zwykly"
+   ]
+  },
+  {
+   "id": "K6-A129",
+   "tekst": "Bezpieczeństwo? Mieszkałem 20 lat na os. Szklane Domy, nic mnie nie rusza. 34 lata, mieszkam sam, chcę mieć życie wokół.",
+   "persona": "singiel",
+   "potrzeby": [
+    "singiel"
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K6-A130",
+   "tekst": "mój pies odszedł w zeszłym roku i nie biorę kolejnego, więc wybieg i weterynarz odpadają. Za to mam 70 lat i wolę mieć lekarza blisko",
+   "persona": "senior",
+   "potrzeby": [
+    "senior",
+    "zdrowie"
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K6-A131",
+   "tekst": "kupujemy pierwsze mieszkanie i chcemy zeby za 5 lat bylo warte wiecej, ale bedziemy w nim mieszkac. planujemy dziecko",
+   "persona": null,
+   "potrzeby": [
+    "inwestycja",
+    "dzieci"
+   ],
+   "cechy": [
+    "zwykly",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A132",
+   "tekst": "szukam mieszkania dla wujka, wdowiec 81 lat, mieszkal sam cale zycie na Kazimierzu i chce dalej sam, tylko zeby apteka i sklep byly na dole bo z kolanem slabo",
+   "persona": "senior",
+   "potrzeby": [
+    "senior",
+    "singiel",
+    "sklepy",
+    "zdrowie"
+   ],
+   "cechy": [
+    "w_imieniu",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A133",
+   "tekst": "Moja przyjaciółka z Ukrainy przyjeżdża z 2 dzieci (8 i 11 lat), pomagam jej znaleźć wynajem. Szkoła podstawowa blisko to podstawa, budżet mały",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci"
+   ],
+   "cechy": [
+    "w_imieniu"
+   ]
+  },
+  {
+   "id": "K6-A134",
+   "tekst": "studiuje gospodarke przestrzenna i robie projekt o suburbanizacji w Zielonkach, sprawdzam jak ta apka opisuje rozne adresy",
+   "persona": null,
+   "potrzeby": [],
+   "cechy": [
+    "nikt_nie_szuka",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A135",
+   "tekst": "chcemy kupic dzialke budowlana w gminie Mogilany, dzieci 4 i 7, zeby byl prad i woda i szkola w miare blisko",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci"
+   ],
+   "cechy": [
+    "zwykly",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A136",
+   "tekst": "Rower mam, ale stoi w piwnicy od 3 lat, więc ścieżki nie są dla mnie argumentem. Najważniejsza apteka i przychodnia, bo choruję przewlekle.",
+   "persona": null,
+   "potrzeby": [
+    "zdrowie"
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K6-A137",
+   "tekst": "Nasza trójka (ja, mąż, synek 1,5 roku) + kot, szukamy 3 pokoi do 800k w Krakowie, park w okolicy obowiązkowo",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci",
+    "zielen"
+   ],
+   "cechy": [
+    "zwykly"
+   ]
+  },
+  {
+   "id": "K6-A138",
+   "tekst": "Moja żona jest w ciąży wysokiego ryzyka, potrzebujemy szpitala położniczego blisko i spokojnej okolicy",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci",
+    "zdrowie",
+    "cisza"
+   ],
+   "cechy": [
+    "zwykly"
+   ]
+  },
+  {
+   "id": "K6-A139",
+   "tekst": "Szukam 2 pokoi do wynajęcia tylko dla siebie, pracuję przy Bonarce i chcę dojeżdżać rowerem cały rok. Mam 29 lat.",
+   "persona": "singiel",
+   "potrzeby": [
+    "rower",
+    "singiel"
+   ],
+   "cechy": [
+    "zwykly"
+   ]
+  },
+  {
+   "id": "K6-A140",
+   "tekst": "Kupujemy pod wynajem krótkoterminowy, liczy się stopa zwrotu.",
+   "persona": "inwestor",
+   "potrzeby": [
+    "inwestycja"
+   ],
+   "cechy": [
+    "profil_glowny"
+   ]
+  },
+  {
+   "id": "K6-A141",
+   "tekst": "mieszkam sam, pracuje w barze na Kazimierzu do 3 w nocy, wracam pieszo, wiec chce blisko i zeby bylo bezpiecznie",
+   "persona": "singiel",
+   "potrzeby": [
+    "singiel",
+    "praca_centrum",
+    "bezpieczenstwo"
+   ],
+   "cechy": [
+    "zwykly",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A142",
+   "tekst": "dojezdzam do pracy pociagiem do Tarnowa, wiec chce mieszkac przy stacji, Płaszów albo Bieżanów, auta nie mam",
+   "persona": null,
+   "potrzeby": [
+    "bez_samochodu"
+   ],
+   "cechy": [
+    "zwykly"
+   ]
+  },
+  {
+   "id": "K6-A143",
+   "tekst": "Emerytowana nauczycielka, 69 lat, mieszkam sama z kanarkiem",
+   "persona": "senior",
+   "potrzeby": [
+    "senior",
+    "singiel"
+   ],
+   "cechy": [
+    "profil_glowny",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A144",
+   "tekst": "przenosze sie z Zakopanego do Krakowa do pracy w biurze na Kleparzu, mam 2 koty i 31 lat, mieszkam z dziewczyna",
+   "persona": null,
+   "potrzeby": [
+    "praca_centrum"
+   ],
+   "cechy": [
+    "zwykly",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A145",
+   "tekst": "Przeprowadzka w marcu, jeszcze nie wiem gdzie dokładnie, otwarta na wszystko",
+   "persona": null,
+   "potrzeby": [],
+   "cechy": [
+    "bez_sygnalu"
+   ]
+  },
+  {
+   "id": "K6-A146",
+   "tekst": "Hipotetycznie: lepiej mieszkać przy Wiśle czy przy Lasku Wolskim jak się ma alergię? Pytam teoretycznie, mieszkam w Poznaniu i tu zostaję.",
+   "persona": null,
+   "potrzeby": [],
+   "cechy": [
+    "nikt_nie_szuka"
+   ]
+  },
+  {
+   "id": "K6-A147",
+   "tekst": "szukam czegos w krakowie albo okolicy, zobaczymy co wyskoczy",
+   "persona": null,
+   "potrzeby": [],
+   "cechy": [
+    "bez_sygnalu",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A148",
+   "tekst": "nie planujemy dzieci, nigdy. dwoje 30latkow, dwa koty, praca zdalna, lubimy chodzic po parkach",
+   "persona": null,
+   "potrzeby": [
+    "zielen"
+   ],
+   "cechy": [
+    "bliska_pomylka",
+    "bez_diakrytykow"
+   ]
+  },
+  {
+   "id": "K6-A149",
+   "tekst": "Remote dev, 33, mieszkam z narzeczoną, celujemy w Zabierzów bo blisko lotnisko, a ona jeździ konno w okolicy",
+   "persona": null,
+   "potrzeby": [
+    "lotnisko"
+   ],
+   "cechy": [
+    "zwykly"
+   ]
+  },
+  {
+   "id": "K6-A150",
+   "tekst": "corka studiuje w Krakowie ale mieszka w akademiku i nie bedzie z nami. my szukamy czegos dla siebie pod Niepolomicami, duzo lasu",
+   "persona": null,
+   "potrzeby": [
+    "zielen"
+   ],
+   "cechy": [
+    "bliska_pomylka",
+    "bez_diakrytykow"
+   ]
+  }
+ ]
+}

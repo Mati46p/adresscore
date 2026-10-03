@@ -28,7 +28,7 @@ let baza: number[] = []
 let wersja = 0
 
 async function pobierz<T>(sciezka: string): Promise<T> {
-  const odp = await fetch('/dane/uslugi/' + sciezka)
+  const odp = await fetch('/dane/biznes/' + sciezka)
   if (!odp.ok) throw new Error(sciezka + ': HTTP ' + odp.status)
   return odp.json() as Promise<T>
 }

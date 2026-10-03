@@ -1,0 +1,233 @@
+/* Panel „Gdzie miasto ma luki” (#91). Układ zależy od szerokości panelu, nie ekranu
+   (container query), bo panel może stać w wąskiej kolumnie obok mapy albo na całej szerokości. */
+.luki {
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+.luki p {
+  margin: 0;
+}
+.luki fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.luki-gora {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.luki-warstwy,
+.luki-sortowanie {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.luki-suma {
+  font-size: 17px;
+  line-height: 1.35;
+  color: var(--tekst);
+}
+.luki-liczba {
+  font-family: var(--font-mono);
+  font-size: 28px;
+  font-weight: 600;
+  margin-right: 4px;
+}
+.luki-podstawa {
+  font-size: 14px;
+  color: var(--tekst-2);
+}
+.luki-szary {
+  color: var(--tekst-3);
+}
+.luki-uwaga {
+  font-size: 14px;
+  color: var(--ostrzezenie-tekst);
+  background: var(--ostrzezenie-tlo);
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.luki-sterowanie {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+}
+.luki-kierunek {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--tekst-2);
+  min-width: 0;
+}
+
+/* ── Lista ─────────────────────────────────────────────────────────────────── */
+.luki-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.luki-kolumny {
+  display: none;
+}
+.luki-wiersz {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "nazwa wluce"
+    "udzial udzial"
+    "brak brak";
+  gap: 4px 12px;
+  align-items: center;
+  width: 100%;
+  min-height: var(--cel-dotyku);
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--ramka);
+  background: var(--powierzchnia);
+  color: var(--tekst);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+.luki-wiersz[aria-current="true"] {
+  border-color: var(--akcent);
+  box-shadow: inset 0 0 0 1px var(--akcent);
+}
+@media (hover: hover) {
+  .luki-wiersz:hover {
+    border-color: var(--akcent-obrys);
+    background: var(--powierzchnia-2);
+  }
+}
+.luki-nazwa {
+  grid-area: nazwa;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.luki-typ {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--tekst-3);
+}
+.luki-num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+.luki-wluce {
+  grid-area: wluce;
+  font-size: 15px;
+  font-weight: 600;
+}
+.luki-dopisek {
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--tekst-3);
+}
+.luki-udzial {
+  grid-area: udzial;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.luki-procent {
+  color: var(--tekst-2);
+}
+.luki-brak {
+  grid-area: brak;
+  text-align: left;
+  font-size: 13px;
+  color: var(--tekst-3);
+}
+
+/* Pasek: pełna szerokość = wszystkie adresy okolicy (100% jednostki), nie największa pozycja. */
+.luki-pasek {
+  display: flex;
+  height: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--linia);
+  box-shadow: inset 0 0 0 1px var(--ramka);
+}
+.luki-pasek-luka {
+  background: var(--ostrzezenie);
+}
+.luki-pasek-brak {
+  background: var(--brak-danych);
+}
+.luki-wiersz[data-szary] .luki-nazwa {
+  color: var(--tekst-3);
+}
+
+/* ── Szeroki panel: prawdziwe kolumny z nagłówkiem ─────────────────────────── */
+@container (min-width: 560px) {
+  .luki-kolumny,
+  .luki-wiersz {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) 8ch minmax(0, 2fr) 8ch;
+    grid-template-areas: "nazwa wluce udzial brak";
+    gap: 4px 16px;
+  }
+  .luki-kolumny {
+    padding: 0 13px 6px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--tekst-3);
+  }
+  .luki-brak {
+    text-align: right;
+  }
+  /* Nagłówek kolumny mówi to samo – dopisek zostaje tylko dla czytnika ekranu. */
+  .luki-dopisek {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}
+
+/* ── Źródło pod rankingiem ─────────────────────────────────────────────────── */
+.luki-zrodlo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 12px;
+  border-top: 1px solid var(--linia);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--tekst-3);
+  overflow-wrap: anywhere;
+}
+.luki-legenda {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  vertical-align: -1px;
+}
+.luki-legenda-luka {
+  background: var(--ostrzezenie);
+}
+.luki-legenda-brak {
+  background: var(--brak-danych);
+}

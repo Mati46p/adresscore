@@ -1,0 +1,190 @@
+{
+  "opis": "Zbiór wzorcowy „zapytaj o adres” (#18): pytania pośrednie, złożone i spoza zakresu. Etykiety ułożył agent AI (Claude) PRZED jakimkolwiek wywołaniem JEV – mogą być stronnicze.",
+  "zasady": {
+    "tematy": "Lista tematów pytania; każdy temat = zbiór warstw (id z listaWarstw na public/dane), z których każda dobrze na niego odpowiada. Pytanie złożone ma 2–3 tematy.",
+    "nie_wiem": "tematy: [] = żadna warstwa nie odpowiada; poprawne jest tylko „nie wiem”.",
+    "trafienie": "Wybór poprawny, gdy należy do któregokolwiek tematu (suma zbiorów).",
+    "pokrycie": "Pytanie złożone: aplikacja wybiera jedną warstwę, więc pokrywa najwyżej 1 z n tematów (1/n)."
+  },
+  "pozycje": [
+    {
+      "id": "B01",
+      "pytanie": "Czy dziecko dojdzie samo do podstawówki, czy to za daleko?",
+      "tematy": [["szkola_podst_odleglosc"]],
+      "cechy": ["pośrednie"]
+    },
+    {
+      "id": "B02",
+      "pytanie": "w nocy slychac tramwaje? mam lekki sen",
+      "tematy": [["halas_ldwn"]],
+      "cechy": ["pośrednie", "bez ogonków", "pułapka (tramwaj → przystanek)"]
+    },
+    {
+      "id": "B03",
+      "pytanie": "Czy piwnica może zalać przy dużej wodzie?",
+      "tematy": [["powodz_1proc", "powodz_10proc", "powodz_02proc"]],
+      "cechy": ["pośrednie", "dwie+ warstwy dopuszczalne"]
+    },
+    {
+      "id": "B04",
+      "pytanie": "Opłaca się tu kupić pod wynajem?",
+      "tematy": [["cena_m2_mediana", "inwestycje_500m"]],
+      "cechy": ["pośrednie", "dwie+ warstwy dopuszczalne"]
+    },
+    {
+      "id": "B05",
+      "pytanie": "Czy wieczorem jest jasno na ulicy?",
+      "tematy": [["oswietlenie_100m"]],
+      "cechy": ["pośrednie"]
+    },
+    {
+      "id": "B06",
+      "pytanie": "Jaka będzie jutro pogoda?",
+      "tematy": [],
+      "cechy": ["spoza zakresu"]
+    },
+    {
+      "id": "B07",
+      "pytanie": "Ile wynosi czynsz administracyjny w tym bloku?",
+      "tematy": [],
+      "cechy": ["spoza zakresu", "pułapka (koszty → cena m²)"]
+    },
+    {
+      "id": "B08",
+      "pytanie": "Czy sąsiedzi są tu mili?",
+      "tematy": [],
+      "cechy": ["spoza zakresu"]
+    },
+    {
+      "id": "B09",
+      "pytanie": "Jak szybko dojadę rano do roboty przy Rynku?",
+      "tematy": [["rynek_czas_min"]],
+      "cechy": ["slang"]
+    },
+    {
+      "id": "B10",
+      "pytanie": "Mam astmę – da się tu oddychać zimą, jak ludzie palą w piecach?",
+      "tematy": [["bap_srednia", "paleniska_200m", "pm25_srednia", "pm10_srednia"]],
+      "cechy": ["pośrednie", "dwie+ warstwy dopuszczalne"]
+    },
+    {
+      "id": "B11",
+      "pytanie": "Czy babcia na wózku dostanie się do lekarza rodzinnego?",
+      "tematy": [["przychodnia_bez_barier_odleglosc", "obnizone_krawezniki_300m"]],
+      "cechy": ["pośrednie", "dwie+ warstwy dopuszczalne"]
+    },
+    {
+      "id": "B12",
+      "pytanie": "Czy w grudniu w ogóle będzie słońce w mieszkaniu?",
+      "tematy": [["slonce_grudzien_h"]],
+      "cechy": ["pośrednie"]
+    },
+    {
+      "id": "B13",
+      "pytanie": "Czy wjadę tu moim starym dieslem bez mandatu?",
+      "tematy": [["sct_w_strefie"]],
+      "cechy": ["pośrednie"]
+    },
+    {
+      "id": "B14",
+      "pytanie": "Trzeba płacić za zostawienie auta pod domem?",
+      "tematy": [["spp_podstrefa"]],
+      "cechy": ["pośrednie"]
+    },
+    {
+      "id": "B15",
+      "pytanie": "Czy coś mi tu wkrótce wybudują za oknem?",
+      "tematy": [["inwestycje_500m", "mpzp_status"]],
+      "cechy": ["pośrednie", "dwie+ warstwy dopuszczalne"]
+    },
+    {
+      "id": "B16",
+      "pytanie": "Da się tu żyć bez samochodu? Jak często coś jeździ?",
+      "tematy": [["kursy_szczyt_h", "przystanek_odleglosc"]],
+      "cechy": ["pośrednie", "dwie+ warstwy dopuszczalne"]
+    },
+    {
+      "id": "B17",
+      "pytanie": "Czy w okolicy mieszka dużo młodych rodzin z dziećmi?",
+      "tematy": [["udzial_0_14"]],
+      "cechy": ["pułapka (dzieci → szkoła)"]
+    },
+    {
+      "id": "B18",
+      "pytanie": "Czy jest tu światłowód?",
+      "tematy": [],
+      "cechy": ["spoza zakresu", "pułapka (stacje bazowe)"]
+    },
+    {
+      "id": "B19",
+      "pytanie": "Jest gdzie wyjść z psem, jakiś skwer albo park?",
+      "tematy": [["zielen_worldcover_100m", "zielen_udzial", "drzewa_100m"]],
+      "cechy": ["pośrednie", "dwie+ warstwy dopuszczalne"]
+    },
+    {
+      "id": "B20",
+      "pytanie": "Czy da się podłączyć do miejskiego ogrzewania?",
+      "tematy": [["siec_cieplownicza_odleglosc"]],
+      "cechy": ["pośrednie"]
+    },
+    {
+      "id": "B21",
+      "pytanie": "Mam blisko na pociąg, żeby dojeżdżać do Tarnowa?",
+      "tematy": [["kolej_odleglosc", "kolej_kursy_szczyt_h"]],
+      "cechy": ["dwie+ warstwy dopuszczalne"]
+    },
+    {
+      "id": "B22",
+      "pytanie": "Jak głośno i daleko do tramwaju?",
+      "tematy": [["halas_ldwn"], ["przystanek_odleglosc"]],
+      "cechy": ["złożone"]
+    },
+    {
+      "id": "B23",
+      "pytanie": "Czy jest zielono, cicho i bezpiecznie wieczorem?",
+      "tematy": [
+        ["zielen_worldcover_100m", "zielen_udzial", "drzewa_100m"],
+        ["halas_ldwn"],
+        ["oswietlenie_100m", "miejscowe_zagrozenia_gmina_2025"]
+      ],
+      "cechy": ["złożone"]
+    },
+    {
+      "id": "B24",
+      "pytanie": "Blisko do przedszkola i żłobka? Mam dwójkę maluchów.",
+      "tematy": [["przedszkole_odleglosc"], ["zlobek_odleglosc"]],
+      "cechy": ["złożone"]
+    },
+    {
+      "id": "B25",
+      "pytanie": "Ile kosztuje metr i czy nie zalewa?",
+      "tematy": [["cena_m2_mediana"], ["powodz_1proc", "powodz_10proc", "powodz_02proc"]],
+      "cechy": ["złożone"]
+    },
+    {
+      "id": "B26",
+      "pytanie": "Jest tu apteka i przychodnia na spacer?",
+      "tematy": [
+        ["apteka_odleglosc"],
+        ["przychodnia_odleglosc", "przychodnia_bez_barier_odleglosc"]
+      ],
+      "cechy": ["złożone"]
+    },
+    {
+      "id": "B27",
+      "pytanie": "Jak tu z powietrzem, hałasem i czy są drzewa pod oknem?",
+      "tematy": [
+        ["pm25_srednia", "pm10_srednia", "no2_srednia", "bap_srednia"],
+        ["halas_ldwn"],
+        ["drzewa_100m", "zielen_worldcover_100m"]
+      ],
+      "cechy": ["złożone"]
+    },
+    {
+      "id": "B28",
+      "pytanie": "Dojadę bezpiecznie rowerem do pracy i będzie gdzie go przypiąć?",
+      "tematy": [["rower_infrastruktura_odleglosc", "droga_rowerowa_odleglosc"], ["stojaki_300m"]],
+      "cechy": ["złożone"]
+    }
+  ]
+}

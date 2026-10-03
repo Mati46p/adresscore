@@ -1,0 +1,84 @@
+/* „Opisz siebie” (#16). Klasy z prefiksem opisz-, tokeny z src/styles.css. Od 390 px w górę. */
+.opisz {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+.opisz-forma {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.opisz-podpowiedz,
+.opisz-uwaga,
+.opisz-zrodlo {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--tekst-2);
+}
+.opisz-pole {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 72px;
+  padding: 10px 12px;
+  border: 1px solid var(--ramka-pola);
+  border-radius: var(--promien);
+  background: var(--powierzchnia);
+  color: var(--tekst);
+  font: inherit;
+  font-size: 16px; /* 16 px – iOS nie przybliża pola przy fokusie */
+  line-height: 1.4;
+  resize: vertical;
+}
+.opisz-pole:focus-visible {
+  outline: 2px solid var(--akcent);
+  outline-offset: 1px;
+}
+.opisz-przycisk {
+  align-self: flex-start;
+  min-height: var(--cel-dotyku);
+}
+.opisz-przycisk:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.opisz-wynik {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.opisz-wynik:empty {
+  display: none;
+}
+.opisz-glowa {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--tekst);
+}
+.opisz-chipy {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.opisz-chip {
+  max-width: 100%;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--akcent-obrys);
+  background: var(--akcent-jasny);
+  color: var(--tekst);
+  font-size: 13px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.opisz-chip.opisz-kategoria {
+  background: var(--powierzchnia);
+  border-color: var(--ramka-pola);
+  color: var(--tekst-2);
+}

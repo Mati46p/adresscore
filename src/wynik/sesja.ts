@@ -47,6 +47,7 @@ export function polaczPreferencje(url: StanUrl, hash: string, zapis: StanUrl | n
     ...url,
     persona: maUstawienia || maPersone ? url.persona : zapis.persona,
     tryb: parametry.has('t') ? url.tryb : zapis.tryb,
+    biznes: parametry.has('biz') ? url.biznes : zapis.biznes,
     ustawienia: maUstawienia ? url.ustawienia : maPersone ? null : zapis.ustawienia,
     filtry: parametry.has('f') ? url.filtry : zapis.filtry,
   }

@@ -1,0 +1,67 @@
+{
+  "opis": "Wejście wskaźnika gmina_koszty_stale_rok: wykonanie dochodów gminy w rozdz. 90002, §0490 (zł) i liczba mieszkańców. Plik generuje etl/koszty-stale.mjs z tabel budzet_pozycje i wskazniki w z-dykty.pl, nie edytuj ręcznie.",
+  "rok": 2025,
+  "pobrano": "2026-10-03",
+  "zrodla": {
+    "budzet": "https://dane.gov.pl/pl/dataset/872",
+    "ludnosc": "https://bdl.stat.gov.pl/api/v1/data/by-variable/72305?unit-level=6"
+  },
+  "gminy": {
+    "1206022": {
+      "wykonanie": 2486983.75,
+      "ludnosc": 7809
+    },
+    "1206052": {
+      "wykonanie": 7888252.11,
+      "ludnosc": 18779
+    },
+    "1206072": {
+      "wykonanie": 7707605.65,
+      "ludnosc": 18832
+    },
+    "1206082": {
+      "wykonanie": 5751022.65,
+      "ludnosc": 13692
+    },
+    "1206092": {
+      "wykonanie": 6687636.81,
+      "ludnosc": 16594
+    },
+    "1206113": {
+      "wykonanie": 23640330.58,
+      "ludnosc": 43944
+    },
+    "1206143": {
+      "wykonanie": 4286347.03,
+      "ludnosc": 11165
+    },
+    "1206152": {
+      "wykonanie": 6796160.92,
+      "ludnosc": 17589
+    },
+    "1206162": {
+      "wykonanie": 12114851.24,
+      "ludnosc": 30041
+    },
+    "1206172": {
+      "wykonanie": 12737503.65,
+      "ludnosc": 28255
+    },
+    "1214012": {
+      "wykonanie": 3344025.53,
+      "ludnosc": 9115
+    },
+    "1219043": {
+      "wykonanie": 15117757.7,
+      "ludnosc": 34020
+    },
+    "1219053": {
+      "wykonanie": 30749684.62,
+      "ludnosc": 70471
+    },
+    "1261011": {
+      "wykonanie": 415143961.45,
+      "ludnosc": 816614
+    }
+  }
+}

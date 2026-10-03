@@ -1,7 +1,7 @@
-import { lazy, Suspense, useEffect, useState } from 'react'
-import { KATEGORIE } from '@/kontrakty'
+import { lazy, Suspense, useState } from 'react'
+import { PoleOpiszSiebie } from '@/ai/PoleOpiszSiebie'
 import { useDane } from '@/wynik/dane'
-import { WARSTWY_BIZNESU } from '@/wynik/persony'
+import { BIZNESY, warstwyBiznesu } from '@/wynik/persony'
 import { kierunekEfektywny } from '@/wynik/silnik'
 import {
   dodajDoPorownania,
@@ -13,6 +13,7 @@ import {
   wybierzAdres,
 } from '@/wynik/stan'
 import { MAKS_POROWNANIE } from '@/wynik/url'
+import { usePropsSasiadowMapy } from '@/wynik/useSasiedzi'
 import { useWyniki } from '@/wynik/useWyniki'
 import { useWstepnaMapa } from '@/wynik/wstepnaMapa'
 import { opisAdresu } from './adres'
@@ -32,12 +33,15 @@ const BRAK_HEKSOW: ReadonlyMap<string, number | null> = new Map()
 export function EkranSzukaj() {
   const dane = useDane()
   const tryb = useStan((s) => s.tryb)
+  const biznes = useStan((s) => s.biznes)
   const warstwa = useStan((s) => s.warstwa)
   const wybrany = useStan((s) => s.wybrany)
   const porownanie = useStan((s) => s.porownanie)
   const kierunki = useStan((s) => s.kierunki)
   const [komunikatHeksow, setKomunikatHeksow] = useState('')
+  const [warstwyRozwiniete, setWarstwyRozwiniete] = useState(false)
   const wyniki = useWyniki()
+  const sasiedzi = usePropsSasiadowMapy()
   const wstepnaMapa = useWstepnaMapa(dane.stan !== 'gotowe')
   const adres = dane.stan === 'gotowe' && wybrany !== null ? dane.adresy[wybrany] : undefined
   const wybraneAdresy =
@@ -55,17 +59,10 @@ export function EkranSzukaj() {
       ? dane.wskazniki.filter(
           (w) =>
             kierunekEfektywny(w.meta, kierunki) !== null &&
-            (tryb !== 'biznes' || WARSTWY_BIZNESU.some((id) => id === w.meta.id && !w.meta.atrapa)),
+            (tryb !== 'biznes' ||
+              warstwyBiznesu(biznes).some((id) => id === w.meta.id && !w.meta.atrapa)),
         )
       : []
-  useEffect(() => {
-    if (
-      warstwa !== 'wynik' &&
-      dane.stan === 'gotowe' &&
-      !warstwy.some((w) => w.meta.id === warstwa)
-    )
-      ustawWarstwe('wynik')
-  }, [warstwa, warstwy, dane.stan])
 
   return (
     <main className="szukaj">
@@ -74,44 +71,56 @@ export function EkranSzukaj() {
           <div className="panel-wstep">
             <h1 tabIndex={-1}>
               {tryb === 'biznes'
-                ? 'Znajdź miejsce na sklep spożywczy'
+                ? `Znajdź miejsce na działalność: ${BIZNESY.find((b) => b.id === biznes)?.nazwa ?? 'biznes'}`
                 : 'Znajdź okolicę w Krakowie'}
             </h1>
             <p>
               {tryb === 'biznes'
-                ? 'Wagi konkurencji i liczby stałych mieszkańców przeliczają kolory na mapie. Kliknij heks, aby obejrzeć adres i porównać okolice.'
+                ? 'Wagi konkurencji i liczby stałych mieszkańców przeliczają kolory na mapie. Wybierz rodzaj działalności poniżej, kliknij heks i porównaj okolice.'
                 : 'Profil i wagi poniżej od razu przeliczają kolory na mapie. Kliknij mapę, żeby zobaczyć okolicę i dodać jej heks do porównania.'}
             </p>
           </div>
         </div>
         <aside aria-label="Filtry" className="szukaj-filtry">
+          <PoleOpiszSiebie />
           <PanelFiltrow />
         </aside>
       </div>
 
       <div className="szukaj-prawa">
         <section aria-label="Mapa Krakowa" className="szukaj-mapa">
-          <div className="pasek-warstw">
-            <label htmlFor="mapa-warstwa">Mapa pokazuje</label>
-            <select
-              id="mapa-warstwa"
-              value={warstwa}
-              onChange={(event) => ustawWarstwe(event.currentTarget.value)}
+          <div role="group" aria-label="Co pokazuje mapa" className="pasek-warstw">
+            <button
+              type="button"
+              className="seg"
+              aria-pressed={warstwa === 'wynik'}
+              onClick={() => ustawWarstwe('wynik')}
             >
-              <option value="wynik">Wynik całej okolicy</option>
-              {Object.entries(KATEGORIE).map(([id, nazwa]) => {
-                const opcje = warstwy.filter((w) => w.meta.kategoria === id)
-                return opcje.length ? (
-                  <optgroup key={id} label={nazwa}>
-                    {opcje.map((w) => (
-                      <option key={w.meta.id} value={w.meta.id}>
-                        {w.meta.nazwa}
-                      </option>
-                    ))}
-                  </optgroup>
-                ) : null
-              })}
-            </select>
+              Wynik tej okolicy
+            </button>
+            {warstwy
+              .filter((w) => warstwyRozwiniete || warstwa === w.meta.id)
+              .map((w) => (
+                <button
+                  key={w.meta.id}
+                  type="button"
+                  className="seg"
+                  aria-pressed={warstwa === w.meta.id}
+                  onClick={() => ustawWarstwe(w.meta.id)}
+                >
+                  {w.meta.nazwa}
+                </button>
+              ))}
+            {warstwy.length > 0 && (
+              <button
+                type="button"
+                className="seg pasek-warstw__wiecej"
+                aria-expanded={warstwyRozwiniete}
+                onClick={() => setWarstwyRozwiniete(!warstwyRozwiniete)}
+              >
+                {warstwyRozwiniete ? 'Zwiń warstwy ▴' : `Inne warstwy (${warstwy.length}) ▾`}
+              </button>
+            )}
           </div>
           <div className="slot-mapy" data-slot="mapa">
             <Suspense
@@ -125,6 +134,7 @@ export function EkranSzukaj() {
                 heksy={wyniki?.heksy ?? wstepnaMapa?.heksy ?? BRAK_HEKSOW}
                 podpisWarstwy={wyniki?.podpis ?? wstepnaMapa?.podpis ?? 'Wynik tej okolicy'}
                 wykluczone={wyniki?.wykluczoneHeksy}
+                sasiedzi={sasiedzi}
                 wybrany={adres ? { lon: adres.lon, lat: adres.lat } : null}
                 onKlik={(lon, lat) => {
                   if (dane.stan !== 'gotowe') return

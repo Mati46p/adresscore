@@ -1,0 +1,385 @@
+{
+  "opis": "Kontrolny, odłożony zestaw „zapytaj o adres” (25 pozycji). Zestaw napisany na ślepo przez agenta AI bez dostępu do reguł, słów kluczowych ani promptów aplikacji, 2026-10-03.",
+  "zasady": "tematy: jedna grupa na każdą rzecz, o którą pyta użytkownik; grupa to lista akceptowalnych id warstw z warstwy.txt (trafienie dowolnej z nich zalicza grupę). [[\"nie_wiem\"]] = pytanie poza zakresem danych.",
+  "pozycje": [
+    {
+      "id": "K-B01",
+      "pytanie": "da się tu w nocy spać przy otwartym oknie czy tiry jeżdżą pod domem?",
+      "tematy": [
+        [
+          "halas_ldwn",
+          "halas_obwarzanek_lden"
+        ]
+      ],
+      "cechy": [
+        "pojedyncze",
+        "posrednie"
+      ]
+    },
+    {
+      "id": "K-B02",
+      "pytanie": "zimą czuć tu dymem z kominów?",
+      "tematy": [
+        [
+          "paleniska_200m",
+          "pm25_srednia",
+          "pm10_srednia",
+          "bap_srednia",
+          "przewietrzanie_klasa"
+        ]
+      ],
+      "cechy": [
+        "pojedyncze",
+        "posrednie"
+      ]
+    },
+    {
+      "id": "K-B03",
+      "pytanie": "a ile mała będzie miała do podstawówki?",
+      "tematy": [
+        [
+          "szkola_podst_odleglosc"
+        ]
+      ],
+      "cechy": [
+        "pojedyncze",
+        "posrednie"
+      ]
+    },
+    {
+      "id": "K-B04",
+      "pytanie": "jak przyjdzie wielka woda jak w 97 to mnie tu zaleje?",
+      "tematy": [
+        [
+          "powodz_1proc",
+          "powodz_10proc",
+          "powodz_02proc",
+          "gmina_powodz_powierzchnia_pct"
+        ]
+      ],
+      "cechy": [
+        "pojedyncze",
+        "posrednie"
+      ]
+    },
+    {
+      "id": "K-B05",
+      "pytanie": "za ile tu teraz chodzą mieszkania za metr?",
+      "tematy": [
+        [
+          "cena_m2_mediana"
+        ]
+      ],
+      "cechy": [
+        "pojedyncze",
+        "potoczne"
+      ]
+    },
+    {
+      "id": "K-B06",
+      "pytanie": "szybko się stąd dostanę na rynek bez auta?",
+      "tematy": [
+        [
+          "rynek_czas_min",
+          "przystanek_odleglosc",
+          "kursy_szczyt_h"
+        ]
+      ],
+      "cechy": [
+        "pojedyncze",
+        "posrednie"
+      ]
+    },
+    {
+      "id": "K-B07",
+      "pytanie": "gdzie najbliżej wykupię receptę?",
+      "tematy": [
+        [
+          "apteka_odleglosc"
+        ]
+      ],
+      "cechy": [
+        "pojedyncze",
+        "posrednie"
+      ]
+    },
+    {
+      "id": "K-B08",
+      "pytanie": "nie postawią mi tu zaraz bloku przed oknem?",
+      "tematy": [
+        [
+          "inwestycje_500m",
+          "mpzp_status"
+        ]
+      ],
+      "cechy": [
+        "pojedyncze",
+        "posrednie"
+      ]
+    },
+    {
+      "id": "K-B09",
+      "pytanie": "dużo tu starszych ludzi mieszka czy raczej młodzi?",
+      "tematy": [
+        [
+          "udzial_65plus",
+          "udzial_0_14"
+        ]
+      ],
+      "cechy": [
+        "pojedyncze",
+        "posrednie"
+      ]
+    },
+    {
+      "id": "K-B10",
+      "pytanie": "słyszałem że w tej okolicy domy pękają bo ziemia się rusza, prawda?",
+      "tematy": [
+        [
+          "osuwisko_odleglosc",
+          "teren_osuwiskowy",
+          "osiadanie_mm_rok"
+        ]
+      ],
+      "cechy": [
+        "pojedyncze",
+        "posrednie"
+      ]
+    },
+    {
+      "id": "K-B11",
+      "pytanie": "bede musial bulic za postoj pod wlasnym domem?",
+      "tematy": [
+        [
+          "spp_podstrefa"
+        ]
+      ],
+      "cechy": [
+        "pojedyncze",
+        "bez_polskich_znakow",
+        "potoczne"
+      ]
+    },
+    {
+      "id": "K-B12",
+      "pytanie": "jest gdzie przypiąć rower żeby nie zwinęli?",
+      "tematy": [
+        [
+          "stojaki_300m"
+        ]
+      ],
+      "cechy": [
+        "pojedyncze",
+        "posrednie"
+      ]
+    },
+    {
+      "id": "K-B13",
+      "pytanie": "z psem do weta daleko?",
+      "tematy": [
+        [
+          "weterynarz_odleglosc"
+        ]
+      ],
+      "cechy": [
+        "pojedyncze",
+        "zwiezle"
+      ]
+    },
+    {
+      "id": "K-B14",
+      "pytanie": "jak tu z przedszkolem i czy jest jakaś piaskownica, huśtawki w pobliżu?",
+      "tematy": [
+        [
+          "przedszkole_odleglosc"
+        ],
+        [
+          "plac_zabaw_odleglosc"
+        ]
+      ],
+      "cechy": [
+        "zlozone"
+      ]
+    },
+    {
+      "id": "K-B15",
+      "pytanie": "cicho tu jest? i czy wieczorem nie jest ciemno jak w piwnicy?",
+      "tematy": [
+        [
+          "halas_ldwn",
+          "halas_obwarzanek_lden"
+        ],
+        [
+          "oswietlenie_100m"
+        ]
+      ],
+      "cechy": [
+        "zlozone",
+        "posrednie"
+      ]
+    },
+    {
+      "id": "K-B16",
+      "pytanie": "ile stąd do Balic i czy jest blisko jakaś stacja z pociągiem?",
+      "tematy": [
+        [
+          "lotnisko_czas_min"
+        ],
+        [
+          "kolej_odleglosc",
+          "kolej_kursy_szczyt_h"
+        ]
+      ],
+      "cechy": [
+        "zlozone"
+      ]
+    },
+    {
+      "id": "K-B17",
+      "pytanie": "jest tu na piechotę lekarz rodzinny i jakiś spożywczak?",
+      "tematy": [
+        [
+          "przychodnia_odleglosc",
+          "przychodnia_bez_barier_odleglosc"
+        ],
+        [
+          "sklep_odleglosc",
+          "uslugi_15min"
+        ]
+      ],
+      "cechy": [
+        "zlozone",
+        "potoczne"
+      ]
+    },
+    {
+      "id": "K-B18",
+      "pytanie": "a jakiejś chemicznej fabryki obok nie ma? no i czy są tu w ogóle jakieś drzewa",
+      "tematy": [
+        [
+          "emitent_odleglosc",
+          "seveso_odleglosc"
+        ],
+        [
+          "drzewa_100m",
+          "zielen_worldcover_100m",
+          "zielen_udzial"
+        ]
+      ],
+      "cechy": [
+        "zlozone",
+        "posrednie"
+      ]
+    },
+    {
+      "id": "K-B19",
+      "pytanie": "ile kosztuje metr, jest plan miejscowy i czy gmina w ogóle w coś inwestuje?",
+      "tematy": [
+        [
+          "cena_m2_mediana"
+        ],
+        [
+          "mpzp_status",
+          "gmina_mpzp_pokrycie_pct"
+        ],
+        [
+          "gmina_inwestycje_pc",
+          "inwestycje_500m",
+          "bo_projekty_1km"
+        ]
+      ],
+      "cechy": [
+        "zlozone",
+        "trzy_tematy"
+      ]
+    },
+    {
+      "id": "K-B20",
+      "pytanie": "jeżdżę na wózku — jest blisko przychodnia bez progów? i czy krawężniki są obniżone?",
+      "tematy": [
+        [
+          "przychodnia_bez_barier_odleglosc"
+        ],
+        [
+          "obnizone_krawezniki_300m"
+        ]
+      ],
+      "cechy": [
+        "zlozone"
+      ]
+    },
+    {
+      "id": "K-B21",
+      "pytanie": "jacy są sąsiedzi pod tym numerem, nie imprezują po nocach?",
+      "tematy": [
+        [
+          "nie_wiem"
+        ]
+      ],
+      "cechy": [
+        "poza_zakresem"
+      ]
+    },
+    {
+      "id": "K-B22",
+      "pytanie": "ile wynosi czynsz do administracji w tym bloku?",
+      "tematy": [
+        [
+          "nie_wiem"
+        ]
+      ],
+      "cechy": [
+        "poza_zakresem"
+      ]
+    },
+    {
+      "id": "K-B23",
+      "pytanie": "czy w tym budynku jest winda?",
+      "tematy": [
+        [
+          "nie_wiem"
+        ]
+      ],
+      "cechy": [
+        "poza_zakresem"
+      ]
+    },
+    {
+      "id": "K-B24",
+      "pytanie": "czy to dobra okolica dla rodziny z małymi dziećmi?",
+      "tematy": [
+        [
+          "szkola_podst_odleglosc",
+          "przedszkole_odleglosc",
+          "zlobek_odleglosc",
+          "plac_zabaw_odleglosc",
+          "udzial_0_14",
+          "szkola_podst_wynik_e8"
+        ]
+      ],
+      "cechy": [
+        "niejednoznaczne"
+      ]
+    },
+    {
+      "id": "K-B25",
+      "pytanie": "czy tu się zdrowo mieszka?",
+      "tematy": [
+        [
+          "pm25_srednia",
+          "pm10_srednia",
+          "no2_srednia",
+          "bap_srednia",
+          "paleniska_200m",
+          "halas_ldwn",
+          "zielen_udzial",
+          "zielen_worldcover_100m",
+          "przychodnia_odleglosc"
+        ]
+      ],
+      "cechy": [
+        "niejednoznaczne"
+      ]
+    }
+  ]
+}

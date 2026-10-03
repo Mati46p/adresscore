@@ -6,12 +6,18 @@
   "outputDirectory": "dist",
   "git": { "deploymentEnabled": false },
   "functions": { "api/seo.js": { "includeFiles": "api/_seo-index.json.gz" } },
+  "headers": [
+    {
+      "source": "/sw.js",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
+    }
+  ],
   "rewrites": [
     { "source": "/adres/:slug", "destination": "/api/seo?view=adres&slug=:slug" },
     { "source": "/katalog/:slug", "destination": "/api/seo?view=ulica&slug=:slug" },
     { "source": "/katalog", "destination": "/api/seo?view=katalog" },
     {
-      "source": "/((?!assets/|api/|dane/|mapa/|sitemap|robots\\.txt|seo-boot\\.js).*)",
+      "source": "/((?!assets/|api/|dane/|mapa/|sitemap|robots\\.txt|sw\\.js|seo-boot\\.js).*)",
       "destination": "/index.html"
     }
   ]

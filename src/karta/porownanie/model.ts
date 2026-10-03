@@ -30,13 +30,18 @@ export const OSIE: readonly KategoriaId[] = [
   'codziennosc',
   'transport',
   'spokoj',
-  'przyszlosc',
+  'spolecznosc',
   'bezpieczenstwo',
 ]
 
-/** Widoczne w porównaniu są wszystkie warstwy z wagą wybraną w preferencjach. */
-export function wybraneWarstwy(wynik: WynikPorownania): readonly RozbicieWarstwy[] {
-  return wynik.warstwy.filter((w) => w.wagaUzytkownika > 0)
+/** Grupy tabeli obejmują każdą warstwę, niezależnie od wagi i braków pomiaru. */
+export function warstwyPorownania(
+  wynik: WynikPorownania,
+): readonly { kategoria: KategoriaId; warstwy: readonly RozbicieWarstwy[] }[] {
+  return ([...OSIE, 'kontekst'] as readonly KategoriaId[]).map((kategoria) => ({
+    kategoria,
+    warstwy: wynik.warstwy.filter((w) => w.meta.kategoria === kategoria),
+  }))
 }
 
 export function priorytety(okolicy: readonly OkolicaPorownania[]): Record<KategoriaId, number> {

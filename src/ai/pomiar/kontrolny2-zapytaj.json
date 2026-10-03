@@ -1,0 +1,31 @@
+{
+  "opis": "Zestaw kontrolny nr 2, „zapytaj o adres”: 25 pytań o jeden adres w Krakowie lub okolicznej gminie. Napisany na ślepo przez agenta AI bez dostępu do kodu aplikacji, jej promptów ani wcześniejszych zestawów testowych; jedyne wejście to pliki etykiet (etykiety.txt, warstwy.txt). Data: 2026-10-03.",
+  "zasady": "tematy: jedna grupa na każdą rzecz, o którą pyta osoba; grupa to lista akceptowalnych id warstw z warstwy.txt (trafienie dowolnej z nich zalicza grupę). Pytania spoza zakresu danych mają złoto [[\"nie_wiem\"]]. Pytania niejednoznaczne mają jedną szeroką grupę.",
+  "pozycje": [
+    {"id":"K2-B01","pytanie":"da sie tu spac przy otwartym oknie czy tiry jezdza cala noc?","tematy":[["halas_ldwn","halas_obwarzanek_lden"]],"cechy":["jeden_temat","posrednie","bez_polskich_znakow"]},
+    {"id":"K2-B02","pytanie":"zimą czuć tu dym z kominów?","tematy":[["paleniska_200m","pm10_srednia","pm25_srednia","bap_srednia","przewietrzanie_klasa"]],"cechy":["jeden_temat","posrednie"]},
+    {"id":"K2-B03","pytanie":"jak mały pójdzie do zerówki to daleko będzie chodzić?","tematy":[["przedszkole_odleglosc","szkola_podst_odleglosc"]],"cechy":["jeden_temat","posrednie"]},
+    {"id":"K2-B04","pytanie":"Wisła tu kiedyś wylewa?","tematy":[["powodz_1proc","powodz_10proc","powodz_02proc","gmina_powodz_powierzchnia_pct"]],"cechy":["jeden_temat","potoczne"]},
+    {"id":"K2-B05","pytanie":"ile mi zejdzie na Rynek bez auta","tematy":[["rynek_czas_min"]],"cechy":["jeden_temat","bez_znaku_zapytania"]},
+    {"id":"K2-B06","pytanie":"gdzie tu najbliżej z psem do weta?","tematy":[["weterynarz_odleglosc"]],"cechy":["jeden_temat"]},
+    {"id":"K2-B07","pytanie":"babcia ma rozrusznik, jak coś się stanie to jest gdzieś w pobliżu to urządzenie do reanimacji?","tematy":[["defibrylator_odleglosc"]],"cechy":["jeden_temat","posrednie","opisowe"]},
+    {"id":"K2-B08","pytanie":"nie postawią mi tu zaraz bloku pod oknem?","tematy":[["inwestycje_500m","mpzp_status"]],"cechy":["jeden_temat","posrednie"]},
+    {"id":"K2-B09","pytanie":"drogo tu za metr?","tematy":[["cena_m2_mediana"]],"cechy":["jeden_temat","krotkie"]},
+    {"id":"K2-B10","pytanie":"dom jest na zboczu, nie zjedzie mi to kiedyś razem z ogródkiem?","tematy":[["osuwisko_odleglosc","teren_osuwiskowy","osiadanie_mm_rok"]],"cechy":["jeden_temat","posrednie"]},
+    {"id":"K2-B11","pytanie":"sami emeryci tu mieszkają czy jakieś dzieciaki też są?","tematy":[["udzial_65plus","udzial_0_14"]],"cechy":["jeden_temat","potoczne"]},
+    {"id":"K2-B12","pytanie":"w grudniu słońce w ogóle tu zagląda?","tematy":[["slonce_grudzien_h"]],"cechy":["jeden_temat","posrednie"]},
+    {"id":"K2-B13","pytanie":"rano kolo 7 jest jakis pociag do miasta?","tematy":[["kolej_kursy_szczyt_h","kolej_odleglosc"]],"cechy":["jeden_temat","bez_polskich_znakow"]},
+    {"id":"K2-B14","pytanie":"jak tu z przedszkolem i placem zabaw? i czy nie za głośno dla małego","tematy":[["przedszkole_odleglosc"],["plac_zabaw_odleglosc"],["halas_ldwn","halas_obwarzanek_lden"]],"cechy":["zlozone","trzy_tematy"]},
+    {"id":"K2-B15","pytanie":"chce dojezdzac rowerem, sa tu jakies sciezki? i gdzie go przypiac pod blokiem","tematy":[["droga_rowerowa_odleglosc","rower_infrastruktura_odleglosc"],["stojaki_300m"]],"cechy":["zlozone","bez_polskich_znakow"]},
+    {"id":"K2-B16","pytanie":"apteka i lekarz rodzinny – blisko czy trzeba jechać?","tematy":[["apteka_odleglosc"],["przychodnia_odleglosc","przychodnia_bez_barier_odleglosc"]],"cechy":["zlozone"]},
+    {"id":"K2-B17","pytanie":"jest tu w okolicy jakaś fabryka co truje? albo eternit na dachach?","tematy":[["emitent_odleglosc","seveso_odleglosc"],["azbest_budynki_100m"]],"cechy":["zlozone","posrednie"]},
+    {"id":"K2-B18","pytanie":"parkowanie pod domem płatne? i czy mój stary diesel w ogóle może tu wjechać","tematy":[["spp_podstrefa"],["sct_w_strefie"]],"cechy":["zlozone","posrednie"]},
+    {"id":"K2-B19","pytanie":"ile stąd do Balic i czy rano jeździ jakiś bus do Krakowa?","tematy":[["lotnisko_czas_min"],["bus_mld_odleglosc","bus_mld_kursy_szczyt_h","przystanek_odleglosc","kursy_szczyt_h"]],"cechy":["zlozone"]},
+    {"id":"K2-B20","pytanie":"po zmroku jest tu oświetlone? daleko na komisariat? i czy jakiś spożywczak blisko","tematy":[["oswietlenie_100m"],["policja_odleglosc"],["sklep_odleglosc"]],"cechy":["zlozone","trzy_tematy"]},
+    {"id":"K2-B21","pytanie":"sąsiedzi z góry imprezują?","tematy":[["nie_wiem"]],"cechy":["poza_zakresem","zmylka_halas"]},
+    {"id":"K2-B22","pytanie":"czy ten blok ma winde i ile wynosi czynsz do wspolnoty?","tematy":[["nie_wiem"]],"cechy":["poza_zakresem","bez_polskich_znakow"]},
+    {"id":"K2-B23","pytanie":"jaki operator ciągnie tu światłowód?","tematy":[["nie_wiem"]],"cechy":["poza_zakresem"]},
+    {"id":"K2-B24","pytanie":"zdrowo tu w ogóle mieszkać?","tematy":[["pm25_srednia","pm10_srednia","no2_srednia","bap_srednia","paleniska_200m","przewietrzanie_klasa","emitent_odleglosc","seveso_odleglosc","halas_ldwn","halas_obwarzanek_lden","azbest_budynki_100m"]],"cechy":["niejednoznaczne"]},
+    {"id":"K2-B25","pytanie":"spokojna ta okolica?","tematy":[["halas_ldwn","halas_obwarzanek_lden","oswietlenie_100m","policja_odleglosc","miejscowe_zagrozenia_gmina_2025"]],"cechy":["niejednoznaczne","krotkie"]}
+  ]
+}

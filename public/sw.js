@@ -1,0 +1,150 @@
+// Service worker trybu offline demo (#100). Po jednym otwarciu online aplikacja, dane, glify
+// i kafle PMTiles działają po odcięciu sieci. Rejestracja: src/main.tsx (tylko build produkcyjny).
+//
+// Strategie:
+// - nawigacja, /dane/, /mapa/fonts/, fonty Google: najpierw sieć, przy braku sieci kopia z cache,
+//   więc online zawsze widać świeży deploy;
+// - /assets/ (pliki z hashem w nazwie): najpierw cache, bo treść pod daną nazwą się nie zmienia;
+// - *.pmtiles: Cache API nie przechowuje odpowiedzi 206, więc przy pierwszym żądaniu Range
+//   pobieramy całe archiwum w tle i potem kroimy zakresy z kopii, także offline;
+// - /api/ i inne domeny: bez ingerencji.
+
+const CACHE = 'adresscore-v1'
+const SKORUPA = ['/', '/index.html']
+
+self.addEventListener('install', (e) => {
+  e.waitUntil(
+    caches
+      .open(CACHE)
+      .then((c) => c.addAll(SKORUPA))
+      .then(() => self.skipWaiting()),
+  )
+})
+
+self.addEventListener('activate', (e) => {
+  e.waitUntil(
+    caches
+      .keys()
+      .then((klucze) => Promise.all(klucze.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then(() => self.clients.claim()),
+  )
+})
+
+self.addEventListener('fetch', (e) => {
+  const zad = e.request
+  if (zad.method !== 'GET') return
+  const url = new URL(zad.url)
+  const swoj = url.origin === self.location.origin
+
+  if (swoj && url.pathname.startsWith('/api/')) return
+  if (swoj && url.pathname.endsWith('.pmtiles')) {
+    e.respondWith(archiwum(e, url))
+    return
+  }
+  if (zad.mode === 'navigate') {
+    e.respondWith(siecPotemCache(zad, '/index.html'))
+    return
+  }
+  if (swoj && url.pathname.startsWith('/assets/')) {
+    e.respondWith(cachePotemSiec(zad))
+    return
+  }
+  if (
+    (swoj && !zad.headers.has('range')) ||
+    url.hostname === 'fonts.googleapis.com' ||
+    url.hostname === 'fonts.gstatic.com'
+  ) {
+    e.respondWith(siecPotemCache(zad))
+  }
+})
+
+async function siecPotemCache(zad, zapasowy) {
+  const cache = await caches.open(CACHE)
+  try {
+    const odp = await fetch(zad)
+    if (odp.ok || odp.type === 'opaque') await cache.put(zad, odp.clone())
+    return odp
+  } catch (blad) {
+    const kopia = (await cache.match(zad)) ?? (zapasowy && (await cache.match(zapasowy)))
+    if (kopia) return kopia
+    throw blad
+  }
+}
+
+async function cachePotemSiec(zad) {
+  const cache = await caches.open(CACHE)
+  const kopia = await cache.match(zad)
+  if (kopia) return kopia
+  const odp = await fetch(zad)
+  if (odp.ok) await cache.put(zad, odp.clone())
+  return odp
+}
+
+const pobieraneArchiwa = new Map()
+// Blob kroi się leniwie, bez kopiowania całych dziesiątek MB przy każdym kaflu.
+const blobyArchiwow = new Map()
+
+function pobierzArchiwum(klucz) {
+  if (!pobieraneArchiwa.has(klucz)) {
+    const zadanie = (async () => {
+      const odp = await fetch(klucz, { cache: 'no-store' })
+      if (!odp.ok) throw new Error(`PMTiles ${klucz}: HTTP ${odp.status}`)
+      await (await caches.open(CACHE)).put(klucz, odp)
+    })()
+      .catch((b) => console.warn('Offline bez kopii archiwum:', b))
+      .finally(() => pobieraneArchiwa.delete(klucz))
+    pobieraneArchiwa.set(klucz, zadanie)
+  }
+  return pobieraneArchiwa.get(klucz)
+}
+
+async function archiwum(e, url) {
+  const klucz = `${url.origin}${url.pathname}`
+  const cache = await caches.open(CACHE)
+  let blob = blobyArchiwow.get(klucz)
+  if (!blob) {
+    const kopia = await cache.match(klucz)
+    if (kopia) {
+      blob = await kopia.blob()
+      blobyArchiwow.set(klucz, blob)
+    }
+  }
+  if (blob) return wytnij(blob, e.request.headers.get('range'))
+  // Pierwsze otwarcie: zakresy z sieci, całe archiwum dociąga się w tle na potrzeby offline.
+  e.waitUntil(pobierzArchiwum(klucz))
+  return fetch(e.request)
+}
+
+function wytnij(bajty, naglowek) {
+  const rozmiar = bajty.size
+  const typ = 'application/octet-stream'
+  const m = naglowek && /^bytes=(\d*)-(\d*)$/.exec(naglowek.trim())
+  if (!m) {
+    return new Response(bajty, {
+      status: 200,
+      headers: { 'Content-Type': typ, 'Content-Length': String(rozmiar) },
+    })
+  }
+  let od
+  let doBajtu
+  if (m[1] === '') {
+    // bytes=-N: ostatnie N bajtów.
+    od = Math.max(0, rozmiar - Number(m[2]))
+    doBajtu = rozmiar - 1
+  } else {
+    od = Number(m[1])
+    doBajtu = m[2] === '' ? rozmiar - 1 : Math.min(Number(m[2]), rozmiar - 1)
+  }
+  if (od >= rozmiar || od > doBajtu) {
+    return new Response(null, { status: 416, headers: { 'Content-Range': `bytes */${rozmiar}` } })
+  }
+  return new Response(bajty.slice(od, doBajtu + 1), {
+    status: 206,
+    headers: {
+      'Content-Type': typ,
+      'Content-Length': String(doBajtu - od + 1),
+      'Content-Range': `bytes ${od}-${doBajtu}/${rozmiar}`,
+      'Accept-Ranges': 'bytes',
+    },
+  })
+}

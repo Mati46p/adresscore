@@ -1,4 +1,5 @@
 import { lazy, Suspense, useState } from 'react'
+import { PoleZapytajOAdres } from '@/ai/PoleZapytajOAdres'
 import { liczba, opisAdresu } from '@/karta/adres'
 import { KATEGORIE, type KategoriaId } from '@/kontrakty'
 import { Sekcja3D } from '@/miasto3d/Sekcja3D'
@@ -15,9 +16,9 @@ import {
 } from '@/wynik/stan'
 import { useWynikAdresu } from '@/wynik/useWyniki'
 import { czyWarstwaWyborow } from '@/wynik/wybory'
-import { FiltrWyborczy } from '../FiltrWyborczy'
 import { Etykieta } from './Etykieta'
 import type { LiteraEtykiety } from './kolory'
+import { LepszySasiad } from './LepszySasiad'
 import { SzczegolySzkoly } from './SzczegolySzkoly'
 import {
   liczbaPL,
@@ -31,7 +32,9 @@ import {
 } from './wyjasnienie'
 import './okolica.css'
 
-const KATEGORIE_WYNIKU = (Object.keys(KATEGORIE) as KategoriaId[]).filter((k) => k !== 'kontekst')
+const KATEGORIE_WYNIKU = (Object.keys(KATEGORIE) as KategoriaId[]).filter(
+  (k) => k !== 'kontekst' && k !== 'przyszlosc',
+)
 const CoByToZmienilo = lazy(async () => ({
   default: (await import('../CoByToZmienilo')).CoByToZmienilo,
 }))
@@ -80,7 +83,7 @@ export function EkranOkolica() {
 
   return (
     <main className="tresc okol">
-      <a href={linkMapa} className="okol-wroc">
+      <a href={linkMapa} className="okol-wroc" onClick={wrocDoMapy}>
         Wróć do mapy
       </a>
 
@@ -116,7 +119,7 @@ export function EkranOkolica() {
         </div>
       </section>
 
-      <FiltrWyborczy />
+      <PoleZapytajOAdres indeks={stan.wybrany} />
 
       <section aria-labelledby="h-kategorie" className="karta">
         <h2 id="h-kategorie" className="okol-h2">
@@ -151,6 +154,8 @@ export function EkranOkolica() {
           <CoByToZmienilo warstwy={wynik.warstwy} />
         </Suspense>
       </section>
+
+      <LepszySasiad adres={stan.wybrany} />
 
       <Sekcja3D />
 
@@ -455,7 +460,7 @@ function NaCoDzien({
         Dodatkowe dane o okolicy
       </h2>
       <p className="okol-podpis">
-        Wybrane przez Ciebie warstwy z wagą większą od zera mogą wpływać na wynik.
+        Fakty o okolicy. Wybrane przez Ciebie warstwy z wagą większą od zera wpływają na wynik.
       </p>
       <dl className="okol-fakty">
         {warstwy.map((w) => (
@@ -475,4 +480,16 @@ function NaCoDzien({
       </dl>
     </section>
   )
+}
+
+/**
+ * Karta ma własną ścieżkę (/adres/…), a mapa żyje pod /#/…, więc zwykły link przeładowywał
+ * stronę i gubił stan w pamięci – m.in. otwartą sekcję Lepszy sąsiad, przez co znaczniki
+ * kandydatów nigdy nie pojawiały się na mapie. Zmiana ekranu w aplikacji zapisuje URL sama.
+ * Klik z modyfikatorem (nowa karta) zostaje zwykłym linkiem.
+ */
+function wrocDoMapy(e: React.MouseEvent<HTMLAnchorElement>) {
+  if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
+  e.preventDefault()
+  przejdz('szukaj')
 }

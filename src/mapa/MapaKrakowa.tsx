@@ -1,3 +1,4 @@
+import { cellToParent, isValidCell } from 'h3-js'
 import {
   AttributionControl,
   addProtocol,
@@ -14,7 +15,7 @@ import {
 } from 'maplibre-gl'
 import adresWorkera from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import { Protocol } from 'pmtiles'
-import { type JSX, useEffect, useId, useRef, useState } from 'react'
+import { type JSX, type ReactNode, useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import {
   type Geometria,
@@ -41,6 +42,8 @@ import {
   STYL,
   ustawGrupePodkladu,
 } from '@/mapa/podklad'
+import type { SasiedziNaMapie } from '@/mapa/sasiedzi/model'
+import { useZnacznikiSasiadow } from '@/mapa/sasiedzi/ZnacznikiSasiadow'
 import {
   gradientCss,
   KOLOR_SZRAFURY,
@@ -50,6 +53,7 @@ import {
   szrafuraCss,
   wyrazenieKoloru,
 } from '@/mapa/skala'
+import { type ObiektyNaMapie, useZnacznikiObiektow } from '@/mapa/symulator/ZnacznikiObiektow'
 import {
   jestBrakiem,
   jestWykluczony,
@@ -75,8 +79,32 @@ export interface MapaKrakowaProps {
   punktyUslug?: readonly { lon: number; lat: number; nazwa: string }[]
   postawionePunkty?: readonly { id: 'a' | 'b'; lon: number; lat: number }[]
   onPrzesunPunkt?: (id: 'a' | 'b', lon: number, lat: number) => void
-  opisHeksu?: (h3: string, res: number, wartosc: number | null) => string
   etykietySkali?: readonly [string, string, string]
+  /** Własna treść legendy (tryb „Dla miasta”, #90). Bez niej: skala wyniku 0–100. */
+  legenda?: ReactNode
+  /**
+   * Własny tekst dymku. `heksyR10` = heksy r10 pod kursorem: jeden przy r10, dzieci przy r8/r9.
+   * Bez niego: „wynik N” albo „brak danych”.
+   */
+  opisHeksu?: (heksyR10: readonly string[], res: 8 | 9 | 10) => string
+  /**
+   * Wartość rodzica r8/r9 z jego heksów r10. Bez niej: średnia dzieci. Mapa luk (#90) sumuje
+   * adresy, bo średnia udziałów zawyżałaby heksy z kilkoma adresami.
+   */
+  wartoscRodzica?: (heksyR10: readonly string[]) => number | null
+  /** Ramka do pokazania (np. okolica z rankingu, #91) – zmiana wartości = przelot kamery. */
+  granice?: [[number, number], [number, number]] | null
+  /** „Lepszy sąsiad” (#95): okrąg i znaczniki kandydatów; brak = warstwa wyłączona. */
+  sasiedzi?: SasiedziNaMapie
+  /** Hipotetyczne obiekty symulatora (#97): przeciąganie, klawiatura, usuwanie. */
+  obiekty?: ObiektyNaMapie
+  /**
+   * Heksy r10 do wyróżnienia (#97: zmieniła się litera albo luka). Nowy zbiór = obrys na
+   * 1,5 s; przy ograniczonym ruchu obrys bez przejścia, do następnej zmiany.
+   */
+  wyroznione?: ReadonlySet<string>
+  /** Środek widoku po każdym ruchu kamery – np. do stawiania obiektu z klawiatury. */
+  onWidok?: (lon: number, lat: number) => void
 }
 
 const BRAK_WYKLUCZONYCH: ReadonlySet<string> = new Set()
@@ -104,6 +132,8 @@ const WARTOSC: ExpressionSpecification = ['coalesce', ['feature-state', 'w'], -1
 const BRAK = jestBrakiem(WARTOSC)
 const WYKLUCZONY = jestWykluczony(WARTOSC)
 const zrodloHeksow = (res: number) => `heksy-r${res}`
+const BLYSK: ExpressionSpecification = ['boolean', ['feature-state', 'blysk'], false]
+const CZAS_BLYSKU_MS = 1500
 const SZRAFURA = 'szrafura-braku'
 
 /** Krycie nakladki nie zmienia danych ani wybranej warstwy wyniku. */
@@ -113,7 +143,13 @@ function ustawKrycieHeksow(mapa: MapaLibre, procent: number) {
   const visibility = widoczne ? 'visible' : 'none'
   for (const { res } of POZIOMY) {
     const id = zrodloHeksow(res)
-    for (const warstwa of [id, `${id}-szrafura`, `${id}-linia`, `${id}-obrys-braku`]) {
+    for (const warstwa of [
+      id,
+      `${id}-szrafura`,
+      `${id}-linia`,
+      `${id}-obrys-braku`,
+      `${id}-blysk`,
+    ]) {
       if (mapa.getLayer(warstwa)) mapa.setLayoutProperty(warstwa, 'visibility', visibility)
     }
     if (mapa.getLayer(id))
@@ -176,8 +212,15 @@ export function MapaKrakowa({
   punktyUslug = BRAK_PUNKTOW,
   postawionePunkty = BRAK_POSTAWIONYCH,
   onPrzesunPunkt,
-  opisHeksu,
   etykietySkali = ['0', '50', '100'],
+  legenda: wlasnaLegenda,
+  opisHeksu,
+  wartoscRodzica,
+  granice,
+  sasiedzi,
+  obiekty,
+  wyroznione,
+  onWidok,
 }: MapaKrakowaProps): JSX.Element {
   const kontener = useRef<HTMLDivElement>(null)
   const mapaRef = useRef<MapaLibre | null>(null)
@@ -186,10 +229,13 @@ export function MapaKrakowa({
   const podpisMglyRef = useRef<Marker | null>(null)
   const dymekRef = useRef<Popup | null>(null)
   const biznesMarkeryRef = useRef<Marker[]>([])
-  const opisHeksuRef = useRef(opisHeksu)
   const onPrzesunPunktRef = useRef(onPrzesunPunkt)
   const onKlikRef = useRef(onKlik)
   const wybranyRef = useRef(wybrany)
+  const opisHeksuRef = useRef(opisHeksu)
+  const wartoscRodzicaRef = useRef(wartoscRodzica)
+  const graniceRef = useRef(granice)
+  const onWidokRef = useRef(onWidok)
   const [gotowa, setGotowa] = useState(false)
   const [legenda, setLegenda] = useState<HTMLElement | null>(null)
   const [krycieHeksow, setKrycieHeksow] = useState(100)
@@ -211,10 +257,13 @@ export function MapaKrakowa({
 
   useEffect(() => {
     onKlikRef.current = onKlik
-    opisHeksuRef.current = opisHeksu
     onPrzesunPunktRef.current = onPrzesunPunkt
     wybranyRef.current = wybrany
     etapRef.current = etap
+    opisHeksuRef.current = opisHeksu
+    wartoscRodzicaRef.current = wartoscRodzica
+    graniceRef.current = granice
+    onWidokRef.current = onWidok
   })
 
   useEffect(() => {
@@ -303,14 +352,43 @@ export function MapaKrakowa({
             'line-width': 1,
           },
         })
+        // Wyróżnienie heksów po zmianie w symulatorze (#97); niewidoczne bez feature-state.
+        mapa.addLayer({
+          id: `${id}-blysk`,
+          type: 'line',
+          source: id,
+          minzoom,
+          maxzoom,
+          paint: {
+            'line-color': '#18202B',
+            'line-width': 2.5,
+            'line-opacity': ['case', BLYSK, 1, 0],
+            'line-opacity-transition': { duration: ograniczonyRuch() ? 0 : 300, delay: 0 },
+          },
+        })
 
-        mapa.on('mousemove', id, (e: MapLayerMouseEvent) => {
+        const pokazDymek = (e: MapLayerMouseEvent) => {
           const f = e.features?.[0]
           if (f?.id === undefined) return
+          const opis = opisHeksuRef.current
+          let tekst: string
+          if (opis) {
+            const h = String(f.id)
+            const dzieci = res === 10 ? [h] : (geometriaRef.current?.dzieci[res].get(h) ?? [])
+            tekst = opis(dzieci, res)
+          } else {
+            const w = mapa.getFeatureState({ source: id, id: f.id }).w as number | undefined
+            tekst = podpisHeksu(w, res)
+          }
+          dymek.setLngLat(e.lngLat).setText(tekst).addTo(mapa)
+        }
+        mapa.on('mousemove', id, (e: MapLayerMouseEvent) => {
           mapa.getCanvas().style.cursor = 'pointer'
-          const w = mapa.getFeatureState({ source: id, id: f.id }).w as number | undefined
-          const opis = opisHeksuRef.current?.(String(f.id), res, w ?? null) ?? podpisHeksu(w, res)
-          dymek.setLngLat(e.lngLat).setText(opis).addTo(mapa)
+          pokazDymek(e)
+        })
+        // Telefon nie ma najechania: bez własnej akcji klik pokazuje dymek (tryb „Dla miasta”).
+        mapa.on('click', id, (e: MapLayerMouseEvent) => {
+          if (!onKlikRef.current && opisHeksuRef.current) pokazDymek(e)
         })
         mapa.on('mouseleave', id, () => {
           mapa.getCanvas().style.cursor = ''
@@ -356,6 +434,9 @@ export function MapaKrakowa({
     })
 
     mapa.on('click', (e) => {
+      // Klik (albo koniec przeciągania) znacznika obiektu symulatora nie stawia nowego obiektu.
+      const cel = e.originalEvent.target
+      if (cel instanceof Element && cel.closest('.mapa-obiekt')) return
       // Klik w widoku Polski znaczy „pokaż mi dane", nie „najbliższy adres w Krakowie".
       if (etapRef.current === 'polska') return startujLot(mapa)
       onKlikRef.current?.(e.lngLat.lng, e.lngLat.lat)
@@ -363,6 +444,8 @@ export function MapaKrakowa({
     // Lot chwilowo ukrywa r10 i po lądowaniu go przywraca. Przy suwaku na 0%
     // ostatnie słowo musi należeć do ustawienia użytkownika.
     mapa.on('moveend', () => {
+      const c = mapa.getCenter()
+      onWidokRef.current?.(c.lng, c.lat)
       if (krycieHeksowRef.current !== 0) return
       queueMicrotask(() => {
         if (mapaRef.current === mapa) ustawKrycieHeksow(mapa, 0)
@@ -468,7 +551,7 @@ export function MapaKrakowa({
           .setLngLat([(minX + maxX) / 2, maxY])
           .addTo(mapa)
       }
-      if (pierwsza && heksy.size && !wybranyRef.current) {
+      if (pierwsza && heksy.size && !wybranyRef.current && !graniceRef.current) {
         if (etapRef.current === 'polska') zaplanujLot(mapa)
         else if (etapRef.current === 'miasto') {
           mapa.fitBounds(g.granice, { padding: 32, animate: false })
@@ -483,15 +566,46 @@ export function MapaKrakowa({
       mapa.setFeatureState({ source: zrodloHeksow(res), id: h }, { w: v })
     }
     for (const [h, w] of heksy) wyslij(10, h, wykluczone.has(h) ? W_WYKLUCZONY : w)
+    const rodzic = wartoscRodzicaRef.current ?? ((dzieci) => sredniaDzieci(dzieci, heksy))
     for (const res of [8, 9] as const) {
-      for (const [rodzic, dzieci] of g.dzieci[res])
-        wyslij(
-          res,
-          rodzic,
-          wszystkieWykluczone(dzieci, wykluczone) ? W_WYKLUCZONY : sredniaDzieci(dzieci, heksy),
-        )
+      for (const [h, dzieci] of g.dzieci[res])
+        wyslij(res, h, wszystkieWykluczone(dzieci, wykluczone) ? W_WYKLUCZONY : rodzic(dzieci))
     }
   }
+
+  useZnacznikiSasiadow(mapaRef, gotowa, sasiedzi)
+  useZnacznikiObiektow(mapaRef, gotowa, obiekty)
+
+  // Błysk heksów: r10 i ich rodzice r9/r8, żeby było go widać przy każdym zoomie.
+  const blyskRef = useRef<{ res: 8 | 9 | 10; h: string }[]>([])
+  useEffect(() => {
+    const mapa = mapaRef.current
+    if (!mapa || !gotowa) return
+    const ustaw = (wartosc: boolean) => {
+      if (mapaRef.current !== mapa) return
+      for (const { res, h } of blyskRef.current) {
+        mapa.setFeatureState({ source: zrodloHeksow(res), id: h }, { blysk: wartosc })
+      }
+    }
+    ustaw(false)
+    const lista: { res: 8 | 9 | 10; h: string }[] = []
+    const rodzice = new Set<string>()
+    for (const h of wyroznione ?? []) {
+      if (!isValidCell(h)) continue
+      lista.push({ res: 10, h })
+      for (const res of [9, 8] as const) {
+        const r = cellToParent(h, res)
+        if (rodzice.has(r)) continue
+        rodzice.add(r)
+        lista.push({ res, h: r })
+      }
+    }
+    blyskRef.current = lista
+    ustaw(true)
+    if (ograniczonyRuch()) return
+    const zgas = window.setTimeout(() => ustaw(false), CZAS_BLYSKU_MS)
+    return () => clearTimeout(zgas)
+  }, [gotowa, wyroznione])
 
   const lon = wybrany?.lon
   const lat = wybrany?.lat
@@ -560,6 +674,17 @@ export function MapaKrakowa({
       biznesMarkeryRef.current = []
     }
   }, [gotowa, postawionePunkty])
+  // Przelot do ramki (okolica z rankingu). Klucz z liczb, bo nowa tablica przy tych samych
+  // granicach nie może ruszać kamery.
+  const kluczGranic = granice ? granice.flat().join(',') : null
+  useEffect(() => {
+    const mapa = mapaRef.current
+    const g = graniceRef.current
+    if (!mapa || !gotowa || kluczGranic === null || !g) return
+    if (etapRef.current !== 'miasto') zakonczIntro()
+    const kamera = mapa.cameraForBounds(g, { padding: 48, maxZoom: 16 })
+    if (kamera) void lec(mapa, kamera)
+  }, [gotowa, kluczGranic])
 
   function zakonczIntro() {
     if (pauzaRef.current !== null) clearTimeout(pauzaRef.current)
@@ -665,6 +790,11 @@ export function MapaKrakowa({
       )}
       {legenda &&
         krycieHeksow > 0 &&
+        wlasnaLegenda !== undefined &&
+        createPortal(wlasnaLegenda, legenda)}
+      {legenda &&
+        krycieHeksow > 0 &&
+        wlasnaLegenda === undefined &&
         createPortal(
           <>
             <div className="mapa-legenda__tytul">{podpisWarstwy}</div>

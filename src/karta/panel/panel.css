@@ -345,3 +345,18 @@
 .panel-prog-pole input[aria-invalid="true"] {
   border-color: var(--ostrzezenie);
 }
+
+/* Wybory to jedna z pomniejszych warstw informacyjnych – zwinięte na końcu listy. */
+.panel-grupa--wybory > summary {
+  cursor: pointer;
+  list-style: none;
+}
+.panel-grupa--wybory > summary::-webkit-details-marker {
+  display: none;
+}
+.panel-grupa--wybory > summary .panel-grupa-podsumowanie::after {
+  content: "▾";
+}
+.panel-grupa--wybory[open] > summary .panel-grupa-podsumowanie::after {
+  content: "▴";
+}

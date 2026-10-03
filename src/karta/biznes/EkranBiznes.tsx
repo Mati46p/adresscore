@@ -46,7 +46,7 @@ export function EkranBiznes() {
   }, [aktywny, punktA, punktB])
 
   useEffect(() => {
-    fetch('/dane/uslugi/katalog.json')
+    fetch('/dane/biznes/katalog.json')
       .then((r) => {
         if (!r.ok) throw new Error('HTTP ' + r.status)
         return r.json() as Promise<Meta[]>
@@ -182,9 +182,16 @@ export function EkranBiznes() {
               postawionePunkty={postawione}
               onPrzesunPunkt={(id, lon, lat) => ustawPunktBiznesu(id, { lon, lat })}
               onKlik={postaw}
-              opisHeksu={(h3, res, wartosc) => {
-                const p = opisy.get(h3)
-                return p && res === 10
+              opisHeksu={(heksyR10, res) => {
+                const p = res === 10 ? opisy.get(heksyR10[0] ?? '') : undefined
+                const wartosci = heksyR10
+                  .map((h) => heksy.get(h))
+                  .filter((w): w is number => w != null)
+                const wartosc = wartosci.length
+                  ? wartosci.reduce((a, b) => a + b, 0) / wartosci.length
+                  : null
+                if (!p && wartosc === null) return 'Brak danych'
+                return p
                   ? Math.round(p.adresyNaPunkt) +
                       ' adresów na punkt · ' +
                       p.konkurenci +

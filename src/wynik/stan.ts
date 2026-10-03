@@ -8,10 +8,12 @@ import { type TwardyFiltr, zPodmienionymFiltrem } from './filtry.ts'
 import {
   PERSONA_DOMYSLNA,
   type PersonaId,
+  RODZAJ_BIZNESU_DOMYSLNY,
+  type RodzajBiznesu,
   TRYB_DOMYSLNY,
   type Tryb,
   ustawieniaPersony,
-  WARSTWY_BIZNESU,
+  warstwyBiznesu,
 } from './persony.ts'
 import {
   odczytajPreferencje,
@@ -31,11 +33,12 @@ export type TrybMapy = 'suma' | 'ostatnia'
 export interface StanAplikacji {
   ekran: Ekran
   tryb: Tryb
+  biznes: RodzajBiznesu
   /** `'wlasna'` po ręcznej zmianie którejkolwiek wagi. */
   persona: PersonaId | 'wlasna'
   /** Wagi 0–4 per id wskaźnika. */
   wagi: Readonly<Record<string, number>>
-  /** Nadpisane kierunki (makieta: ↑ ↓ ≈); brak klucza = kierunek z meta. */
+  /** Nadpisane kierunki; brak klucza = kierunek z meta. */
   kierunki: Kierunki
   /** Indeks wybranego adresu w adresy.json albo null. */
   wybrany: number | null
@@ -50,11 +53,14 @@ export interface StanAplikacji {
   branza: string
   punktA: { lon: number; lat: number } | null
   punktB: { lon: number; lat: number } | null
+  /** Obiekty symulatora (#98), warianty A i B jako tekst `symulacjaUrl.ts`. */
+  symulacja: { a: string; b: string }
 }
 
 let stan: StanAplikacji = {
   ekran: 'szukaj',
   tryb: TRYB_DOMYSLNY,
+  biznes: RODZAJ_BIZNESU_DOMYSLNY,
   persona: PERSONA_DOMYSLNA,
   wagi: {},
   kierunki: {},
@@ -67,6 +73,7 @@ let stan: StanAplikacji = {
   branza: 'sklep',
   punktA: null,
   punktB: null,
+  symulacja: { a: '', b: '' },
 }
 
 const sluchacze = new Set<() => void>()
@@ -77,7 +84,7 @@ let indeksPoId = new Map<string, number>()
 let indeksPoHash = new Map<string, number>()
 let slugPoIndeks: readonly string[] = []
 let metaWskaznikow: readonly (Pick<WskaznikMeta, 'id' | 'kategoria'> &
-  Partial<Pick<WskaznikMeta, 'atrapa'>>)[] = []
+  Partial<Pick<WskaznikMeta, 'atrapa' | 'domyslnaWaga'>>)[] = []
 let oczekujacyUrl: StanUrl | null = null
 let odczytujemyHistorie = false
 type UstawieniaTrybu = Pick<StanAplikacji, 'persona' | 'wagi' | 'kierunki' | 'filtry'>
@@ -101,11 +108,12 @@ function ustawieniaZSesji(rodzaj: 'mieszkanie' | 'biznes', tryb: Tryb): Ustawien
     persona === 'wlasna' ? PERSONA_DOMYSLNA : persona,
     tryb,
     metaWskaznikow,
+    url.biznes ?? stan.biznes,
   )
   const { wagi, kierunki } = url.ustawienia
-    ? sprawdzUstawienia(url.ustawienia, metaWskaznikow, domyslne, tryb)
+    ? sprawdzUstawienia(url.ustawienia, metaWskaznikow, domyslne, tryb, url.biznes ?? stan.biznes)
     : domyslne
-  return { persona, wagi, kierunki, filtry: url.filtry }
+  return { persona, wagi, kierunki, filtry: [] }
 }
 
 export function pobierzStan(): StanAplikacji {
@@ -149,13 +157,13 @@ export function ustawTryb(tryb: Tryb) {
   if (tryb === 'biznes') {
     mieszkaniePrzedBiznesem = ustawieniaBiezacegoTrybu()
     const zapis = ostatniBiznes ?? ustawieniaZSesji('biznes', 'biznes')
-    const domyslne = ustawieniaPersony(PERSONA_DOMYSLNA, 'biznes', metaWskaznikow)
+    const domyslne = ustawieniaPersony(PERSONA_DOMYSLNA, 'biznes', metaWskaznikow, stan.biznes)
     return zmien({
       tryb,
       persona: zapis?.persona ?? PERSONA_DOMYSLNA,
       wagi: zapis?.wagi ?? domyslne.wagi,
       kierunki: zapis?.kierunki ?? domyslne.kierunki,
-      filtry: zapis?.filtry ?? [],
+      filtry: [],
       warstwa: 'wynik',
       trybMapy: 'suma',
       ostatniaWarstwa: null,
@@ -175,7 +183,7 @@ export function ustawTryb(tryb: Tryb) {
       persona,
       wagi: persona === 'wlasna' && zapis ? zapis.wagi : domyslne.wagi,
       kierunki: persona === 'wlasna' && zapis ? zapis.kierunki : domyslne.kierunki,
-      filtry: zapis?.filtry ?? [],
+      filtry: [],
       warstwa: 'wynik',
       trybMapy: 'suma',
       ostatniaWarstwa: null,
@@ -203,6 +211,20 @@ export function ustawWage(id: string, waga: number) {
   })
 }
 
+export function ustawRodzajBiznesu(biznes: RodzajBiznesu) {
+  if (biznes === stan.biznes) return
+  const { wagi, kierunki } = ustawieniaPersony(PERSONA_DOMYSLNA, 'biznes', metaWskaznikow, biznes)
+  zmien({
+    biznes,
+    wagi,
+    kierunki,
+    filtry: [],
+    persona: PERSONA_DOMYSLNA,
+    warstwa: 'wynik',
+    trybMapy: 'suma',
+  })
+}
+
 export function ustawKomitet(id: string) {
   if (!czyWarstwaWyborow(id) || !metaWskaznikow.some((m) => m.id === id)) return
   const ustawienia = zmienKomitet(id, stan.wagi, stan.kierunki, stan.filtry)
@@ -212,6 +234,17 @@ export function ustawKomitet(id: string) {
     ostatniaWarstwa: id,
     ...(stan.trybMapy === 'ostatnia' ? { warstwa: id } : {}),
   })
+}
+
+/**
+ * Wszystkie wagi naraz (np. „opisz siebie”, #16): jedna zmiana stanu = jedno przeliczenie mapy,
+ * bez przestawiania ostatniej warstwy, którą robi `ustawWage`.
+ */
+export function ustawWagi(wagi: Readonly<Record<string, number>>, kierunki: Kierunki) {
+  const przyciete: Record<string, number> = {}
+  for (const [id, w] of Object.entries(wagi))
+    przyciete[id] = Math.min(Math.max(Math.round(w), 0), 4)
+  zmien({ wagi: przyciete, kierunki: { ...kierunki }, persona: 'wlasna' })
 }
 
 /** null przywraca kierunek z meta wskaźnika. */
@@ -247,6 +280,12 @@ export function ustawBranze(branza: string) {
 
 export function ustawPunktBiznesu(id: 'a' | 'b', punkt: { lon: number; lat: number } | null) {
   zmien(id === 'a' ? { punktA: punkt } : { punktB: punkt })
+}
+
+/** Warianty symulatora (#98); zapis do URL tylko na ekranie symulatora. */
+export function ustawSymulacje(symulacja: { a: string; b: string }) {
+  if (symulacja.a === stan.symulacja.a && symulacja.b === stan.symulacja.b) return
+  zmien({ symulacja })
 }
 
 export function dodajDoPorownania(i: number) {
@@ -319,7 +358,7 @@ export function indeksAdresu(id: string | null): number | null {
 export function podlaczDane(
   ids: readonly string[],
   wskazniki: readonly (Pick<WskaznikMeta, 'id' | 'kategoria'> &
-    Partial<Pick<WskaznikMeta, 'atrapa'>>)[],
+    Partial<Pick<WskaznikMeta, 'atrapa' | 'domyslnaWaga'>>)[],
   adresy: readonly Adres[],
 ) {
   idAdresow = ids
@@ -337,13 +376,15 @@ export function podlaczDane(
     persona === 'wlasna' ? PERSONA_DOMYSLNA : persona,
     tryb,
     wskazniki,
+    url?.biznes ?? stan.biznes,
   )
   const { wagi, kierunki } = url?.ustawienia
-    ? sprawdzUstawienia(url.ustawienia, wskazniki, domyslne, tryb)
+    ? sprawdzUstawienia(url.ustawienia, wskazniki, domyslne, tryb, url?.biznes ?? stan.biznes)
     : domyslne
   zmien({
     persona,
     tryb,
+    biznes: url?.biznes ?? stan.biznes,
     wagi,
     kierunki,
     ...(url ? zUrl(url) : {}),
@@ -359,7 +400,9 @@ function zUrl(url: StanUrl): Partial<StanAplikacji> {
     ekran: url.ekran === 'okolica' && wybrany === null ? 'szukaj' : url.ekran,
     wybrany: url.ekran === 'okolica' ? wybrany : stan.wybrany,
     porownanie: url.porownanie.map((id) => indeksPoId.get(id)).filter((i) => i !== undefined),
-    filtry: url.filtry,
+    filtry: [],
+    biznes: url.biznes ?? stan.biznes,
+    ...(url.symulacja ? { symulacja: url.symulacja } : {}),
     branza: url.branza ?? 'sklep',
     punktA: url.punktA ?? null,
     punktB: url.punktB ?? null,
@@ -369,14 +412,15 @@ function zUrl(url: StanUrl): Partial<StanAplikacji> {
 function sprawdzUstawienia(
   ustawienia: NonNullable<StanUrl['ustawienia']>,
   wskazniki: readonly (Pick<WskaznikMeta, 'id' | 'kategoria'> &
-    Partial<Pick<WskaznikMeta, 'atrapa'>>)[],
+    Partial<Pick<WskaznikMeta, 'atrapa' | 'domyslnaWaga'>>)[],
   domyslne: { wagi: Record<string, number>; kierunki: Kierunki },
   tryb: Tryb,
+  biznes: RodzajBiznesu = RODZAJ_BIZNESU_DOMYSLNY,
 ) {
   const znane = new Set(
     wskazniki
       .filter((w) =>
-        tryb === 'biznes' ? !w.atrapa && WARSTWY_BIZNESU.some((id) => id === w.id) : true,
+        tryb === 'biznes' ? !w.atrapa && warstwyBiznesu(biznes).includes(w.id) : true,
       )
       .map((w) => w.id),
   )
@@ -394,10 +438,12 @@ function doUrl(s: StanAplikacji): StanUrl {
     idAdresu: s.ekran === 'okolica' ? idAdresu(s.wybrany) : null,
     persona: s.persona === 'wlasna' ? null : s.persona,
     tryb: s.tryb,
+    biznes: s.biznes,
     porownanie: s.porownanie.map((i) => idAdresu(i)).filter((id) => id !== null),
     ustawienia:
       s.persona === 'wlasna' ? { wagi: { ...s.wagi }, kierunki: { ...s.kierunki } } : null,
-    filtry: [...s.filtry],
+    filtry: [],
+    ...(s.ekran === 'symulator' ? { symulacja: s.symulacja } : {}),
     branza: s.branza,
     punktA: s.punktA,
     punktB: s.punktB,
@@ -472,13 +518,19 @@ if (typeof window !== 'undefined') {
   stan = { ...stan, ekran: startowy.ekran }
   if (startowy.persona) stan = { ...stan, persona: startowy.persona }
   if (startowy.tryb) stan = { ...stan, tryb: startowy.tryb }
+  if (startowy.biznes) stan = { ...stan, biznes: startowy.biznes }
+  stan = { ...stan, filtry: [] }
+  if (startowy.symulacja) stan = { ...stan, symulacja: startowy.symulacja }
   if (startowy.ekran === 'biznes') stan = { ...stan, tryb: 'biznes' }
-  stan = { ...stan, filtry: startowy.filtry }
   const odczytajZmianeUrl = () => {
     const url = czytajBiezacyUrl()
     if (!idAdresow) {
       oczekujacyUrl = url
-      return zmien({ ekran: url.ekran, filtry: url.filtry })
+      return zmien({
+        ekran: url.ekran,
+        filtry: [],
+        ...(url.symulacja ? { symulacja: url.symulacja } : {}),
+      })
     }
     const latka: Partial<StanAplikacji> = zUrl(url)
     const persona = url.ustawienia ? 'wlasna' : (url.persona ?? PERSONA_DOMYSLNA)
@@ -487,12 +539,19 @@ if (typeof window !== 'undefined') {
       persona === 'wlasna' ? PERSONA_DOMYSLNA : persona,
       tryb,
       metaWskaznikow,
+      url.biznes ?? stan.biznes,
     )
     Object.assign(latka, {
       persona,
       tryb,
       ...(url.ustawienia
-        ? sprawdzUstawienia(url.ustawienia, metaWskaznikow, domyslne, tryb)
+        ? sprawdzUstawienia(
+            url.ustawienia,
+            metaWskaznikow,
+            domyslne,
+            tryb,
+            url.biznes ?? stan.biznes,
+          )
         : domyslne),
     })
     odczytujemyHistorie = true

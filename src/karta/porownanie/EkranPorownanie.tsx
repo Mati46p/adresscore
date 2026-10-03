@@ -6,7 +6,8 @@ import { Wyszukiwarka } from '@/karta/wyszukiwarka/Wyszukiwarka'
 import { KATEGORIE } from '@/kontrakty'
 import { useDane } from '@/wynik/dane'
 import { ocenFiltr, opisFiltru, type TwardyFiltr } from '@/wynik/filtry'
-import { type RozbicieWarstwy, wynikAdresu } from '@/wynik/silnik'
+import type { RozbicieWarstwy } from '@/wynik/silnik'
+import { wynikAdresu } from '@/wynik/silnik'
 import { dodajDoPorownania, hrefDla, useStan, usunZPorownania } from '@/wynik/stan'
 import { MAKS_POROWNANIE } from '@/wynik/url'
 import { useWyniki } from '@/wynik/useWyniki'
@@ -18,46 +19,56 @@ import {
   RADAR_X,
   RADAR_Y,
   ranking,
+  warstwyPorownania,
   werdykt,
-  wybraneWarstwy,
 } from './model'
 import './porownanie.css'
 
 const KOLORY = ['#176448', '#bc6b38', '#4b67a1', '#9a5f91', '#697a2e']
 
+const POMIAR = new Intl.NumberFormat('pl-PL', { maximumFractionDigits: 2 })
+
 function opisPomiaru(w: RozbicieWarstwy | undefined): string {
   if (!w || w.wartosc === null) return 'Brak danych'
-  return `${new Intl.NumberFormat('pl-PL', { maximumFractionDigits: 2 }).format(w.wartosc)} ${w.meta.jednostka}`
+  return `${POMIAR.format(w.wartosc)}${w.meta.jednostka ? ` ${w.meta.jednostka}` : ''}`
 }
 
-function TabelaPreferencji({
+function TabelaAtrybutow({
   okolice,
   filtry,
+  wykluczone,
 }: {
   okolice: readonly OkolicaPorownania[]
   filtry: readonly TwardyFiltr[]
+  wykluczone: ReadonlySet<string>
 }) {
-  const wybrane = wybraneWarstwy(okolice[0]!.wynik)
+  const grupy = warstwyPorownania(okolice[0]!.wynik)
   return (
     <section className="porownanie-tabela" aria-labelledby="porownanie-tabela-h">
-      <h2 id="porownanie-tabela-h">Szczegóły według Twoich preferencji</h2>
+      <h2 id="porownanie-tabela-h">Pełna tabela atrybutów</h2>
       <p>
-        Każdy wiersz odpowiada warstwie z wagą większą od zera lub ustawionemu filtrowi. Ocena 0–100
-        uwzględnia wybrany kierunek; brak pomiaru pozostaje brakiem danych.
+        Wszystkie dostępne warstwy dla porównywanych adresów. Waga 0 i warstwy informacyjne nie
+        zmieniają wyniku; brak danych nie jest zerem. Przewiń tabelę w bok, aby zobaczyć kolejne
+        adresy.
       </p>
       <div
         className="porownanie-tabela__przewijanie"
         role="region"
-        aria-label="Tabela porównania wybranych atrybutów"
+        aria-label="Tabela wszystkich atrybutów porównywanych adresów"
         tabIndex={0}
       >
         <table>
           <thead>
             <tr>
-              <th scope="col">Wybrany atrybut i ustawienie</th>
+              <th scope="col">Atrybut</th>
               {okolice.map((o, i) => (
                 <th key={o.id} scope="col">
-                  <span className="porownanie-kropka" style={{ background: KOLORY[i] }} /> {o.nazwa}
+                  <span
+                    className="porownanie-kropka"
+                    style={{ background: o.kolor ?? KOLORY[i] }}
+                  />{' '}
+                  {o.nazwa}
+                  {wykluczone.has(o.id) && <small>Wykluczony filtrem · dane informacyjne</small>}
                 </th>
               ))}
             </tr>
@@ -65,7 +76,7 @@ function TabelaPreferencji({
           <tbody>
             <tr className="porownanie-tabela__wynik">
               <th scope="row">
-                Wynik łączny<small>według aktualnych wag</small>
+                Wynik łączny<small>Według obecnych wag</small>
               </th>
               {okolice.map((o) => (
                 <td key={o.id}>
@@ -77,26 +88,30 @@ function TabelaPreferencji({
                 </td>
               ))}
             </tr>
-            {OSIE.concat('kontekst').map((kategoria) => {
-              const warstwy = wybrane
-                .filter((w) => w.kategoria === kategoria)
-                .sort((a, b) => b.wagaUzytkownika - a.wagaUzytkownika)
-              if (warstwy.length === 0) return null
+            {grupy.flatMap(({ kategoria, warstwy: grupa }) => {
+              if (grupa.length === 0) return []
               return [
                 <tr className="porownanie-tabela__grupa" key={`${kategoria}-grupa`}>
                   <th scope="rowgroup" colSpan={okolice.length + 1}>
                     {KATEGORIE[kategoria]}
                   </th>
                 </tr>,
-                ...warstwy.map((w) => (
+                ...grupa.map((w) => (
                   <tr key={w.id}>
                     <th scope="row">
                       {w.meta.nazwa}
                       <small>
+                        {w.meta.zrodla.map((z) => z.nazwa).join(', ') || 'Źródło niepodane'} ·{' '}
+                        {w.meta.rozdzielczosc}
+                        {w.meta.rozmiar ? ` ${w.meta.rozmiar}` : ''}
+                        {w.meta.zrodla[0]?.dataDanych
+                          ? ` · stan ${w.meta.zrodla[0].dataDanych}`
+                          : ''}
+                      </small>
+                      <small>
                         Waga {w.wagaUzytkownika}/4 ·{' '}
-                        {w.kierunek
-                          ? etykietaKierunku(w.meta, w.kierunek)
-                          : 'Bez wybranego kierunku'}
+                        {w.kierunek ? etykietaKierunku(w.meta, w.kierunek) : 'Bez kierunku oceny'}
+                        {w.meta.atrapa ? ' · dane przykładowe' : ''}
                       </small>
                     </th>
                     {okolice.map((o) => {
@@ -110,7 +125,9 @@ function TabelaPreferencji({
                               ? pomiar.ocena === null
                                 ? 'Ocena: brak danych'
                                 : `Ocena: ${liczba(pomiar.ocena)}/100`
-                              : 'Nie wchodzi do wyniku'}
+                              : pomiar?.wagaUzytkownika === 0
+                                ? 'Pominięte w wyniku (waga 0)'
+                                : 'Informacyjnie – bez wpływu na wynik'}
                             {pomiar?.niedostepny ? ' · warstwa niedostępna' : ''}
                           </small>
                         </td>
@@ -133,7 +150,7 @@ function TabelaPreferencji({
                 <tr key={`filtr-${filtr.id}`}>
                   <th scope="row">
                     {opisFiltru(filtr, meta)}
-                    <small>Filtr wyklucza adres z rankingu, nie obniża oceny.</small>
+                    <small>Filtr wyklucza adres, nie obniża oceny.</small>
                   </th>
                   {okolice.map((o) => {
                     const pomiar = o.wynik.warstwy.find((w) => w.id === filtr.id)
@@ -148,7 +165,6 @@ function TabelaPreferencji({
                               : 'Nie wiadomo'}
                         </strong>
                         <small>{opisPomiaru(pomiar)}</small>
-                        {pomiar?.etykieta && <small>{pomiar.etykieta}</small>}
                       </td>
                     )
                   })}
@@ -158,9 +174,6 @@ function TabelaPreferencji({
           </tbody>
         </table>
       </div>
-      {wybrane.length === 0 && (
-        <p>Nie wybrano żadnej warstwy. Ustaw wagę większą od zera w preferencjach.</p>
-      )}
     </section>
   )
 }
@@ -427,12 +440,21 @@ export function EkranPorownanie() {
                 porównaniu. Możesz je usunąć lub zmienić filtry po lewej.
               </p>
             )}
-            {aktywneOkolice.length === 0 ? (
+            {aktywneOkolice.length === 0 && (
               <p className="komunikat">Żaden wybrany adres nie spełnia obecnych filtrów.</p>
-            ) : (
+            )}
+            {aktywneOkolice.length > 0 && <Radar okolice={aktywneOkolice} />}
+            <TabelaAtrybutow
+              okolice={okolice}
+              filtry={stan.filtry}
+              wykluczone={
+                new Set(
+                  okolice.filter((o) => wynikiMapy?.wykluczenia.wykluczony[o.i]).map((o) => o.id),
+                )
+              }
+            />
+            {aktywneOkolice.length > 0 && (
               <>
-                <Radar okolice={aktywneOkolice} />
-                <TabelaPreferencji okolice={aktywneOkolice} filtry={stan.filtry} />
                 <section className="porownanie-ranking" aria-label="Ranking dopasowania">
                   <h2>Dopasowanie do Ciebie</h2>
                   <ol>

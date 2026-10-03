@@ -6,14 +6,24 @@ import { useStan } from '@/wynik/stan'
 import { opisAdresu } from './adres'
 import { EkranSzukaj } from './EkranSzukaj'
 import { KatalogAdresow } from './KatalogAdresow'
-import { ladujMetode, ladujOkolice, ladujPorownanie, przygotujEkran } from './ladowanieEkranow'
+import {
+  ladujBiznes,
+  ladujMetode,
+  ladujOkolice,
+  ladujPorownanie,
+  ladujSymulator,
+  przygotujEkran,
+} from './ladowanieEkranow'
 import { Naglowek } from './Naglowek'
 
 const EkranOkolica = lazy(async () => ({ default: (await ladujOkolice()).EkranOkolica }))
 const EkranPorownanie = lazy(async () => ({ default: (await ladujPorownanie()).EkranPorownanie }))
 const Metoda = lazy(async () => ({ default: (await ladujMetode()).Metoda }))
 const EkranBiznes = lazy(async () => ({
-  default: (await import('./biznes/EkranBiznes')).EkranBiznes,
+  default: (await ladujBiznes()).EkranBiznes,
+}))
+const EkranSymulatora = lazy(async () => ({
+  default: (await ladujSymulator()).EkranSymulatora,
 }))
 
 /** Powłoka: nagłówek z krokami i ekran wybrany przez hash (#/, #/adres/<id>, #/porownanie). */
@@ -43,7 +53,9 @@ function Powloka() {
             ? 'Miejsce na biznes'
             : ekran === 'katalog'
               ? 'Katalog adresów Krakowa'
-              : 'Szukaj okolicy'
+              : ekran === 'symulator'
+                ? 'Symulator inwestycji dla miasta'
+                : 'Szukaj okolicy'
 
   // Przejście = inny ekran albo, na karcie, inny adres. Klik w mapę na Szukaj niczego nie resetuje.
   const klucz = ekran === 'okolica' ? `okolica:${wybrany}` : ekran
@@ -131,6 +143,7 @@ function Powloka() {
         {ekran === 'porownanie' && <EkranPorownanie />}
         {ekran === 'metoda' && <Metoda />}
         {ekran === 'biznes' && <EkranBiznes />}
+        {ekran === 'symulator' && <EkranSymulatora />}
       </Suspense>
     </>
   )

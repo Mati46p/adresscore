@@ -1,0 +1,240 @@
+{
+  "opis": "Zbiór wzorcowy „opisz siebie” (#18): złożone, potoczne opisy, jakie wpisuje prawdziwy człowiek. Etykiety ułożył agent AI (Claude) PRZED jakimkolwiek wywołaniem JEV – mogą być stronnicze.",
+  "zasady": {
+    "persona": "Profil, który powinna wybrać aplikacja; null = żaden nie pasuje (np. para bez dzieci, opis cudzej sytuacji). persona_tez = inny profil też do przyjęcia.",
+    "nic": "true = tekst nie niesie żadnej potrzeby; poprawnie tylko „nic nie zrozumiano” (bieżące ustawienia zostają).",
+    "potrzeby": "Id z POTRZEBY. Dotyczą domowników, którzy tam zamieszkają (mama 82 l. mieszkająca z rodziną = senior). Inwestor: tylko inwestycja + kategorie.",
+    "dzieci": "mieszkają dzieci albo dziecko w planach / ciąża; NIE: dorosłe dzieci, które się wyprowadziły; NIE: dzieci znajomych; NIE: „gdybyśmy kiedyś”.",
+    "bez_samochodu": "ktoś z domowników nie ma auta albo codziennie polega na komunikacji miejskiej.",
+    "praca_centrum": "regularny dojazd do centrum (praca, uczelnia, życie nocne) albo wprost szybki dojazd do Rynku / Starego Miasta / Kazimierza; NIE: dojazd poza centrum (Bonarka, Zabłocie, Prokocim, Kampus UJ na Ruczaju), NIE: praca zdalna.",
+    "senior": "osoba albo domownik na emeryturze / w starszym wieku.",
+    "zdrowie": "trzeba mieć blisko lekarza, aptekę (choroba przewlekła, wózek, balkonik, regularne leki).",
+    "sklepy": "sklepy, knajpy, usługi w zasięgu spaceru.",
+    "kategorie": "Ważne kategorie (poziom ≥ 3) = suma kategorii podnoszonych przez potrzeby wzorca (tabela POTRZEBY) + kategorie_wazne. kategorie_niewazne = tekst wprost mówi, że to obojętne (poziom ≤ 1)."
+  },
+  "pozycje": [
+    {
+      "id": "A01",
+      "tekst": "Mamy trzylatka i drugie w drodze, jest też pies (labrador, duży). Szukamy czegoś z parkiem, bo z psem i wózkiem codziennie łazimy. Mąż jeździ do pracy na Kazimierz tramwajem, auta nie mamy.",
+      "persona": "rodzina",
+      "potrzeby": ["dzieci", "pies", "zielen", "praca_centrum", "bez_samochodu"],
+      "cechy": ["wiele potrzeb", "sygnał pośredni", "przeczenie"]
+    },
+    {
+      "id": "A02",
+      "tekst": "Jestem na emeryturze od dwóch lat, żona ma cukrzycę i co chwilę jesteśmy w przychodni. Chcielibyśmy spokojnie, bez imprez pod oknem, i żeby była gdzie ławka przysiąść w drodze do sklepu.",
+      "persona": "senior",
+      "potrzeby": ["senior", "zdrowie", "cisza", "sklepy"],
+      "cechy": ["wiele potrzeb"]
+    },
+    {
+      "id": "A03",
+      "tekst": "nie mam dzieci ani psa, auto sprzedalem rok temu i jezdze MPK albo rowerem. robie w biurze na Starowislnej wiec dojazd ma byc ogarniety. szukam kawalerki, lubie wyjsc wieczorem na miasto",
+      "persona": "singiel",
+      "potrzeby": ["bez_samochodu", "rower", "praca_centrum", "singiel"],
+      "cechy": ["bez ogonków", "slang", "przeczenie", "sygnał pośredni"]
+    },
+    {
+      "id": "A04",
+      "tekst": "Szukamy z żoną mieszkania na lata. Ona pracuje zdalnie i potrzebuje ciszy do rozmów, ja latam co tydzień do Warszawy i Frankfurtu. Dzieci planujemy za rok-dwa, więc przedszkole w okolicy by się przydało.",
+      "persona": "rodzina",
+      "potrzeby": ["cisza", "lotnisko", "dzieci"],
+      "cechy": ["wiele potrzeb", "sygnał pośredni"]
+    },
+    {
+      "id": "A05",
+      "tekst": "hej, sprawdzam tylko jak to działa :)",
+      "persona": null,
+      "nic": true,
+      "potrzeby": [],
+      "cechy": ["brak sygnału"]
+    },
+    {
+      "id": "A06",
+      "tekst": "Kumpel ma trójkę dzieci i psa i wiecznie narzeka na swoje osiedle, ale to nie dla niego. Szukamy z partnerką dla siebie: ma być cicho, bez smogu, bo mam astmę, i jakiś park do biegania.",
+      "persona": null,
+      "potrzeby": ["cisza", "powietrze", "zielen"],
+      "cechy": ["cudza sytuacja", "pułapka profilu", "wiele potrzeb"]
+    },
+    {
+      "id": "A07",
+      "tekst": "Gdybyśmy kiedyś mieli dzieci, to pewnie szkoła by się liczyła, ale na razie to nieaktualne. Teraz liczy się szybki dojazd na AGH i żeby był sklep pod blokiem.",
+      "persona": null,
+      "potrzeby": ["praca_centrum", "sklepy"],
+      "cechy": ["hipoteza", "pułapka profilu", "slang"]
+    },
+    {
+      "id": "A08",
+      "tekst": "Chcę mieć cicho w nocy, ale żeby do klubów na Kazimierzu było z 10 minut, bo lubię wyjść. Studiuję na UJ, roweru nie mam, wszędzie chodzę albo jadę tramwajem.",
+      "persona": "singiel",
+      "potrzeby": ["cisza", "praca_centrum", "bez_samochodu", "singiel"],
+      "cechy": ["sprzeczność", "przeczenie", "sygnał pośredni"]
+    },
+    {
+      "id": "A09",
+      "tekst": "Relocating z Londynu, pracuję hybrydowo w office na Zabłociu, 2x w tygodniu. Need good public transport, no car. Mam corgi, więc jakiś park nearby byłby super. Często latam do UK.",
+      "persona": null,
+      "persona_tez": ["singiel"],
+      "potrzeby": ["bez_samochodu", "pies", "zielen", "lotnisko"],
+      "cechy": ["angielski", "sygnał pośredni", "wiele potrzeb"]
+    },
+    {
+      "id": "A10",
+      "tekst": "Mama z nami zamieszka, ma 82 lata i chodzi o balkoniku, więc przychodnia i apteka muszą być blisko. Mamy też dwie córki w podstawówce. My z mężem jeździmy autem, więc komunikacja jest nam obojętna.",
+      "persona": "rodzina",
+      "persona_tez": ["senior"],
+      "potrzeby": ["senior", "zdrowie", "dzieci"],
+      "kategorie_niewazne": ["transport"],
+      "cechy": ["sygnał pośredni", "wiele potrzeb", "przeczenie"]
+    },
+    {
+      "id": "A11",
+      "tekst": "Pracuję na zmiany w szpitalu na Prokocimiu, dojeżdżam nocnym autobusem. Śpię w dzień, więc hałas za oknem to dla mnie dramat. Mam kota, nie psa. I fajnie jakby Biedronka była po drodze.",
+      "persona": null,
+      "persona_tez": ["singiel"],
+      "potrzeby": ["bez_samochodu", "cisza", "sklepy"],
+      "cechy": ["przeczenie", "sygnał pośredni", "pułapka (dojazd poza centrum)"]
+    },
+    {
+      "id": "A12",
+      "tekst": "Kupuję trzecie mieszkanie, pod wynajem dla studentów. Liczy się blisko na uczelnie i dobra komunikacja, reszta mnie mało obchodzi, sam tam mieszkać nie będę.",
+      "persona": "inwestor",
+      "potrzeby": ["inwestycja"],
+      "kategorie_wazne": ["transport"],
+      "cechy": ["cudze potrzeby (najemcy)"]
+    },
+    {
+      "id": "A13",
+      "tekst": "Pracuję zdalnie z domu, więc ważne, żeby było cicho i zielono za oknem. Mieszkam sama z dwoma psami, rano biegam po lesie albo bulwarach. Do miasta wpadam rowerem.",
+      "persona": "singiel",
+      "potrzeby": ["cisza", "zielen", "pies", "rower", "singiel"],
+      "cechy": ["wiele potrzeb", "odmiana słowa (psami)"]
+    },
+    {
+      "id": "A14",
+      "tekst": "mam dwojke dzieci (5 i 8 lat), syn ma alergie na pylki i astme wiec smog odpada. zona jezdzi do pracy do centrum, ja mam firme w domu. szkola w poblizu bylaby idealna",
+      "persona": "rodzina",
+      "potrzeby": ["dzieci", "powietrze", "praca_centrum"],
+      "cechy": ["bez ogonków", "wiele potrzeb"]
+    },
+    {
+      "id": "A15",
+      "tekst": "Mieszkamy w bloku w Nowej Hucie od 40 lat, wnuki wpadają co weekend. Chcemy się przenieść bliżej córki, ale bez schodów, bo mąż po udarze jeździ na wózku. Nie musi być zielono, ważniejsze, żeby wszystko było pod ręką.",
+      "persona": "senior",
+      "potrzeby": ["senior", "zdrowie", "sklepy"],
+      "cechy": ["sygnał pośredni", "przeczenie", "pułapka (córka dorosła)"]
+    },
+    {
+      "id": "A16",
+      "tekst": "Jestem w ciąży, z partnerem szukamy 3 pokoi. On dojeżdża do Bonarki autem, ja do pracy przy Rynku tramwajem. Okolica bez smogu, bo kaszlę każdej zimy.",
+      "persona": "rodzina",
+      "potrzeby": ["dzieci", "praca_centrum", "bez_samochodu", "powietrze"],
+      "cechy": ["sygnał pośredni", "wiele potrzeb"]
+    },
+    {
+      "id": "A17",
+      "tekst": "Szukam czegoś niedaleko Balic, bo jestem stewardessą i wracam o różnych porach. Nie mam auta, a taksówki za drogie. Mieszkam sama, kot w niczym nie przeszkadza.",
+      "persona": "singiel",
+      "potrzeby": ["lotnisko", "bez_samochodu", "singiel"],
+      "cechy": ["sygnał pośredni", "przeczenie"]
+    },
+    {
+      "id": "A18",
+      "tekst": "Dzień dobry, chciałabym zapytać, czy ta aplikacja jest darmowa i kto ją zrobił?",
+      "persona": null,
+      "nic": true,
+      "potrzeby": [],
+      "cechy": ["brak sygnału"]
+    },
+    {
+      "id": "A19",
+      "tekst": "Pracuję zdalnie dla firmy z USA, calls do późna, więc spokój to must have. Siłownia i sklep pod ręką, bo nie chce mi się nigdzie jeździć. Car-free od lat.",
+      "persona": null,
+      "persona_tez": ["singiel"],
+      "potrzeby": ["cisza", "sklepy", "bez_samochodu"],
+      "cechy": ["angielski", "slang"]
+    },
+    {
+      "id": "A20",
+      "tekst": "Chciałbym, żeby było zielono i cicho, ale jednocześnie blisko knajp i życia, bo nie lubię nudy. Do pracy w Galerii Krakowskiej chodzę pieszo, auta nie potrzebuję.",
+      "persona": null,
+      "persona_tez": ["singiel"],
+      "potrzeby": ["zielen", "cisza", "sklepy", "praca_centrum", "bez_samochodu"],
+      "cechy": ["sprzeczność", "wiele potrzeb", "przeczenie"]
+    },
+    {
+      "id": "A21",
+      "tekst": "Kupujemy dom na lata, mamy dwóch synów. Po 2010 roku boję się wszystkiego, co blisko Wisły, nie chcę, żeby nas zalało. Zależy nam też, żeby okolica się rozwijała, a nie stała w miejscu.",
+      "persona": "rodzina",
+      "potrzeby": ["dzieci", "bezpieczenstwo"],
+      "kategorie_wazne": ["przyszlosc"],
+      "cechy": ["sygnał pośredni"]
+    },
+    {
+      "id": "A22",
+      "tekst": "Szukam czegoś na Ruczaju albo w okolicy, mam rower elektryczny i nim wszędzie śmigam, do roboty w Kampusie UJ też. Weekendy w Tyńcu i Lasku Wolskim. No i dobra knajpa w pobliżu.",
+      "persona": null,
+      "persona_tez": ["singiel"],
+      "potrzeby": ["rower", "zielen", "sklepy"],
+      "cechy": ["slang", "sygnał pośredni", "pułapka (dojazd poza centrum)"]
+    },
+    {
+      "id": "A23",
+      "tekst": "szukam flipa albo czegos pod airbnb, ma sie zwrocic w 5 lat. przyda sie jak w okolicy cos buduja, bo ceny pojda w gore",
+      "persona": "inwestor",
+      "potrzeby": ["inwestycja"],
+      "cechy": ["slang", "angielski", "bez ogonków"]
+    },
+    {
+      "id": "A24",
+      "tekst": "Jesteśmy parą 30+, w planach dziecko, mamy psa. Oboje pracujemy w centrum i chcemy dojeżdżać tramwajem, a nie stać w korkach. Ważne powietrze, bo zimą w Nowej Hucie nie dało się oddychać.",
+      "persona": "rodzina",
+      "potrzeby": ["dzieci", "pies", "praca_centrum", "bez_samochodu", "powietrze"],
+      "cechy": ["wiele potrzeb"]
+    },
+    {
+      "id": "A25",
+      "tekst": "Mam 74 lata, sama już nie prowadzę, więc wszędzie muszę dojść albo dojechać autobusem. Codziennie biorę leki, apteka blisko to podstawa. Lubię posiedzieć w parku.",
+      "persona": "senior",
+      "potrzeby": ["senior", "bez_samochodu", "zdrowie", "zielen"],
+      "cechy": ["sygnał pośredni", "wiele potrzeb"]
+    },
+    {
+      "id": "A26",
+      "tekst": "Nie mam samochodu, nie mam dzieci i nie planuję. Na zieleni mi nie zależy, ważne, żeby do Rynku było 15 minut i żeby Żabka była na dole.",
+      "persona": null,
+      "persona_tez": ["singiel"],
+      "potrzeby": ["bez_samochodu", "praca_centrum", "sklepy"],
+      "cechy": ["przeczenie", "wiele potrzeb"]
+    },
+    {
+      "id": "A27",
+      "tekst": "Żona chce dom pod lasem, ja blisko biura na Zabłociu i siłowni. Dzieci mamy już dorosłe, wyprowadziły się. Kompromis: coś zielonego, ale z dobrym dojazdem komunikacją.",
+      "persona": null,
+      "potrzeby": ["zielen", "bez_samochodu"],
+      "cechy": ["sprzeczność", "pułapka profilu", "pułapka (dojazd poza centrum)"]
+    },
+    {
+      "id": "A28",
+      "tekst": "Hi, I'm an Erasmus student from Spain, studying at Jagiellonian. No car obviously, I bike everywhere. Want something cheap, close to the Old Town and nightlife. Pozdrawiam!",
+      "persona": "singiel",
+      "potrzeby": ["bez_samochodu", "rower", "praca_centrum", "singiel"],
+      "cechy": ["angielski", "wiele potrzeb"]
+    },
+    {
+      "id": "A29",
+      "tekst": "Mamy bliźniaki w żłobku i owczarka, który musi się wybiegać. Żona ma chorą tarczycę i często bywa u endokrynologa. Teściowie pomagają, ale sami jeżdżą tylko komunikacją.",
+      "persona": "rodzina",
+      "potrzeby": ["dzieci", "pies", "zdrowie", "zielen"],
+      "cechy": ["sygnał pośredni", "wiele potrzeb", "pułapka (teściowie nie mieszkają)"]
+    },
+    {
+      "id": "A30",
+      "tekst": "W sumie to jeszcze nie wiem, mąż mówi, że się nie przeprowadzamy, ja że tak. Zobaczymy.",
+      "persona": null,
+      "nic": true,
+      "potrzeby": [],
+      "cechy": ["brak sygnału"]
+    }
+  ]
+}

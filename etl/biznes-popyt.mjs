@@ -57,7 +57,7 @@ const out = {
     c.liczbaKursow ? Math.round((c.kursy / c.liczbaKursow) * 100) / 100 : 0,
   ]),
 }
-const folder = join(BAZA, 'uslugi')
+const folder = join(BAZA, 'biznes')
 mkdirSync(folder, { recursive: true })
 writeFileSync(join(folder, 'popyt.json'), JSON.stringify(out))
 console.log('Popyt: ' + out.komorki.length + ' heksów, ' + k.id.length + ' adresów')

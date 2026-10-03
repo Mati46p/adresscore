@@ -21,13 +21,9 @@ test('zmiana komitetu przenosi wagę, kierunek i próg tylko na wybraną listę'
   ])
 })
 
-test('samo wskazanie komitetu nie włącza go do wyniku', () => {
-  const wynik = zmienKomitet(
-    'sejm2023_lista_4',
-    { sejm2023_lista_1: 0, sejm2023_lista_4: 0 },
-    {},
-    [],
-  )
-  assert.equal(wynik.wagi.sejm2023_lista_4, 0)
-  assert.equal(wynik.kierunki.sejm2023_lista_4, 'wiecej-lepiej')
+test('wybór innego komitetu bez wagi pozostawia wybory poza wynikiem', () => {
+  const wynik = zmienKomitet('sejm2023_lista_3', { sejm2023_lista_1: 0, halas_ldwn: 4 }, {}, [])
+  assert.equal(wynik.wagi.sejm2023_lista_1, 0)
+  assert.equal(wynik.wagi.sejm2023_lista_3, 0)
+  assert.equal(wynik.kierunki.sejm2023_lista_3, 'wiecej-lepiej')
 })

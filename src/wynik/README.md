@@ -34,7 +34,7 @@ Zasady skali:
 - Norma wewnątrz przedziału daje ocenę 50. Przekroczenie normy zawsze daje mniej niż 50.
 - Kierunek `neutralny` nie liczy się do wyniku, dopóki użytkownik albo persona nie poda kierunku.
 - Kategoria `kontekst` nigdy nie liczy się do wyniku. Karta pokazuje ją jako fakt (`wartosc`).
-- Kierunek użytkownika: `mniej-lepiej` (↓), `wiecej-lepiej` (↑), `optimum` (≈, najlepszy środek przedziału).
+- Kierunek użytkownika: `mniej-lepiej` (↓) lub `wiecej-lepiej` (↑).
 
 `WynikAdresu`:
 
@@ -54,10 +54,11 @@ Kolory: `PALETA_WYNIKU` (5 stopni z makiety, od słabo do idealnie) i `KOLOR_BRA
 
 - `PERSONY`: `rodzina`, `singiel`, `senior`, `inwestor`, `od-zera`. Każda ma `wagi`, opcjonalne `kierunki` i `wagaNowych`.
 - `TRYBY`: `kupuje`, `wynajmuje`, `biznes`. Kupno i najem używają person oraz modyfikatorów
-  kategorii; biznes pokazuje odległość od sklepu i ludność NSP 2021. Atrapa sklepu dostaje wagę 0
-  i nie jest pokazywana jako rzeczywista konkurencja.
+  kategorii. Biznes ocenia odległość od wybranego rodzaju usługi (sklep spożywczy,
+  gastronomia, apteka lub weterynarz) oraz ludność NSP 2021. Warstwa przykładowa dostaje wagę 0.
 - `ustawieniaPersony(persona, tryb, metaWskaznikow)` daje `{ wagi, kierunki }` dla żywych warstw.
-  Nieznane id persona pomija. Nowa warstwa z manifestu dostaje `wagaNowych`.
+  Nieznane id persona pomija. Nowa warstwa z manifestu ma wagę 0, dopóki nie zostanie
+  świadomie dodana do profilu. Profil `od-zera` pozostawia wszystkie wagi na 0.
 
 ## Dane – `dane.ts`
 
@@ -84,6 +85,63 @@ Filtr nieznanej warstwy nic nie wyklucza, ale zostaje w stanie i w URL.
 - `policzWykluczenia(wskazniki, filtry, n)` daje `wykluczony[]`, `niewiadomy[]` i liczniki.
 - `wykluczoneHeksy(wykluczony, grupy)` daje heksy, w których wszystkie adresy są wykluczone. `MapaKrakowa` dostaje je w propie `wykluczone`.
 - `useWyniki()` zwraca `wykluczenia` i `wykluczoneHeksy`. Ranking pomija wykluczone adresy, a średnie heksów liczą się bez nich.
+
+## Lepszy sąsiad – `sasiedzi.ts` (czysta funkcja, #93)
+
+`lepsiSasiedzi(i, adresy, wskazniki, { wagi, kierunki, filtry }, opcje?)` daje
+`{ wyjsciowy: { wynik, litera, pewnosc, cenaM2 }, kandydaci: LepszySasiad[] }`: do 3 adresów
+w promieniu 500 m z literą lepszą niż adres `i`. Kartę (#94) i mapę (#95) robią osobne zadania.
+
+- Kandydaci z pierścieni H3 wokół heksu adresu, potem odległość geodezyjna (`odlegloscM`) ≤ 500 m.
+- Wynik liczy `wynikAdresu` z bieżącymi wagami i kierunkami. Adres naruszający dealbreaker nie jest
+  kandydatem; brak danych dla filtra nie wyklucza. Adres wyjściowy bez wyniku = pusta lista.
+- Cena: `cena_m2_mediana` w granicach ±15%. Brak ceny po którejś stronie (albo warstwa-atrapa) =
+  kandydat zostaje z `cena: { stan: 'brak', podpis: 'brak cen transakcyjnych' }`.
+- `wyroznia`: do 2 kategorii z największą przewagą wkładu, z `opis` słowami („znacznie ciszej i zdrowiej”).
+  Szara kategoria po którejś stronie nie wchodzi do porównania. Punktów nie pokazuj.
+- `nizszaPewnosc`: kandydat ma niższą pewność niż adres wyjściowy – oznacz go na karcie.
+- Jeden wpis na budynek, budynek adresu wyjściowego pominięty. `opcje.budynekAdresu(i)` podaje klucz
+  budynku (np. z obrysów `miasto3d`); bez niego ten sam budynek = ta sama ulica, ten sam numer bez
+  litery („5”, „5A”) i ≤ 30 m.
+- Kolejność: lepsza litera → bliżej → wyższy wynik → niższy indeks.
+- Pierwsze wywołanie liczy indeks heksów i oceny warstw (ok. 200 ms przy 177 tys. adresów), kolejne trwają kilka ms.
+
+### Wspólny stan karty i mapy – `sasiedziStan.ts` + `useSasiedzi.ts` (#94)
+
+Jeden stan dla sekcji na karcie (`src/karta/okolica/LepszySasiad.tsx`) i znaczników na mapie (#95).
+Stan trzyma tylko `{ zrodlo: number | null, wybrany: number | null }` – adres, dla którego sekcja
+jest otwarta, i pozycję podświetlonego kandydata. Listę kandydatów liczy `policzSasiadow` z bieżącymi
+wagami, kierunkami i filtrami (pamięć ostatniego wyniku w module), więc zmiana wagi przelicza kartę
+i mapę naraz. Sekcja otwarta dla innego adresu niż `stan.wybrany` = zamknięta (pusta lista).
+
+| Eksport | Co robi |
+|---|---|
+| `otworzSasiadow(i)`, `zamknijSasiadow()`, `przelaczSasiadow(i)` | Otwiera/zamyka sekcję. Zamknięcie czyści kandydatów i podświetlenie – znaczniki znikają. |
+| `wybierzSasiada(k \| null)` | Podświetla kandydata `k` (pozycja w liście) na karcie i mapie. |
+| `otworzKarteSasiada(adres)` | Zamyka sekcję i otwiera kartę kandydata (`pokazOkolice`). |
+| `porownajZSasiadem(zrodlo, adres)` | Dodaje oba adresy do Porównania (#48) i przechodzi tam; `'pelne'`, gdy się nie mieszczą (nic nie zmienia). |
+| `useStanSasiadow(selektor)` | Czyta stan jak `useStan`. |
+| `useLepsiSasiedzi()` (useSasiedzi.ts) | `{ otwarta, wynik: LepsiSasiedzi \| null, wybrany }` dla karty. |
+| `usePropsSasiadowMapy()` (useSasiedzi.ts) | Gotowe propsy dla komponentu znaczników na mapie (niżej). |
+
+Propsy mapy (`PropsSasiadowMapy`):
+
+```ts
+kandydaci: readonly { adres: number; lon: number; lat: number; litera: Litera; etykieta: string }[]
+srodek: { lon: number; lat: number } | null   // adres wyjściowy; null = sekcja zamknięta
+promienM: number                              // 500
+wybrany: number | null                        // pozycja w `kandydaci`
+onWybierz: (k: number | null) => void         // podświetla kandydata k (pozycja w `kandydaci`)
+onOtworz: (k: number) => void                 // otwiera kartę kandydata k i zamyka sekcję
+```
+
+Pusta `kandydaci` i `srodek: null` = nic nie rysuj. `kandydaci` ma stałą tożsamość dla tego samego
+wyniku. Podpięcie w miejscu, gdzie renderuje się mapa:
+
+```tsx
+const sasiedzi = usePropsSasiadowMapy()
+<MapaKrakowa … sasiedzi={sasiedzi} />   // albo {...sasiedzi} na komponencie znaczników z #95
+```
 
 ## Stan – `stan.ts`
 
@@ -137,3 +195,27 @@ const a = dane.stan === 'gotowe' && wybrany !== null ? dane.adresy[wybrany] : nu
 Tokeny CSS są w `src/styles.css` (`--akcent`, `--tekst-2`, `--ramka`, `--ostrzezenie-tlo` i inne).
 Klasy wspólne: `.seg` z `aria-pressed`, `.przycisk-glowny`, `.etykieta-sekcji`, `.karta`, `.atrapa`.
 Przy każdej warstwie z `meta.atrapa` pokaż etykietę „dane przykładowe”.
+
+## Luki w usługach – `luki.ts` (tryb „Dla miasta”, #89)
+
+Czyste funkcje. Luka nie zależy od wag, persony ani kierunku – liczy się z surowego pomiaru i progu.
+
+- `PROGI_LUK` – jedyne miejsce progów, każdy ze źródłem: sklep > 800 m, przystanek > 500 m,
+  punkt schronienia > 1 km, hałas > 64 dB LDWN (albo `meta.norma`, gdy warstwa ją ma).
+- `progLuki(meta)` daje próg albo `null` (atrapa, warstwa bez progu). Wybór warstwy w #90 pokazuje tylko te z progiem.
+- `okolicaAdresu(adres)` – dzielnica Krakowa, poza Krakowem cała gmina. Jednostki SIM przyjdą z #75.
+- `policzLuki(wskaznik, adresy, grupy?)` daje `{ prog, razem, okolice[], heksy: Map<h3, …>, jednostka: 'adresy' }`
+  albo `null` dla atrapy. Każda jednostka: `wszystkie = wLuce + bezLuki + brakDanych`,
+  `udzial = wLuce / wszystkie`; `udzial: null`, gdy jednostka nie ma żadnego adresu z danymi (szara).
+- Podpis „adresy”, nie „mieszkańcy”, dopóki nie wejdzie #74 albo #40.
+
+## Ranking luk – `rankingLuk.ts` (panel „Gdzie miasto ma luki”, #91)
+
+Czyste funkcje dla `src/karta/luki/PanelLuk.tsx`. Dane z `policzLuki`, tu tylko kolejność i teksty.
+
+- `rankingLuk(wynik, 'liczba' | 'udzial')` daje `{ naglowek, kierunek, wiersze[] }`. Suma `wiersze[].wLuce`
+  = `naglowek.wLuce` (`sumaWLuce`, pilnuje test). Jednostki szare (`udzial: null`) zawsze na końcu.
+- `kierunek` – kierunek słowami („Od góry: najwięcej adresów bez przystanku w 500 m”) zamiast numerów miejsc.
+- `pasekLuki(okolica)` – szerokości w % adresów jednostki (w luce + szary brak danych), nie % największej pozycji.
+- `procentUdzialu` nie zaokrągla do kłamstwa: „<1%” zamiast „0%”, „>99%” zamiast „100%”.
+- `rozdzielczoscWarstwy(meta)`, `zrodlaWarstwy(meta)` – podpis pod rankingiem.

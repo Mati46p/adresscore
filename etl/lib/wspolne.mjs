@@ -9,8 +9,16 @@ import { fileURLToPath } from 'node:url'
 export const KORZEN = join(dirname(fileURLToPath(import.meta.url)), '..', '..')
 export const DANE = join(KORZEN, 'public', 'dane')
 export const CACHE = join(KORZEN, 'etl', '.cache')
-const KATEGORIE = ['codziennosc', 'transport', 'spokoj', 'przyszlosc', 'bezpieczenstwo', 'kontekst']
-const ROZDZIELCZOSCI = ['adres', 'budynek', 'heks', 'siatka', 'rejon', 'gmina']
+const KATEGORIE = [
+  'codziennosc',
+  'transport',
+  'spokoj',
+  'spolecznosc',
+  'przyszlosc',
+  'bezpieczenstwo',
+  'kontekst',
+]
+const ROZDZIELCZOSCI = ['adres', 'budynek', 'heks', 'siatka', 'rejon', 'gmina', 'powiat']
 const KIERUNKI = ['mniej-lepiej', 'wiecej-lepiej', 'neutralny']
 
 export const dzis = () => new Date().toISOString().slice(0, 10)

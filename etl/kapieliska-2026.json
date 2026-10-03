@@ -1,0 +1,194 @@
+{
+  "opis": "Ręcznie ułożony wykaz kąpielisk czynnych w sezonie 2026 w Krakowie i najbliższej okolicy. Serwis Kąpieliskowy GIS (sk.gis.gov.pl) nie ma API i blokuje automaty (WAF), więc skrypt etl/kapieliska.mjs go nie odpytuje: wykaz jest tym plikiem. Każdy punkt ma źródło wykazu (strona kąpieliska w Serwisie, a dla Krakowa także uchwała rady miasta i PDF wykazu z BIP) oraz źródło położenia. Kąpieliska nieczynne w 2026 (Przystań Brzegi, status w wykazie: nieczynne) oraz bez danych o sezonie 2026 (Bobrowe Rozlewisko) pominięto celowo. Aktualizacja na kolejny sezon: sprawdzić wykaz uchwały rady gminy i strony kąpielisk, poprawić ten plik.",
+  "sporzadzono": "2026-10-03",
+  "sezon": 2026,
+  "kapieliska": [
+    {
+      "id": "bagry",
+      "etykieta": "Plaża Bagry",
+      "nazwa": "Plaża Bagry na zbiorniku Bagry Wielkie",
+      "gmina": "Kraków",
+      "powiat": "Kraków",
+      "adres": "ul. Kozia, dz. nr 338/4, 338/7 i 341/1, obr. 28 Podgórze",
+      "kodKrajowy": "1206PKAP0001",
+      "status2026": "czynne",
+      "lat": 50.03374,
+      "lon": 19.9935,
+      "wykaz": {
+        "nazwa": "Serwis Kąpieliskowy GIS: Plaża Bagry",
+        "url": "https://sk.gis.gov.pl/kapielisko/572"
+      },
+      "uchwala": {
+        "nazwa": "Uchwała Nr XLVII/1013/26 Rady Miasta Krakowa z dnia 19 marca 2026 r. (wykaz kąpielisk na 2026 r.), PDF wykazu: status 2026 czynne",
+        "url": "https://www.bip.krakow.pl/?dok_id=247780"
+      },
+      "polozenie": {
+        "zrodlo": "OpenStreetMap (ODbL): środek dwóch odcinków plaży „Plaża Bagry”, way/426435314 i way/709342891",
+        "url": "https://www.openstreetmap.org/way/426435314",
+        "pobrano": "2026-10-03",
+        "dokladnosc": "ok. 250 m; najbliższy adres ul. Kozia w PRG leży 84 m od punktu"
+      }
+    },
+    {
+      "id": "bagry-wschod",
+      "etykieta": "Plaża Bagry Wschód",
+      "nazwa": "Plaża Bagry Wschód na zbiorniku Bagry Wielkie",
+      "gmina": "Kraków",
+      "powiat": "Kraków",
+      "adres": "ul. Bagrowa, dz. nr 341/1, 345/1 obr. 28 i 82/5 obr. 27 Podgórze",
+      "kodKrajowy": "1206PKAP0006",
+      "status2026": "czynne",
+      "lat": 50.031,
+      "lon": 19.99824,
+      "wykaz": {
+        "nazwa": "Serwis Kąpieliskowy GIS: Plaża Bagry Wschód",
+        "url": "https://sk.gis.gov.pl/kapielisko/797"
+      },
+      "uchwala": {
+        "nazwa": "Uchwała Nr XLVII/1013/26 Rady Miasta Krakowa z dnia 19 marca 2026 r. (wykaz kąpielisk na 2026 r.), PDF wykazu: status 2026 czynne",
+        "url": "https://www.bip.krakow.pl/?dok_id=247780"
+      },
+      "polozenie": {
+        "zrodlo": "OpenStreetMap (ODbL): plaża „Plaża Bagry - Wschód” way/577761748 i strefa pływacka way/1076838600",
+        "url": "https://www.openstreetmap.org/way/577761748",
+        "pobrano": "2026-10-03",
+        "dokladnosc": "ok. 250 m; najbliższy adres ul. Bagrowa w PRG leży 191 m od punktu"
+      }
+    },
+    {
+      "id": "zakrzowek",
+      "etykieta": "Zakrzówek",
+      "nazwa": "Zakrzówek na zbiorniku Zakrzówek",
+      "gmina": "Kraków",
+      "powiat": "Kraków",
+      "adres": "ul. Wyłom, dz. nr 191/11, 191/3, 203 obr. 9 Podgórze",
+      "status2026": "czynne",
+      "lat": 50.03413,
+      "lon": 19.91117,
+      "wykaz": {
+        "nazwa": "Serwis Kąpieliskowy GIS: Zakrzówek",
+        "url": "https://sk.gis.gov.pl/kapielisko/902"
+      },
+      "uchwala": {
+        "nazwa": "Uchwała Nr XLVII/1013/26 Rady Miasta Krakowa z dnia 19 marca 2026 r. (wykaz kąpielisk na 2026 r.), PDF wykazu: status 2026 czynne",
+        "url": "https://www.bip.krakow.pl/?dok_id=247780"
+      },
+      "polozenie": {
+        "zrodlo": "OpenStreetMap (ODbL): obiekt „Kąpielisko Zakrzówek”, relation/18237940",
+        "url": "https://www.openstreetmap.org/relation/18237940",
+        "pobrano": "2026-10-03",
+        "dokladnosc": "ok. 250 m; najbliższy adres ul. Wyłom w PRG leży 169 m od punktu"
+      }
+    },
+    {
+      "id": "przylasek-rusiecki",
+      "etykieta": "Przylasek Rusiecki",
+      "nazwa": "Przylasek Rusiecki na zbiorniku nr 1",
+      "gmina": "Kraków",
+      "powiat": "Kraków",
+      "adres": "ul. Rzepakowa, dz. nr 175/6 obr. 34 Nowa Huta",
+      "kodKrajowy": "1206PKAP0003",
+      "status2026": "czynne",
+      "lat": 50.04833,
+      "lon": 20.15962,
+      "wykaz": {
+        "nazwa": "Serwis Kąpieliskowy GIS: Przylasek Rusiecki",
+        "url": "https://sk.gis.gov.pl/kapielisko/574"
+      },
+      "uchwala": {
+        "nazwa": "Uchwała Nr XLVII/1013/26 Rady Miasta Krakowa z dnia 19 marca 2026 r. (wykaz kąpielisk na 2026 r.), PDF wykazu: status 2026 czynne",
+        "url": "https://www.bip.krakow.pl/?dok_id=247780"
+      },
+      "polozenie": {
+        "zrodlo": "OpenStreetMap (ODbL): strefa pływacka „Kąpielisko Przylasek Rusiecki”, way/1074829424",
+        "url": "https://www.openstreetmap.org/way/1074829424",
+        "pobrano": "2026-10-03",
+        "dokladnosc": "ok. 250 m; najbliższy adres ul. Rzepakowa w PRG leży 117 m od punktu"
+      }
+    },
+    {
+      "id": "kryspinow",
+      "etykieta": "Kryspinów",
+      "nazwa": "Kąpielisko Zalew na Piaskach w Kryspinowie",
+      "gmina": "Liszki",
+      "powiat": "krakowski",
+      "adres": "Kryspinów, Zalew na Piaskach (gmina Liszki)",
+      "status2026": "czynne",
+      "lat": 50.04875,
+      "lon": 19.79703,
+      "wykaz": {
+        "nazwa": "Serwis Kąpieliskowy GIS: Zalew na Piaskach",
+        "url": "https://sk.gis.gov.pl/kapielisko/571"
+      },
+      "polozenie": {
+        "zrodlo": "OpenStreetMap (ODbL): płatne, strzeżone odcinki plaży nad Zalewem na Piaskach, way/25156251 i way/826213352",
+        "url": "https://www.openstreetmap.org/way/25156251",
+        "pobrano": "2026-10-03",
+        "dokladnosc": "ok. 250 m"
+      }
+    },
+    {
+      "id": "dolina-raby",
+      "etykieta": "Dolina Raby",
+      "nazwa": "Kąpielisko Dolina Raby w Kłaju",
+      "gmina": "Kłaj",
+      "powiat": "wielicki",
+      "adres": "Kłaj, Ośrodek rekreacyjny Dolina Raby",
+      "status2026": "czynne",
+      "lat": 49.97877,
+      "lon": 20.32523,
+      "wykaz": {
+        "nazwa": "Serwis Kąpieliskowy GIS: Dolina Raby",
+        "url": "https://sk.gis.gov.pl/kapielisko/903"
+      },
+      "polozenie": {
+        "zrodlo": "OpenStreetMap (ODbL): strefa pływacka „Kąpielisko Dolina Raby”, way/1097634878",
+        "url": "https://www.openstreetmap.org/way/1097634878",
+        "pobrano": "2026-10-03",
+        "dokladnosc": "ok. 250 m"
+      }
+    },
+    {
+      "id": "kuter-port",
+      "etykieta": "Kuter Port",
+      "nazwa": "Kąpielisko Kuter Port w Marszowicach i Nieznanowicach",
+      "gmina": "Gdów",
+      "powiat": "wielicki",
+      "adres": "Marszowice i Nieznanowice (gmina Gdów), Kuter Port",
+      "status2026": "czynne",
+      "lat": 49.90745,
+      "lon": 20.25432,
+      "wykaz": {
+        "nazwa": "Serwis Kąpieliskowy GIS: Kuter Port",
+        "url": "https://sk.gis.gov.pl/kapielisko/798"
+      },
+      "polozenie": {
+        "zrodlo": "OpenStreetMap (ODbL): punkt „Kuter Port”, node/3980685790",
+        "url": "https://www.openstreetmap.org/node/3980685790",
+        "pobrano": "2026-10-03",
+        "dokladnosc": "ok. 300 m"
+      }
+    },
+    {
+      "id": "januszowice",
+      "etykieta": "Januszowice",
+      "nazwa": "Kąpielisko w Strefie rekreacji w Januszowicach",
+      "gmina": "Słomniki",
+      "powiat": "krakowski",
+      "adres": "Januszowice (gmina Słomniki), Strefa rekreacji",
+      "status2026": "czynne",
+      "lat": 50.25877,
+      "lon": 20.07838,
+      "wykaz": {
+        "nazwa": "Serwis Kąpieliskowy GIS: Kąpielisko w Strefie rekreacji w Januszowicach",
+        "url": "https://sk.gis.gov.pl/kapielisko/859"
+      },
+      "polozenie": {
+        "zrodlo": "OpenStreetMap (ODbL): strefa pływacka nad Zbiornikiem Januszowice, way/1259542234",
+        "url": "https://www.openstreetmap.org/way/1259542234",
+        "pobrano": "2026-10-03",
+        "dokladnosc": "ok. 250 m"
+      }
+    }
+  ]
+}

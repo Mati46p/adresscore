@@ -1,11 +1,18 @@
 // Router na hashu bez biblioteki: trzy ekrany i kilka parametrów do udostępniania.
 // Hash, a nie ścieżka, bo hosting SPA nie musi wtedy przepisywać adresów na index.html.
 import { filtryDoTekstu, filtryZTekstu, type TwardyFiltr } from './filtry.ts'
-import type { PersonaId, Tryb } from './persony.ts'
-import { PERSONY } from './persony.ts'
+import type { PersonaId, RodzajBiznesu, Tryb } from './persony.ts'
+import { BIZNESY, PERSONY } from './persony.ts'
 import type { Kierunki } from './silnik.ts'
 
-export type Ekran = 'szukaj' | 'okolica' | 'porownanie' | 'metoda' | 'katalog' | 'biznes'
+export type Ekran =
+  | 'szukaj'
+  | 'okolica'
+  | 'porownanie'
+  | 'metoda'
+  | 'katalog'
+  | 'symulator'
+  | 'biznes'
 
 export interface StanUrl {
   ekran: Ekran
@@ -13,6 +20,7 @@ export interface StanUrl {
   idAdresu: string | null
   persona: PersonaId | null
   tryb: Tryb | null
+  biznes?: RodzajBiznesu
   /** Id adresów na liście porównania. */
   porownanie: string[]
   /** Własne ustawienia wyniku, zapisane wyłącznie dla persony „własna”. */
@@ -22,6 +30,11 @@ export interface StanUrl {
   branza?: string
   punktA?: { lon: number; lat: number } | null
   punktB?: { lon: number; lat: number } | null
+  /**
+   * Obiekty symulatora (#98) jako tekst `symulacjaUrl.ts`, warianty A i B (parametry `a`, `b`).
+   * Tylko na ekranie symulatora – gdzie indziej pola nie ma.
+   */
+  symulacja?: { a: string; b: string }
 }
 
 export const MAKS_POROWNANIE = 5
@@ -47,8 +60,7 @@ function czytajUstawienia(tekst: string | null): StanUrl['ustawienia'] {
       return null
     if (
       kierunki.some(
-        ([id, wartosc]) =>
-          !id || !['wiecej-lepiej', 'mniej-lepiej', 'optimum'].includes(wartosc as string),
+        ([id, wartosc]) => !id || !['wiecej-lepiej', 'mniej-lepiej'].includes(wartosc as string),
       )
     )
       return null
@@ -102,10 +114,13 @@ export function czytajHash(hash: string): StanUrl {
     ekran = 'katalog'
   } else if (czesci[0] === 'biznes') {
     ekran = 'biznes'
+  } else if (czesci[0] === 'symulator') {
+    ekran = 'symulator'
   }
 
   const p = parametry.get('p')
   const t = parametry.get('t')
+  const b = parametry.get('biz')
   const cmp = parametry.get('cmp')
   const ustawienia = czytajUstawienia(parametry.get('u'))
   return {
@@ -113,12 +128,22 @@ export function czytajHash(hash: string): StanUrl {
     idAdresu,
     persona: PERSONY.some((x) => x.id === p) ? (p as PersonaId) : null,
     tryb: t === 'kupuje' || t === 'wynajmuje' || t === 'biznes' ? t : null,
+    ...(BIZNESY.some((x) => x.id === b) ? { biznes: b as RodzajBiznesu } : {}),
     porownanie: cmp ? cmp.split(',').filter(Boolean).slice(0, MAKS_POROWNANIE) : [],
     ustawienia,
     filtry: filtryZTekstu(parametry.get('f')),
-    branza: parametry.get('b')?.match(/^[a-z_]+$/) ? (parametry.get('b') as string) : 'sklep',
-    punktA: czytajPunkt(parametry.get('a')),
-    punktB: czytajPunkt(parametry.get('c')),
+    ...(ekran === 'biznes'
+      ? {
+          branza: /^[a-z_]+$/.test(parametry.get('b') ?? '')
+            ? (parametry.get('b') as string)
+            : 'sklep',
+          punktA: czytajPunkt(parametry.get('a')),
+          punktB: czytajPunkt(parametry.get('c')),
+        }
+      : {}),
+    ...(ekran === 'symulator'
+      ? { symulacja: { a: parametry.get('a') ?? '', b: parametry.get('b') ?? '' } }
+      : {}),
   }
 }
 
@@ -129,19 +154,29 @@ export function zapiszHash(s: StanUrl): string {
   else if (s.ekran === 'metoda') sciezka = '/metoda'
   else if (s.ekran === 'katalog') sciezka = '/katalog'
   else if (s.ekran === 'biznes') sciezka = '/biznes'
+  else if (s.ekran === 'symulator') sciezka = '/symulator'
   const parametry = new URLSearchParams()
   if (s.persona) parametry.set('p', s.persona)
   if (s.tryb) parametry.set('t', s.tryb)
+  if (s.tryb === 'biznes' && s.biznes && s.biznes !== 'sklep') parametry.set('biz', s.biznes)
   if (s.porownanie.length) parametry.set('cmp', s.porownanie.join(','))
   if (s.ustawienia)
     parametry.set('u', JSON.stringify({ v: 1, w: s.ustawienia.wagi, k: s.ustawienia.kierunki }))
   if (s.filtry.length) parametry.set('f', filtryDoTekstu(s.filtry))
+  if (s.ekran === 'symulator' && s.symulacja) {
+    if (s.symulacja.a) parametry.set('a', s.symulacja.a)
+    if (s.symulacja.b) parametry.set('b', s.symulacja.b)
+  }
+  const q = parametry
+    .toString()
+    .replaceAll('%2C', ',')
+    .replaceAll('%3A', ':')
+    .replaceAll('%3B', ';')
   if (s.ekran === 'biznes') {
     parametry.set('b', s.branza ?? 'sklep')
     if (s.punktA) parametry.set('a', s.punktA.lon.toFixed(6) + ',' + s.punktA.lat.toFixed(6))
     if (s.punktB) parametry.set('c', s.punktB.lon.toFixed(6) + ',' + s.punktB.lat.toFixed(6))
   }
-  const q = parametry.toString().replaceAll('%2C', ',').replaceAll('%3A', ':')
   return `#${sciezka}${q ? `?${q}` : ''}`
 }
 
