@@ -1,7 +1,8 @@
 // Punkty usług dla trybu „Biznes" (#104): sklep spożywczy, apteka, fryzjer, piekarnia, kawiarnia i POZ
 // w Krakowie i obwarzanku. Same punkty (bez wskaźników na adres) z pięciu źródeł:
-// OpenStreetMap (Geofabrik), Overture Places, Rejestr Aptek, RPWDL (POZ) i CEIDG (uzupełnienie).
-// Uruchom: node etl/uslugi.mjs [--bez-ceidg] [--budzet-ceidg=300]. Opis źródeł i licencji: etl/uslugi.md.
+// OpenStreetMap (Geofabrik), Overture Places, Rejestr Aptek i RPWDL (POZ). CEIDG domyślnie wyłączony:
+// adres działalności to często adres domowy, nie lokal, więc punkty wprowadzały szum (decyzja 2026-10-03).
+// Uruchom: node etl/uslugi.mjs [--z-ceidg] [--budzet-ceidg=300]. Opis źródeł i licencji: etl/uslugi.md.
 // Surowe pobrania trafiają do etl/.cache, drugi bieg ich nie pobiera.
 // Wynik: public/dane/uslugi/katalog.json i public/dane/uslugi/<branza>.json.
 import { mkdirSync, statSync, writeFileSync } from 'node:fs'
@@ -124,7 +125,7 @@ export function tabelaLiczb(katalog) {
   )
 }
 
-export async function licz({ ceidg = true, budzetCeidg = LIMIT_CEIDG } = {}) {
+export async function licz({ ceidg = false, budzetCeidg = LIMIT_CEIDG } = {}) {
   const t0 = Date.now()
   const osm = await punktyOsmBranz()
   console.log(`OSM (stan ${osm.stan}): ${osm.punkty.length} punktów w branżach katalogu`)
@@ -206,7 +207,7 @@ export async function licz({ ceidg = true, budzetCeidg = LIMIT_CEIDG } = {}) {
 function argumenty(argv) {
   const opcje = {}
   for (const a of argv) {
-    if (a === '--bez-ceidg') opcje.ceidg = false
+    if (a === '--z-ceidg') opcje.ceidg = true
     else if (a.startsWith('--budzet-ceidg=')) opcje.budzetCeidg = Number(a.split('=')[1])
     else throw new Error(`Nieznany argument: ${a}`)
   }

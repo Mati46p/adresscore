@@ -1,6 +1,6 @@
 # Punkty usług dla trybu „Biznes" (zadanie #104)
 
-Uruchom `node etl/uslugi.mjs` z katalogu projektu (opcje: `--bez-ceidg`, `--budzet-ceidg=300`). Skrypt zbiera punkty sześciu branż w Krakowie i obwarzanku z pięciu źródeł, łączy duplikaty i zapisuje `public/dane/uslugi/katalog.json` oraz po jednym pliku na branżę. To **same punkty**: nie ma tu wskaźników na adres (te liczy #8, #120 i #124). Surowe pobrania leżą w `etl/.cache` (poza gitem), drugi bieg ich nie pobiera. Paczkomaty są poza zakresem (robi je #124).
+Uruchom `node etl/uslugi.mjs` z katalogu projektu (opcje: `--z-ceidg`, `--budzet-ceidg=300`). Skrypt zbiera punkty sześciu branż w Krakowie i obwarzanku z czterech źródeł (CEIDG tylko na żądanie), łączy duplikaty i zapisuje `public/dane/uslugi/katalog.json` oraz po jednym pliku na branżę. To **same punkty**: nie ma tu wskaźników na adres (te liczy #8, #120 i #124). Surowe pobrania leżą w `etl/.cache` (poza gitem), drugi bieg ich nie pobiera. Paczkomaty są poza zakresem (robi je #124).
 
 ## Co powstaje
 
@@ -60,6 +60,8 @@ Co świadomie pominięto: rzeźnie, delikatesy specjalistyczne, kioski i drogeri
 
 ## CEIDG: uzupełnienie z budżetem i bez danych osobowych
 
+**Domyślnie wyłączone (decyzja właściciela 2026-10-03):** adres z CEIDG to często adres domowy właściciela firmy, więc punkty wprowadzały szum do konkurencji. Kod zostaje za flagą `--z-ceidg` do pomiarów, pliki w `public/dane/uslugi` są bez CEIDG.
+
 CEIDG zna jednoosobowe działalności z kodem PKD, ale **nie wie, gdzie jest lokal**: adres działalności bywa domowy albo wirtualny. Dlatego punkty tylko z CEIDG są uzupełnieniem i mają własny bit.
 
 - **Budżet.** Limit API (1000/h) dzielimy z innym projektem, więc ETL wysyła łącznie najwyżej 300 zapytań (`--budzet-ceidg`), a licznik leży w `etl/.cache/ceidg/zuzycie.json` i przeżywa kolejne biegi. Odpowiedzi są w cache (jedna strona = jeden plik), drugi bieg nie pyta ponownie. ETL przestaje też pytać, gdy w oknie godzinnym zostanie mniej niż 500 zapytań (nagłówek `x-rate-limit-remaining`). Odmowa API (401, 403, 429), brak tokenu albo błąd sieci kończą pobieranie z logiem; reszta warstwy powstaje bez CEIDG.
@@ -70,6 +72,8 @@ CEIDG zna jednoosobowe działalności z kodem PKD, ale **nie wie, gdzie jest lok
 - **Nazwy w plikach.** Nazwa lokalu pochodzi tylko z OSM, Overture i rejestrów, nigdy z CEIDG. Nazwy wyglądające na osobę fizyczną (tytuł z nazwiskiem, „indywidualna praktyka", popularne imię obok nazwiska) są zamieniane na `null`. To heurystyka: samo nazwisko albo nietypowe imię przejdą.
 
 ## Kontrola wyniku (bieg z 2026-10-03)
+
+**Uwaga:** tabela i opis CEIDG niżej pochodzą z pierwszego biegu z CEIDG (2026-10-03). Bieżące liczby bez CEIDG: sklep 2619, apteka 431, fryzjer 1063, piekarnia 764, kawiarnia 836, POZ 394 (cały prostokąt `BBOX`), źródło prawdy to `katalog.json`.
 
 Stany źródeł: OSM 2026-10-02, Overture 2026-09-23.1 (55 836 miejsc w obszarze), Rejestr Aptek pobrany 2026-10-03 (1085 aktywnych w Małopolsce, adres znaleziono dla 1061), RPWDL ze stanem 2026-10-02 (793 komórki POZ, adres dla 765), CEIDG pobrany 2026-10-03. Liczby to punkty w całym obszarze (prostokąt `BBOX`). „Bez samego CEIDG" to rdzeń do liczenia konkurencji, bez punktów z wyłącznie adresem z CEIDG.
 
