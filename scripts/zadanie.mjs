@@ -47,7 +47,8 @@ function zadania() {
       tytul: z.title,
       etykiety: z.labels.map((l) => l.name),
       przypisani: z.assignees.map((a) => a.login),
-      etap: Number(/^E(\d)/.exec(z.milestone?.title ?? '')?.[1] ?? 9),
+      // \d+, bo „E10” czytane jako E1 wskakiwało na początek kolejki
+      etap: Number(/^E(\d+)/.exec(z.milestone?.title ?? '')?.[1] ?? 99),
     }))
     .sort((a, b) => a.etap - b.etap || a.nr - b.nr)
 }
