@@ -1,0 +1,21 @@
+{
+  "nazwa": "Modele budynków GUGiK LoD1 2024, powiat Kraków (TERYT 1261)",
+  "url": "https://opendata.geoportal.gov.pl/InneDane/Budynki3D/LOD1/2024/12/1261.zip",
+  "dokumentacja": "https://www.geoportal.gov.pl/pl/dane/inne-dane/modele-3d-budynkow/",
+  "licencja": "Bez opłat, do dowolnego wykorzystania według dokumentacji GUGiK",
+  "rocznikModelu": 2024,
+  "rocznikiALS": {
+    "2023": 91257
+  },
+  "pobrano": "2026-10-03",
+  "zipSha256": "dff392bbb6e81e81f7eb8558e552a64c870e2a8a53c1507958c3db242662f385",
+  "liczbaBudynkow": 91257,
+  "zakresWysokosciM": [
+    2.01,
+    62.51
+  ],
+  "crs": "EPSG:4326",
+  "jednostkaWysokosci": "m",
+  "metoda": "Najniższy poziomy wielokąt z lod1Solid stanowi przyziemie budynku BDOT10k BUBD_A; height_m to przybliżona bldg:measuredHeight GUGiK z mediany punktów ALS względem NMT 1 m. To nie są obrysy EGiB.",
+  "dokladnoscWspolrzednych": "6 miejsc po przecinku (~0,1 m)"
+}
