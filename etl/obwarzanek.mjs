@@ -28,7 +28,7 @@ export const MIARY = [
     jednostka: 'zł/os.',
     csvJednostka: 'zl',
     pierwotne: {
-      nazwa: 'GUS – Bank Danych Lokalnych',
+      nazwa: 'GUS – Bank Danych Lokalnych, wydatki inwestycyjne (licznik miary na mieszkańca)',
       url: 'https://bdl.stat.gov.pl/api/v1/data/by-variable/76450?unit-level=6',
     },
   },
@@ -133,15 +133,19 @@ async function main() {
     const lata = new Set()
     for (const [teryt, g] of gminaPoTeryt) {
       const r = ranking.get(teryt)
-      g.miary[m.id] = r ? { wartosc: r.wartosc, rok: r.rok, url: r.url } : null
+      g.miary[m.id] = r
+        ? { wartosc: r.wartosc, rok: r.rok, url: r.url, zrodloPierwotne: m.pierwotne.url }
+        : null
       if (r) lata.add(r.rok)
     }
     if (!lata.size) throw new Error(`Brak danych dla 14 gmin: ${m.slug}`)
+    const roczniki = [...lata].sort((a, b) => a - b)
+    const dataDanych = `${roczniki.length === 1 ? 'rocznik' : 'roczniki'} ${roczniki.join(', ')}`
     zapiszWskaznik(
       {
         id: m.id,
         nazwa: m.nazwa,
-        opis: `${m.opis} Roczniki występujące w 14 gminach: ${[...lata].sort().join(', ')}. Źródło wtórne: z-dykty.pl; szczegół gminy i metoda: https://z-dykty.pl/metodologia`,
+        opis: `${m.opis} Roczniki występujące w 14 gminach: ${roczniki.join(', ')}. Źródło wtórne: z-dykty.pl; szczegół gminy i metoda: https://z-dykty.pl/metodologia`,
         jednostka: m.jednostka,
         kategoria: 'kontekst',
         kierunek: 'neutralny',
@@ -153,14 +157,14 @@ async function main() {
             url,
             licencja:
               'Opracowanie CC BY 4.0 – https://creativecommons.org/licenses/by/4.0/; atrybucja z-dykty.pl',
-            dataDanych: `rocznik ${Math.max(...lata)}`,
+            dataDanych,
             pobrano,
           },
           {
             nazwa: m.pierwotne.nazwa,
             url: m.pierwotne.url,
             licencja: 'Dane źródłowe instytucji publicznej; warunki u wydawcy',
-            dataDanych: `rocznik ${Math.max(...lata)}`,
+            dataDanych,
             pobrano,
           },
         ],

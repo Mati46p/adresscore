@@ -46,6 +46,12 @@ test('opublikowane wskaźniki mają zgodną wersję i wartość jednakową w obr
     assert.equal(p.meta.kategoria, 'kontekst')
     assert.equal(p.meta.kierunek, 'neutralny')
     assert.equal(p.wartosci.length, adresy.length)
+    const roczniki = [...new Set(gminy.gminy.map((g) => g.miary[m.id]?.rok).filter(Boolean))].sort(
+      (a, b) => a - b,
+    )
+    const dataDanych = `${roczniki.length === 1 ? 'rocznik' : 'roczniki'} ${roczniki.join(', ')}`
+    assert.equal(p.meta.zrodla.length, 2)
+    for (const zrodlo of p.meta.zrodla) assert.equal(zrodlo.dataDanych, dataDanych)
     for (let i = 0; i < adresy.length; i++) {
       const v = wiersze.get(adresy[i].teryt)?.miary[m.id]?.wartosc ?? null
       assert.equal(p.wartosci[i], v)
