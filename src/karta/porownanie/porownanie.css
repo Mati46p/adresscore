@@ -1,0 +1,131 @@
+.porownanie {
+  display: grid;
+  gap: 20px;
+}
+.porownanie h1 {
+  margin: 0;
+  font-size: clamp(28px, 4vw, 36px);
+  letter-spacing: -0.02em;
+}
+.porownanie h2 {
+  margin: 0 0 14px;
+  font-size: 20px;
+}
+.porownanie p {
+  line-height: 1.5;
+}
+.porownanie-gora {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.porownanie-gora p {
+  color: var(--tekst-2);
+  margin: 8px 0 0;
+}
+.porownanie-uwaga {
+  margin: 0;
+  padding: 12px 16px;
+  background: #fff3da;
+  border: 1px solid #e5c787;
+  border-radius: 10px;
+}
+.porownanie-lista,
+.porownanie-przelacznik {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.porownanie-adres {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid #dce3df;
+  border-radius: 10px;
+  background: white;
+}
+.porownanie-adres button {
+  border: 0;
+  background: transparent;
+  font-size: 20px;
+  cursor: pointer;
+}
+.porownanie-kropka {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: none;
+}
+.porownanie-wykres,
+.porownanie-tabela,
+.porownanie-ranking,
+.porownanie-werdykt {
+  padding: 20px;
+  border: 1px solid #dce3df;
+  border-radius: 16px;
+  background: white;
+}
+.porownanie-wykres {
+  text-align: center;
+}
+.porownanie-wykres svg {
+  width: min(100%, 560px);
+  height: auto;
+}
+.porownanie-wykres p {
+  margin: 0 auto;
+  max-width: 60ch;
+  color: var(--tekst-2);
+  font-size: 13px;
+}
+.porownanie-tabela {
+  overflow-x: auto;
+}
+.porownanie-tabela table {
+  width: 100%;
+  min-width: 600px;
+  border-collapse: collapse;
+  text-align: left;
+}
+.porownanie-tabela th,
+.porownanie-tabela td {
+  padding: 12px;
+  border-bottom: 1px solid #e8edeb;
+}
+.porownanie-tabela small {
+  display: block;
+  color: var(--tekst-2);
+}
+.porownanie-ranking ol {
+  display: grid;
+  gap: 8px;
+  padding: 0;
+  margin: 0;
+  list-style-position: inside;
+}
+.porownanie-ranking li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 12px;
+  padding: 12px;
+  border: 1px solid #e8edeb;
+  border-radius: 10px;
+}
+.porownanie-ranking li span {
+  grid-column: 1 / -1;
+  color: var(--tekst-2);
+  font-size: 13px;
+}
+.porownanie-ranking strong {
+  font-size: 20px;
+  font-variant-numeric: tabular-nums;
+}
+.porownanie-werdykt p {
+  margin: 0 0 8px;
+}
+.porownanie-werdykt small {
+  color: var(--tekst-2);
+}

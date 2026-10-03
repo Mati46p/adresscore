@@ -1,0 +1,80 @@
+import type { KategoriaId } from '../../kontrakty/index.ts'
+
+// Strukturalnie zgodne z WynikAdresu z silnika; moduł porównania nie wymaga jego uruchomienia.
+export interface KategoriaPorownania {
+  kategoria: KategoriaId
+  ocena: number | null
+  pewnosc: number
+  warstwy: readonly { liczona: boolean; wagaUzytkownika: number; meta: { atrapa?: boolean } }[]
+}
+
+export interface WynikPorownania {
+  wynik: number | null
+  litera: string | null
+  pewnosc: number
+  kategorie: readonly KategoriaPorownania[]
+  warstwy: readonly { meta: { atrapa?: boolean } }[]
+}
+
+export interface OkolicaPorownania {
+  id: string
+  nazwa: string
+  wynik: WynikPorownania
+  href?: string
+}
+
+export const OSIE: readonly KategoriaId[] = [
+  'codziennosc',
+  'transport',
+  'spokoj',
+  'przyszlosc',
+  'bezpieczenstwo',
+]
+
+export function priorytety(okolicy: readonly OkolicaPorownania[]): Record<KategoriaId, number> {
+  const pierwsza = okolicy[0]?.wynik.kategorie ?? []
+  const wagi = Object.fromEntries(
+    pierwsza.map((k) => [
+      k.kategoria,
+      k.warstwy.filter((w) => w.liczona).reduce((s, w) => s + w.wagaUzytkownika, 0),
+    ]),
+  ) as Record<KategoriaId, number>
+  const maksimum = Math.max(0, ...OSIE.map((o) => wagi[o] ?? 0))
+  return Object.fromEntries(
+    OSIE.map((o) => [o, maksimum ? (wagi[o] ?? 0) / maksimum : 0]),
+  ) as Record<KategoriaId, number>
+}
+
+export function ranking(okolicy: readonly OkolicaPorownania[]): OkolicaPorownania[] {
+  return [...okolicy].sort((a, b) => {
+    const av = a.wynik.wynik
+    const bv = b.wynik.wynik
+    if (av === null || !Number.isFinite(av)) return bv === null || !Number.isFinite(bv) ? 0 : 1
+    if (bv === null || !Number.isFinite(bv)) return -1
+    return bv - av
+  })
+}
+
+export function werdykt(okolicy: readonly OkolicaPorownania[]): string {
+  const [pierwsza, druga] = ranking(okolicy)
+  if (!pierwsza || pierwsza.wynik.wynik === null) return 'Brak wyniku do porównania.'
+  if (!druga || druga.wynik.wynik === null)
+    return 'Dodaj drugi adres z wynikiem, aby zobaczyć werdykt.'
+  const roznica = (pierwsza.wynik.wynik ?? 0) - druga.wynik.wynik
+  if (roznica < 1)
+    return 'Najwyższe wyniki są bardzo zbliżone. Sprawdź kategorie i dostępność danych.'
+  if (pierwsza.wynik.pewnosc < 0.5 || druga.wynik.pewnosc < 0.5)
+    return 'Dane dla najwyższych wyników są niepełne. Nie wskazujemy zwycięzcy.'
+  return `${pierwsza.nazwa} ma najwyższy wynik dla obecnych wag (${Math.round(roznica)} pkt więcej niż ${druga.nazwa}).`
+}
+
+export function punktyRadaru(wartosci: readonly (number | null)[], promien = 140): string | null {
+  if (wartosci.length < 3 || wartosci.some((v) => v === null || !Number.isFinite(v))) return null
+  return wartosci
+    .map((v, i) => {
+      const kat = -Math.PI / 2 + (i * 2 * Math.PI) / wartosci.length
+      const r = (Math.min(100, Math.max(0, v as number)) / 100) * promien
+      return `${(200 + Math.cos(kat) * r).toFixed(1)},${(190 + Math.sin(kat) * r).toFixed(1)}`
+    })
+    .join(' ')
+}

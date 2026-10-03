@@ -1,56 +1,258 @@
+import { useState } from 'react'
 import { liczba, opisAdresu } from '@/karta/adres'
+import { KATEGORIE } from '@/kontrakty'
 import { useDane } from '@/wynik/dane'
+import { wynikAdresu } from '@/wynik/silnik'
 import { hrefDla, useStan, usunZPorownania } from '@/wynik/stan'
 import { MAKS_POROWNANIE } from '@/wynik/url'
-import { useWyniki } from '@/wynik/useWyniki'
+import { type OkolicaPorownania, OSIE, priorytety, punktyRadaru, ranking, werdykt } from './model'
+import './porownanie.css'
 
-/**
- * Slot #48 – porównanie do 5 okolic wg docs/makieta/Porownanie.dc.html: wykres radarowy
- * po kategoriach, tabela, werdykt.
- * TODO #48: radar i tabela. Rozbicie per adres: wynikAdresu(i, dane.wskazniki, wagi, kierunki).
- */
+const KOLORY = ['#176448', '#bc6b38', '#4b67a1', '#9a5f91', '#697a2e']
+
+function Radar({ okolice }: { okolice: readonly OkolicaPorownania[] }) {
+  const wagi = priorytety(okolice)
+  return (
+    <div className="porownanie-wykres">
+      <svg viewBox="0 0 440 400" role="img" aria-label="Radar ocen kategorii i priorytetów">
+        {[25, 50, 75, 100].map((poziom) => (
+          <polygon
+            key={poziom}
+            points={punktyRadaru(OSIE.map(() => poziom)) ?? ''}
+            fill="none"
+            stroke="#dce3df"
+          />
+        ))}
+        {OSIE.map((id, i) => {
+          const kat = -Math.PI / 2 + (i * 2 * Math.PI) / OSIE.length
+          const x = 200 + Math.cos(kat) * 140
+          const y = 190 + Math.sin(kat) * 140
+          return (
+            <g key={id}>
+              <line x1="200" y1="190" x2={x} y2={y} stroke="#dce3df" />
+              <text
+                x={200 + Math.cos(kat) * 180}
+                y={190 + Math.sin(kat) * 180}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                fontSize="12"
+              >
+                {KATEGORIE[id]}
+              </text>
+            </g>
+          )
+        })}
+        {okolice.map((o, i) => {
+          const wartosci = OSIE.map(
+            (id) => o.wynik.kategorie.find((k) => k.kategoria === id)?.ocena ?? null,
+          )
+          const punkty = punktyRadaru(wartosci)
+          return (
+            punkty && (
+              <polygon
+                key={o.id}
+                points={punkty}
+                fill={KOLORY[i]}
+                fillOpacity=".12"
+                stroke={KOLORY[i]}
+                strokeWidth="2.5"
+              />
+            )
+          )
+        })}
+        <polygon
+          points={punktyRadaru(OSIE.map((id) => wagi[id] * 100)) ?? ''}
+          fill="none"
+          stroke="#182c22"
+          strokeWidth="2"
+          strokeDasharray="5 5"
+        />
+      </svg>
+      <p>
+        Przerywana linia pokazuje Twoje priorytety. Okolica z brakującą kategorią jest pokazana w
+        tabeli, bez niepełnego wielokąta.
+      </p>
+    </div>
+  )
+}
+
 export function EkranPorownanie() {
   const dane = useDane()
   const stan = useStan((s) => s)
-  const wyniki = useWyniki()
-
+  const [widok, ustawWidok] = useState<'radar' | 'tabela'>('radar')
+  const [status, ustawStatus] = useState('')
+  const okolice: OkolicaPorownania[] =
+    dane.stan === 'gotowe'
+      ? stan.porownanie.slice(0, MAKS_POROWNANIE).flatMap((i) => {
+          const adres = dane.adresy[i]
+          return adres
+            ? [
+                {
+                  id: adres.id,
+                  nazwa: opisAdresu(adres),
+                  wynik: wynikAdresu(i, dane.wskazniki, stan.wagi, stan.kierunki),
+                  href: hrefDla(stan, { ekran: 'okolica', wybrany: i }),
+                },
+              ]
+            : []
+        })
+      : []
+  const atrapa =
+    dane.stan === 'gotowe' && (dane.plikAdresow.atrapa || dane.wskazniki.some((w) => w.meta.atrapa))
+  async function kopiuj() {
+    try {
+      await navigator.clipboard.writeText(
+        new URL(hrefDla(stan, { ekran: 'porownanie' }), location.href).href,
+      )
+      ustawStatus(
+        stan.persona === 'wlasna'
+          ? 'Skopiowano link do adresów. Ręczne wagi nie są zapisywane w linku.'
+          : 'Skopiowano link do porównania.',
+      )
+    } catch {
+      ustawStatus('Nie udało się skopiować. Skopiuj adres strony z przeglądarki.')
+    }
+  }
   return (
-    <main className="tresc">
-      <h1 style={{ margin: 0, fontSize: 36, letterSpacing: '-0.02em' }}>
-        Porównaj okolice pod siebie
-      </h1>
-      {stan.porownanie.length === 0 ? (
+    <main className="tresc porownanie">
+      <div className="porownanie-gora">
+        <div>
+          <h1>Porównaj okolice pod siebie</h1>
+          <p>Wyniki dla aktualnych wag. Możesz zestawić do {MAKS_POROWNANIE} adresów.</p>
+        </div>
+        {okolice.length > 0 && (
+          <button className="seg" type="button" onClick={kopiuj}>
+            Kopiuj link
+          </button>
+        )}
+      </div>
+      {stan.persona === 'wlasna' && okolice.length > 0 && (
+        <p className="porownanie-uwaga">
+          Link udostępnia wybrane adresy. Ręcznie ustawione wagi nie są zapisywane w linku.
+        </p>
+      )}
+      {status && <p role="status">{status}</p>}
+      {atrapa && (
+        <p className="porownanie-uwaga">Dane przykładowe: część wyników pochodzi z atrapy.</p>
+      )}
+      {dane.stan === 'ladowanie' && <p className="komunikat">Wczytywanie danych porównania…</p>}
+      {stan.porownanie.length === 0 && (
         <p className="komunikat">
-          Lista jest pusta. Dodaj do {MAKS_POROWNANIE} adresów z karty okolicy.{' '}
+          Lista jest pusta. Dodaj adresy z karty okolicy.{' '}
           <a href={hrefDla(stan, { ekran: 'szukaj' })}>Wróć do mapy</a>
         </p>
-      ) : (
-        <ol className="lista-wynikow">
-          {stan.porownanie.map((i) => {
-            const adres = dane.stan === 'gotowe' ? dane.adresy[i] : undefined
-            const v = wyniki?.naAdres[i]
-            return (
-              <li key={i} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <a
-                  className="pozycja-wyniku"
-                  style={{ flex: 1 }}
-                  href={hrefDla(stan, { ekran: 'okolica', wybrany: i })}
+      )}
+      {okolice.length > 0 && (
+        <>
+          <div className="porownanie-lista" aria-label="Wybrane adresy">
+            {okolice.map((o, i) => (
+              <div className="porownanie-adres" key={o.id}>
+                <span className="porownanie-kropka" style={{ background: KOLORY[i] }} />
+                <a href={o.href}>{o.nazwa}</a>
+                <button
+                  type="button"
+                  onClick={() => usunZPorownania(stan.porownanie[i] as number)}
+                  aria-label={`Usuń ${o.nazwa} z porównania`}
                 >
-                  <span
-                    className="plakietka-wyniku"
-                    data-brak={v === undefined || Number.isNaN(v) ? '' : undefined}
-                  >
-                    {liczba(v)}
-                  </span>
-                  {adres ? opisAdresu(adres) : '…'}
-                </a>
-                <button type="button" className="seg" onClick={() => usunZPorownania(i)}>
-                  Usuń<span className="sr-only"> {adres ? opisAdresu(adres) : ''}</span>
+                  ×
                 </button>
-              </li>
-            )
-          })}
-        </ol>
+              </div>
+            ))}
+          </div>
+          <div className="porownanie-przelacznik" role="group" aria-label="Widok porównania">
+            <button
+              className="seg"
+              type="button"
+              aria-pressed={widok === 'radar'}
+              onClick={() => ustawWidok('radar')}
+            >
+              Wykres radarowy
+            </button>
+            <button
+              className="seg"
+              type="button"
+              aria-pressed={widok === 'tabela'}
+              onClick={() => ustawWidok('tabela')}
+            >
+              Tabela
+            </button>
+          </div>
+          {widok === 'radar' ? (
+            <Radar okolice={okolice} />
+          ) : (
+            <div
+              className="porownanie-tabela"
+              role="region"
+              aria-label="Tabela porównania"
+              tabIndex={0}
+            >
+              <table>
+                <thead>
+                  <tr>
+                    <th scope="col">Kategoria</th>
+                    {okolice.map((o) => (
+                      <th key={o.id} scope="col">
+                        {o.nazwa}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {OSIE.map((id) => (
+                    <tr key={id}>
+                      <th scope="row">{KATEGORIE[id]}</th>
+                      {okolice.map((o) => {
+                        const k = o.wynik.kategorie.find((x) => x.kategoria === id)
+                        return (
+                          <td key={o.id}>
+                            {liczba(k?.ocena)}
+                            <small>
+                              {k?.ocena === null || !k
+                                ? 'Brak danych'
+                                : `${Math.round(k.pewnosc * 100)}% danych`}
+                            </small>
+                          </td>
+                        )
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <section className="porownanie-ranking" aria-label="Ranking dopasowania">
+            <h2>Dopasowanie do Ciebie</h2>
+            <ol>
+              {ranking(okolice).map((o) => {
+                const najlepsza = [...o.wynik.kategorie]
+                  .filter((k) => k.kategoria !== 'kontekst' && k.ocena !== null)
+                  .sort((a, b) => (b.ocena ?? 0) - (a.ocena ?? 0))[0]
+                return (
+                  <li key={o.id}>
+                    <a href={o.href}>{o.nazwa}</a>
+                    <strong>
+                      {liczba(o.wynik.wynik)}
+                      {o.wynik.litera ? ` / ${o.wynik.litera}` : ''}
+                    </strong>
+                    <span>
+                      {o.wynik.wynik === null
+                        ? 'Brak wyniku'
+                        : `Dostępność danych: ${Math.round(o.wynik.pewnosc * 100)}%`}
+                      {najlepsza && ` · Mocna strona: ${KATEGORIE[najlepsza.kategoria]}`}
+                    </span>
+                  </li>
+                )
+              })}
+            </ol>
+          </section>
+          <section className="porownanie-werdykt">
+            <h2>Werdykt</h2>
+            <p>{werdykt(okolice)}</p>
+            <small>
+              Braki danych nie są oceną zero. Wyniki zależą od aktualnych wag i dostępnych warstw.
+            </small>
+          </section>
+        </>
       )}
     </main>
   )
