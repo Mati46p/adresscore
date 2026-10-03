@@ -46,3 +46,25 @@ ZTP [określa GTFS jako dane otwarte](https://ztp.krakow.pl/wszystkie-aktualnosc
 Publikując wynik, podajemy źródło, daty i metodę przetworzenia zgodnie z
 [warunkami ponownego wykorzystania informacji GMK](https://bip.krakow.pl/?dok_id=48482).
 Warunki wskazują także ograniczenia odpowiedzialności miasta oraz możliwe prawa osób trzecich.
+
+## Rynek Główny (#60)
+
+`node etl/dojazd-gtfs.mjs 2026-10-07 --rynek` zapisuje
+`public/dane/wskazniki/rynek_czas_min.json` dla tego samego rozkładu i godziny wyjścia 07:00.
+Cel to **punkt na Rynku Głównym: 50.0617°N, 19.9373°E**. Po wysiadaniu z pojazdu model
+dolicza dojście ze stanowiska GTFS do tego punktu; dla adresów w promieniu 1,2 km porównuje
+również bezpośredni marsz. Pozostałe parametry są takie jak wyżej: dojścia i przesiadki po
+prostej, 1,25 m/s, co najmniej 2 min na przesiadkę, najpóźniejszy przyjazd 14:00.
+
+To statyczny, **planowy** czas podróży przy wyjściu 07:00 w konkretnym dniu, a nie czas
+aktualnej podróży ani trasa piesza po chodnikach. Rzeka, tory, przejścia dla pieszych i inne
+bariery mogą wydłużyć rzeczywisty marsz. Wynik `null` oznacza brak znalezionej trasy w modelu
+(w tym brak stanowiska w promieniu 1,2 km), nie zerowy czas. `rynek_czas_min` nie deklaruje
+sztywnego zakresu 0–120 min; surowe wartości pozostają dostępne dla karty adresu.
+
+Kontrola przeliczenia z 2026-10-03 dla rozkładu 2026-10-07: 160 487/176 684 adresów
+z wartością (90,8%), 16 197 `null`; mediana 56 min, p95 95 min, zakres 1–342 min.
+Przykładowe wyniki: Rynek Główny 10 – 2 min pieszo, Floriańska 1 – 3 min pieszo,
+Bronowicka 104 – 25 min, Wielicka 256 – 51 min. Wersja identyfikatorów adresów jest taka
+sama jak w `adresy.json`; te przykłady kontrolują orientacyjnie logikę, nie są pomiarem
+rzeczywistej podróży.
