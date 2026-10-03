@@ -4,7 +4,17 @@
 import type { WskaznikMeta } from '../kontrakty/index.ts'
 import type { Kierunki, Wagi } from './silnik.ts'
 
-export type PersonaId = 'rodzina' | 'singiel' | 'senior' | 'inwestor' | 'od-zera'
+export type PersonaId =
+  | 'rodzina'
+  | 'singiel'
+  | 'senior'
+  | 'inwestor'
+  | 'student'
+  | 'psiarz'
+  | 'rowerzysta'
+  | 'zdalny'
+  | 'aktywny'
+  | 'od-zera'
 export type Tryb = 'kupuje' | 'wynajmuje' | 'biznes'
 
 export const BIZNESY = [
@@ -133,6 +143,112 @@ export const PERSONY: readonly Persona[] = [
     },
     // Nowe pozwolenia = okolica rośnie, ceny pójdą w górę.
     kierunki: { inwestycje_500m: 'wiecej-lepiej' },
+    wagaNowych: 0,
+  },
+  {
+    id: 'student',
+    nazwa: 'Student',
+    opis: 'Uczelnia i akademik w zasięgu, tani dojazd, życie po zajęciach',
+    wagi: {
+      akademik_odleglosc: 4,
+      przystanek_odleglosc: 4,
+      kursy_szczyt_h: 4,
+      rynek_czas_min: 3,
+      kolej_odleglosc: 2,
+      sklep_odleglosc: 3,
+      gastronomia_odleglosc: 2,
+      zycie_nocne_300m: 2,
+      biblioteka_1200m: 2,
+      kultura_odleglosc: 2,
+      paczkomat_odleglosc: 2,
+      rower_infrastruktura_odleglosc: 2,
+      sport_odleglosc: 1,
+      pm25_srednia: 1,
+    },
+    wagaNowych: 0,
+  },
+  {
+    id: 'psiarz',
+    nazwa: 'Z psem',
+    opis: 'Wybieg i zieleń na spacer, weterynarz blisko, spokojna okolica',
+    wagi: {
+      wybieg_psy_odleglosc: 4,
+      weterynarz_odleglosc: 4,
+      zielen_worldcover_100m: 4,
+      zielen_udzial: 2,
+      drzewa_100m: 2,
+      przyroda_chroniona_odleglosc: 2,
+      rod_odleglosc: 1,
+      sklep_odleglosc: 2,
+      halas_ldwn: 3,
+      pm25_srednia: 2,
+      oswietlenie_100m: 2,
+      przystanek_odleglosc: 2,
+      powodz_10proc: 2,
+    },
+    wagaNowych: 0,
+  },
+  {
+    id: 'rowerzysta',
+    nazwa: 'Rowerzysta',
+    opis: 'Drogi rowerowe, stojaki i czyste powietrze, auto niepotrzebne',
+    wagi: {
+      droga_rowerowa_odleglosc: 4,
+      rower_infrastruktura_odleglosc: 4,
+      stojaki_300m: 3,
+      rower_ruch_dobowy: 2,
+      drogi_gruntowe_300m: 1,
+      pm25_srednia: 3,
+      no2_srednia: 3,
+      zielen_worldcover_100m: 2,
+      kolej_odleglosc: 2,
+      przystanek_odleglosc: 2,
+      sklep_odleglosc: 2,
+      sport_odleglosc: 2,
+      halas_ldwn: 2,
+    },
+    wagaNowych: 0,
+  },
+  {
+    id: 'zdalny',
+    nazwa: 'Praca zdalna',
+    opis: 'Cisza w dzień, światło i zieleń, wszystko na co dzień w zasięgu spaceru',
+    wagi: {
+      halas_ldwn: 4,
+      slonce_grudzien_h: 3,
+      zielen_worldcover_100m: 3,
+      drzewa_100m: 2,
+      pm25_srednia: 3,
+      sklep_odleglosc: 3,
+      piekarnia_odleglosc: 2,
+      gastronomia_odleglosc: 2,
+      paczkomat_odleglosc: 3,
+      poczta_odleglosc: 1,
+      stacje_bazowe_300m: 2,
+      sport_odleglosc: 2,
+      kolej_odleglosc: 1,
+      przystanek_odleglosc: 1,
+    },
+    wagaNowych: 0,
+  },
+  {
+    id: 'aktywny',
+    nazwa: 'Aktywny',
+    opis: 'Obiekty sportowe, siłownie plenerowe, kąpieliska i tereny do biegania',
+    wagi: {
+      sport_odleglosc: 4,
+      silownia_plenerowa_odleglosc: 4,
+      kapielisko_odleglosc: 3,
+      zielen_worldcover_100m: 4,
+      przyroda_chroniona_odleglosc: 3,
+      droga_rowerowa_odleglosc: 3,
+      pitnik_odleglosc: 1,
+      pm25_srednia: 3,
+      pm10_srednia: 2,
+      halas_ldwn: 2,
+      sklep_odleglosc: 2,
+      przystanek_odleglosc: 2,
+    },
     wagaNowych: 0,
   },
   {
