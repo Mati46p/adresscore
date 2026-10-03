@@ -1,7 +1,7 @@
 import { lazy, Suspense, useState } from 'react'
 import { PoleOpiszSiebie } from '@/ai/PoleOpiszSiebie'
 import { useDane } from '@/wynik/dane'
-import { WARSTWY_BIZNESU } from '@/wynik/persony'
+import { BIZNESY, warstwyBiznesu } from '@/wynik/persony'
 import { kierunekEfektywny } from '@/wynik/silnik'
 import {
   dodajDoPorownania,
@@ -33,6 +33,7 @@ const BRAK_HEKSOW: ReadonlyMap<string, number | null> = new Map()
 export function EkranSzukaj() {
   const dane = useDane()
   const tryb = useStan((s) => s.tryb)
+  const biznes = useStan((s) => s.biznes)
   const warstwa = useStan((s) => s.warstwa)
   const wybrany = useStan((s) => s.wybrany)
   const porownanie = useStan((s) => s.porownanie)
@@ -58,7 +59,8 @@ export function EkranSzukaj() {
       ? dane.wskazniki.filter(
           (w) =>
             kierunekEfektywny(w.meta, kierunki) !== null &&
-            (tryb !== 'biznes' || WARSTWY_BIZNESU.some((id) => id === w.meta.id && !w.meta.atrapa)),
+            (tryb !== 'biznes' ||
+              warstwyBiznesu(biznes).some((id) => id === w.meta.id && !w.meta.atrapa)),
         )
       : []
 
@@ -69,12 +71,12 @@ export function EkranSzukaj() {
           <div className="panel-wstep">
             <h1 tabIndex={-1}>
               {tryb === 'biznes'
-                ? 'Znajdź miejsce na sklep spożywczy'
+                ? `Znajdź miejsce na działalność: ${BIZNESY.find((b) => b.id === biznes)?.nazwa ?? 'biznes'}`
                 : 'Znajdź okolicę w Krakowie'}
             </h1>
             <p>
               {tryb === 'biznes'
-                ? 'Wagi konkurencji i liczby stałych mieszkańców przeliczają kolory na mapie. Kliknij heks, aby obejrzeć adres i porównać okolice.'
+                ? 'Wagi konkurencji i liczby stałych mieszkańców przeliczają kolory na mapie. Wybierz rodzaj działalności poniżej, kliknij heks i porównaj okolice.'
                 : 'Profil i wagi poniżej od razu przeliczają kolory na mapie. Kliknij mapę, żeby zobaczyć okolicę i dodać jej heks do porównania.'}
             </p>
           </div>

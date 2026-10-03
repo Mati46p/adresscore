@@ -99,6 +99,7 @@ const NAZWY_KATEGORII: Record<KategoriaId, string> = {
   codziennosc: 'Codzienność pieszo',
   transport: 'Transport',
   spokoj: 'Spokój i zdrowie',
+  spolecznosc: 'Społeczność i koszty',
   przyszlosc: 'Przyszłość okolicy',
   bezpieczenstwo: 'Bezpieczeństwo i ryzyko',
   kontekst: 'Kontekst',
@@ -109,6 +110,7 @@ const FRAZY_KATEGORII: Record<Exclude<KategoriaId, 'kontekst'>, string> = {
   codziennosc: 'bliżej do codziennych spraw pieszo',
   transport: 'lepszy dojazd komunikacją',
   spokoj: 'ciszej i zdrowiej',
+  spolecznosc: 'korzystniejsze warunki społeczne i koszty',
   przyszlosc: 'lepsze perspektywy okolicy',
   bezpieczenstwo: 'bezpieczniej',
 }

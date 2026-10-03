@@ -3,8 +3,8 @@
 // moduł src/kontrakty czyta import.meta.env, którego w Node nie ma.
 import type { KategoriaId, PlikWskaznika, WskaznikMeta } from '../kontrakty/index.ts'
 
-/** Kierunek, który może nadpisać użytkownik (makieta: ↑ ↓ ≈). */
-export type KierunekOceny = 'mniej-lepiej' | 'wiecej-lepiej' | 'optimum'
+/** Kierunek, który może nadpisać użytkownik. */
+export type KierunekOceny = 'mniej-lepiej' | 'wiecej-lepiej'
 
 /** Waga użytkownika per id wskaźnika, 0–4 jak w makiecie. Brak klucza = 0. */
 export type Wagi = Readonly<Record<string, number>>
@@ -18,6 +18,7 @@ export const KOLEJNOSC_KATEGORII = [
   'codziennosc',
   'transport',
   'spokoj',
+  'spolecznosc',
   'przyszlosc',
   'bezpieczenstwo',
   'kontekst',
@@ -72,8 +73,6 @@ export function literaZWyniku(wynik: number | null): Litera | null {
 //
 // Kierunki:
 // - `wiecej-lepiej` = 100 · u, `mniej-lepiej` = 100 − 100 · u (dokładne lustro).
-// - `optimum` (≈ w makiecie) = 100 w środku skali, 0 na obu brzegach. Na skali rangowej środek
-//   to mediana, więc ocena to odległość od mediany w rangach: 100 · (1 − 2 · |u − 0,5|).
 // - `neutralny` bez kierunku od użytkownika nie wchodzi do wyniku (ocena null).
 
 export interface Skala {
@@ -223,7 +222,7 @@ export function pozycjaNaSkali(wartosc: number | null | undefined, skala: Skala)
 function ocenaZPozycji(u: number, kierunek: KierunekOceny): number {
   if (kierunek === 'wiecej-lepiej') return 100 * u
   if (kierunek === 'mniej-lepiej') return 100 - 100 * u
-  return 100 * (1 - 2 * Math.abs(u - 0.5))
+  return 100 - 100 * u
 }
 
 /** Kierunek, który faktycznie liczy ocenę; null = wskaźnik nie wchodzi do wyniku. */
@@ -232,17 +231,12 @@ export function kierunekEfektywny(meta: WskaznikMeta, kierunki?: Kierunki): Kier
   // Atrapa ceny nie może zmienić prawdziwego wyniku, nawet przez stare ustawienia w URL.
   if (meta.id === 'cena_m2_mediana' && meta.atrapa) return null
   const k = kierunki?.[meta.id] ?? meta.kierunek
-  if (
-    k === 'optimum' &&
-    (meta.id === 'sct_w_strefie' || meta.id === 'spp_podstrefa' || KONTEKST_DO_WYNIKU[meta.id])
-  )
-    return null
   return k === 'neutralny' ? null : k
 }
 
 /** Jedynie te fakty z kontekstu mogą być dobrowolnie oceniane. */
 export const KONTEKST_DO_WYNIKU: Readonly<Record<string, KategoriaId>> = {
-  cena_m2_mediana: 'przyszlosc',
+  cena_m2_mediana: 'spolecznosc',
   drzewa_100m: 'codziennosc',
   ludnosc_1km: 'codziennosc',
   sejm2023_lista_1: 'kontekst',
@@ -255,7 +249,9 @@ export const KONTEKST_DO_WYNIKU: Readonly<Record<string, KategoriaId>> = {
 }
 
 function kategoriaWarstwy(meta: WskaznikMeta, liczona: boolean): KategoriaId {
-  return liczona ? (KONTEKST_DO_WYNIKU[meta.id] ?? meta.kategoria) : meta.kategoria
+  return liczona && meta.kategoria === 'kontekst'
+    ? (KONTEKST_DO_WYNIKU[meta.id] ?? meta.kategoria)
+    : meta.kategoria
 }
 
 /** Ocena 0–100, gdzie 100 = najlepiej. Brak danych albo brak kierunku → null, nigdy 0. */

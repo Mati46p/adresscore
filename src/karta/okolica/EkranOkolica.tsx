@@ -24,7 +24,9 @@ import {
 } from './wyjasnienie'
 import './okolica.css'
 
-const KATEGORIE_WYNIKU = (Object.keys(KATEGORIE) as KategoriaId[]).filter((k) => k !== 'kontekst')
+const KATEGORIE_WYNIKU = (Object.keys(KATEGORIE) as KategoriaId[]).filter(
+  (k) => k !== 'kontekst' && k !== 'przyszlosc',
+)
 const CoByToZmienilo = lazy(async () => ({
   default: (await import('../CoByToZmienilo')).CoByToZmienilo,
 }))

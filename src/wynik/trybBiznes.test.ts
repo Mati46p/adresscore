@@ -33,7 +33,7 @@ test('preferencje sklepu są osobne od ustawień mieszkaniowych podczas przełą
   ustawWage('sklep_odleglosc', 2)
   ustawTryb('kupuje')
   assert.equal(pobierzStan().wagi.halas_ldwn, 4)
-  assert.equal(pobierzStan().filtry.length, 1)
+  assert.equal(pobierzStan().filtry.length, 0)
   ustawTryb('biznes')
   assert.equal(pobierzStan().wagi.sklep_odleglosc, 2)
   assert.deepEqual(pobierzStan().filtry, [])

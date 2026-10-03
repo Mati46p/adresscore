@@ -284,8 +284,7 @@ export function Metoda() {
             </p>
             <p>
               Kierunek mówi, co jest lepsze. „Mniej lepiej" daje 100 przy najniższej wartości,
-              „więcej lepiej" przy najwyższej. Kierunek „optimum" daje 100 w środku przedziału.
-              Każdy kierunek możesz zmienić.
+              „więcej lepiej" przy najwyższej. Każdy kierunek możesz zmienić.
             </p>
             <p>
               Jeśli przepis albo wytyczne podają normę, norma leży w środku skali i daje ocenę 50.
@@ -405,10 +404,10 @@ export function Metoda() {
             Jeśli dodamy tę kategorię, to najwyżej na poziomie gminy albo komendy. Kategoria „
             {KATEGORIE.bezpieczenstwo}" dotyczy dziś ryzyk środowiskowych, jak powódź.
           </dd>
-          <dt>Inwestycje obok jakości</dt>
+          <dt>Inwestycje i koszty obok jakości</dt>
           <dd>
             Pokazujemy nie tylko, jak jest w okolicy, ale też co się w niej buduje. Kategoria „
-            {KATEGORIE.przyszlosc}" zawiera na przykład pozwolenia na budowę w promieniu 500 m.
+            {KATEGORIE.spolecznosc}" zawiera na przykład pozwolenia na budowę w promieniu 500 m.
             Okolica ze słabym wynikiem i dużymi inwestycjami wygląda inaczej niż okolica bez zmian.
           </dd>
           <dt>„Co by to zmieniło"</dt>

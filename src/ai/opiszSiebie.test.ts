@@ -429,7 +429,7 @@ describe('przetworzOdpowiedzi (JEV → zrozumienie)', () => {
   it('#147: profil Inwestor niesie przyszłość okolicy (potrzeba z tabeli, bez liczby JEV)', () => {
     const z = przetworzOdpowiedzi({ profil: { typ: 'choice', wybor: 'inwestor', pewnosc: 0.9 } })
     assert.deepEqual(z?.potrzeby, ['inwestycja'])
-    assert.equal(z?.kategorie.przyszlosc, 4)
+    assert.equal(z?.kategorie.spolecznosc, 4)
   })
 
   it('bez pewnego profilu persona wynika z mocnych potrzeb (bez procentu)', () => {
@@ -491,7 +491,7 @@ describe('#155: próg profilu i profil z mocnych potrzeb', () => {
     assert.equal(inw?.persona, 'inwestor')
     // Inwestor niesie przyszłość okolicy także z zapasu.
     assert.deepEqual(inw?.potrzeby, ['zielen', 'inwestycja'])
-    assert.equal(inw?.kategorie.przyszlosc, 4)
+    assert.equal(inw?.kategorie.spolecznosc, 4)
 
     const sam = przetworzOdpowiedzi(
       { profil: profil('singiel', 0.6), p_rower: noul(0.8) },

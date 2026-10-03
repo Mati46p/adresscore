@@ -7,8 +7,18 @@ import type { Kierunki, Wagi } from './silnik.ts'
 export type PersonaId = 'rodzina' | 'singiel' | 'senior' | 'inwestor' | 'od-zera'
 export type Tryb = 'kupuje' | 'wynajmuje' | 'biznes'
 
-/** Warstwy mające sens przy wyborze miejsca na sklep spożywczy. */
-export const WARSTWY_BIZNESU = ['sklep_odleglosc', 'ludnosc_1km'] as const
+export const BIZNESY = [
+  { id: 'sklep', nazwa: 'Sklep spożywczy', konkurencja: 'sklep_odleglosc' },
+  { id: 'gastronomia', nazwa: 'Gastronomia', konkurencja: 'gastronomia_odleglosc' },
+  { id: 'apteka', nazwa: 'Apteka', konkurencja: 'apteka_odleglosc' },
+  { id: 'weterynarz', nazwa: 'Gabinet weterynaryjny', konkurencja: 'weterynarz_odleglosc' },
+] as const
+export type RodzajBiznesu = (typeof BIZNESY)[number]['id']
+export const RODZAJ_BIZNESU_DOMYSLNY: RodzajBiznesu = 'sklep'
+export const WARSTWY_BIZNESU = [...BIZNESY.map((b) => b.konkurencja), 'ludnosc_1km'] as const
+export function warstwyBiznesu(rodzaj: RodzajBiznesu): readonly string[] {
+  return [BIZNESY.find((b) => b.id === rodzaj)?.konkurencja ?? 'sklep_odleglosc', 'ludnosc_1km']
+}
 
 export interface Persona {
   id: PersonaId
@@ -33,7 +43,7 @@ export const PERSONY: readonly Persona[] = [
       pm25_srednia: 3,
       zielen_udzial: 4,
       inwestycje_500m: 1,
-      powodz_1proc: 2,
+      powodz_10proc: 2,
     },
     // Budowa obok to hałas i ruch ciężarówek przez lata.
     kierunki: { inwestycje_500m: 'mniej-lepiej' },
@@ -50,7 +60,7 @@ export const PERSONY: readonly Persona[] = [
       pm25_srednia: 2,
       zielen_udzial: 2,
       inwestycje_500m: 0,
-      powodz_1proc: 1,
+      powodz_10proc: 1,
     },
     wagaNowych: 2,
   },
@@ -65,7 +75,7 @@ export const PERSONY: readonly Persona[] = [
       pm25_srednia: 4,
       zielen_udzial: 3,
       inwestycje_500m: 1,
-      powodz_1proc: 2,
+      powodz_10proc: 2,
     },
     kierunki: { inwestycje_500m: 'mniej-lepiej' },
     wagaNowych: 2,
@@ -81,7 +91,7 @@ export const PERSONY: readonly Persona[] = [
       pm25_srednia: 1,
       zielen_udzial: 1,
       inwestycje_500m: 4,
-      powodz_1proc: 3,
+      powodz_10proc: 3,
     },
     // Nowe pozwolenia = okolica rośnie, ceny pójdą w górę.
     kierunki: { inwestycje_500m: 'wiecej-lepiej' },
@@ -100,12 +110,12 @@ export const PERSONA_DOMYSLNA: PersonaId = 'rodzina'
 export const TRYB_DOMYSLNY: Tryb = 'kupuje'
 
 export const TRYBY: readonly { id: Tryb; nazwa: string; opis: string }[] = [
-  { id: 'kupuje', nazwa: 'Kupuję', opis: 'Na lata: liczy się przyszłość okolicy i ryzyko' },
+  { id: 'kupuje', nazwa: 'Kupuję', opis: 'Na lata: liczą się koszty i ryzyko' },
   { id: 'wynajmuje', nazwa: 'Wynajmuję', opis: 'Na teraz: liczy się dojazd i codzienność' },
   {
     id: 'biznes',
     nazwa: 'Miejsca do założenia biznesu',
-    opis: 'Sklep spożywczy: konkurencja i liczba mieszkańców',
+    opis: 'Wybierz rodzaj usług: konkurencja i liczba mieszkańców',
   },
 ]
 
@@ -115,8 +125,8 @@ export const TRYBY: readonly { id: Tryb; nazwa: string; opis: string }[] = [
 export const MODYFIKATORY_TRYBU: Readonly<
   Record<Tryb, Partial<Record<WskaznikMeta['kategoria'], number>>>
 > = {
-  kupuje: { przyszlosc: 1, bezpieczenstwo: 1 },
-  wynajmuje: { przyszlosc: -1, transport: 1 },
+  kupuje: { bezpieczenstwo: 1 },
+  wynajmuje: { transport: 1 },
   biznes: {},
 }
 
@@ -132,13 +142,14 @@ export function ustawieniaPersony(
   personaId: PersonaId,
   tryb: Tryb,
   wskazniki: readonly (Pick<WskaznikMeta, 'id' | 'kategoria'> &
-    Partial<Pick<WskaznikMeta, 'atrapa'>>)[],
+    Partial<Pick<WskaznikMeta, 'atrapa' | 'domyslnaWaga'>>)[],
+  rodzajBiznesu: RodzajBiznesu = RODZAJ_BIZNESU_DOMYSLNY,
 ): { wagi: Record<string, number>; kierunki: Kierunki } {
   if (tryb === 'biznes') {
     const rzeczywiste = new Set(wskazniki.filter((w) => !w.atrapa).map((w) => w.id))
     const wagi = Object.fromEntries(wskazniki.map((w) => [w.id, 0]))
     const kierunki: Record<string, Kierunki[string]> = {}
-    for (const id of WARSTWY_BIZNESU) {
+    for (const id of warstwyBiznesu(rodzajBiznesu)) {
       if (!rzeczywiste.has(id)) continue
       wagi[id] = 4
       kierunki[id] = 'wiecej-lepiej'
@@ -148,12 +159,12 @@ export function ustawieniaPersony(
   const persona = znajdzPersone(personaId) ?? (PERSONY[0] as Persona)
   const wagi: Record<string, number> = {}
   const kierunki: Record<string, Kierunki[string]> = {}
-  for (const { id, kategoria } of wskazniki) {
+  for (const { id, kategoria, domyslnaWaga } of wskazniki) {
     if (kategoria === 'kontekst') {
       wagi[id] = 0
       continue
     }
-    let w = persona.wagi[id] ?? persona.wagaNowych
+    let w = persona.wagi[id] ?? domyslnaWaga ?? persona.wagaNowych
     if (w > 0) w = Math.min(Math.max(w + (MODYFIKATORY_TRYBU[tryb][kategoria] ?? 0), 1), 4)
     wagi[id] = w
     const k = persona.kierunki?.[id]

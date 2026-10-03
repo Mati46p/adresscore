@@ -3,9 +3,6 @@
 //
 // Ocena heksu w macierzy = średnia ocen adresów z danymi dla kierunku „więcej = lepiej".
 // - „mniej = lepiej": 100 − ocena. Dokładnie, bo per adres ocena(mniej) = 100 − ocena(więcej).
-// - „optimum": 100 · (1 − 2·|ocena/100 − ½|) liczone ze średniej heksu. To przybliżenie
-//   (średnia z optimum adresów ≠ optimum średniej): heks z adresami po obu brzegach skali
-//   wychodzi lepiej niż w rzeczywistości. Karta adresu liczy optimum dokładnie z kafla.
 // - Wynik ważony heksu = średnia ważona ocen warstw heksu. Przeglądarka z pełnymi danymi
 //   liczyłaby najpierw wynik adresu, potem średnią po heksie – przy pełnych danych to to samo
 //   (średnia jest liniowa), różnica pojawia się tylko przy lukach w danych w obrębie heksu.

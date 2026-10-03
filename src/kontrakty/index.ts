@@ -7,6 +7,8 @@ export const KATEGORIE = {
   codziennosc: 'Codzienność pieszo',
   transport: 'Transport',
   spokoj: 'Spokój i zdrowie',
+  spolecznosc: 'Społeczność i koszty',
+  /** Zachowane wyłącznie dla zgodności starszych ustawień i testowych danych. */
   przyszlosc: 'Przyszłość okolicy',
   bezpieczenstwo: 'Bezpieczeństwo i ryzyko',
   // Fakty na karcie bez wpływu na wynik (demografia, ceny, kontekst gminy).
@@ -54,6 +56,8 @@ export interface WskaznikMeta {
   zakres?: [number, number]
   /** Numer zadania w GitHubie, które wyprodukowało warstwę. */
   zadanie: number
+  /** Domyślna waga nowej warstwy w profilu, gdy nie ma jej w ustawieniach persony. */
+  domyslnaWaga?: 0 | 1 | 2 | 3 | 4
   /** true = dane wymyślone (atrapa do pracy równoległej). Na karcie oznaczyć wprost. */
   atrapa?: boolean
 }

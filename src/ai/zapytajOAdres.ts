@@ -171,7 +171,7 @@ export const TEMATY: readonly Temat[] = [
     id: 'halas',
     nazwa: 'hałas',
     twierdzenie: `${O}, czy jest tu głośno albo cicho: hałas ulicy, tramwajów, pociągów, samolotów, spokój w nocy.`,
-    warstwy: ['halas_ldwn', 'halas_obwarzanek_lden'],
+    warstwy: ['halas_ldwn'],
     domyslna: 'halas_ldwn',
   },
   {
@@ -228,8 +228,8 @@ export const TEMATY: readonly Temat[] = [
     id: 'powodz',
     nazwa: 'powódź',
     twierdzenie: `${O}, czy grozi tu powódź: zalewanie, podtopienia, wysoka woda, wylew rzeki.`,
-    warstwy: ['powodz_1proc', 'powodz_10proc', 'powodz_02proc', 'gmina_powodz_powierzchnia_pct'],
-    domyslna: 'powodz_1proc',
+    warstwy: ['powodz_10proc'],
+    domyslna: 'powodz_10proc',
   },
   {
     id: 'komunikacja',
@@ -314,15 +314,15 @@ export const TEMATY: readonly Temat[] = [
     },
     warstwy: [
       'sklep_odleglosc',
-      'uslugi_15min',
-      'bankomat_poczta_odleglosc',
+      'gastronomia_1200m',
+      'poczta_1200m',
+      'biblioteka_1200m',
       'paczkomat_odleglosc',
       'weterynarz_odleglosc',
     ],
     domyslna: 'sklep_odleglosc',
     obiekty: {
       sklep_odleglosc: 'sklep',
-      bankomat_poczta_odleglosc: 'bankomat_poczta',
       paczkomat_odleglosc: 'paczkomat',
       weterynarz_odleglosc: 'weterynarz',
     },
@@ -847,7 +847,7 @@ export const REGULY: readonly {
     wzorce: [/ziel/, /\bpark(u|i|ow|iem)?\b/, /traw/, /przyrod/, /natur/],
   },
   {
-    warstwy: ['powodz_1proc', 'powodz_10proc', 'powodz_02proc', 'gmina_powodz_powierzchnia_pct'],
+    warstwy: ['powodz_10proc'],
     wzorce: [/zalew/, /zalan/, /powodz/, /podtop/, /wylew/],
   },
   {
@@ -872,7 +872,10 @@ export const REGULY: readonly {
     warstwy: ['sklep_odleglosc'],
     wzorce: [/sklep/, /zakup/, /spozyw/, /biedronk/, /zabk/, /\blidl/],
   },
-  { warstwy: ['uslugi_15min'], wzorce: [/uslug/, /15 minut/, /wszystko blisko/, /pod reka/] },
+  {
+    warstwy: ['gastronomia_1200m', 'poczta_1200m', 'biblioteka_1200m'],
+    wzorce: [/uslug/, /15 minut/, /wszystko blisko/, /pod reka/],
+  },
   { warstwy: ['lawki_300m'], wzorce: [/lawk/, /usiasc/] },
   { warstwy: ['obnizone_krawezniki_300m'], wzorce: [/kraweznik/, /wozk/, /niepelnospraw/] },
   { warstwy: ['oswietlenie_100m'], wzorce: [/latarn/, /oswietl/, /ciemno/] },
@@ -909,7 +912,7 @@ export const PODPOWIEDZI: readonly { pytanie: string; warstwa: string }[] = [
   { pytanie: 'Daleko do przystanku?', warstwa: 'przystanek_odleglosc' },
   { pytanie: 'Czy jest tu zielono?', warstwa: 'zielen_worldcover_100m' },
   { pytanie: 'Jakie jest powietrze?', warstwa: 'pm25_srednia' },
-  { pytanie: 'Czy tu zalewa?', warstwa: 'powodz_1proc' },
+  { pytanie: 'Czy tu zalewa?', warstwa: 'powodz_10proc' },
   { pytanie: 'Ile kosztuje metr?', warstwa: 'cena_m2_mediana' },
 ]
 
@@ -1043,22 +1046,7 @@ export interface ParaBlizniacza {
  * odpowiednika – `pozary_gmina_2025` to inna kategoria zdarzeń i ma dane wszędzie. Pozostałe
  * warstwy tylko krakowskie (np. `drzewa_100m`, `cena_m2_mediana`) nie mają bliźniaka.
  */
-export const BLIZNIACZE_WARSTWY: readonly ParaBlizniacza[] = [
-  {
-    krakow: 'halas_ldwn',
-    obwarzanek: 'halas_obwarzanek_lden',
-    notkaObwarzanek: 'dla tego adresu: mapa hałasu poza Krakowem (Lden, EEA)',
-    notkaKrakow: 'dla tego adresu: mapa hałasu Krakowa (LDWN, MSIP)',
-    pokrycie: { krakowWKrakowie: 0.99, obwarzanekPoza: 0.1 },
-  },
-  {
-    krakow: 'inwestycje_500m',
-    obwarzanek: 'inwestycje_500m_obwarzanek',
-    notkaObwarzanek: 'dla tego adresu: pozwolenia na budowę z rejestru GUNB (poza Krakowem)',
-    notkaKrakow: 'dla tego adresu: pozwolenia na budowę z MSIP Krakowa',
-    pokrycie: { krakowWKrakowie: 0.99, obwarzanekPoza: 0.99 },
-  },
-]
+export const BLIZNIACZE_WARSTWY: readonly ParaBlizniacza[] = []
 
 /** Bliźniak warstwy i notka na wypadek zamiany; null = warstwa bez pary. */
 export function blizniak(warstwa: string): { warstwa: string; notka: string } | null {

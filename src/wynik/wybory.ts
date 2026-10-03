@@ -8,7 +8,7 @@ export function czyWarstwaWyborow(id: string): boolean {
 export function zmienKomitet(
   id: string,
   wagi: Readonly<Record<string, number>>,
-  kierunki: Readonly<Record<string, 'wiecej-lepiej' | 'mniej-lepiej' | 'optimum'>>,
+  kierunki: Readonly<Record<string, 'wiecej-lepiej' | 'mniej-lepiej'>>,
   filtry: readonly { id: string; warunek: 'min' | 'max' | 'rowne-zero'; prog: number }[],
 ) {
   const poprzedni =

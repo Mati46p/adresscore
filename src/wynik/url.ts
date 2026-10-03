@@ -1,8 +1,8 @@
 // Router na hashu bez biblioteki: trzy ekrany i kilka parametrów do udostępniania.
 // Hash, a nie ścieżka, bo hosting SPA nie musi wtedy przepisywać adresów na index.html.
 import { filtryDoTekstu, filtryZTekstu, type TwardyFiltr } from './filtry.ts'
-import type { PersonaId, Tryb } from './persony.ts'
-import { PERSONY } from './persony.ts'
+import type { PersonaId, RodzajBiznesu, Tryb } from './persony.ts'
+import { BIZNESY, PERSONY } from './persony.ts'
 import type { Kierunki } from './silnik.ts'
 
 export type Ekran = 'szukaj' | 'okolica' | 'porownanie' | 'metoda' | 'katalog' | 'symulator'
@@ -13,6 +13,7 @@ export interface StanUrl {
   idAdresu: string | null
   persona: PersonaId | null
   tryb: Tryb | null
+  biznes?: RodzajBiznesu
   /** Id adresów na liście porównania. */
   porownanie: string[]
   /** Własne ustawienia wyniku, zapisane wyłącznie dla persony „własna”. */
@@ -49,8 +50,7 @@ function czytajUstawienia(tekst: string | null): StanUrl['ustawienia'] {
       return null
     if (
       kierunki.some(
-        ([id, wartosc]) =>
-          !id || !['wiecej-lepiej', 'mniej-lepiej', 'optimum'].includes(wartosc as string),
+        ([id, wartosc]) => !id || !['wiecej-lepiej', 'mniej-lepiej'].includes(wartosc as string),
       )
     )
       return null
@@ -92,6 +92,7 @@ export function czytajHash(hash: string): StanUrl {
 
   const p = parametry.get('p')
   const t = parametry.get('t')
+  const b = parametry.get('biz')
   const cmp = parametry.get('cmp')
   const ustawienia = czytajUstawienia(parametry.get('u'))
   return {
@@ -99,6 +100,7 @@ export function czytajHash(hash: string): StanUrl {
     idAdresu,
     persona: PERSONY.some((x) => x.id === p) ? (p as PersonaId) : null,
     tryb: t === 'kupuje' || t === 'wynajmuje' || t === 'biznes' ? t : null,
+    ...(BIZNESY.some((x) => x.id === b) ? { biznes: b as RodzajBiznesu } : {}),
     porownanie: cmp ? cmp.split(',').filter(Boolean).slice(0, MAKS_POROWNANIE) : [],
     ustawienia,
     filtry: filtryZTekstu(parametry.get('f')),
@@ -118,6 +120,7 @@ export function zapiszHash(s: StanUrl): string {
   const parametry = new URLSearchParams()
   if (s.persona) parametry.set('p', s.persona)
   if (s.tryb) parametry.set('t', s.tryb)
+  if (s.tryb === 'biznes' && s.biznes && s.biznes !== 'sklep') parametry.set('biz', s.biznes)
   if (s.porownanie.length) parametry.set('cmp', s.porownanie.join(','))
   if (s.ustawienia)
     parametry.set('u', JSON.stringify({ v: 1, w: s.ustawienia.wagi, k: s.ustawienia.kierunki }))

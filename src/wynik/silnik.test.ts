@@ -87,7 +87,6 @@ describe('dobrowolne punktowanie kontekstu i stref 0/1', () => {
     )
     const w = { sct_w_strefie: 2 }
     assert.equal(wynikAdresu(0, [strefa], w).wynik, null)
-    assert.equal(wynikAdresu(0, [strefa], w, { sct_w_strefie: 'optimum' }).wynik, null)
     assert.equal(wynikAdresu(1, [strefa], w, { sct_w_strefie: 'wiecej-lepiej' }).wynik, 100)
     assert.equal(wynikAdresu(0, [strefa], w, { sct_w_strefie: 'mniej-lepiej' }).wynik, 100)
     assert.equal(wynikiWszystkich([strefa], w, { sct_w_strefie: 'mniej-lepiej' }, 2)[1], 0)
@@ -140,7 +139,7 @@ describe('dobrowolne punktowanie kontekstu i stref 0/1', () => {
     )
     assert.equal(
       wynikAdresu(0, [realna], { cena_m2_mediana: 2 }, ustawienia).warstwy[0]?.kategoria,
-      'przyszlosc',
+      'spolecznosc',
     )
   })
 })
@@ -209,12 +208,6 @@ describe('ocena wskaźnika', () => {
     assert.equal(ocenWartosc(null, staly, 'wiecej-lepiej'), null)
     const bez = zbudujSkale(meta({ id: 'bez', zakres: undefined }), [null, null])
     assert.equal(ocenWartosc(7, bez, 'wiecej-lepiej'), null)
-  })
-
-  it('optimum: 100 w środku, 0 na brzegach', () => {
-    assert.equal(ocenWartosc(50, zielen.skala, 'optimum'), 100)
-    assert.equal(ocenWartosc(0, zielen.skala, 'optimum'), 0)
-    assert.equal(ocenWartosc(100, zielen.skala, 'optimum'), 0)
   })
 })
 

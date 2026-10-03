@@ -30,7 +30,7 @@ export const OSIE: readonly KategoriaId[] = [
   'codziennosc',
   'transport',
   'spokoj',
-  'przyszlosc',
+  'spolecznosc',
   'bezpieczenstwo',
 ]
 

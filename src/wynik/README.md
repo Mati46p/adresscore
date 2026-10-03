@@ -34,7 +34,7 @@ Zasady skali:
 - Norma wewnątrz przedziału daje ocenę 50. Przekroczenie normy zawsze daje mniej niż 50.
 - Kierunek `neutralny` nie liczy się do wyniku, dopóki użytkownik albo persona nie poda kierunku.
 - Kategoria `kontekst` nigdy nie liczy się do wyniku. Karta pokazuje ją jako fakt (`wartosc`).
-- Kierunek użytkownika: `mniej-lepiej` (↓), `wiecej-lepiej` (↑), `optimum` (≈, najlepszy środek przedziału).
+- Kierunek użytkownika: `mniej-lepiej` (↓) lub `wiecej-lepiej` (↑).
 
 `WynikAdresu`:
 

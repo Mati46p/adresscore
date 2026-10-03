@@ -28,13 +28,13 @@ import {
 } from './jev.ts'
 
 /** Kategorie liczone w wyniku – kontekst nie ma wagi z „opisz siebie”. */
-export type KategoriaOceniana = Exclude<KategoriaId, 'kontekst'>
+export type KategoriaOceniana = Exclude<KategoriaId, 'kontekst' | 'przyszlosc'>
 
 export const KATEGORIE_OCENIANE = [
   'codziennosc',
   'transport',
   'spokoj',
-  'przyszlosc',
+  'spolecznosc',
   'bezpieczenstwo',
 ] as const satisfies readonly KategoriaOceniana[]
 
@@ -44,7 +44,7 @@ export const ETYKIETY_KATEGORII = {
   codziennosc: 'Codzienność pieszo',
   transport: 'Transport',
   spokoj: 'Spokój i zdrowie',
-  przyszlosc: 'Przyszłość okolicy',
+  spolecznosc: 'Społeczność i koszty',
   bezpieczenstwo: 'Bezpieczeństwo i ryzyko',
 } as const satisfies { [K in KategoriaOceniana]: (typeof KATEGORIE)[K] }
 
@@ -52,7 +52,7 @@ const OPISY_KATEGORII: Record<KategoriaOceniana, string> = {
   codziennosc: 'sklepy, szkoły, przychodnie i usługi w zasięgu spaceru',
   transport: 'przystanki, częste kursy, dojazd do centrum i na lotnisko',
   spokoj: 'cisza, czyste powietrze, zieleń',
-  przyszlosc: 'inwestycje i rozwój okolicy',
+  spolecznosc: 'koszty, szkoły, inwestycje i społeczność',
   bezpieczenstwo: 'ryzyko powodzi i inne zagrożenia',
 }
 
@@ -274,7 +274,7 @@ export const POTRZEBY: readonly Potrzeba[] = [
     wzorce: [{ re: /\b(rower|hulajnog)/ }],
     // Warstwy dróg rowerowych jeszcze nie ma – rower to krótkie dystanse do usług.
     kategorie: { codziennosc: 3 },
-    wskazniki: { uslugi_15min: 4 },
+    wskazniki: { sklep_odleglosc: 4, gastronomia_1200m: 3, poczta_1200m: 3 },
   },
   {
     id: 'bez_samochodu',
@@ -299,7 +299,7 @@ export const POTRZEBY: readonly Potrzeba[] = [
       { re: /\b(komunikacj|tramwaj|autobus|mpk|przystan|metro|pociag)/ },
     ],
     kategorie: { transport: 4, codziennosc: 3 },
-    wskazniki: { przystanek_odleglosc: 4, kursy_szczyt_h: 4, uslugi_15min: 3 },
+    wskazniki: { przystanek_odleglosc: 4, kursy_szczyt_h: 4, sklep_odleglosc: 3 },
   },
   {
     id: 'senior',
@@ -369,14 +369,14 @@ export const POTRZEBY: readonly Potrzeba[] = [
     etykieta: 'sklepy pod ręką',
     wzorce: [{ re: /\b(sklep|zakup|uslug|wszystko blisko|wszedzie blisko|pieszo|na piechote)/ }],
     kategorie: { codziennosc: 4 },
-    wskazniki: { sklep_odleglosc: 4, uslugi_15min: 4 },
+    wskazniki: { sklep_odleglosc: 4, gastronomia_1200m: 2, poczta_1200m: 2 },
   },
   {
     id: 'bezpieczenstwo',
     etykieta: 'bezpieczeństwo',
     wzorce: [{ re: /\b(bezpieczn|powodz|zalan|zalew|wylew|podtopi|ryzyk)/ }],
     kategorie: { bezpieczenstwo: 4 },
-    wskazniki: { powodz_1proc: 4, powodz_10proc: 4, powodz_02proc: 3 },
+    wskazniki: { powodz_10proc: 4 },
   },
   {
     id: 'inwestycja',
@@ -385,7 +385,7 @@ export const POTRZEBY: readonly Potrzeba[] = [
       { re: /\b(inwest|na wynajem|pod wynajem|zysk|lokat|zarobi|wzrost cen|wartosc nieruchom)/ },
     ],
     persona: 'inwestor',
-    kategorie: { przyszlosc: 4 },
+    kategorie: { spolecznosc: 4 },
     wskazniki: { inwestycje_500m: 4, bo_projekty_1km: 3 },
   },
   {
@@ -753,7 +753,7 @@ export function wagiZeZrozumienia(
   for (const { id, kategoria } of wskazniki) {
     const przed = baza.wagi[id] ?? 0
     let w = przed
-    if (kategoria !== 'kontekst') {
+    if (kategoria !== 'kontekst' && kategoria !== 'przyszlosc') {
       const poziom = z.kategorie[kategoria]
       if (poziom !== undefined) w = poziom <= 1 ? Math.min(w, poziom) : Math.max(w, poziom)
       const minimum = z.wskazniki[id]
