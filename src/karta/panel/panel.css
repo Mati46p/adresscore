@@ -203,3 +203,19 @@
   background: #f0f2ef;
   color: var(--tekst-2);
 }
+.panel-pytanie {
+  flex: 0 0 100%;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tekst-2);
+}
+.panel-skala {
+  font-size: 12px;
+  color: var(--tekst-3);
+}
+.seg.panel-kier {
+  min-height: var(--cel-dotyku);
+  padding: 0 12px;
+  border-radius: 8px;
+  font-size: 14px;
+}

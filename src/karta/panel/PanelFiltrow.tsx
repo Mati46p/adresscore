@@ -15,10 +15,10 @@ import './panel.css'
 
 const SEGMENTY_WAGI = Array.from({ length: WAGA_MAX + 1 }, (_, n) => n)
 
-const KIERUNKI: readonly { id: KierunekOceny; znak: string; opis: string; tekst: string }[] = [
-  { id: 'wiecej-lepiej', znak: '↑', opis: 'Więcej lepiej', tekst: 'więcej to lepiej' },
-  { id: 'mniej-lepiej', znak: '↓', opis: 'Mniej lepiej', tekst: 'mniej to lepiej' },
-  { id: 'optimum', znak: '≈', opis: 'Optimum, środek skali', tekst: 'najlepszy środek skali' },
+const KIERUNKI: readonly { id: KierunekOceny; znak: string; opis: string }[] = [
+  { id: 'wiecej-lepiej', znak: '↑', opis: 'Więcej lepiej' },
+  { id: 'mniej-lepiej', znak: '↓', opis: 'Mniej lepiej' },
+  { id: 'optimum', znak: '≈', opis: 'Środek najlepszy' },
 ]
 
 const OPIS_TRYBU: Record<string, string> = {
@@ -31,6 +31,10 @@ const OPIS_TRYBU: Record<string, string> = {
 // Panel pamięta ostatni wybrany profil, żeby „Przywróć wagi profilu" działało po ręcznej
 // zmianie (stan wtedy trzyma tylko 'wlasna'). Zmienna modułu przeżywa zmianę ekranu.
 let ostatniaPersona: PersonaId = 'rodzina'
+
+function opisDomyslny(k: string): string {
+  return (KIERUNKI.find((x) => x.id === k)?.opis ?? k).toLowerCase()
+}
 
 function opisZrodla(w: WskaznikPrzygotowany): string {
   const { meta } = w
@@ -121,7 +125,8 @@ export function PanelFiltrow() {
           </span>
         </div>
         <p className="panel-uwaga">
-          Waga 0–4. Strzałka: czy więcej to lepiej (↑), mniej lepiej (↓), czy szukasz środka (≈).
+          Waga 0–4 mówi, jak ważna jest dla Ciebie warstwa: 0 – pomijam, 4 – bardzo ważne. Kierunek
+          mówi, czy lepiej więcej, czy mniej.
         </p>
         <div className="panel-akcje">
           <button
@@ -213,7 +218,6 @@ function Warstwa({
   const informacyjna = meta.kategoria === 'kontekst'
   const neutralna = meta.kierunek === 'neutralny'
   const kierunek = kierunekEfektywny(meta, kierunki)
-  const opisKierunku = KIERUNKI.find((k) => k.id === kierunek)
 
   return (
     <li className="panel-warstwa" title={meta.opis}>
@@ -228,46 +232,61 @@ function Warstwa({
       ) : (
         <>
           <div className="panel-sterowanie">
-            <div role="group" aria-label={`Waga: ${meta.nazwa}`} className="panel-seg-grupa">
+            <span id={`waga-${meta.id}`} className="panel-pytanie">
+              Jak ważne dla Ciebie?
+            </span>
+            <div role="group" aria-labelledby={`waga-${meta.id}`} className="panel-seg-grupa">
               {SEGMENTY_WAGI.map((n) => (
                 <button
                   key={n}
                   type="button"
                   className="seg panel-seg"
                   aria-pressed={waga === n}
-                  aria-label={`Waga ${n}: ${meta.nazwa}`}
+                  aria-label={`Waga ${n} z 4: ${meta.nazwa}`}
                   onClick={() => ustawWage(meta.id, n)}
                 >
                   {n}
                 </button>
               ))}
             </div>
-            {neutralna && (
-              <div role="group" aria-label={`Kierunek: ${meta.nazwa}`} className="panel-seg-grupa">
-                {KIERUNKI.map((k) => (
-                  <button
-                    key={k.id}
-                    type="button"
-                    className="seg panel-seg"
-                    title={k.opis}
-                    aria-pressed={kierunek === k.id}
-                    aria-label={`${k.opis}: ${meta.nazwa}`}
-                    onClick={() => ustawKierunek(meta.id, kierunek === k.id ? null : k.id)}
-                  >
-                    {k.znak}
-                  </button>
-                ))}
-              </div>
-            )}
+            <span className="panel-skala" aria-hidden="true">
+              0 – pomijam · 4 – bardzo ważne
+            </span>
+          </div>
+          <div className="panel-sterowanie">
+            <span id={`kier-${meta.id}`} className="panel-pytanie">
+              Co jest lepsze?
+            </span>
+            <div role="group" aria-labelledby={`kier-${meta.id}`} className="panel-seg-grupa">
+              {KIERUNKI.filter((k) => k.id !== 'optimum' || neutralna).map((k) => (
+                <button
+                  key={k.id}
+                  type="button"
+                  className="seg panel-kier"
+                  aria-pressed={kierunek === k.id}
+                  aria-label={`${k.opis}: ${meta.nazwa}`}
+                  // Kierunek z kontraktu nie trafia do stanu – nadpisanie zostaje tylko, gdy różni się
+                  // od domyślnego, więc „Przywróć wagi profilu" i link w URL zostają czyste.
+                  onClick={() =>
+                    ustawKierunek(
+                      meta.id,
+                      k.id === meta.kierunek || (neutralna && kierunek === k.id) ? null : k.id,
+                    )
+                  }
+                >
+                  <span aria-hidden="true">{k.znak}</span> {k.opis}
+                </button>
+              ))}
+            </div>
           </div>
           {neutralna && !kierunek && (
             <p className="panel-nota">
               Wybierz kierunek – bez niego warstwa nie liczy się do wyniku.
             </p>
           )}
-          {!neutralna && opisKierunku && (
+          {!neutralna && kierunek !== meta.kierunek && (
             <p className="panel-kierunek">
-              <span aria-hidden="true">{opisKierunku.znak}</span> {opisKierunku.tekst}
+              Zmieniony kierunek – domyślnie {opisDomyslny(meta.kierunek)}.
             </p>
           )}
         </>
