@@ -4,7 +4,7 @@ import type { PersonaId, Tryb } from './persony.ts'
 import { PERSONY } from './persony.ts'
 import type { Kierunki } from './silnik.ts'
 
-export type Ekran = 'szukaj' | 'okolica' | 'porownanie'
+export type Ekran = 'szukaj' | 'okolica' | 'porownanie' | 'metoda'
 
 export interface StanUrl {
   ekran: Ekran
@@ -74,6 +74,8 @@ export function czytajHash(hash: string): StanUrl {
     if (idAdresu !== null) ekran = 'okolica'
   } else if (czesci[0] === 'porownanie') {
     ekran = 'porownanie'
+  } else if (czesci[0] === 'metoda') {
+    ekran = 'metoda'
   }
 
   const p = parametry.get('p')
@@ -94,6 +96,7 @@ export function zapiszHash(s: StanUrl): string {
   let sciezka = '/'
   if (s.ekran === 'okolica' && s.idAdresu) sciezka = `/adres/${encodeURIComponent(s.idAdresu)}`
   else if (s.ekran === 'porownanie') sciezka = '/porownanie'
+  else if (s.ekran === 'metoda') sciezka = '/metoda'
   const parametry = new URLSearchParams()
   if (s.persona) parametry.set('p', s.persona)
   if (s.tryb) parametry.set('t', s.tryb)
