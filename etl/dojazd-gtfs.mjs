@@ -358,7 +358,6 @@ export async function generuj(data = dataRobocza(), cel = null) {
     jednostka: 'min',
     kierunek: 'mniej-lepiej',
     rozdzielczosc: 'adres',
-    zakres: [0, 120],
     zadanie: 38,
     zrodla,
   }

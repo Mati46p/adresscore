@@ -27,6 +27,8 @@ Kontrola dla danych z 2026-10-03: 160 487/176 684 adresów ma wartość, mediana
 Rynek Główny 10 ma 40 min, bliskie lotnisku adresy 1 min. Zakres 1–304 min. Miejsca bez trasy
 w modelu: 16 197 adresów, w tym gminy na obrzeżach z dojściem dalszym niż 1,2 km. Każdy adres
 dziedziczy tę samą wersję identyfikatorów co `adresy.json`.
+Skala punktacji powstaje z 5. i 95. percentyla wartości, bez deklarowanego sztywnego zakresu;
+surowe czasy powyżej percentyla pozostają dostępne na karcie.
 
 Silnik przyjmuje również współrzędne dowolnego celu:
 
