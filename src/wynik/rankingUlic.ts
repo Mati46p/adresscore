@@ -8,6 +8,8 @@ export interface PozycjaUlicy {
   dzielnica: string | null
   liczbaAdresow: number
   wynik: number
+  /** Indeks pierwszego adresu z danymi, który spełnia bieżące filtry. */
+  adresDoPorownania: number
 }
 
 /** Jeden wiersz na ulicę; ocena ulicy jest średnią ocen jej adresów z danymi. */
@@ -39,6 +41,7 @@ export function rankingUlic(
         liczbaAdresow: 1,
         suma: wynik,
         wynik: 0,
+        adresDoPorownania: i,
       })
     }
   }
