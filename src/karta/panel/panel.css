@@ -1,0 +1,205 @@
+/* Panel filtrów (#36). Klasy z prefiksem panel-, tokeny z src/styles.css. */
+.panel-wstep {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.panel-wstep h1 {
+  margin: 0;
+  font-size: 28px;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+.panel-wstep p {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--tekst-2);
+}
+.panel-sekcja {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.panel-uwaga {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--tekst-2);
+}
+
+/* Kafle trybu */
+.opt {
+  background: var(--powierzchnia);
+  border: 1px solid var(--ramka);
+  color: var(--tekst);
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+}
+.opt:hover {
+  border-color: var(--akcent-obrys);
+}
+.opt[aria-pressed="true"] {
+  background: var(--akcent-jasny);
+  border-color: var(--akcent);
+  box-shadow: inset 0 0 0 1px var(--akcent);
+}
+.panel-kafle {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.panel-kafel {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 64px;
+  padding: 12px 14px;
+  border-radius: var(--promien);
+}
+.panel-kafel-tytul {
+  font-size: 17px;
+  font-weight: 700;
+}
+.panel-kafel-opis {
+  font-size: 12px;
+  color: var(--tekst-2);
+}
+
+/* Persony */
+.panel-chipy {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* Wagi */
+.panel-wagi-glowa {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+}
+.panel-licznik {
+  font-size: 13px;
+  color: var(--tekst-2);
+}
+.panel-akcje {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.panel-akcja:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.panel-akcja:disabled:hover {
+  border-color: var(--ramka);
+}
+
+.panel-grupa {
+  border: 1px solid var(--ramka);
+  border-radius: var(--promien);
+  overflow: hidden;
+}
+.panel-grupa-glowa {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 12px 14px;
+  background: var(--powierzchnia-2);
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  color: var(--tekst);
+  text-align: left;
+}
+.panel-grupa-tytul {
+  font-size: 15px;
+  font-weight: 600;
+}
+.panel-grupa-podsumowanie {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--tekst-2);
+  text-align: right;
+}
+.panel-warstwy {
+  list-style: none;
+  margin: 0;
+  padding: 0 14px 8px;
+}
+.panel-warstwa {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 0;
+  border-top: 1px solid var(--linia);
+}
+.panel-warstwa-glowa {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 2px 8px;
+}
+.panel-warstwa-nazwa {
+  font-size: 14px;
+  font-weight: 500;
+}
+.panel-warstwa-zrodlo {
+  font-size: 11px;
+  color: var(--tekst-3);
+  overflow-wrap: anywhere;
+}
+.panel-atrapa {
+  font-size: 11px;
+  padding: 1px 6px;
+}
+.panel-sterowanie {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+}
+.panel-seg-grupa {
+  display: flex;
+  gap: 4px;
+}
+.seg.panel-seg {
+  width: 40px;
+  min-height: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 15px;
+}
+.panel-nota {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--ostrzezenie-tekst);
+}
+.panel-kierunek {
+  margin: 0;
+  font-size: 12px;
+  color: var(--tekst-2);
+}
+.panel-info {
+  margin: 0;
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: #f0f2ef;
+  color: var(--tekst-2);
+}
