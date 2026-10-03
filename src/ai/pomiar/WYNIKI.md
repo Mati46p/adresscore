@@ -1,5 +1,8 @@
 # Pomiar JEV po polsku (#18)
 
+> Najnowszy wynik – na zbiorze kontrolnym pisanym na ślepo – jest w sekcji
+> „Poprawki trafności (#147)”. Liczby z #18 niżej dotyczą zbioru, na którym potem stroiliśmy.
+
 Pomiar z 2026-10-03: JEV (TypeSafe, `jev-latest`) kontra reguły słów kluczowych na złożonych,
 potocznych opisach i pytaniach. Zbiory: `zbior-opisz.json` (30 opisów), `zbior-zapytaj.json`
 (28 pytań). Wyniki pozycja po pozycji: `wyniki-na-zywo.json`. Skrypt: `pomiar.ts`.
@@ -241,10 +244,174 @@ powtórzeń z #18. Pomiar: 56 płatnych wywołań (28 przed + 28 po).
 Powtórzenie: `node --env-file=.env.local src/ai/pomiar/pomiar.ts --na-zywo --tylko b`
 (sekcja „pytania złożone” i przeliczenie progów są w wyniku skryptu).
 
+## Poprawki trafności (#147)
+
+Pomiar z 2026-10-03. Trzy poprawki z błędów #18 i #146 i – przede wszystkim – **pierwszy pomiar
+na zbiorze, którego nie znał nikt, kto stroił aplikację**.
+
+> **Zastrzeżenie.** Zbiór kontrolny (`kontrolny-opisz.json`, 30 opisów; `kontrolny-zapytaj.json`,
+> 25 pytań) napisał na ślepo **inny agent AI** – bez dostępu do kodu, promptów, reguł i starych
+> zbiorów; dostał tylko listy id (potrzeby, profile, warstwy). To nadal AI, nie ludzie. Pliki
+> weszły do repo osobnym commitem przed jakąkolwiek zmianą kodu i są bajt w bajt takie, jak
+> je napisał (`src/ai/pomiar/biome.json` wyłącza je z formatowania). Etykiet nie zmieniałem.
+> Stroiłem **wyłącznie na starych zbiorach** (`zbior-*.json`) – te liczby są więc optymistyczne.
+> Zbioru kontrolnego w czasie strojenia nie czytałem (ani tekstów, ani wyników pozycja po
+> pozycji; `pomiar.ts --zbior kontrolny` drukuje same sumy). Przebiegi na nim były dwa:
+> przed zmianą (na `main`) i raz po – ten drugi to wynik nagłówkowy, po nim nic nie zmieniałem.
+
+### Co się zmieniło
+
+1. **Twierdzenia bez „i”.** `bez_samochodu`: „Osoba nie ma samochodu i jeździ komunikacją
+   miejską” → „Osoba nie ma samochodu”. Pozostałe twierdzenia potrzeb nie łączyły dwóch warunków.
+   Próbowałem je też zaostrzyć (dzieci, pies, praca w centrum, lekarz, opis profilu „nieznany”)
+   – na starym zbiorze A „dokładnie” spadło z 67% do 50%, więc wróciły do brzmienia z #16
+   (pośredni przebieg w tabeli niżej). Wersja „obywa się bez samochodu” łapała za dużo
+   (rowerzyści, seniorzy) – zostało najprostsze zdanie.
+2. **Potoczne słowa w opisach warstw** (`DOPISKI_WARSTW`): park, skwer, smog, dym z pieców,
+   korki, piwnica, „słychać tramwaje”, recepta/leki, Żabka, miejskie ogrzewanie…
+3. **Ostrzejsze tematy** (`TEMATY`): „Użytkownik chce się dowiedzieć, jak stąd dojechać
+   komunikacją…” zamiast „Pytanie (choćby w części) dotyczy komunikacji, tramwajów…”, z jawnymi
+   wykluczeniami czterech znanych fałszywych dodatków (hałas tramwajów ≠ komunikacja, apteka ≠
+   sklep, przepisy dla diesli ≠ powietrze, bezpieczeństwo jazdy rowerem ≠ zagrożenia).
+4. **Cudza sytuacja.** W tym samym wywołaniu JEV ocenia „Osoba opisuje własną obecną sytuację
+   i swoje potrzeby (nie cudzą, nie hipotetyczną, nie przeszłą)”. Poniżej 0,5: profil zostaje bez
+   zmian, poziomy kategorii przepadają, zostają tylko potrzeby z noul ≥ 0,9; pusty wynik to
+   „nic nie zrozumiano” od JEV, a nie zapas na reguły (reguły złapałyby słowa z cudzej sytuacji).
+5. **Wolne miejsce w limicie 16 pytań: „Przyszłość okolicy”.** Było 1 profil + 5 kategorii + 10
+   potrzeb. Usunąłem pytanie o poziom kategorii `przyszlosc`, bo w #18 JEV odszedł od środka
+   skali tylko w 2 z 30 opisów, a jeden z nich i tak był inwestorem. Tę kategorię niesie teraz
+   profil Inwestor: gdy JEV go wybierze, dochodzi potrzeba `inwestycja` z tabeli `POTRZEBY`
+   (przyszłość 4, wskaźniki inwestycji) – liczby z tabeli, nie od JEV. Scalanie dwóch potrzeb
+   odrzuciłem: zepsułoby porównanie z wzorcem pozycja po pozycji i chip „zrozumiałem”.
+   Koszt: tekst w rodzaju „żeby okolica się rozwijała” bez profilu Inwestor nie podnosi już
+   kategorii (w starym A tak było w 1 opisie – kategorie R 87% → 88%, bez straty).
+6. **Dwie warstwy z jednego tematu.** Tematy z różnymi obiektami (szkoły, zdrowie, sklepy,
+   rower – pole `obiekty`) dokładają drugą warstwę, gdy reguły słów kluczowych trafiają w pytaniu
+   inny obiekt niż pierwsza warstwa (przedszkole + żłobek, apteka + przychodnia, trasa + stojaki).
+   Bez dodatkowego wywołania JEV, tylko w wolne miejsca (różne tematy mają pierwszeństwo),
+   najwyżej 3, bez duplikatów; ta sama zasada w regule zapasowej. Przy okazji `/szkol/` →
+   `/\bszkol/`, bo „przedszkola” trafiało też szkołę.
+
+### Wynik nagłówkowy – zbiór kontrolny (na ślepo)
+
+**A – „opisz siebie”** (30 opisów):
+
+| | Reguły przed | Reguły po | JEV przed | **JEV po** |
+|---|---|---|---|---|
+| Profil trafiony | 57% | 57% | 57% | **63%** |
+| Potrzeby (10 z twierdzeniem) – P / R / F1 | 59 / 49 / 53% | 59 / 49 / 53% | 74 / 83 / 78% | **69 / 88 / 77%** |
+| Potrzeby – F1 na wszystkich 15 | 54% | 54% | 65% | **67%** |
+| Kategorie ważne – P / R / F1 | 71 / 65 / 68% | 71 / 65 / 68% | 79 / 71 / 75% | **75 / 83 / 79%** |
+| Cały opis zrozumiany dokładnie | 20% | 20% | 40% | **37%** |
+| Puste teksty → „nic nie zrozumiano” | 2/2 | 2/2 | 2/2 | 2/2 |
+
+**B – „zapytaj o adres”** (25 pytań: 15 pojedynczych, 7 złożonych, 3 spoza zakresu):
+
+| | Reguły przed | Reguły po | JEV przed | **JEV po** |
+|---|---|---|---|---|
+| Trafna warstwa główna (albo „nie wiem”) | 64% | 64% | 84% | **92%** |
+| Pytania pojedyncze – warstwa główna trafna | 6/15 | 6/15 | 12/15 | **14/15** |
+| Pokrycie pytań złożonych | 67% | 67% | 60% | **52%** |
+| Złożone z kompletem tematów | 2/7 | 2/7 | 2/7 | **1/7** |
+| Spoza zakresu → „nie wiem” bez dodatków | 3/3 | 3/3 | 3/3 | 3/3 |
+| Precyzja warstw | 94% | 89% | 88% | **92%** |
+| Fałszywe dodatki na pojedynczych (pytań) | 0 | 1 | 2 | 2 |
+| Zapas (JEV pod progiem → reguły) | – | – | 2/25 | 1/25 |
+
+JEV = to, co widzi użytkownik (JEV z zapasem). Reguły „opisz siebie” się nie zmieniły, stąd
+te same liczby.
+
+Jak to czytać – uczciwie:
+
+- **Na zbiorze kontrolnym liczby są wyraźnie niższe niż w #18.** „Dokładnie” 37% zamiast 67–73%,
+  profil 63% zamiast 90–93%. Część to stronniczość starego zbioru (pisał go agent, który znał
+  reguły i opisy), część to inna konwencja etykiet: autor zbioru kontrolnego daje profil `null`
+  każdej parze bez dzieci i każdemu, kto nie mówi wprost o profilu, a aplikacja nie ma profilu
+  „para”, więc JEV wybiera Singla. Reguły też spadają (dokładnie 30% → 20%, profil 73% → 57%).
+- **Poprawki pomagają głównie w „zapytaj o adres”:** warstwa główna 84% → 92% (pojedyncze
+  12 → 14 z 15), precyzja 88% → 92%. „Opisz siebie”: pełność potrzeb 83% → 88% i kategorie
+  F1 75% → 79%, ale precyzja potrzeb 74% → 69% (nowe twierdzenie „nie ma samochodu” trafia
+  częściej, także fałszywie: 6 z 30 opisów, z tego 4 nowe) i „dokładnie” o 1 opis mniej
+  (40% → 37%).
+- **Pytania złożone na zbiorze kontrolnym są gorsze: pokrycie 60% → 52%** (jedno pytanie:
+  „lekarz rodzinny i jakiś spożywczak” – temat sklepów 0,96 → 0,56, pod progiem 0,6).
+  Ostrzejsze tematy obniżają noul także tematom prawdziwym (np. „czy wieczorem nie jest
+  ciemno” – bezpieczeństwo 0,80 → 0,38; tu bez skutku, bo warstwa główna i tak była „nie
+  wiem”). Na starym zbiorze to samo przykryła druga warstwa z tematu (B24, B26, B28 – akurat te
+  pytania, które ją motywowały).
+- **Fałszywe dodatki na pojedynczych: dalej 2 na 15, ale inne.** Zniknęły „recepta” → sklep
+  i „przypiąć rower” → oświetlenie. Doszły „przypiąć rower” → trasa rowerowa (słowo „rower”
+  trafia regułę trasy – wada nowej drugiej warstwy) i „z psem do weta” → zieleń 0,71
+  (prawdopodobnie przez nowy dopisek zieleni „gdzie wyjść … z psem”).
+- **Bramka „własna sytuacja” działa, ale nie zawsze tak, jak chcemy:** „pytam w imieniu siostry,
+  … ja mam dzieci” – profil bez zmian (przed: Singiel + dzieci + praca w centrum). Ale „mama
+  z nami zamieszka, 84 lata” też spadło pod próg (0,18) – profil Senior przepadł, potrzeby
+  senior i lekarz zostały. Na starym zbiorze poniżej progu był tylko 1 z 30 opisów.
+
+**Etykiety, które uważam za sporne** (nie zmieniłem żadnej): K-A11 i K-A20 mają potrzebę
+`singiel`, a profil `null` (w aplikacji potrzeba `singiel` ustawia profil Singiel); K-A17 to
+samo z `senior`; K-A29 („kupuję dla córki na studia … albo wynajmę”) – Inwestor jest sporny;
+K-A19 („dojazd na Grzegórzki”) – `praca_centrum`, choć Grzegórzki to nie centrum w rozumieniu
+starego zbioru. Zbiór B wygląda poprawnie.
+
+### Stare zbiory (do strojenia) – przed i po
+
+A „przed” to przebieg 1 z #18 (to samo zapytanie co na `main`, kod „opisz siebie” od #18 się
+nie zmienił – bez nowych wywołań). B „przed” powtórzone teraz na `main`, bo lista warstw urosła
+(86 plików, w tym atrapy).
+
+| A, JEV | Przed (#18) | Pośrednio (wszystkie twierdzenia zaostrzone) | **Po** |
+|---|---|---|---|
+| Profil | 93% | 90% | **93%** |
+| Potrzeby P / R / F1 | 92 / 89 / 91% | 83 / 89 / 86% | **91 / 94 / 93%** |
+| Potrzeby F1 (wszystkie 15) | 77% | 75% | **80%** |
+| Kategorie P / R / F1 | 97 / 87 / 91% | 92 / 88 / 90% | **97 / 88 / 92%** |
+| Dokładnie | 67% | 50% | **73%** |
+
+| B | Reguły przed | Reguły po | JEV przed | **JEV po** |
+|---|---|---|---|---|
+| Trafna warstwa główna | 68% | 68% | 89% | **96%** |
+| Pojedyncze (warstwa główna) | 9/17 | 9/17 | 15/17 | **16/17** |
+| Pokrycie złożonych | 79% | 100% | 74% | **76%** |
+| Złożone w komplecie | 4/7 | 7/7 | 3/7 | **4/7** |
+| Precyzja warstw | 88% | 89% | 84% | **100%** |
+| Fałszywe dodatki na pojedynczych | 1 | 1 | 1 | **0** |
+| Zapas | – | – | 6/28 | 1/28 |
+
+Na starym zbiorze wszystko rośnie – na nim stroiłem, więc to nie jest dowód. Reguły złożone
+dochodzą do 100%, bo druga warstwa z tematu trafia dokładnie w trzy pytania, które ją
+motywowały.
+
+### Opóźnienie (p50 / p95 / max, pośrednik → api.typesafe.ai)
+
+| Przebieg | A (16 pytań w zapytaniu) | B (16 pytań) | Razem |
+|---|---|---|---|
+| Kontrolny przed | 271 / 412 / 713 ms | 308 / 408 / 412 ms | 302 / 412 / 713 ms |
+| Kontrolny po | 281 / 387 / 511 ms | 309 / 440 / 455 ms | 306 / 440 / 511 ms |
+| Stary B przed | – | 329 / 409 / 413 ms | – |
+| Stary A + B po | 267 / 327 / 395 ms | 321 / 411 / 411 ms | 297 / 410 / 411 ms |
+| Stary A po (końcowy) | 275 / 392 / 438 ms | – | – |
+
+Bez zmian: nadal jedno wywołanie na tekst, ok. 0,3 s, żadne nie przekroczyło 800 ms.
+
+### Wywołania na żywo
+
+**226 płatnych wywołań**: kontrolny przed 55, stary B przed 28, stary A + B po pierwszej wersji
+58, stary A po wycofaniu zaostrzeń 30, kontrolny po 55. Budżet zadania to ok. 220 – przekroczony
+o 6, bo pośredni przebieg A wypadł źle i trzeba było zmierzyć wersję końcową.
+
+Powtórzenie: `node --env-file=.env.local src/ai/pomiar/pomiar.ts --na-zywo --zbior kontrolny`
+(55 wywołań) i bez `--zbior` dla starych zbiorów (58).
+
 ## Na slajd
 
-- JEV rozumie złożone opisy w całości w 67% przypadków, reguły słów kluczowych w 30%.
-- Gdy ktoś wymienia kilka potrzeb naraz, JEV wyłapuje 9 z 10 z nich, reguły 7 z 10 – i trafia
-  profil w 93% opisów (reguły 73%).
-- Na pytanie o adres JEV wskazuje właściwe dane w 86% przypadków (reguły 64%) i odpowiada
+Liczby ze zbioru kontrolnego (#147), pisanego na ślepo przez osobnego agenta AI – są niższe niż
+w #18 (tamten zbiór pisał agent, który znał reguły i opisy, a etykiety mają inną konwencję). Zdania z #18 (67%, 9 z 10, 93%,
+86%) dotyczyły zbioru, na którym potem stroiliśmy, i na slajd już się nie nadają.
+
+- Na opisach, których nie widział nikt, kto stroił aplikację, JEV wyłapuje prawie 9 z 10 wymienionych
+  potrzeb, reguły słów kluczowych – 5 z 10.
+- Cały opis (profil i komplet potrzeb) JEV rozumie dokładnie w 37% przypadków, reguły w 20% –
+  złożone, potoczne opisy są trudne dla obu.
+- Na pytanie o adres JEV wskazuje właściwe dane w 92% przypadków (reguły 64%) i odpowiada
   w 0,3 sekundy.

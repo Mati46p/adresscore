@@ -4,6 +4,7 @@
 // Użycie (z katalogu repo):
 //   node src/ai/pomiar/pomiar.ts                      # tylko reguły, bez sieci i bez klucza
 //   node --env-file=.env.local src/ai/pomiar/pomiar.ts --na-zywo [--tylko a|b] [--wyjscie plik.json]
+//   … --zbior kontrolny     # zbiór pisany na ślepo (#147): tylko liczby zbiorcze, bez błędów
 //
 // Na żywo każda pozycja to JEDNO wywołanie JEV (ok. 58 na przebieg – to kosztuje). Idzie
 // tą samą ścieżką co aplikacja: klient (jev.ts, timeout 1,5 s) → pośrednik (api/_jev.js,
@@ -20,11 +21,13 @@ import type { PlikWskaznika } from '../../kontrakty/index.ts'
 import type { OdpowiedzJev, OpcjeKlienta } from '../jev.ts'
 import { zJevem } from '../jev.ts'
 import {
+  ID_WLASNEJ_SYTUACJI,
   KATEGORIE_OCENIANE,
   type KategoriaOceniana,
   nicNieZrozumiano,
   opiszSiebie,
   POTRZEBY,
+  PROG_WLASNEJ_SYTUACJI,
   PUSTE_ZROZUMIENIE,
   przetworzOdpowiedzi,
   type Zrozumienie,
@@ -62,10 +65,33 @@ interface PozycjaZapytaj {
   tematy: string[][]
 }
 
+const argv = process.argv.slice(2)
+const iZbior = argv.indexOf('--zbior')
+/**
+ * `--zbior kontrolny` (#147): zbiór odłożony, pisany na ślepo przez osobnego agenta bez dostępu
+ * do kodu. Na nim nic nie stroimy – raport pokazuje tylko liczby zbiorcze (bez tekstów i bez
+ * błędów pozycja po pozycji), żeby strojenie go nie widziało.
+ */
+const KONTROLNY = iZbior >= 0 && argv[iZbior + 1] === 'kontrolny'
+
 const KATALOG = new URL('./', import.meta.url)
 const czytaj = (plik: string) => JSON.parse(readFileSync(new URL(plik, KATALOG), 'utf8'))
-const ZBIOR_A: PozycjaOpisz[] = czytaj('zbior-opisz.json').pozycje
-const ZBIOR_B: PozycjaZapytaj[] = czytaj('zbior-zapytaj.json').pozycje
+/**
+ * Zbiór kontrolny ma ten sam schemat z dwiema różnicami: „spoza zakresu” to `[["nie_wiem"]]`
+ * (u nas `[]`), a „nic” nie jest jawne – to profil null i brak potrzeb.
+ */
+const ZBIOR_A: PozycjaOpisz[] = KONTROLNY
+  ? (czytaj('kontrolny-opisz.json').pozycje as PozycjaOpisz[]).map((p) => ({
+      ...p,
+      nic: p.nic ?? (p.persona === null && p.potrzeby.length === 0),
+    }))
+  : czytaj('zbior-opisz.json').pozycje
+const ZBIOR_B: PozycjaZapytaj[] = KONTROLNY
+  ? (czytaj('kontrolny-zapytaj.json').pozycje as PozycjaZapytaj[]).map((p) => ({
+      ...p,
+      tematy: p.tematy.filter((t) => !(t.length === 1 && t[0] === NIE_WIEM)),
+    }))
+  : czytaj('zbior-zapytaj.json').pozycje
 
 const KORZEN = new URL('../../../', import.meta.url)
 const katalogWskaznikow = new URL('public/dane/wskazniki/', KORZEN)
@@ -194,6 +220,8 @@ interface WynikA {
     /** Ocena twierdzeń (noul 0–1) dla potrzeb z twierdzeniem. */
     noul: Record<string, number | null>
     poziomy: Record<string, number | null>
+    /** #147: ocena twierdzenia „opisuje własną obecną sytuację” (noul 0–1). */
+    wlasna: number | null
   }
 }
 
@@ -230,6 +258,7 @@ async function biegA(naZywo: Awaited<ReturnType<typeof klientNaZywo>> | null): P
         const x = odp?.[`kat_${k}`]
         poziomy[k] = x?.typ === 'score' ? x.ocena : null
       }
+      const wlasna = odp?.[ID_WLASNEJ_SYTUACJI]
       w.jev = {
         ms: o.ms,
         zrodlo: r.zrodlo,
@@ -237,6 +266,7 @@ async function biegA(naZywo: Awaited<ReturnType<typeof klientNaZywo>> | null): P
         profil: profil?.typ === 'choice' ? { wybor: profil.wybor, pewnosc: profil.pewnosc } : null,
         noul,
         poziomy,
+        wlasna: wlasna?.typ === 'noul' ? wlasna.noul : null,
       }
       process.stderr.write(`A ${p.id} ${o.ms} ms ${r.zrodlo}\n`)
     }
@@ -481,7 +511,12 @@ function raport(a: WynikA[], b: WynikB[], naZywo: boolean) {
   const systemyA = wszystkie.filter((s) => a.some((w) => w.systemy[s]))
   const systemyB = wszystkie.filter((s) => b.some((w) => s in w.systemy))
   const out: string[] = []
-  out.push(`## A – opisz siebie (${a.length} pozycji)`, '')
+  out.push(
+    `# Zbiór: ${KONTROLNY ? 'kontrolny (na ślepo)' : 'wzorcowy (do strojenia)'}`,
+    '',
+    `## A – opisz siebie (${a.length} pozycji)`,
+    '',
+  )
   out.push(
     '| system | profil | potrzeby P / R / F1 (10 z twierdzeniem) | potrzeby F1 (wszystkie 15) | kategorie P / R / F1 | dokładnie | „nic” | „obojętne” |',
     '|---|---|---|---|---|---|---|---|',
@@ -533,8 +568,8 @@ function raport(a: WynikA[], b: WynikB[], naZywo: boolean) {
       const przeliczone = b.map((w) => ({ tematy: w.tematy, wiele: { x: przeliczProg(w, prog) } }))
       out.push(wierszWiele(String(prog), ocenWiele(przeliczone, 'x')))
     }
-    out.push('', 'Oceny tematów ≥ 0,3 (noul):', '')
-    for (const w of b) {
+    if (!KONTROLNY) out.push('', 'Oceny tematów ≥ 0,3 (noul):', '')
+    for (const w of KONTROLNY ? [] : b) {
       const t = Object.entries(w.jev?.tematy ?? {})
         .filter(([, v]) => v !== null && v >= 0.3)
         .sort((x, y) => (y[1] ?? 0) - (x[1] ?? 0))
@@ -602,6 +637,7 @@ function raport(a: WynikA[], b: WynikB[], naZywo: boolean) {
       `- Opóźnienie p50 / p95 / max: A ${lat(msA)}; B ${lat(msB)}; razem ${lat(ms)}`,
       `- A, pewność profilu: trafny ${sr(profilTrafny)}, błędny ${sr(profilBledny)}`,
       `- A, noul potrzeb: we wzorcu ${sr(noulTak)}, poza wzorcem ${sr(noulNie)}`,
+      `- A, „własna sytuacja” (#147): średnio ${sr(a.flatMap((w) => (w.jev?.wlasna == null ? [] : [w.jev.wlasna])))}, poniżej progu ${PROG_WLASNEJ_SYTUACJI}: ${a.filter((w) => w.jev?.wlasna != null && w.jev.wlasna < PROG_WLASNEJ_SYTUACJI).length}`,
       `- B, pewność warstwy: trafna ${sr(warstwaTrafna)}, błędna ${sr(warstwaBledna)}`,
     )
     podsumowanie = {
@@ -620,6 +656,10 @@ function raport(a: WynikA[], b: WynikB[], naZywo: boolean) {
       },
     }
   }
+  if (KONTROLNY) {
+    out.push('', 'Zbiór kontrolny: bez błędów pozycja po pozycji (nie stroimy na nim).')
+    return { tekst: out.join('\n'), podsumowanie }
+  }
   out.push('', '## Błędy', '')
   for (const s of wszystkie) {
     if (!ocenyA[s] && !ocenyB[s]) continue
@@ -633,7 +673,6 @@ function raport(a: WynikA[], b: WynikB[], naZywo: boolean) {
 
 // ── Start ─────────────────────────────────────────────────────────────────────────────────
 
-const argv = process.argv.slice(2)
 const naZywo = argv.includes('--na-zywo')
 const iWyjscie = argv.indexOf('--wyjscie')
 const wyjscie = iWyjscie >= 0 ? argv[iWyjscie + 1] : undefined

@@ -393,6 +393,78 @@ describe('tematy – pytania złożone (#146)', () => {
     assert.deepEqual(w?.warstwy, ['pm25_srednia', 'drzewa_100m'])
   })
 
+  it('#147: dwa różne obiekty z jednego tematu → druga warstwa z reguł, bez nowego wywołania', () => {
+    // Przedszkole + żłobek: JEV wybiera przedszkole, temat szkół ma noul wysoko, reguły trafiają
+    // w obie warstwy – druga stoi zaraz po pierwszej.
+    const w = przetworzWiele(
+      odp('przedszkole_odleglosc', 0.9, { szkoly: 0.98, demografia: 0.65 }),
+      pelna,
+      'Blisko do przedszkola i żłobka?',
+    )
+    assert.deepEqual(w?.warstwy, ['przedszkole_odleglosc', 'zlobek_odleglosc', 'ludnosc_1km'])
+    // Apteka + przychodnia; rower + stojaki.
+    assert.deepEqual(
+      przetworzWiele(
+        odp('apteka_odleglosc', 0.9, { zdrowie: 0.98 }),
+        pelna,
+        'Apteka i przychodnia?',
+      )?.warstwy,
+      ['apteka_odleglosc', 'przychodnia_odleglosc'],
+    )
+    assert.deepEqual(
+      przetworzWiele(
+        odp('rower_infrastruktura_odleglosc', 0.9, { rower: 0.98 }),
+        pelna,
+        'Dojadę rowerem i gdzie go przypiąć?',
+      )?.warstwy,
+      ['rower_infrastruktura_odleglosc', 'stojaki_300m'],
+    )
+  })
+
+  it('#147: druga warstwa z tematu tylko w wolne miejsce, bez duplikatów, ≤ 3', () => {
+    const w = przetworzWiele(
+      odp('przedszkole_odleglosc', 0.9, { szkoly: 0.98, halas: 0.9, zielen: 0.9 }),
+      pelna,
+      'Przedszkole, żłobek, cisza i zieleń?',
+    )
+    // Różne tematy mają pierwszeństwo – żłobek się nie mieści.
+    assert.deepEqual(w?.warstwy, ['przedszkole_odleglosc', 'halas_ldwn', 'zielen_worldcover_100m'])
+    assert.equal(new Set(w?.warstwy).size, w?.warstwy.length)
+  })
+
+  it('#147: jedna rzecz z tematu albo temat miar jednej rzeczy → jedna warstwa jak dotąd', () => {
+    // Tylko przedszkole – reguły trafiają jedną warstwę w temacie.
+    assert.deepEqual(
+      przetworzWiele(
+        odp('przedszkole_odleglosc', 0.9, { szkoly: 0.98 }),
+        pelna,
+        'Daleko do przedszkola?',
+      )?.warstwy,
+      ['przedszkole_odleglosc'],
+    )
+    // Przychodnia bez barier i „lekarz” to ten sam obiekt – bez drugiej warstwy.
+    assert.deepEqual(
+      przetworzWiele(
+        odp('przychodnia_bez_barier_odleglosc', 0.9, { zdrowie: 0.98 }),
+        pelna,
+        'Czy przychodnia jest bez barier dla wózka, daleko do lekarza?',
+      )?.warstwy,
+      ['przychodnia_bez_barier_odleglosc'],
+    )
+    // Obiekty tematu to jego warstwy.
+    for (const t of TEMATY)
+      for (const w of Object.keys(t.obiekty ?? {})) assert.ok(t.warstwy.includes(w), w)
+    // Powietrze to kilka miar jednego (smog i piece) – bez drugiej warstwy.
+    assert.deepEqual(
+      przetworzWiele(
+        odp('pm25_srednia', 0.9, { powietrze: 0.98 }),
+        pelna,
+        'Da się tu oddychać zimą, jak palą w piecach?',
+      )?.warstwy,
+      ['pm25_srednia'],
+    )
+  })
+
   it('pewne nie_wiem → „nie wiem” bez dodatków, nawet gdy tematy są wysoko', () => {
     assert.deepEqual(
       przetworzWiele(odp(NIE_WIEM, 0.9, { ceny: 0.9, halas: 0.8 }), pelna, 'czynsz?'),
@@ -431,6 +503,9 @@ describe('regulaWiele – reguła zapasowa z kilkoma tematami', () => {
     ],
     // Dwie reguły z jednego tematu (powietrze) → jedna warstwa; remis – wyżej w REGULY.
     ['Jaki smog i ile NO2?', ['no2_srednia']],
+    // #147: dwa różne obiekty z jednego tematu → dwie warstwy.
+    ['Blisko do przedszkola i żłobka?', ['przedszkole_odleglosc', 'zlobek_odleglosc']],
+    ['Jest tu apteka i przychodnia na spacer?', ['apteka_odleglosc', 'przychodnia_odleglosc']],
     ['Jak głośno tu jest?', ['halas_ldwn']],
     ['Jaki jest kolor nieba?', []],
   ]

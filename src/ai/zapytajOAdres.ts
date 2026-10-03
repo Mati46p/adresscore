@@ -37,12 +37,37 @@ export const POLECENIE =
  * Dopiski do opisu warstwy dla JEV (przed opisem z danych, żeby nie uciął ich limit 300 znaków).
  * Trzy warstwy powodzi różnią się tylko prawdopodobieństwem, więc JEV rozkładał pewność między
  * nie i na „Czy piwnica może zalać?” spadał pod próg (pomiar #18) – wskazujemy domyślną.
+ * #147: potoczne słowa, którymi ludzie pytają (park, skwer, smog, korki…). Opisy z danych są
+ * techniczne („odsetek powierzchni oczka 100 m…”), a słowo „park” w nich nie pada (B19 w #18).
  */
 const DOPISKI_WARSTW: Readonly<Record<string, string>> = {
   powodz_1proc:
-    'Domyślna odpowiedź na pytania, czy tu zalewa, czy zaleje piwnicę, o powódź i podtopienia.',
+    'Domyślna odpowiedź na pytania, czy tu zalewa, czy zaleje piwnicę, o powódź, wysoką wodę, wylewy rzeki i podtopienia.',
   powodz_10proc: 'Tylko gdy pytanie wprost dotyczy częstych zalań (co kilka lat).',
   powodz_02proc: 'Tylko gdy pytanie wprost dotyczy najgorszego, skrajnie rzadkiego scenariusza.',
+  zielen_worldcover_100m:
+    'Domyślna odpowiedź na pytania o zieleń: park, skwer, trawnik, czy jest zielono, gdzie wyjść na spacer albo z psem.',
+  drzewa_100m: 'Odpowiedź na pytania o drzewa przy ulicy i pod oknem.',
+  pm25_srednia:
+    'Domyślna odpowiedź na pytania o smog, czyste powietrze i czym się tu oddycha (astma, alergia).',
+  bap_srednia: 'Odpowiedź na pytania o dym z pieców i palenie węglem.',
+  halas_ldwn:
+    'Domyślna odpowiedź na pytania, czy jest głośno albo cicho, czy słychać ulicę, tramwaje albo pociągi i czy da się spać przy otwartym oknie.',
+  przystanek_odleglosc:
+    'Domyślna odpowiedź na pytania o komunikację miejską: tramwaj, autobus, MPK, daleko do przystanku.',
+  kursy_szczyt_h: 'Odpowiedź na pytania, jak często coś jeździ i ile się czeka.',
+  rynek_czas_min:
+    'Odpowiedź na pytania, ile się jedzie do centrum albo na Rynek, także rano w korkach.',
+  kolej_odleglosc: 'Odpowiedź na pytania o pociąg, stację i dojazd koleją.',
+  sklep_odleglosc: 'Domyślna odpowiedź na pytania o sklep i zakupy (Biedronka, Żabka, Lidl).',
+  przychodnia_odleglosc:
+    'Domyślna odpowiedź na pytania o lekarza rodzinnego, przychodnię i ośrodek zdrowia.',
+  apteka_odleglosc: 'Odpowiedź na pytania o aptekę i leki.',
+  szkola_podst_odleglosc: 'Domyślna odpowiedź na pytania o szkołę i podstawówkę.',
+  spp_podstrefa: 'Odpowiedź na pytania, czy za parkowanie auta pod domem trzeba płacić.',
+  inwestycje_500m: 'Odpowiedź na pytania, czy coś tu wybudują, czy będzie budowa za oknem.',
+  oswietlenie_100m: 'Odpowiedź na pytania, czy wieczorem na ulicy jest jasno.',
+  siec_cieplownicza_odleglosc: 'Odpowiedź na pytania o miejskie ogrzewanie i ciepło z sieci.',
 }
 
 /** Warstwa z danymi pod adresami – podzbiór `WskaznikPrzygotowany` z src/wynik/silnik.ts. */
@@ -127,23 +152,33 @@ export interface Temat {
   warstwy: readonly string[]
   /** Warstwa, którą temat dokłada, gdy reguły nie wskażą lepszej z grupy. */
   domyslna: string
+  /**
+   * #147: warstwa → obiekt, gdy temat to grupa różnych obiektów (przedszkole i żłobek, apteka
+   * i przychodnia), a nie kilku miar jednej rzeczy (jak powietrze). Gdy pytanie wprost nazywa
+   * drugi obiekt (trafia go reguła słów kluczowych), temat może dołożyć drugą warstwę.
+   * Dwie warstwy jednego obiektu (przychodnia i przychodnia bez barier) to nadal jedna rzecz.
+   */
+  obiekty?: Readonly<Record<string, string>>
 }
 
-const O = 'Pytanie (choćby w części) dotyczy'
+// #147: twierdzenie mówi, o co użytkownik PYTA, a nie o czym wspomina. Wcześniejsze „Pytanie
+// (choćby w części) dotyczy …” łapało samo słowo: „słychać tramwaje” → komunikacja, „apteka”
+// → sklepy, „dieslem” → powietrze, „bezpiecznie rowerem” → zagrożenia (pomiar #146).
+const O = 'Użytkownik chce się dowiedzieć'
 
 /** Stała kolejność – JEV widzi ją w zapytaniu, a remis noul rozstrzyga pozycja na liście. */
 export const TEMATY: readonly Temat[] = [
   {
     id: 'halas',
     nazwa: 'hałas',
-    twierdzenie: `${O} hałasu, ciszy albo tego, czy w nocy jest spokojnie.`,
+    twierdzenie: `${O}, czy jest tu głośno albo cicho: hałas ulicy, tramwajów, pociągów, samolotów, spokój w nocy.`,
     warstwy: ['halas_ldwn', 'halas_obwarzanek_lden'],
     domyslna: 'halas_ldwn',
   },
   {
     id: 'powietrze',
     nazwa: 'powietrze',
-    twierdzenie: `${O} jakości powietrza, smogu, spalin albo palenia w piecach.`,
+    twierdzenie: `${O}, jakim powietrzem się tu oddycha: smog, pyły, spaliny, dym z pieców. Pytanie o przepisy dla aut (wjazd do strefy, mandat) to nie to.`,
     warstwy: [
       'pm25_srednia',
       'pm10_srednia',
@@ -157,7 +192,7 @@ export const TEMATY: readonly Temat[] = [
   {
     id: 'zielen',
     nazwa: 'zieleń',
-    twierdzenie: `${O} zieleni, parków, drzew, skwerów albo przyrody w okolicy.`,
+    twierdzenie: `${O}, czy w okolicy jest zieleń: parki, skwery, drzewa, las, przyroda, miejsce na spacer.`,
     warstwy: [
       'zielen_worldcover_100m',
       'zielen_udzial',
@@ -171,14 +206,14 @@ export const TEMATY: readonly Temat[] = [
   {
     id: 'powodz',
     nazwa: 'powódź',
-    twierdzenie: `${O} powodzi, zalewania, podtopień albo wysokiej wody.`,
+    twierdzenie: `${O}, czy grozi tu powódź: zalewanie, podtopienia, wysoka woda, wylew rzeki.`,
     warstwy: ['powodz_1proc', 'powodz_10proc', 'powodz_02proc', 'gmina_powodz_powierzchnia_pct'],
     domyslna: 'powodz_1proc',
   },
   {
     id: 'komunikacja',
     nazwa: 'komunikacja',
-    twierdzenie: `${O} komunikacji publicznej: przystanków, tramwajów, autobusów, pociągów albo czasu dojazdu.`,
+    twierdzenie: `${O}, jak stąd dojechać komunikacją publiczną: odległość do przystanku albo stacji, jak często jeździ, ile trwa dojazd. Hałas od tramwajów to nie to.`,
     warstwy: [
       'przystanek_odleglosc',
       'kursy_szczyt_h',
@@ -194,7 +229,7 @@ export const TEMATY: readonly Temat[] = [
   {
     id: 'szkoly',
     nazwa: 'szkoły i przedszkola',
-    twierdzenie: `${O} szkół, przedszkoli, żłobków albo placów zabaw dla dzieci.`,
+    twierdzenie: `${O}, czy blisko jest szkoła, przedszkole, żłobek albo plac zabaw dla dzieci.`,
     warstwy: [
       'szkola_podst_odleglosc',
       'przedszkole_odleglosc',
@@ -204,11 +239,19 @@ export const TEMATY: readonly Temat[] = [
       'plac_zabaw_odleglosc',
     ],
     domyslna: 'szkola_podst_odleglosc',
+    obiekty: {
+      szkola_podst_odleglosc: 'szkola',
+      szkola_podst_wynik_e8: 'szkola',
+      przedszkole_odleglosc: 'przedszkole',
+      zlobek_odleglosc: 'zlobek',
+      liceum_odleglosc: 'liceum',
+      plac_zabaw_odleglosc: 'plac_zabaw',
+    },
   },
   {
     id: 'zdrowie',
     nazwa: 'zdrowie',
-    twierdzenie: `${O} lekarza, przychodni, apteki albo pomocy medycznej w pobliżu.`,
+    twierdzenie: `${O}, czy blisko jest lekarz, przychodnia, apteka albo inna pomoc medyczna.`,
     warstwy: [
       'przychodnia_odleglosc',
       'przychodnia_bez_barier_odleglosc',
@@ -216,11 +259,17 @@ export const TEMATY: readonly Temat[] = [
       'defibrylator_odleglosc',
     ],
     domyslna: 'przychodnia_odleglosc',
+    obiekty: {
+      przychodnia_odleglosc: 'przychodnia',
+      przychodnia_bez_barier_odleglosc: 'przychodnia',
+      apteka_odleglosc: 'apteka',
+      defibrylator_odleglosc: 'defibrylator',
+    },
   },
   {
     id: 'sklepy',
     nazwa: 'sklepy i usługi',
-    twierdzenie: `${O} sklepów, zakupów, usług, poczty, bankomatu albo paczkomatu w pobliżu.`,
+    twierdzenie: `${O}, czy blisko są sklepy albo usługi: zakupy, poczta, bankomat, paczkomat, weterynarz. Apteka i lekarz to nie sklepy.`,
     warstwy: [
       'sklep_odleglosc',
       'uslugi_15min',
@@ -229,18 +278,24 @@ export const TEMATY: readonly Temat[] = [
       'weterynarz_odleglosc',
     ],
     domyslna: 'sklep_odleglosc',
+    obiekty: {
+      sklep_odleglosc: 'sklep',
+      bankomat_poczta_odleglosc: 'bankomat_poczta',
+      paczkomat_odleglosc: 'paczkomat',
+      weterynarz_odleglosc: 'weterynarz',
+    },
   },
   {
     id: 'ceny',
     nazwa: 'ceny mieszkań',
-    twierdzenie: `${O} cen mieszkań, kosztu metra kwadratowego albo wartości nieruchomości.`,
+    twierdzenie: `${O}, ile kosztują tu mieszkania: cena metra kwadratowego, czy jest drogo, ile warta jest nieruchomość.`,
     warstwy: ['cena_m2_mediana'],
     domyslna: 'cena_m2_mediana',
   },
   {
     id: 'bezpieczenstwo',
     nazwa: 'bezpieczeństwo',
-    twierdzenie: `${O} bezpieczeństwa na ulicy, oświetlenia wieczorem, policji albo przestępczości.`,
+    twierdzenie: `${O}, czy okolica jest bezpieczna od przestępstw i zdarzeń: oświetlenie ulic wieczorem, policja, interwencje służb, pożary. Bezpieczeństwo jazdy rowerem to nie to.`,
     warstwy: [
       'oswietlenie_100m',
       'policja_odleglosc',
@@ -253,28 +308,33 @@ export const TEMATY: readonly Temat[] = [
   {
     id: 'parkowanie',
     nazwa: 'parkowanie',
-    twierdzenie: `${O} parkowania samochodu, płatnej strefy parkowania albo wjazdu autem do strefy.`,
+    twierdzenie: `${O} czegoś o samochodzie w okolicy: parkowanie, płatna strefa parkowania, parking P+R, wjazd autem do strefy czystego transportu.`,
     warstwy: ['spp_podstrefa', 'sct_w_strefie', 'pr_odleglosc'],
     domyslna: 'spp_podstrefa',
   },
   {
     id: 'rower',
     nazwa: 'rower',
-    twierdzenie: `${O} jazdy rowerem, dróg rowerowych albo stojaków na rowery.`,
+    twierdzenie: `${O}, jak tu jeździć rowerem: drogi i trasy rowerowe albo stojaki, gdzie przypiąć rower.`,
     warstwy: ['rower_infrastruktura_odleglosc', 'droga_rowerowa_odleglosc', 'stojaki_300m'],
     domyslna: 'rower_infrastruktura_odleglosc',
+    obiekty: {
+      rower_infrastruktura_odleglosc: 'trasa',
+      droga_rowerowa_odleglosc: 'trasa',
+      stojaki_300m: 'stojaki',
+    },
   },
   {
     id: 'demografia',
     nazwa: 'demografia',
-    twierdzenie: `${O} tego, kto mieszka w okolicy: ilu jest tu ludzi, rodzin z dziećmi albo seniorów.`,
+    twierdzenie: `${O}, kto mieszka w okolicy: ilu jest tu ludzi, czy dużo rodzin z dziećmi albo seniorów.`,
     warstwy: ['ludnosc_1km', 'udzial_0_14', 'udzial_65plus'],
     domyslna: 'ludnosc_1km',
   },
   {
     id: 'plan',
     nazwa: 'plan miejscowy i inwestycje',
-    twierdzenie: `${O} planu miejscowego, nowych budów, inwestycji albo tego, co powstanie w okolicy.`,
+    twierdzenie: `${O}, co się zmieni w okolicy: plan miejscowy, nowe budowy i inwestycje, co tu powstanie.`,
     warstwy: [
       'inwestycje_500m',
       'mpzp_status',
@@ -288,7 +348,7 @@ export const TEMATY: readonly Temat[] = [
   {
     id: 'przemysl_grunt',
     nazwa: 'przemysł i grunt',
-    twierdzenie: `${O} zakładów przemysłowych, azbestu, osuwisk albo ruchów gruntu.`,
+    twierdzenie: `${O}, czy blisko są zakłady przemysłowe, azbest, osuwiska albo ruchy gruntu.`,
     warstwy: [
       'emitent_odleglosc',
       'seveso_odleglosc',
@@ -375,13 +435,42 @@ export function przetworzWiele(
     .filter((x): x is { t: Temat; noul: number } => x.noul !== null && x.noul >= prog)
     .sort((a, b) => b.noul - a.noul) // sort stabilny: remis = kolejność TEMATY
   return {
-    warstwy: dobierz(
-      [glowny.warstwa],
-      tematy.map((x) => x.t),
+    warstwy: drugieZTematu(
+      dobierz(
+        [glowny.warstwa],
+        tematy.map((x) => x.t),
+        wskazane,
+        ids,
+      ),
       wskazane,
-      ids,
     ),
   }
+}
+
+/**
+ * #147: dwa różne obiekty z jednego tematu („przedszkole i żłobek”, „apteka i przychodnia”).
+ * Temat z `obiekty`, który ma już dokładnie jedną warstwę, dokłada drugą: pierwszą warstwę
+ * tego tematu wskazaną przez reguły słów kluczowych, która jest INNYM obiektem niż ta, którą
+ * już ma – bez dodatkowego wywołania JEV. Najpierw liczą się różne tematy (dobierz), drugie
+ * warstwy idą tylko w wolne miejsca do MAKS_ODPOWIEDZI, zaraz po pierwszej z tematu.
+ */
+export function drugieZTematu(warstwy: readonly string[], wskazane: readonly string[]): string[] {
+  const wynik = [...warstwy]
+  for (const t of TEMATY) {
+    if (wynik.length >= MAKS_ODPOWIEDZI) break
+    const obiekty = t.obiekty
+    if (!obiekty) continue
+    const wTemacie = wynik.filter((w) => tematWarstwy(w) === t.id)
+    const pierwsza = wTemacie[0]
+    if (wTemacie.length !== 1 || pierwsza === undefined) continue
+    const obiekt = obiekty[pierwsza]
+    if (obiekt === undefined) continue
+    const druga = wskazane.find(
+      (w) => obiekty[w] !== undefined && obiekty[w] !== obiekt && !wynik.includes(w),
+    )
+    if (druga) wynik.splice(wynik.indexOf(pierwsza) + 1, 0, druga)
+  }
+  return wynik
 }
 
 /** Dokłada po jednej warstwie z kolejnych tematów, aż do MAKS_ODPOWIEDZI. */
@@ -473,7 +562,8 @@ export const REGULY: readonly { warstwy: readonly string[]; wzorce: readonly Reg
   { warstwy: ['apteka_odleglosc'], wzorce: [/aptek/, /\bleki\b/, /\blekow\b/, /lekarstw/] },
   { warstwy: ['przedszkole_odleglosc'], wzorce: [/przedszkol/] },
   { warstwy: ['zlobek_odleglosc'], wzorce: [/zlob/] },
-  { warstwy: ['szkola_podst_odleglosc'], wzorce: [/szkol/, /podstawowk/] },
+  // #147: \b – inaczej „przedszkola” trafiało też szkołę (fałszywa druga warstwa z tematu).
+  { warstwy: ['szkola_podst_odleglosc'], wzorce: [/\bszkol/, /podstawowk/] },
   { warstwy: ['przychodnia_odleglosc'], wzorce: [/przychodn/, /lekarz/, /\bpoz\b/, /doktor/] },
   {
     warstwy: ['sklep_odleglosc'],
@@ -572,7 +662,8 @@ function trafieniaRegul(pytanie: string, lista: readonly PozycjaListy[]): Trafie
  */
 export function regulaWiele(pytanie: string, lista: readonly PozycjaListy[]): WyborWarstw {
   const tematy = new Map<string, TrafienieReguly & { pozTematu: number }>()
-  for (const t of trafieniaRegul(pytanie, lista)) {
+  const trafienia = trafieniaRegul(pytanie, lista)
+  for (const t of trafienia) {
     const id = tematWarstwy(t.warstwa)
     const byla = tematy.get(id)
     if (!byla) tematy.set(id, { ...t, pozTematu: t.poz })
@@ -585,7 +676,13 @@ export function regulaWiele(pytanie: string, lista: readonly PozycjaListy[]): Wy
     .sort((a, b) => a.pozTematu - b.pozTematu)
     .slice(0, MAKS_ODPOWIEDZI)
     .map((t) => t.warstwa)
-  return { warstwy }
+  // #147: wolne miejsca – druga warstwa z tematu, w którym pytanie nazywa dwa różne obiekty.
+  return {
+    warstwy: drugieZTematu(
+      warstwy,
+      trafienia.map((t) => t.warstwa),
+    ),
+  }
 }
 
 // --- Odpowiedź z danych ------------------------------------------------------------------

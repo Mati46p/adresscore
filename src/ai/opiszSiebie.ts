@@ -64,6 +64,19 @@ export const POZIOMY_WAZNOSCI = [
   'Bardzo ważne',
 ] as const
 
+/**
+ * Kategorie, o których poziom pytamy JEV (#147: bez „Przyszłości okolicy”). Zwolnione miejsce
+ * zajęło twierdzenie o własnej sytuacji – limit pośrednika to 16 pytań. Przyszłość okolicy
+ * wynika z profilu Inwestor (potrzeba `inwestycja` z tabeli POTRZEBY); w #18 JEV odszedł od
+ * środka skali tylko w 2 z 30 opisów, a jeden z nich i tak był inwestorem.
+ */
+export const KATEGORIE_JEV = [
+  'codziennosc',
+  'transport',
+  'spokoj',
+  'bezpieczenstwo',
+] as const satisfies readonly KategoriaOceniana[]
+
 /** Środek skali = „tekst o tym nie mówi” – nie zmienia wag. */
 const POZIOM_NEUTRALNY = 2
 
@@ -71,6 +84,17 @@ const POZIOM_NEUTRALNY = 2
 export const PROG_PEWNOSCI = 0.6
 /** Od tej oceny twierdzenia (noul) uznajemy potrzebę. */
 export const PROG_POTRZEBY = 0.6
+
+/**
+ * #147: tekst o cudzej, hipotetycznej albo przeszłej sytuacji („Kumpel ma trójkę dzieci…”,
+ * „Gdybyśmy kiedyś mieli dzieci…”). JEV ocenia to twierdzenie w tym samym wywołaniu.
+ */
+export const ID_WLASNEJ_SYTUACJI = 'wlasna_sytuacja'
+export const TWIERDZENIE_WLASNEJ_SYTUACJI =
+  'Osoba opisuje własną obecną sytuację i swoje potrzeby (nie cudzą, nie hipotetyczną, nie przeszłą).'
+/** Poniżej tej oceny profil zostaje bez zmian, a potrzeby muszą mieć noul ≥ PROG_POTRZEBY_PEWNEJ. */
+export const PROG_WLASNEJ_SYTUACJI = 0.5
+export const PROG_POTRZEBY_PEWNEJ = 0.9
 
 interface Wzorzec {
   re: RegExp
@@ -95,7 +119,12 @@ export interface Potrzeba {
 }
 
 // Kolejność = kolejność pytań do JEV i chipów „zrozumiałem”. Najwyżej 10 z twierdzeniem
-// (limit 16 pytań: 1 profil + 5 kategorii + 10 potrzeb).
+// (limit 16 pytań: 1 profil + 4 kategorie + 10 potrzeb + własna sytuacja).
+// #147: każde twierdzenie to jeden warunek – JEV obniża ocenę, gdy tekst spełnia tylko część
+// koniunkcji („nie ma samochodu i jeździ komunikacją” → „Nie mam samochodu” 0,58 w #18).
+// Pozostałe twierdzenia nie mają „i”. Próba ich zaostrzenia (dzieci, pies, praca w centrum,
+// lekarz, opis profilu „nieznany”) pogorszyła zbiór wzorcowy – wróciły do brzmienia z #16
+// (WYNIKI.md, „Poprawki trafności (#147)”).
 export const POTRZEBY: readonly Potrzeba[] = [
   {
     id: 'dzieci',
@@ -155,7 +184,7 @@ export const POTRZEBY: readonly Potrzeba[] = [
   {
     id: 'bez_samochodu',
     etykieta: 'bez samochodu',
-    twierdzenie: 'Osoba nie ma samochodu i jeździ komunikacją miejską.',
+    twierdzenie: 'Osoba nie ma samochodu.',
     wzorce: [
       {
         re: /\b(bez (samochodu|auta|samochod)|nie mam (samochodu|auta|prawa jazdy)|nie jezdze (samochodem|autem))/,
@@ -314,20 +343,21 @@ export const ID_PROFILU = 'profil'
 export const idKategorii = (k: KategoriaOceniana) => `kat_${k}`
 export const idPotrzeby = (p: Potrzeba) => `p_${p.id}`
 
-/** Zapytanie w stałej kolejności: profil, 5 kategorii, potrzeby z twierdzeniem. */
+/** Zapytanie w stałej kolejności: profil, 4 kategorie, potrzeby z twierdzeniem, własna sytuacja. */
 export function zapytanieOpiszSiebie(tekst: string): ZapytanieJev {
   const pytania: ZapytanieJev['pytania'] = {}
   pytania[ID_PROFILU] = wybor('Który profil najlepiej pasuje do osoby szukającej mieszkania?', {
     ...Object.fromEntries(PROFILE_JEV.map((p) => [p.id, `${p.nazwa} – ${p.opis}`])),
     [PROFIL_NIEZNANY]: 'Nie da się tego określić z tekstu',
   })
-  for (const k of KATEGORIE_OCENIANE) {
+  for (const k of KATEGORIE_JEV) {
     pytania[idKategorii(k)] = ocena(
       `Jak ważna jest dla tej osoby kategoria „${ETYKIETY_KATEGORII[k]}” (${OPISY_KATEGORII[k]})? Jeśli tekst o tym nie mówi, wybierz „${POZIOMY_WAZNOSCI[POZIOM_NEUTRALNY]}”.`,
       POZIOMY_WAZNOSCI,
     )
   }
   for (const p of POTRZEBY) if (p.twierdzenie) pytania[idPotrzeby(p)] = takNie(p.twierdzenie)
+  pytania[ID_WLASNEJ_SYTUACJI] = takNie(TWIERDZENIE_WLASNEJ_SYTUACJI)
   return { stan: tekst, pytania }
 }
 
@@ -387,10 +417,28 @@ const pewny = (pewnosc: number | null) => pewnosc === null || pewnosc >= PROG_PE
 /**
  * Odpowiedzi JEV → zrozumienie. null (→ reguły), gdy nic nie przeszło progu pewności.
  * Poziom kategorii liczy się tylko, gdy JEV jest pewny i odszedł od środka skali.
+ *
+ * #147: gdy JEV ocenia, że tekst nie opisuje własnej obecnej sytuacji (noul < próg), profil
+ * zostaje bez zmian, poziomy kategorii przepadają, a z potrzeb zostają tylko bardzo pewne.
+ * Wtedy pusty wynik to „nic nie zrozumiano” od JEV, a nie powód do reguł – reguły złapałyby
+ * słowa z cudzej sytuacji („kumpel ma psa” → pies).
  */
 export function przetworzOdpowiedzi(
   odpowiedzi: Record<string, OdpowiedzJev | null>,
 ): Zrozumienie | null {
+  const w = odpowiedzi[ID_WLASNEJ_SYTUACJI]
+  // Brak odpowiedzi na to jedno pytanie = jak przed #147 (nie karzemy za milczenie JEV).
+  const wlasna = w?.typ !== 'noul' || w.noul >= PROG_WLASNEJ_SYTUACJI
+  if (!wlasna) {
+    const potrzeby: { id: string; procent: number }[] = []
+    for (const p of POTRZEBY) {
+      const o = p.twierdzenie ? odpowiedzi[idPotrzeby(p)] : null
+      if (o?.typ === 'noul' && o.noul >= PROG_POTRZEBY_PEWNEJ)
+        potrzeby.push({ id: p.id, procent: procent(o.noul) })
+    }
+    return potrzeby.length ? zloz(null, null, potrzeby, {}) : PUSTE_ZROZUMIENIE
+  }
+
   let persona: PersonaId | null = null
   let pewnoscPersony: number | null = null
   const profil = odpowiedzi[ID_PROFILU]
@@ -403,20 +451,23 @@ export function przetworzOdpowiedzi(
   }
 
   const poziomy: Partial<Record<KategoriaOceniana, number>> = {}
-  for (const k of KATEGORIE_OCENIANE) {
+  for (const k of KATEGORIE_JEV) {
     const o = odpowiedzi[idKategorii(k)]
     if (o?.typ !== 'score' || !pewny(o.pewnosc)) continue
     const poziom = Math.min(Math.max(Math.round(o.ocena), 0), POZIOMY_WAZNOSCI.length - 1)
     if (poziom !== POZIOM_NEUTRALNY) poziomy[k] = poziom
   }
 
-  const potrzeby: { id: string; procent: number }[] = []
+  const potrzeby: { id: string; procent: number | null }[] = []
   for (const p of POTRZEBY) {
     if (!p.twierdzenie) continue
     const o = odpowiedzi[idPotrzeby(p)]
     if (o?.typ === 'noul' && o.noul >= PROG_POTRZEBY)
       potrzeby.push({ id: p.id, procent: procent(o.noul) })
   }
+  // Przyszłość okolicy nie ma już pytania o poziom – niesie ją profil Inwestor przez potrzebę
+  // `inwestycja` (jej kategorie i wskaźniki z tabeli POTRZEBY, bez liczby od JEV).
+  if (persona === 'inwestor') potrzeby.push({ id: 'inwestycja', procent: null })
 
   if (persona === null && potrzeby.length === 0 && Object.keys(poziomy).length === 0) return null
   return zloz(

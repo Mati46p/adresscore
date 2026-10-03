@@ -5,12 +5,14 @@ import type { OdpowiedzJev } from './jev.ts'
 import {
   ETYKIETY_KATEGORII,
   ID_PROFILU,
-  KATEGORIE_OCENIANE,
+  ID_WLASNEJ_SYTUACJI,
+  KATEGORIE_JEV,
   nicNieZrozumiano,
   normalizuj,
   opiszSiebie,
   POTRZEBY,
   POZIOMY_WAZNOSCI,
+  PROG_WLASNEJ_SYTUACJI,
   przetworzOdpowiedzi,
   wagiZeZrozumienia,
   type Zrozumienie,
@@ -48,14 +50,40 @@ describe('zapytanieOpiszSiebie', () => {
   const z = zapytanieOpiszSiebie('Mam psa')
   const ids = Object.keys(z.pytania)
 
-  it('stała kolejność: profil, 5 kategorii, potrzeby z twierdzeniem', () => {
+  it('stała kolejność: profil, 4 kategorie, potrzeby z twierdzeniem, własna sytuacja', () => {
     const potrzebyJev = POTRZEBY.filter((p) => p.twierdzenie).map((p) => `p_${p.id}`)
     assert.deepEqual(ids, [
       ID_PROFILU,
-      ...KATEGORIE_OCENIANE.map((k) => `kat_${k}`),
+      ...KATEGORIE_JEV.map((k) => `kat_${k}`),
       ...potrzebyJev,
+      ID_WLASNEJ_SYTUACJI,
     ])
     assert.equal(z.stan, 'Mam psa')
+  })
+
+  it('#147: najwyżej 16 pytań (limit pośrednika) – wolne miejsce to „Przyszłość okolicy”', async () => {
+    // Plik JS pośrednika bez typów – import dynamiczny, jak w pomiar.ts.
+    const sciezka = new URL('../../api/_jev.js', import.meta.url).href
+    const { LIMITY, sprawdzZapytanie } = (await import(sciezka)) as {
+      LIMITY: { pytan: number }
+      sprawdzZapytanie: (c: unknown) => { blad?: string }
+    }
+    assert.ok(ids.length <= LIMITY.pytan, `${ids.length} pytań`)
+    assert.equal(LIMITY.pytan, 16)
+    assert.ok(!ids.includes('kat_przyszlosc'))
+    assert.equal(z.pytania[ID_WLASNEJ_SYTUACJI]?.typ, 'noul')
+    // Pośrednik przyjmuje to zapytanie bez zmian.
+    assert.equal(sprawdzZapytanie(z).blad, undefined)
+  })
+
+  it('#147: twierdzenie „bez samochodu” to jeden warunek, bez „i”', () => {
+    const t = POTRZEBY.find((p) => p.id === 'bez_samochodu')?.twierdzenie ?? ''
+    assert.match(t, /nie ma samochodu/)
+    assert.doesNotMatch(t, /\si\s/)
+    assert.doesNotMatch(t, /komunikac/)
+    // Żadne twierdzenie potrzeby nie łączy dwóch warunków przez „ i ”.
+    for (const p of POTRZEBY)
+      if (p.twierdzenie) assert.doesNotMatch(p.twierdzenie, /\si\s/, `${p.id}: ${p.twierdzenie}`)
   })
 
   it('mieści się w limitach pośrednika (≤ 16 pytań, id i polecenia)', () => {
@@ -142,6 +170,56 @@ describe('przetworzOdpowiedzi (JEV → zrozumienie)', () => {
       przetworzOdpowiedzi({ profil: { typ: 'choice', wybor: 'od-zera', pewnosc: 0.99 } }),
       null,
     )
+  })
+
+  it('#147: cudza sytuacja (noul własnej sytuacji niski) → profil bez zmian, tylko pewne potrzeby', () => {
+    const odp: Record<string, OdpowiedzJev | null> = {
+      profil: { typ: 'choice', wybor: 'rodzina', pewnosc: 0.95 },
+      kat_spokoj: { typ: 'score', ocena: 4, pewnosc: 0.95 },
+      p_dzieci: { typ: 'noul', noul: 0.8 },
+      p_pies: { typ: 'noul', noul: 0.95 },
+      [ID_WLASNEJ_SYTUACJI]: { typ: 'noul', noul: PROG_WLASNEJ_SYTUACJI - 0.01 },
+    }
+    const z = przetworzOdpowiedzi(odp)
+    assert.ok(z)
+    assert.equal(z.persona, null)
+    assert.deepEqual(z.potrzeby, ['pies'])
+    assert.equal(z.potrzeby.includes('dzieci'), false)
+    // Wagi: bez profilu bazą są bieżące, więc persona użytkownika się nie zmienia.
+    const u = wagiZeZrozumienia(z, 'kupuje', WSKAZNIKI, BIEZACE)
+    assert.equal(u.wagi.przystanek_odleglosc, BIEZACE.wagi.przystanek_odleglosc)
+  })
+
+  it('#147: cudza sytuacja bez pewnych potrzeb → „nic nie zrozumiano” od JEV, nie reguły', async () => {
+    const odp = {
+      profil: { typ: 'choice', wybor: 'rodzina', pewnosc: 0.9 },
+      p_dzieci: { typ: 'noul', noul: 0.85 },
+      [ID_WLASNEJ_SYTUACJI]: { typ: 'noul', noul: 0.1 },
+    }
+    const z = przetworzOdpowiedzi(odp as Record<string, OdpowiedzJev | null>)
+    assert.ok(z && nicNieZrozumiano(z))
+    const { fetchImpl } = zbudujFetch(200, { odpowiedzi: odp, powod: null })
+    const w = await opiszSiebie('Kumpel ma trójkę dzieci i psa', { fetch: fetchImpl })
+    assert.equal(w.zrodlo, 'jev')
+    assert.ok(nicNieZrozumiano(w.wynik), 'reguły złapałyby dzieci i psa kumpla')
+  })
+
+  it('#147: własna sytuacja na progu albo bez odpowiedzi → jak dotąd', () => {
+    const baza: Record<string, OdpowiedzJev | null> = {
+      profil: { typ: 'choice', wybor: 'rodzina', pewnosc: 0.95 },
+      p_dzieci: { typ: 'noul', noul: 0.8 },
+    }
+    for (const wlasna of [{ typ: 'noul', noul: PROG_WLASNEJ_SYTUACJI } as const, null]) {
+      const z = przetworzOdpowiedzi({ ...baza, [ID_WLASNEJ_SYTUACJI]: wlasna })
+      assert.equal(z?.persona, 'rodzina')
+      assert.deepEqual(z?.potrzeby, ['dzieci'])
+    }
+  })
+
+  it('#147: profil Inwestor niesie przyszłość okolicy (potrzeba z tabeli, bez liczby JEV)', () => {
+    const z = przetworzOdpowiedzi({ profil: { typ: 'choice', wybor: 'inwestor', pewnosc: 0.9 } })
+    assert.deepEqual(z?.potrzeby, ['inwestycja'])
+    assert.equal(z?.kategorie.przyszlosc, 4)
   })
 
   it('bez pewnego profilu persona wynika z potrzeb (bez procentu)', () => {
