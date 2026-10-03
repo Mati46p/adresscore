@@ -1,0 +1,464 @@
+{
+ "opis": "Zestaw kontrolny nr 4 (zapytaj). Napisany na ślepo przez agenta AI bez dostępu do kodu aplikacji, promptów ani wcześniejszych zestawów; jedyne wejście to etykiety.txt i warstwy.txt. Wejście wpisywane z klawiatury (pisane, nie mówione). Data: 2026-10-03.",
+ "zasady": "Gold tematy: jedna grupa na każdą rzecz, o którą pytanie pyta; grupa = tablica akceptowalnych id warstw z warstwy.txt (trafienie dowolnej warstwy z grupy zalicza grupę). Pytania spoza zakresu danych: [[\"nie_wiem\"]]. Pytania niejednoznaczne: jedna grupa z warstwami z różnych możliwych odczytań. Żadnych warstw wyborczych. cechy: niejednoznaczne, zlozone, spoza.",
+ "pozycje": [
+  {
+   "id": "K4-B01",
+   "pytanie": "jak tu jest z halasem w nocy, da sie spac przy otwartym oknie?",
+   "tematy": [
+    [
+     "halas_ldwn",
+     "halas_obwarzanek_lden"
+    ]
+   ],
+   "cechy": []
+  },
+  {
+   "id": "K4-B02",
+   "pytanie": "Ile mam z przedszkolakiem na piechotę do najbliższej podstawówki?",
+   "tematy": [
+    [
+     "szkola_podst_odleglosc"
+    ]
+   ],
+   "cechy": []
+  },
+  {
+   "id": "K4-B03",
+   "pytanie": "czy zima czuc tu ten dym z kominow od sasiadow",
+   "tematy": [
+    [
+     "paleniska_200m",
+     "bap_srednia",
+     "pm10_srednia",
+     "pm25_srednia"
+    ]
+   ],
+   "cechy": []
+  },
+  {
+   "id": "K4-B04",
+   "pytanie": "a jak daleko jest jakas przychodnia na nfz?",
+   "tematy": [
+    [
+     "przychodnia_odleglosc"
+    ]
+   ],
+   "cechy": []
+  },
+  {
+   "id": "K4-B05",
+   "pytanie": "Czy to miejsce może zalać, jak przyjdzie wielka woda jak w 97?",
+   "tematy": [
+    [
+     "powodz_1proc",
+     "powodz_10proc",
+     "powodz_02proc"
+    ]
+   ],
+   "cechy": []
+  },
+  {
+   "id": "K4-B06",
+   "pytanie": "ile chodzi metr w tej okolicy mniej wiecej",
+   "tematy": [
+    [
+     "cena_m2_mediana"
+    ]
+   ],
+   "cechy": []
+  },
+  {
+   "id": "K4-B07",
+   "pytanie": "Czy pod domem trzeba płacić za postój w dzień roboczy, to już strefa?",
+   "tematy": [
+    [
+     "spp_podstrefa"
+    ]
+   ],
+   "cechy": []
+  },
+  {
+   "id": "K4-B08",
+   "pytanie": "jest gdzies blisko stacja kolejowa zeby smignac do miasta pociagiem",
+   "tematy": [
+    [
+     "kolej_odleglosc"
+    ]
+   ],
+   "cechy": []
+  },
+  {
+   "id": "K4-B09",
+   "pytanie": "czy mi tu zaraz nie postawia bloku przed oknem? cos sie buduje obok?",
+   "tematy": [
+    [
+     "inwestycje_500m",
+     "mpzp_status",
+     "inwestycje_500m_obwarzanek"
+    ]
+   ],
+   "cechy": []
+  },
+  {
+   "id": "K4-B10",
+   "pytanie": "mam starego psa z cukrzyca, daleko do weta?",
+   "tematy": [
+    [
+     "weterynarz_odleglosc"
+    ]
+   ],
+   "cechy": []
+  },
+  {
+   "id": "K4-B11",
+   "pytanie": "Mieszkają tu raczej emeryci czy rodziny z małymi dziećmi?",
+   "tematy": [
+    [
+     "udzial_65plus",
+     "udzial_0_14"
+    ]
+   ],
+   "cechy": []
+  },
+  {
+   "id": "K4-B12",
+   "pytanie": "czy latarnie tu sa, bo wracam po ciemku z treningu",
+   "tematy": [
+    [
+     "oswietlenie_100m"
+    ]
+   ],
+   "cechy": []
+  },
+  {
+   "id": "K4-B13",
+   "pytanie": "jest gdzie przypiac rower pod sklepem czy trzeba do slupa",
+   "tematy": [
+    [
+     "stojaki_300m"
+    ]
+   ],
+   "cechy": []
+  },
+  {
+   "id": "K4-B14",
+   "pytanie": "Słyszałem, że na Bielanach zbocza się osuwają. Ten adres jest bezpieczny pod tym względem?",
+   "tematy": [
+    [
+     "osuwisko_odleglosc",
+     "teren_osuwiskowy"
+    ]
+   ],
+   "cechy": []
+  },
+  {
+   "id": "K4-B15",
+   "pytanie": "betonowa pustynia czy jednak cos rosnie dookola?",
+   "tematy": [
+    [
+     "drzewa_100m",
+     "zielen_udzial",
+     "zielen_worldcover_100m"
+    ]
+   ],
+   "cechy": []
+  },
+  {
+   "id": "K4-B16",
+   "pytanie": "Gdzie najbliższy żłobek dla rocznego?",
+   "tematy": [
+    [
+     "zlobek_odleglosc"
+    ]
+   ],
+   "cechy": []
+  },
+  {
+   "id": "K4-B17",
+   "pytanie": "ile do przedszkola i czy jest jakis plac zabaw zeby wyjsc po poludniu",
+   "tematy": [
+    [
+     "przedszkole_odleglosc"
+    ],
+    [
+     "plac_zabaw_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "zlozone"
+   ]
+  },
+  {
+   "id": "K4-B18",
+   "pytanie": "Jak daleko do apteki i do paczkomatu?",
+   "tematy": [
+    [
+     "apteka_odleglosc"
+    ],
+    [
+     "paczkomat_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "zlozone"
+   ]
+  },
+  {
+   "id": "K4-B19",
+   "pytanie": "czy samoloty tu mocno slychac i ile sie jedzie do balic",
+   "tematy": [
+    [
+     "halas_ldwn",
+     "halas_obwarzanek_lden"
+    ],
+    [
+     "lotnisko_czas_min"
+    ]
+   ],
+   "cechy": [
+    "zlozone"
+   ]
+  },
+  {
+   "id": "K4-B20",
+   "pytanie": "podstawowka w okolicy ma dobre wyniki z egzaminu osmoklasisty? i jak daleko do jakiegos liceum",
+   "tematy": [
+    [
+     "szkola_podst_wynik_e8"
+    ],
+    [
+     "liceum_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "zlozone"
+   ]
+  },
+  {
+   "id": "K4-B21",
+   "pytanie": "Jest tu w pobliżu jakiś zakład, który coś emituje? I czy sąsiednie domy mają jeszcze eternit na dachach?",
+   "tematy": [
+    [
+     "emitent_odleglosc",
+     "seveso_odleglosc"
+    ],
+    [
+     "azbest_budynki_100m"
+    ]
+   ],
+   "cechy": [
+    "zlozone"
+   ]
+  },
+  {
+   "id": "K4-B22",
+   "pytanie": "ile mi zajmie dojazd na rynek komunikacja, gdzie najblizszy parkuj i jedz, no i czy jest droga dla rowerow",
+   "tematy": [
+    [
+     "rynek_czas_min"
+    ],
+    [
+     "pr_odleglosc"
+    ],
+    [
+     "droga_rowerowa_odleglosc",
+     "rower_infrastruktura_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "zlozone"
+   ]
+  },
+  {
+   "id": "K4-B23",
+   "pytanie": "Mąż ma chore serce – jest gdzieś blisko defibrylator? I daleko do komisariatu?",
+   "tematy": [
+    [
+     "defibrylator_odleglosc"
+    ],
+    [
+     "policja_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "zlozone"
+   ]
+  },
+  {
+   "id": "K4-B24",
+   "pytanie": "jak czesto jezdzi cos w szczycie i czy jest blisko bankomat albo poczta",
+   "tematy": [
+    [
+     "kursy_szczyt_h"
+    ],
+    [
+     "bankomat_poczta_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "zlozone"
+   ]
+  },
+  {
+   "id": "K4-B25",
+   "pytanie": "jaki jest numer ksiegi wieczystej tego mieszkania?",
+   "tematy": [
+    [
+     "nie_wiem"
+    ]
+   ],
+   "cechy": [
+    "spoza"
+   ]
+  },
+  {
+   "id": "K4-B26",
+   "pytanie": "Ten facet spod czternastki, sąsiad z góry, jest w porządku czy robi imprezy?",
+   "tematy": [
+    [
+     "nie_wiem"
+    ]
+   ],
+   "cechy": [
+    "spoza"
+   ]
+  },
+  {
+   "id": "K4-B27",
+   "pytanie": "ile wynosi czynsz do wspolnoty i czy byl remont dachu",
+   "tematy": [
+    [
+     "nie_wiem"
+    ]
+   ],
+   "cechy": [
+    "spoza"
+   ]
+  },
+  {
+   "id": "K4-B28",
+   "pytanie": "Jaki operator ciągnie tu światłowód, da się mieć 1 Gb?",
+   "tematy": [
+    [
+     "nie_wiem"
+    ]
+   ],
+   "cechy": [
+    "spoza"
+   ]
+  },
+  {
+   "id": "K4-B29",
+   "pytanie": "no a do miasta jak sie stad dostac bez auta?",
+   "tematy": [
+    [
+     "przystanek_odleglosc",
+     "kursy_szczyt_h",
+     "rynek_czas_min",
+     "kolej_odleglosc",
+     "bus_mld_odleglosc",
+     "kolej_kursy_szczyt_h",
+     "bus_mld_kursy_szczyt_h"
+    ]
+   ],
+   "cechy": [
+    "niejednoznaczne"
+   ]
+  },
+  {
+   "id": "K4-B30",
+   "pytanie": "Czy to jest spokojna okolica?",
+   "tematy": [
+    [
+     "halas_ldwn",
+     "halas_obwarzanek_lden",
+     "oswietlenie_100m",
+     "policja_odleglosc",
+     "miejscowe_zagrozenia_gmina_2025"
+    ]
+   ],
+   "cechy": [
+    "niejednoznaczne"
+   ]
+  },
+  {
+   "id": "K4-B31",
+   "pytanie": "jak blisko jest tu woda?",
+   "tematy": [
+    [
+     "woda_odleglosc",
+     "powodz_1proc",
+     "powodz_10proc",
+     "powodz_02proc",
+     "kapielisko_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "niejednoznaczne"
+   ]
+  },
+  {
+   "id": "K4-B32",
+   "pytanie": "da sie tu wszystko zalatwic na nogach?",
+   "tematy": [
+    [
+     "uslugi_15min",
+     "sklep_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "niejednoznaczne"
+   ]
+  },
+  {
+   "id": "K4-B33",
+   "pytanie": "a dla starszej osoby jak to tu wyglada",
+   "tematy": [
+    [
+     "udzial_65plus",
+     "przychodnia_bez_barier_odleglosc",
+     "przychodnia_odleglosc",
+     "cas_odleglosc",
+     "lawki_300m",
+     "obnizone_krawezniki_300m"
+    ]
+   ],
+   "cechy": [
+    "niejednoznaczne"
+   ]
+  },
+  {
+   "id": "K4-B34",
+   "pytanie": "co z tym gruntem, nie zapadnie sie to wszystko za pare lat?",
+   "tematy": [
+    [
+     "osiadanie_mm_rok",
+     "teren_osuwiskowy",
+     "osuwisko_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "niejednoznaczne"
+   ]
+  },
+  {
+   "id": "K4-B35",
+   "pytanie": "Zmieni się tu coś w najbliższych latach?",
+   "tematy": [
+    [
+     "inwestycje_500m",
+     "mpzp_status",
+     "przetargi_dzielnica",
+     "gmina_inwestycje_pc",
+     "bo_projekty_1km",
+     "inwestycje_500m_obwarzanek",
+     "obszar_rewitalizacji"
+    ]
+   ],
+   "cechy": [
+    "niejednoznaczne"
+   ]
+  }
+ ]
+}

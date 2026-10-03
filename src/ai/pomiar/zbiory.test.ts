@@ -97,7 +97,7 @@ describe('zbiór wzorcowy „zapytaj o adres”', () => {
   })
 })
 
-// Zbiory kontrolne: nr 1 (#147), nr 2 (#152) i nr 3 (#153), napisane na ślepo przez osobnego agenta,
+// Zbiory kontrolne: nr 1 (#147), nr 2 (#152), nr 3 (#153) i nr 4 (#157), napisane na ślepo przez osobnego agenta,
 // bez dostępu do kodu. Etykiet nie poprawiamy – test pilnuje tylko, że id są znane, a pomiar
 // je zrozumie, i że teksty nie powtarzają się między zbiorami.
 const katalogWskaznikow = 'public/dane/wskazniki'
@@ -113,13 +113,41 @@ const warstwyJev = () =>
     ).map((p) => p.id),
   )
 
+// #157: zbiór nr 4 jest większy (40 opisów, 35 pytań) – liczność sprawdzamy dla każdego zbioru.
 const ZBIORY_KONTROLNE = [
-  { nazwa: 'kontrolny', opisz: 'kontrolny-opisz.json', zapytaj: 'kontrolny-zapytaj.json' },
-  { nazwa: 'kontrolny nr 2', opisz: 'kontrolny2-opisz.json', zapytaj: 'kontrolny2-zapytaj.json' },
-  { nazwa: 'kontrolny nr 3', opisz: 'kontrolny3-opisz.json', zapytaj: 'kontrolny3-zapytaj.json' },
+  {
+    nazwa: 'kontrolny',
+    opisz: 'kontrolny-opisz.json',
+    zapytaj: 'kontrolny-zapytaj.json',
+    nA: 30,
+    nB: 25,
+  },
+  {
+    nazwa: 'kontrolny nr 2',
+    opisz: 'kontrolny2-opisz.json',
+    zapytaj: 'kontrolny2-zapytaj.json',
+    nA: 30,
+    nB: 25,
+  },
+  {
+    nazwa: 'kontrolny nr 3',
+    opisz: 'kontrolny3-opisz.json',
+    zapytaj: 'kontrolny3-zapytaj.json',
+    nA: 30,
+    nB: 25,
+  },
+  {
+    nazwa: 'kontrolny nr 4',
+    opisz: 'kontrolny4-opisz.json',
+    zapytaj: 'kontrolny4-zapytaj.json',
+    nA: 40,
+    nB: 35,
+  },
 ] as const
 const kontrolne = ZBIORY_KONTROLNE.map((z) => ({
   nazwa: z.nazwa,
+  nA: z.nA,
+  nB: z.nB,
   opisz: czytaj(z.opisz).pozycje as PozycjaOpisz[],
   zapytaj: czytaj(z.zapytaj).pozycje as PozycjaZapytaj[],
 }))
@@ -129,8 +157,10 @@ const wszystkieOpisy = [...opisz, ...kontrolne.flatMap((k) => k.opisz)]
  * pisał na ślepo, bez dostępu do zbioru nr 2, i trafił na to samo krótkie pytanie. Etykiet ani
  * tekstów zbioru nie zmieniamy, więc ta jedna pozycja jest zwolniona z wymogu „inne niż
  * w pozostałych zbiorach” (w swoim zbiorze nadal musi być unikalna).
+ * #157: tak samo K4-B25 (50 znaków) – dosłownie to samo pytanie co K3-B21. Zbiór nr 4 wszedł
+ * bajt w bajt, więc i tej pozycji nie zmieniamy; w WYNIKI.md jest zaznaczona jako powtórka.
  */
-const ZNANE_POWTORZENIA = new Set(['K3-B05'])
+const ZNANE_POWTORZENIA = new Set(['K3-B05', 'K4-B25'])
 const wszystkiePytania = [...zapytaj, ...kontrolne.flatMap((k) => k.zapytaj)].filter(
   (p) => !ZNANE_POWTORZENIA.has(p.id),
 )
@@ -140,8 +170,8 @@ for (const k of kontrolne) {
     const potrzeby = new Set(POTRZEBY.map((p) => p.id))
     const persony = new Set(PERSONY.map((p) => p.id as string))
 
-    it('30 pozycji, unikalne id i teksty, inne niż w pozostałych zbiorach', () => {
-      assert.equal(k.opisz.length, 30)
+    it(`${k.nA} pozycji, unikalne id i teksty, inne niż w pozostałych zbiorach`, () => {
+      assert.equal(k.opisz.length, k.nA)
       bezPowtorzen(
         k.opisz.map((p) => p.id),
         'id',
@@ -165,8 +195,8 @@ for (const k of kontrolne) {
   describe(`zbiór ${k.nazwa} „zapytaj o adres” (na ślepo)`, () => {
     const warstwy = warstwyJev()
 
-    it('25 pozycji, unikalne id i pytania, inne niż w pozostałych zbiorach', () => {
-      assert.equal(k.zapytaj.length, 25)
+    it(`${k.nB} pozycji, unikalne id i pytania, inne niż w pozostałych zbiorach`, () => {
+      assert.equal(k.zapytaj.length, k.nB)
       bezPowtorzen(
         k.zapytaj.map((p) => p.id),
         'id',
