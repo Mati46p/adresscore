@@ -66,7 +66,7 @@ export function EkranOkolica() {
 
   return (
     <main className="tresc okol">
-      <a href={linkMapa} className="okol-wroc">
+      <a href={linkMapa} className="okol-wroc" onClick={wrocDoMapy}>
         Wróć do mapy
       </a>
 
@@ -436,4 +436,16 @@ function NaCoDzien({
       </dl>
     </section>
   )
+}
+
+/**
+ * Karta ma własną ścieżkę (/adres/…), a mapa żyje pod /#/…, więc zwykły link przeładowywał
+ * stronę i gubił stan w pamięci – m.in. otwartą sekcję Lepszy sąsiad, przez co znaczniki
+ * kandydatów nigdy nie pojawiały się na mapie. Zmiana ekranu w aplikacji zapisuje URL sama.
+ * Klik z modyfikatorem (nowa karta) zostaje zwykłym linkiem.
+ */
+function wrocDoMapy(e: React.MouseEvent<HTMLAnchorElement>) {
+  if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
+  e.preventDefault()
+  przejdz('szukaj')
 }
