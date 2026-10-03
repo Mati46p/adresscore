@@ -4,6 +4,7 @@
 //   node src/ai/pomiar/spelnienie.ts            # tabele markdown na stdout (do WYNIKI.md)
 //   node src/ai/pomiar/spelnienie.ts --top 300  # inny rozmiar „najlepszych adresów” (domyślnie 100)
 //   node src/ai/pomiar/spelnienie.ts --syntetyczne  # #183: nowe potrzeby na przypadkach syntetycznych
+//   node src/ai/pomiar/spelnienie.ts --182      # tylko tabele 4–5: siła i „nie chcę” (#182), ok. 6 s
 //
 // Dla opisów ze zbioru wzorcowego i zbiorów kontrolnych nr 1–7 bierzemy WZORCOWY profil
 // i WZORCOWE potrzeby (etykiety, nie odpowiedź JEV) i liczymy wagi na kilka sposobów:
@@ -313,6 +314,121 @@ const wspolne = (a: Uint32Array, b: Uint32Array) => {
   return n / a.length
 }
 
+const f = (x: number, c = 1) => (Number.isNaN(x) ? '–' : x.toFixed(c).replace('.', ','))
+const lepsze = (m: Miara, d: number) => (m.lepiej === 'mniej' ? d < 0 : d > 0)
+const znak = (m: Miara, d: number) =>
+  Number.isNaN(d) || Math.abs(d) < 1e-9 ? '=' : lepsze(m, d) ? '↑' : '↓'
+const jednostka = (m: Miara) =>
+  m.powyzej === undefined
+    ? (PO_ID.get(m.id)?.meta.jednostka ?? '')
+    : `% top z > ${String(m.powyzej).replace('.', ',')}`
+
+// ── #182: siła potrzeby i „nie chcę” – przypadki syntetyczne ─────────────────────────────
+//
+// W starych zbiorach złota prawie nie ma siły ani „nie chcę”, więc mierzymy na własnych
+// przypadkach: (a) 7 „nie chcę” × 3 konteksty (profil + typowa potrzeba) – czy top adresów
+// odsuwa się od rzeczy niechcianej; (b) 8 potrzeb × siła 1 / 2 / 3 – czy siła 3 przesuwa top
+// mocniej niż 1. Bez JEV, deterministycznie. Tylko ta część: `--182` (bez historii git).
+
+const MIARY_NIE: Readonly<Record<string, Miara>> = {
+  zycie_nocne_obok: { id: 'zycie_nocne_300m', lepiej: 'mniej', powyzej: 0 },
+  turysci: { id: 'noclegi_lozka_300m', lepiej: 'mniej', powyzej: 0 },
+  szkola_obok: { id: 'szkola_odleglosc', lepiej: 'wiecej' },
+  duza_droga: { id: 'halas_ldwn', lepiej: 'mniej', powyzej: 55 },
+  przemysl: { id: 'emitent_odleglosc', lepiej: 'wiecej' },
+  imprezy: { id: 'imprezy_obiekty_dni_500m_2025_26', lepiej: 'mniej', powyzej: 0 },
+  budowy: { id: 'inwestycje_500m', lepiej: 'mniej' },
+}
+const KONTEKSTY_182: readonly { persona: PersonaId | null; potrzeby: string[] }[] = [
+  { persona: 'rodzina', potrzeby: ['dzieci'] },
+  { persona: 'singiel', potrzeby: ['bez_samochodu'] },
+  { persona: 'senior', potrzeby: ['zdrowie'] },
+]
+const SILY_182: readonly { persona: PersonaId | null; potrzeba: string }[] = [
+  { persona: 'rodzina', potrzeba: 'dzieci' },
+  { persona: null, potrzeba: 'pies' },
+  { persona: null, potrzeba: 'zielen' },
+  { persona: null, potrzeba: 'powietrze' },
+  { persona: 'singiel', potrzeba: 'bez_samochodu' },
+  { persona: 'senior', potrzeba: 'zdrowie' },
+  { persona: 'singiel', potrzeba: 'rower' },
+  { persona: null, potrzeba: 'cisza' },
+]
+
+/** Jak `zloz` w opiszSiebie.ts: wagi potrzeb przez siłę, „nie chcę” osobno. */
+function przebieg182(
+  persona: PersonaId | null,
+  ids: readonly string[],
+  sily: Readonly<Record<string, nowa.Sila>> = {},
+  nieChce: readonly string[] = [],
+): Przebieg {
+  const z = zrozumienie(nowa, persona, ids)
+  for (const id of Object.keys(z.wskazniki)) delete z.wskazniki[id]
+  for (const id of ids) {
+    const p = nowa.POTRZEBY.find((x) => x.id === id)
+    for (const [w, waga] of Object.entries(p?.wskazniki ?? {}))
+      z.wskazniki[w] = Math.max(z.wskazniki[w] ?? 0, nowa.wagaZSily(waga, sily[id]))
+  }
+  return przebieg(nowa.wagiZeZrozumienia({ ...z, sily, nieChce }, TRYB, METAS, baza(null)))
+}
+
+function sekcja182() {
+  const fm = (x: number) => (Number.isNaN(x) ? '–' : x.toFixed(1).replace('.', ','))
+  console.log(
+    `\n**4. #182 „nie chcę”: profil + potrzeba → to samo + „nie chcę”** (top ${TOP}; ↑ = dalej od rzeczy niechcianej)\n`,
+  )
+  console.log(
+    '| „Nie chcę” | Wskaźnik | Kontekst | Bez | Z „nie chcę” | Zmiana | Top wspólne z „bez” (%) |',
+  )
+  console.log('|---|---|---|---|---|---|---|')
+  let lepiej = 0
+  let gorzej = 0
+  for (const [nie, m] of Object.entries(MIARY_NIE))
+    for (const k of KONTEKSTY_182) {
+      const bez = przebieg182(k.persona, k.potrzeby)
+      const z = przebieg182(k.persona, k.potrzeby, {}, [nie])
+      const a = miaraTop(bez.top, m)
+      const b = miaraTop(z.top, m)
+      if (Math.abs(b - a) > 1e-9) lepsze(m, b - a) ? lepiej++ : gorzej++
+      console.log(
+        `| ${nie} | ${m.id} (${jednostka(m)}) | ${k.persona} + ${k.potrzeby.join(', ')} | ${fm(a)} | ${fm(b)} | ${znak(m, b - a)} ${fm(b - a)} | ${Math.round(100 * wspolne(bez.top, z.top))} |`,
+      )
+    }
+  console.log(
+    `\nPrzypadków: ${Object.keys(MIARY_NIE).length * KONTEKSTY_182.length}; lepiej ${lepiej}, gorzej ${gorzej}, bez zmiany reszta.\n`,
+  )
+
+  console.log(
+    '**5. #182 siła: profil → profil + potrzeba z siłą 1 / 2 / 3** (zmiana wskaźnika względem samego profilu)\n',
+  )
+  console.log('| Potrzeba | Wskaźnik | Profil | Siła 1 | Siła 2 | Siła 3 | 3 mocniej niż 1? |')
+  console.log('|---|---|---|---|---|---|---|')
+  let mocniej = 0
+  let wszystkie = 0
+  for (const s of SILY_182)
+    for (const m of MIARY[s.potrzeba] ?? []) {
+      const profil = miaraTop(przebieg182(s.persona, []).top, m)
+      const d = ([1, 2, 3] as const).map(
+        (sila) =>
+          miaraTop(przebieg182(s.persona, [s.potrzeba], { [s.potrzeba]: sila }).top, m) - profil,
+      ) as [number, number, number]
+      // „Mocniej” = siła 3 przesuwa we właściwą stronę co najmniej tyle, co siła 1.
+      const dobrze = (x: number) => (m.lepiej === 'mniej' ? -x : x)
+      const ok = dobrze(d[2]) >= dobrze(d[0]) - 1e-9
+      wszystkie++
+      if (ok) mocniej++
+      console.log(
+        `| ${s.potrzeba} | ${m.id} (${jednostka(m)}) | ${s.persona ?? PERSONA_DOMYSLNA} | ${znak(m, d[0])} ${fm(d[0])} | ${znak(m, d[1])} ${fm(d[1])} | ${znak(m, d[2])} ${fm(d[2])} | ${ok ? 'tak' : 'nie'} |`,
+      )
+    }
+  console.log(`\nSiła 3 co najmniej tak mocno jak 1: ${mocniej} / ${wszystkie}.`)
+}
+const tylko182 = argv.includes('--182')
+if (tylko182) {
+  sekcja182()
+  process.exit(0)
+}
+
 // ── Stara tabela z BAZA ───────────────────────────────────────────────────────────────────
 
 const tymczasowy = new URL('_spelnienie_stare_opiszSiebie.ts', AI)
@@ -337,15 +453,6 @@ const WARIANTY = ['profil', 'stara', 'sklad', 'nowa'] as const
 type Wariant = (typeof WARIANTY)[number]
 
 // ── Pomiar ────────────────────────────────────────────────────────────────────────────────
-
-const f = (x: number, c = 1) => (Number.isNaN(x) ? '–' : x.toFixed(c).replace('.', ','))
-const lepsze = (m: Miara, d: number) => (m.lepiej === 'mniej' ? d < 0 : d > 0)
-const znak = (m: Miara, d: number) =>
-  Number.isNaN(d) || Math.abs(d) < 1e-9 ? '=' : lepsze(m, d) ? '↑' : '↓'
-const jednostka = (m: Miara) =>
-  m.powyzej === undefined
-    ? (PO_ID.get(m.id)?.meta.jednostka ?? '')
-    : `% top z > ${String(m.powyzej).replace('.', ',')}`
 
 const przebiegi = (p: Pozycja): Record<Wariant, Przebieg> => ({
   profil: licz('-', nowa, p.persona, []),
@@ -455,3 +562,5 @@ console.log(
   `| Top ${TOP} wspólne z top samego profilu (%) | ${kol((p, x) => 100 * wspolne(x.w.profil.top, p.top), 0)} |`,
 )
 console.log(`\nZestawy wag policzone: ${pamiec.size}.`)
+
+sekcja182()

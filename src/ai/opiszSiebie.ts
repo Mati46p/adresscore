@@ -784,6 +784,269 @@ export const PIERWSZENSTWO_PERSON: readonly PersonaId[] = [
   'singiel',
 ]
 
+// ── Siła potrzeby i potrzeby „na nie” (#182) ────────────────────────────────────────────────
+
+/** Siła potrzeby – słownik zbioru nr 8: 1 = „byłoby miło”, 2 = „wyraźnie ważne”, 3 = warunek. */
+export type Sila = 1 | 2 | 3
+export const OPISY_SILY: Readonly<Record<Sila, string>> = {
+  1: 'byłoby miło',
+  2: 'wyraźnie ważne',
+  3: 'bardzo ważne',
+}
+
+/**
+ * Waga warstwy potrzeby przy danej sile: 3 = waga z tabeli POTRZEBY, 2 = o 1 mniej, 1 = o 2
+ * mniej, najmniej 1 (potrzeba rozpoznana zawsze coś waży). Brak siły (reguły bez słów
+ * siły, JEV bez odpowiedzi) = waga z tabeli, czyli dokładnie jak przed #182 – tabela była
+ * strojona w #177 na potrzebach bez siły.
+ */
+export function wagaZSily(wagaTabeli: number, sila: Sila | undefined): number {
+  if (sila === undefined || wagaTabeli <= 0) return wagaTabeli
+  return Math.max(1, wagaTabeli - (3 - sila))
+}
+
+export interface PotrzebaNaNie {
+  /** Id ze słownika zbioru nr 8 – nie zmieniaj (etykiety złota). */
+  id: string
+  /** Do chipa „nie chcę: …”. */
+  etykieta: string
+  /** Twierdzenie noul dla JEV z kryteriami prawda/fałsz (jak #163). */
+  twierdzenie: string
+  kryteria: KryteriaTakNie
+  /** Słowa rzeczy niechcianej (ASCII); liczą się tylko po słowie odmowy (`ODMOWA`). */
+  slowa: RegExp
+  /**
+   * Warstwy, które „nie chcę” przejmuje: waga i kierunek. Test pilnuje, że każda istnieje
+   * w `public/dane/wskazniki` i liczy się w silniku (nie kontekst, kierunek nie neutralny).
+   */
+  warstwy: Readonly<Record<string, { waga: number; kierunek: KierunekOceny }>>
+}
+
+/**
+ * Potrzeby „na nie”: jawne „nie chcę X w pobliżu”. Bez nowych warstw – każda przejmuje
+ * istniejące warstwy i ustawia im kierunek, który silnik już zna (`kierunki`, jak suwak
+ * kierunku w panelu wag). Brak warstwy „duża ulica”: mapa hałasu (LDWN) to głównie hałas
+ * drogowy i tramwajowy, a NO2 to spaliny. „Szkoła obok” dostaje „dalej = lepiej”, bo silnik
+ * nie ma kierunku „optimum” – waga 2, żeby szkoła 2 km dalej nie wygrywała z resztą.
+ */
+export const NA_NIE: readonly PotrzebaNaNie[] = [
+  {
+    id: 'zycie_nocne_obok',
+    etykieta: 'knajpy i kluby pod oknem',
+    twierdzenie: 'Osoba nie chce mieszkać blisko barów, pubów, klubów ani nocnego hałasu z lokali.',
+    kryteria: {
+      prawda: {
+        co: 'Tekst mówi, że osoba nie chce knajp, barów, klubów albo imprezowego hałasu nocą pod oknem – także jako „byle nie nad pubem”.',
+        przyklady: ['Tylko nie nad pubem, chcę spać w nocy.', 'Żadnych klubów pod oknem.'],
+      },
+      falsz: {
+        co: 'Osoba lubi życie nocne i chce mieć knajpy blisko albo tekst w ogóle nie mówi o lokalach.',
+        przyklady: ['Lubię wyjść wieczorem do baru blisko domu.'],
+      },
+    },
+    slowa:
+      /\b(knajp|bar\b|barow|barami|pub\b|puby|pubow|pubem|klub|dyskotek|imprezowni|lokal\w* nocn|nocn\w* (zycie|halas))/,
+    warstwy: {
+      zycie_nocne_300m: { waga: 4, kierunek: 'mniej-lepiej' },
+      gastronomia_odleglosc: { waga: 1, kierunek: 'wiecej-lepiej' },
+    },
+  },
+  {
+    id: 'turysci',
+    etykieta: 'turyści i najem na doby',
+    twierdzenie: 'Osobie przeszkadzają turyści albo mieszkania wynajmowane turystom na doby.',
+    kryteria: {
+      prawda: {
+        co: 'Tekst mówi, że przeszkadzają turyści, walizki, hostele, hotele albo najem krótkoterminowy (Airbnb) w okolicy lub w bloku.',
+        przyklady: ['Byle nie Stare Miasto, mam dość turystów z walizkami.'],
+      },
+      falsz: {
+        co: 'Tekst nie mówi o turystach ani o najmie na doby. Sam zakup mieszkania pod wynajem to nie to.',
+      },
+    },
+    slowa: /\b(turyst|airbnb|hostel|walizk|najem krotkoterminow|najm\w* krotkoterminow|na doby)/,
+    warstwy: { noclegi_lozka_300m: { waga: 4, kierunek: 'mniej-lepiej' } },
+  },
+  {
+    id: 'szkola_obok',
+    etykieta: 'szkoła tuż obok',
+    twierdzenie:
+      'Osoba nie chce mieszkać tuż obok szkoły albo placu zabaw, bo przeszkadza hałas dzieci.',
+    kryteria: {
+      prawda: {
+        co: 'Tekst mówi, że osoba nie chce szkoły, boiska szkolnego albo placu zabaw tuż pod oknem – także gdy chce mieć szkołę w zasięgu spaceru, ale nie za ścianą.',
+        przyklady: ['Szkoła może być w okolicy, ale nie pod samym oknem.'],
+      },
+      falsz: {
+        co: 'Osoba chce mieć szkołę albo plac zabaw blisko i nic nie mówi o hałasie dzieci, albo tekst w ogóle nie mówi o szkole.',
+        przyklady: ['Szukamy blisko dobrej podstawówki.'],
+      },
+    },
+    slowa: /\b(szkol|boisk|plac\w* zabaw|halas\w* dzieci|krzyk\w* dzieci)/,
+    warstwy: {
+      szkola_odleglosc: { waga: 2, kierunek: 'wiecej-lepiej' },
+      plac_zabaw_odleglosc: { waga: 1, kierunek: 'wiecej-lepiej' },
+    },
+  },
+  {
+    id: 'duza_droga',
+    etykieta: 'ruchliwa ulica',
+    twierdzenie: 'Osoba nie chce mieszkać przy ruchliwej ulicy, trasie ani dużej drodze.',
+    kryteria: {
+      prawda: {
+        co: 'Tekst mówi, że osoba nie chce ruchliwej ulicy, trasy, obwodnicy, korków albo hałasu samochodów i tramwajów pod oknem.',
+        przyklady: ['Byle nie przy głównej ulicy, nie zniosę ruchu pod oknem.'],
+      },
+      falsz: {
+        co: 'Tekst nie wspomina ulic, ruchu ani samochodów pod oknem; sama ogólna chęć ciszy to za mało.',
+      },
+    },
+    slowa:
+      /\b(ruchliw|ulic|tras[aeyi]?\b|obwodnic|aleji|alei|autostrad|droga\b|drogi\b|droga szybk|korki|korkow|samochod\w* pod oknem)/,
+    warstwy: {
+      halas_ldwn: { waga: 4, kierunek: 'mniej-lepiej' },
+      no2_srednia: { waga: 2, kierunek: 'mniej-lepiej' },
+    },
+  },
+  {
+    id: 'przemysl',
+    etykieta: 'przemysł i kominy',
+    twierdzenie: 'Osoba nie chce mieszkać blisko zakładów przemysłowych, fabryk ani kominów.',
+    kryteria: {
+      prawda: {
+        co: 'Tekst mówi, że osoba nie chce w pobliżu fabryki, huty, elektrociepłowni, spalarni, zakładu chemicznego albo terenów przemysłowych.',
+        przyklady: ['Z dala od huty i kominów, proszę.'],
+      },
+      falsz: {
+        co: 'Tekst nie mówi o zakładach ani przemyśle; sam smog z pieców domowych to nie to.',
+      },
+    },
+    slowa: /\b(przemysl|fabryk|zaklad|hut[aeyi]?\b|kombinat|spalarni|elektrocieplowni|komin|chemi)/,
+    warstwy: {
+      emitent_odleglosc: { waga: 4, kierunek: 'wiecej-lepiej' },
+      seveso_odleglosc: { waga: 3, kierunek: 'wiecej-lepiej' },
+    },
+  },
+  {
+    id: 'imprezy',
+    etykieta: 'stadiony i imprezy masowe',
+    twierdzenie:
+      'Osoba nie chce mieszkać blisko stadionu, hali widowiskowej ani miejsc imprez masowych.',
+    kryteria: {
+      prawda: {
+        co: 'Tekst mówi, że osoba nie chce w pobliżu stadionu, areny, hali koncertowej, kibiców albo koncertów i imprez masowych.',
+        przyklady: ['Nie przy stadionie, nie chcę kibiców co weekend.'],
+      },
+      falsz: {
+        co: 'Tekst nie mówi o stadionach, koncertach ani imprezach masowych; zwykłe knajpy to nie to.',
+      },
+    },
+    slowa:
+      /\b(stadion|aren[aey]?\b|hal[aiy] (widowisk|koncert|sportow)|kibic|koncert|impre[zs]\w* masow|mecz)/,
+    warstwy: {
+      imprezy_obiekty_dni_500m_2025_26: { waga: 4, kierunek: 'mniej-lepiej' },
+      imprezy_stale_wpisy_500m_2026: { waga: 3, kierunek: 'mniej-lepiej' },
+    },
+  },
+  {
+    id: 'budowy',
+    etykieta: 'budowy wokół',
+    twierdzenie: 'Osoba nie chce mieszkać tam, gdzie wokół dużo się buduje.',
+    kryteria: {
+      prawda: {
+        co: 'Tekst mówi, że osoba nie chce budów, dźwigów, nowych bloków stawianych za oknem albo placu budowy w okolicy.',
+        przyklady: ['Mam dość budowy za oknem, chcę gotowe osiedle.'],
+      },
+      falsz: {
+        co: 'Tekst nie mówi o budowach albo cieszy się z nowych inwestycji w okolicy (np. kupuje pod wynajem).',
+      },
+    },
+    slowa: /\b(budow|buduj|dzwig|plac\w* budowy|nowe bloki|deweloper)/,
+    warstwy: { inwestycje_500m: { waga: 4, kierunek: 'mniej-lepiej' } },
+  },
+]
+
+/**
+ * Siła z JEV: jedno pytanie score na grupę potrzeb (3 pytania zamiast osobnego na każdą
+ * potrzebę). Siła potrzeby = zaokrąglona ocena jej grupy (1–3); ocena 0 („tekst o tym nie
+ * mówi”) przy rozpoznanej potrzebie = brak siły (waga z tabeli). Bez progu pewności – próg
+ * 0,5 pogorszył trafność. Wybór z próby na żywo przy pełnym żądaniu (31 pytań, 2 przebiegi,
+ * 24 zdania celowane): grupy 73% trafnych siły (śr. błąd 0,31), jedno pytanie o całość 62%,
+ * pasma noul twierdzeń potrzeb 58%, stała 2 38% (WYNIKI.md, „Siła i «nie chcę» (#182)”).
+ * Potrzeba spoza grup nie ma siły z JEV (waga z tabeli): reguły-tylko i z #183 praca zdalna,
+ * życie nocne, sport – żadne z 3 pytań ich nie obejmuje (wózek, auto, student – tak).
+ */
+export const SKALA_SILY = [
+  'Tekst nie mówi o takich potrzebach',
+  'Byłoby miło – wspomniane lekko, bez nacisku',
+  'Wyraźnie ważne',
+  'Bardzo ważne – warunek konieczny',
+] as const
+export const GRUPY_SILY: readonly { id: string; polecenie: string; potrzeby: readonly string[] }[] =
+  [
+    {
+      id: 's_dom',
+      polecenie:
+        'Jak ważne są dla osoby dzieci, zdrowie, lekarz, pies i sprawy załatwiane pieszo blisko domu?',
+      potrzeby: ['dzieci', 'pies', 'senior', 'zdrowie', 'sklepy', 'wozek'],
+    },
+    {
+      id: 's_otoczenie',
+      polecenie:
+        'Jak ważne są dla osoby zieleń, park, czyste powietrze, cisza i bezpieczeństwo okolicy?',
+      potrzeby: ['zielen', 'powietrze', 'cisza', 'bezpieczenstwo'],
+    },
+    {
+      id: 's_dojazd',
+      polecenie:
+        'Jak ważne są dla osoby dojazdy: komunikacja, rower, praca w centrum, pociąg, lotnisko?',
+      potrzeby: ['rower', 'bez_samochodu', 'praca_centrum', 'lotnisko', 'kolej', 'auto', 'student'],
+    },
+  ]
+
+/** Od tej oceny twierdzenia „nie chcę” (noul) JEV uznaje potrzebę „na nie”. */
+export const PROG_NA_NIE = 0.6
+
+/**
+ * Słowo odmowy przed rzeczą niechcianą (reguły zapasowe): najwyżej 5 słów przed nią.
+ * „Nie chcę baru pod oknem”, „byle nie przy stadionie”, „z dala od huty”, „mam dość turystów”.
+ */
+const ODMOWA =
+  /\b(nie chce\w*|nie chcial\w*|byle nie|byleby nie|tylko nie|nie moze byc|bez|z dala od|daleko od|unik\w*|przeszkadza\w*|mam dosc|dosc mam|nie znosz\w*|nie lubi\w*|zadn\w*|nie przy|nie obok|nie nad|nie pod)\b(\s+\S+){0,5}\s*$/
+
+/** „Nie chcę mieć daleko do szkoły” to potrzeba na tak, nie odmowa. */
+const NIE_ODMOWA = /\b(daleko|dlugo|dojazd\w*|dojezdz\w*|brak\w*|brakowa\w*)\b/
+
+/** Fragmenty „odmowa … rzecz niechciana” w tekście: [początek odmowy, koniec rzeczy). */
+function odmowy(tekst: string, slowa: RegExp): [number, number][] {
+  const wynik: [number, number][] = []
+  for (const m of tekst.matchAll(new RegExp(slowa.source, 'g'))) {
+    const o = ODMOWA.exec(tekst.slice(0, m.index))
+    if (o && !NIE_ODMOWA.test(o[0].slice((o[1] ?? '').length)))
+      wynik.push([o.index, (m.index ?? 0) + m[0].length])
+  }
+  return wynik
+}
+const odmowaPrzed = (tekst: string, slowa: RegExp) => odmowy(tekst, slowa).length > 0
+/** Tekst z wyciętymi fragmentami odmowy (spacje zamiast nich). */
+function bezOdmowy(tekst: string, slowa: RegExp): string {
+  let t = tekst
+  for (const [a, b] of odmowy(tekst, slowa)) t = t.slice(0, a) + ' '.repeat(b - a) + t.slice(b)
+  return t
+}
+
+/** Reguły: siła z jawnych słów w całym tekście (jedna dla wszystkich potrzeb); brak = undefined. */
+const SILA_3 =
+  /\b(koniecznie|musi\w*|warunek|bardzo wazn\w*|najwazniejsz\w*|absolutnie|niezbedn\w*|kluczow\w*)/
+const SILA_1 =
+  /\b(byloby milo|byloby fajnie|fajnie by\w*|mile widzian\w*|opcjonaln\w*|niekoniecznie|przydal\w* by|nie musi|ewentualnie)/
+export function silaZRegul(tekst: string): Sila | undefined {
+  const t = normalizuj(tekst)
+  if (SILA_3.test(t)) return 3
+  if (SILA_1.test(t)) return 1
+  return undefined
+}
+
 /** Profile do wyboru przez JEV – bez „Od zera”, plus jawne „nie wiadomo”. */
 const PROFILE_JEV = PERSONY.filter((p) => p.id !== 'od-zera')
 const PROFIL_NIEZNANY = 'nieznany'
@@ -802,14 +1065,15 @@ export const OPISY_PROFILI_JEV: Readonly<Record<Exclude<PersonaId, 'od-zera'>, s
 export const OPIS_PROFILU_NIEZNANEGO = 'Nie da się tego określić z tekstu'
 
 export interface PozycjaZrozumienia {
-  rodzaj: 'profil' | 'potrzeba' | 'kategoria'
+  /** #182: `na_nie` = potrzeba „nie chcę X w pobliżu”. */
+  rodzaj: 'profil' | 'potrzeba' | 'kategoria' | 'na_nie'
   etykieta: string
   /**
    * Profil i potrzeba: pewność JEV w % (null = z reguł, bez liczby).
    * Kategoria: ważność 0–100 % (waga 0–4 × 25).
    */
   procent: number | null
-  /** Kategoria: słowny poziom ważności, np. „Bardzo ważne”. */
+  /** Kategoria: słowny poziom ważności, np. „Bardzo ważne”. Potrzeba: siła (#182). */
   opis?: string
 }
 
@@ -823,6 +1087,10 @@ export interface Zrozumienie {
   /** Id rozpoznanych potrzeb w kolejności POTRZEBY. */
   potrzeby: string[]
   zrozumialem: PozycjaZrozumienia[]
+  /** #182: siła rozpoznanych potrzeb (id → 1–3); brak klucza = waga z tabeli, jak przed #182. */
+  sily?: Readonly<Record<string, Sila>>
+  /** #182: id rozpoznanych potrzeb „na nie” (NA_NIE), w kolejności tabeli. */
+  nieChce?: readonly string[]
 }
 
 export const PUSTE_ZROZUMIENIE: Zrozumienie = {
@@ -834,7 +1102,12 @@ export const PUSTE_ZROZUMIENIE: Zrozumienie = {
 }
 
 export function nicNieZrozumiano(z: Zrozumienie): boolean {
-  return z.persona === null && z.potrzeby.length === 0 && Object.keys(z.kategorie).length === 0
+  return (
+    z.persona === null &&
+    z.potrzeby.length === 0 &&
+    Object.keys(z.kategorie).length === 0 &&
+    (z.nieChce ?? []).length === 0
+  )
 }
 
 // ── Zapytanie do JEV ──────────────────────────────────────────────────────────────────────
@@ -842,8 +1115,13 @@ export function nicNieZrozumiano(z: Zrozumienie): boolean {
 export const ID_PROFILU = 'profil'
 export const idKategorii = (k: KategoriaOceniana) => `kat_${k}`
 export const idPotrzeby = (p: Potrzeba) => `p_${p.id}`
+/** #182: pytanie noul o potrzebę „na nie”. */
+export const idNaNie = (n: PotrzebaNaNie) => `n_${n.id}`
 
-/** Zapytanie w stałej kolejności: profil, 3 kategorie, potrzeby z twierdzeniem, bramka. */
+/**
+ * Zapytanie w stałej kolejności: profil, 3 kategorie, potrzeby z twierdzeniem, potrzeby
+ * „na nie” i 3 pytania o siłę (#182), bramka.
+ */
 export function zapytanieOpiszSiebie(tekst: string): ZapytanieJev {
   const pytania: ZapytanieJev['pytania'] = {}
   pytania[ID_PROFILU] = wybor('Który profil najlepiej pasuje do osoby szukającej mieszkania?', {
@@ -860,6 +1138,8 @@ export function zapytanieOpiszSiebie(tekst: string): ZapytanieJev {
   }
   for (const p of POTRZEBY)
     if (p.twierdzenie) pytania[idPotrzeby(p)] = takNie(p.twierdzenie, p.kryteria)
+  for (const n of NA_NIE) pytania[idNaNie(n)] = takNie(n.twierdzenie, n.kryteria)
+  for (const g of GRUPY_SILY) pytania[g.id] = ocena(g.polecenie, SKALA_SILY)
   for (const b of BRAMKA) pytania[b.id] = takNie(b.twierdzenie, b.kryteria)
   return { stan: tekst, pytania }
 }
@@ -876,18 +1156,22 @@ function personaZPotrzeb(ids: readonly string[]): PersonaId | null {
 function zloz(
   persona: PersonaId | null,
   pewnoscPersony: number | null,
-  potrzeby: readonly { id: string; procent: number | null }[],
+  potrzeby: readonly { id: string; procent: number | null; sila?: Sila }[],
   poziomyJev: Partial<Record<KategoriaOceniana, number>>,
+  nieChce: readonly { id: string; procent: number | null }[] = [],
 ): Zrozumienie {
   const kategorie: Partial<Record<KategoriaOceniana, number>> = {}
   const wskazniki: Record<string, number> = {}
-  for (const { id } of potrzeby) {
+  const sily: Record<string, Sila> = {}
+  for (const { id, sila } of potrzeby) {
     const p = POTRZEBY.find((x) => x.id === id)
     if (!p) continue
+    if (sila !== undefined) sily[id] = sila
     for (const [k, w] of Object.entries(p.kategorie) as [KategoriaOceniana, number][])
       kategorie[k] = Math.max(kategorie[k] ?? 0, w)
+    // #182: waga warstwy potrzeby zależy od jej siły (3 = tabela, 2 = −1, 1 = −2, min. 1).
     for (const [id, w] of Object.entries(p.wskazniki))
-      wskazniki[id] = Math.max(wskazniki[id] ?? 0, w)
+      wskazniki[id] = Math.max(wskazniki[id] ?? 0, wagaZSily(w, sila))
   }
   // Jawny poziom od JEV wygrywa z tym, co wynika z potrzeb – także „mało ważne”.
   Object.assign(kategorie, poziomyJev)
@@ -895,10 +1179,23 @@ function zloz(
   const zrozumialem: PozycjaZrozumienia[] = []
   const p = znajdzPersone(persona)
   if (p) zrozumialem.push({ rodzaj: 'profil', etykieta: p.nazwa, procent: pewnoscPersony })
-  for (const { id, procent } of potrzeby) {
+  for (const { id, procent, sila } of potrzeby) {
     const potrzeba = POTRZEBY.find((x) => x.id === id)
-    if (potrzeba) zrozumialem.push({ rodzaj: 'potrzeba', etykieta: potrzeba.etykieta, procent })
+    if (potrzeba)
+      zrozumialem.push({
+        rodzaj: 'potrzeba',
+        etykieta: potrzeba.etykieta,
+        procent,
+        ...(sila === undefined ? {} : { opis: OPISY_SILY[sila] }),
+      })
   }
+  const naNie = NA_NIE.filter((n) => nieChce.some((x) => x.id === n.id))
+  for (const n of naNie)
+    zrozumialem.push({
+      rodzaj: 'na_nie',
+      etykieta: n.etykieta,
+      procent: nieChce.find((x) => x.id === n.id)?.procent ?? null,
+    })
   for (const k of KATEGORIE_OCENIANE) {
     const poziom = kategorie[k]
     if (poziom === undefined) continue
@@ -909,7 +1206,15 @@ function zloz(
       opis: POZIOMY_WAZNOSCI[poziom],
     })
   }
-  return { persona, kategorie, wskazniki, potrzeby: potrzeby.map((x) => x.id), zrozumialem }
+  return {
+    persona,
+    kategorie,
+    wskazniki,
+    potrzeby: potrzeby.map((x) => x.id),
+    zrozumialem,
+    ...(Object.keys(sily).length ? { sily } : {}),
+    ...(naNie.length ? { nieChce: naNie.map((n) => n.id) } : {}),
+  }
 }
 
 // ── Odpowiedzi JEV → zrozumienie ──────────────────────────────────────────────────────────
@@ -989,14 +1294,16 @@ export function przetworzOdpowiedzi(
   tekst = '',
   progi: ProgiProfilu = PROGI_PROFILU,
 ): Zrozumienie | null {
+  const sila = silyZJev(odpowiedzi)
   if (bramkaZamknieta(odpowiedzi)) {
-    const potrzeby: { id: string; procent: number }[] = []
+    const potrzeby: { id: string; procent: number; sila?: Sila }[] = []
     for (const p of POTRZEBY) {
       const o = p.twierdzenie ? odpowiedzi[idPotrzeby(p)] : null
       if (o?.typ === 'noul' && o.noul >= PROG_POTRZEBY_PEWNEJ)
-        potrzeby.push({ id: p.id, procent: procent(o.noul) })
+        potrzeby.push({ id: p.id, procent: procent(o.noul), ...sila(p.id) })
     }
-    return potrzeby.length ? zloz(null, null, potrzeby, {}) : PUSTE_ZROZUMIENIE
+    const nie = nieChceZJev(odpowiedzi, PROG_POTRZEBY_PEWNEJ)
+    return potrzeby.length || nie.length ? zloz(null, null, potrzeby, {}, nie) : PUSTE_ZROZUMIENIE
   }
 
   let persona: PersonaId | null = null
@@ -1018,22 +1325,50 @@ export function przetworzOdpowiedzi(
     if (poziom !== POZIOM_NEUTRALNY) poziomy[k] = poziom
   }
 
-  const potrzeby: { id: string; procent: number | null }[] = []
+  const potrzeby: { id: string; procent: number | null; sila?: Sila }[] = []
   for (const p of POTRZEBY) {
     if (!p.twierdzenie) continue
     const o = odpowiedzi[idPotrzeby(p)]
     if (o?.typ === 'noul' && o.noul >= PROG_POTRZEBY)
-      potrzeby.push({ id: p.id, procent: procent(o.noul) })
+      potrzeby.push({ id: p.id, procent: procent(o.noul), ...sila(p.id) })
   }
+  const nie = nieChceZJev(odpowiedzi, PROG_NA_NIE)
   // Nic pewnego od JEV → reguły (one i tak czytają te same słowa, co zapas profilu niżej).
-  if (persona === null && potrzeby.length === 0 && Object.keys(poziomy).length === 0) return null
+  if (
+    persona === null &&
+    potrzeby.length === 0 &&
+    nie.length === 0 &&
+    Object.keys(poziomy).length === 0
+  )
+    return null
   // #155: pod progiem (albo „nieznany”) profil tylko z mocnych potrzeb; bez nich – bez zmian.
   if (persona === null) persona = profilZMocnychPotrzeb(odpowiedzi, tekst, progi)
   // Społeczność i koszty (po #171 także dawna „Przyszłość okolicy”) nie ma pytania o poziom –
   // niesie ją profil Inwestor przez potrzebę `inwestycja` (jej kategorie i wskaźniki z tabeli
   // POTRZEBY, bez liczby od JEV).
   if (persona === 'inwestor') potrzeby.push({ id: 'inwestycja', procent: null })
-  return zloz(persona, pewnoscPersony, potrzeby, poziomy)
+  return zloz(persona, pewnoscPersony, potrzeby, poziomy, nie)
+}
+
+/** #182: siła potrzeby z oceny jej grupy (GRUPY_SILY); `{}` = brak siły (waga z tabeli). */
+function silyZJev(odpowiedzi: Record<string, OdpowiedzJev | null>) {
+  return (id: string): { sila?: Sila } => {
+    const g = GRUPY_SILY.find((x) => x.potrzeby.includes(id))
+    const o = g ? odpowiedzi[g.id] : null
+    if (o?.typ !== 'score') return {}
+    const s = Math.min(Math.round(o.ocena), 3)
+    return s >= 1 ? { sila: s as Sila } : {}
+  }
+}
+
+/** #182: potrzeby „na nie” z noul ≥ progu, w kolejności NA_NIE. */
+function nieChceZJev(odpowiedzi: Record<string, OdpowiedzJev | null>, prog: number) {
+  const wynik: { id: string; procent: number }[] = []
+  for (const n of NA_NIE) {
+    const o = odpowiedzi[idNaNie(n)]
+    if (o?.typ === 'noul' && o.noul >= prog) wynik.push({ id: n.id, procent: procent(o.noul) })
+  }
+  return wynik
 }
 
 // ── Reguły zapasowe ───────────────────────────────────────────────────────────────────────
@@ -1065,12 +1400,18 @@ function wystepuje(tekst: string, w: Wzorzec): boolean {
 export function zRegul(tekst: string): Zrozumienie {
   const t = normalizuj(tekst)
   if (!t) return PUSTE_ZROZUMIENIE
-  const ids = POTRZEBY.filter((p) => p.wzorce.some((w) => wystepuje(t, w))).map((p) => p.id)
+  // #182: „nie chcę mieszkać obok szkoły” to potrzeba „na nie”, a nie „dzieci” – potrzeby na tak
+  // czytamy z tekstu bez fragmentów odmowy.
+  const nie = NA_NIE.filter((n) => odmowaPrzed(t, n.slowa))
+  const naTak = nie.reduce((s, n) => bezOdmowy(s, n.slowa), t)
+  const ids = POTRZEBY.filter((p) => p.wzorce.some((w) => wystepuje(naTak, w))).map((p) => p.id)
+  const sila = silaZRegul(tekst)
   return zloz(
     personaZPotrzeb(ids),
     null,
-    ids.map((id) => ({ id, procent: null })),
+    ids.map((id) => ({ id, procent: null, ...(sila === undefined ? {} : { sila }) })),
     {},
+    nie.map((n) => ({ id: n.id, procent: null })),
   )
 }
 
@@ -1100,6 +1441,46 @@ export interface NoweUstawienia {
 const przytnij = (w: number) => Math.min(Math.max(Math.round(w), 0), 4)
 
 /**
+ * #182: reguła sprzecznych kierunków – deterministyczna, bez JEV:
+ * 1. Jawne „nie chcę” wygrywa kierunek swojej warstwy: z profilem, z bieżącymi ustawieniami
+ *    i z potrzebą na tak („mamy dzieci, ale nie pod samą szkołą” → szkoła dalej = lepiej).
+ *    Użytkownik powiedział to wprost o tej jednej rzeczy, a potrzeba na tak mówi o całej grupie
+ *    warstw. Dwa „nie chcę” nie mają sprzecznych kierunków (pilnuje test tabeli NA_NIE).
+ * 2. Dwie potrzeby na tak z przeciwnymi kierunkami na tej samej warstwie: wygrywa silniejsza
+ *    (brak siły = 3, jak waga z tabeli), przy remisie wcześniejsza w POTRZEBY.
+ * 3. Kierunek z profilu albo bieżących ustawień wygrywa z potrzebą na tak (#177, bez zmian).
+ */
+export function kierunkiPotrzeb(
+  z: Pick<Zrozumienie, 'potrzeby' | 'sily' | 'nieChce'>,
+  /** Tabela potrzeb – parametr tylko dla testów reguły (dziś żadne dwie nie są sprzeczne). */
+  tabela: readonly Potrzeba[] = POTRZEBY,
+): {
+  naTak: Record<string, KierunekOceny>
+  naNie: Record<string, { waga: number; kierunek: KierunekOceny }>
+} {
+  const naTak: Record<string, KierunekOceny> = {}
+  const silaKierunku: Record<string, number> = {}
+  for (const p of tabela) {
+    if (!z.potrzeby.includes(p.id)) continue
+    const s = z.sily?.[p.id] ?? 3
+    for (const [warstwa, k] of Object.entries(p.kierunki ?? {})) {
+      if ((silaKierunku[warstwa] ?? 0) >= s) continue
+      naTak[warstwa] = k
+      silaKierunku[warstwa] = s
+    }
+  }
+  const naNie: Record<string, { waga: number; kierunek: KierunekOceny }> = {}
+  for (const n of NA_NIE) {
+    if (!z.nieChce?.includes(n.id)) continue
+    for (const [warstwa, w] of Object.entries(n.warstwy)) {
+      const byla = naNie[warstwa]
+      naNie[warstwa] = byla ? { ...byla, waga: Math.max(byla.waga, w.waga) } : { ...w }
+    }
+  }
+  return { naTak, naNie }
+}
+
+/**
  * Bazą są wagi rozpoznanego profilu (albo bieżące, gdy profilu nie ma). Potrzeby podnoszą
  * swoje warstwy z tabeli POTRZEBY (także te z wagą 0) i nadają kierunek warstwom neutralnym.
  * Poziom kategorii od JEV ≥ 3 podnosi do tego poziomu te warstwy kategorii, które baza już
@@ -1116,12 +1497,15 @@ const przytnij = (w: number) => Math.min(Math.max(Math.round(w), 0), 4)
  *   warstwy profilu z wagą 1 (wynik E8, kolejki NFZ) do 4 i przedszkole ginęło wśród nich.
  *   Poziom od JEV wyższy (albo niższy) niż z potrzeb działa jak dotąd. Poziomy w zrozumieniu
  *   (chipy, pomiar kategorii) się nie zmieniają.
+ *
+ * #182: minimalne wagi potrzeb są już przeliczone przez siłę (`wagaZSily` w `zloz`), a „nie
+ * chcę” przejmuje swoje warstwy – kierunek i waga według `kierunkiPotrzeb`.
  */
 export function wagiZeZrozumienia(
   z: Zrozumienie,
   tryb: Tryb,
   wskazniki: readonly (Pick<WskaznikMeta, 'id' | 'kategoria'> &
-    Partial<Pick<WskaznikMeta, 'atrapa'>>)[],
+    Partial<Pick<WskaznikMeta, 'atrapa' | 'kierunek'>>)[],
   biezace: { wagi: Readonly<Record<string, number>>; kierunki: Kierunki },
 ): NoweUstawienia {
   const baza = z.persona
@@ -1132,6 +1516,10 @@ export function wagiZeZrozumienia(
   for (const p of potrzeby)
     for (const [k, w] of Object.entries(p.kategorie) as [KategoriaOceniana, number][])
       zPotrzeb[k] = Math.max(zPotrzeb[k] ?? 0, w)
+  const zKierunkiem = kierunkiPotrzeb(z)
+  const meta = new Map(wskazniki.map((w) => [w.id, w]))
+  /** Kierunek, który warstwa ma bez „nie chcę”: ustawiony w bazie albo z meta. */
+  const kierunekBazy = (id: string) => baza.kierunki[id] ?? meta.get(id)?.kierunek
   const wagi: Record<string, number> = {}
   let zmiana = false
   for (const { id, kategoria } of wskazniki) {
@@ -1143,21 +1531,35 @@ export function wagiZeZrozumienia(
       if (poziom !== undefined && poziom !== zPotrzeb[kategoria])
         w = poziom <= 1 ? Math.min(w, poziom) : w > 0 ? Math.max(w, poziom) : 0
       const minimum = z.wskazniki[id]
-      if (minimum !== undefined) w = Math.max(w, minimum)
+      const nie = zKierunkiem.naNie[id]
+      if (nie) {
+        // #182: „nie chcę” przejmuje warstwę. Liczą się tylko wagi zgodne z jego kierunkiem –
+        // waga profilu „plac zabaw blisko” nie może wzmacniać „plac zabaw daleko”.
+        const kierunekPotrzeby = zKierunkiem.naTak[id] ?? meta.get(id)?.kierunek
+        w = Math.max(
+          kierunekBazy(id) === nie.kierunek ? w : 0,
+          minimum !== undefined && kierunekPotrzeby === nie.kierunek ? minimum : 0,
+          nie.waga,
+        )
+      } else if (minimum !== undefined) w = Math.max(w, minimum)
     }
     w = przytnij(w)
     if (w !== przed) zmiana = true
     wagi[id] = w
   }
-  // Kierunek z potrzeby tylko tam, gdzie baza nie ma własnego (profil albo wybór użytkownika).
+  // Kierunek z potrzeby na tak tylko tam, gdzie baza nie ma własnego (profil albo wybór
+  // użytkownika). #182: „nie chcę” nadpisuje każdy kierunek swojej warstwy.
   const kierunki: Record<string, KierunekOceny> = { ...baza.kierunki }
-  const zywe = new Set(wskazniki.map((w) => w.id))
-  for (const p of potrzeby) {
-    for (const [warstwa, k] of Object.entries(p.kierunki ?? {})) {
-      if (!zywe.has(warstwa) || kierunki[warstwa] !== undefined) continue
-      kierunki[warstwa] = k
-      zmiana = true
-    }
+  for (const [warstwa, k] of Object.entries(zKierunkiem.naTak)) {
+    if (!meta.has(warstwa) || kierunki[warstwa] !== undefined) continue
+    kierunki[warstwa] = k
+    zmiana = true
+  }
+  for (const [warstwa, { kierunek }] of Object.entries(zKierunkiem.naNie)) {
+    if (!meta.has(warstwa) || (kierunki[warstwa] ?? meta.get(warstwa)?.kierunek) === kierunek)
+      continue
+    kierunki[warstwa] = kierunek
+    zmiana = true
   }
   return {
     persona: z.persona && !zmiana ? z.persona : 'wlasna',

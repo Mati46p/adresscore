@@ -15,7 +15,14 @@ import './opiszSiebie.css'
 
 function tekstPozycji(p: PozycjaZrozumienia): string {
   if (p.rodzaj === 'kategoria') return `${p.etykieta} – ${(p.opis ?? '').toLowerCase()}`
-  const nazwa = p.rodzaj === 'profil' ? `profil: ${p.etykieta}` : p.etykieta
+  const nazwa =
+    p.rodzaj === 'profil'
+      ? `profil: ${p.etykieta}`
+      : p.rodzaj === 'na_nie'
+        ? `nie chcę: ${p.etykieta}`
+        : p.opis
+          ? `${p.etykieta} (${p.opis})`
+          : p.etykieta
   return p.procent === null ? nazwa : `${nazwa} ${p.procent}%`
 }
 

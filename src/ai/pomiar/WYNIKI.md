@@ -2993,6 +2993,114 @@ liczona bieżącą tabelą i bieżącym składaniem:
 
 Bez sieci, do powtórzenia: `node src/ai/pomiar/spelnienie.ts --syntetyczne`.
 
+## Siła i „nie chcę” (#182)
+
+Przed #182 potrzeba była zero-jedynkowa, a „nie chcę knajp pod oknem” niczego nie zmieniało.
+Silnik się nie zmienił. JEV dalej wybiera tylko z zamkniętych list: ocenia twierdzenia (noul)
+i wybiera poziom na skali (score). Słownik jest wspólny ze zbiorem nr 8: siła 1 = „byłoby miło”,
+2 = „wyraźnie ważne”, 3 = „bardzo ważne / warunek”, a 7 id „nie chcę” jest takich jak w etykietach.
+
+### Siła: skąd ją brać (próba na żywo)
+
+Sprawdziliśmy 4 źródła w jednym pełnym żądaniu (31 pytań). Mieliśmy 24 celowane zdania z siłą
+ustaloną przy pisaniu: pierwsze 16 w dwóch przebiegach (A/A), 8 nowych tylko w drugim. Liczymy
+tylko potrzeby, które JEV rozpoznał (noul ≥ 0,6).
+
+| Źródło siły | Pytań | Przebieg 1 (16 zdań) | Przebieg 2 (24 zdania) |
+|---|---|---|---|
+| stała 2 | 0 | 47% (błąd 0,53) | 38% (0,62) |
+| brak siły (= waga z tabeli, jak przed #182) | 0 | 37% (0,79) | 46% (0,69) |
+| pasma noul twierdzenia (≥ 0,95 / 0,8 / 0,6) | 0 | 53% (0,53) | 58% (0,50) |
+| jedno pytanie score o siłę wymagań w całym tekście | 1 | 58% (0,47) | 62% (0,46) |
+| **3 pytania score – po jednym na grupę potrzeb** | 3 | **68% (0,32)** | **73% (0,31)** |
+| grupy z progiem pewności 0,5 | 3 | 58% (0,47) | 69% (0,35) |
+
+Wygrało źródło **3 pytania score na grupę**: dom (dzieci, pies, senior, zdrowie, sklepy),
+otoczenie (zieleń, powietrze, cisza, bezpieczeństwo) i dojazdy (rower, bez samochodu, praca
+w centrum, lotnisko, kolej). Skala ma 4 poziomy: 0 = „tekst nie mówi”, 1–3 = siła. Siła potrzeby
+to zaokrąglona ocena jej grupy. Ocena 0 przy rozpoznanej potrzebie oznacza brak siły, czyli
+wagę z tabeli. Potrzeby z #183 wózek, auto i student należą do grup dom i dojazdy. Praca
+zdalna, życie nocne i sport nie należą do żadnej grupy, więc mają wagę z tabeli. Noul mówi, czy twierdzenie jest prawdziwe, a nie jak mocno. „Mam psa, fajnie
+byłoby mieć skwer” daje pies 0,94, choć siła wynosi 1. Osobne pytanie score na każdą potrzebę
+to co najmniej 10 pytań więcej. Zawodzi to, że jedna grupa ma jedną siłę, np. „astma córki to
+warunek” podnosi też dzieci do 3. Oceny grup są stabilne: w A/A różnią się o ±0,15. Zdania pisał
+ten sam agent, który ustalał siłę, więc wynik jest optymistyczny. Wynik nagłówkowy policzy #184
+na zbiorze nr 8.
+
+**Siła → waga** (`wagaZSily`): przy sile 3 warstwa potrzeby dostaje wagę z tabeli POTRZEBY, przy
+2 o 1 mniej, a przy 1 o 2 mniej, ale nie mniej niż 1. Brak siły daje wagę z tabeli, tak jak
+przed #182. Tak jest przy regułach bez słów siły i przy JEV bez oceny. Reguły zapasowe ustawiają
+jedną siłę dla całego tekstu: „koniecznie / warunek / najważniejsze” = 3, „byłoby miło /
+niekoniecznie” = 1.
+
+### „Nie chcę”: tabela
+
+7 twierdzeń noul z kryteriami prawda/fałsz (jak w #163) i progiem 0,6. Każde przejmuje
+istniejące warstwy, które liczą się w silniku, i nadaje im kierunek (`kierunki`, jak suwak
+kierunku w panelu):
+
+| Id | Warstwy (waga, kierunek) |
+|---|---|
+| zycie_nocne_obok | bary/kluby w 300 m (4, mniej), najbliższa gastronomia (1, dalej) |
+| turysci | miejsca noclegowe w 300 m (4, mniej) |
+| szkola_obok | najbliższa szkoła (2, dalej), plac zabaw (1, dalej) |
+| duza_droga | hałas LDWN (4, mniej), NO2 (2, mniej) |
+| przemysl | zakład z rejestru PRTR (4, dalej), zakład Seveso (3, dalej) |
+| imprezy | dni z wydarzeniem w dużych obiektach w 500 m (4, mniej), imprezy stałe w 500 m (3, mniej) |
+| budowy | pozwolenia na budowę w 500 m (4, mniej) |
+
+Nie ma warstwy „duża ulica”. Mapa hałasu to głównie hałas drogowy i tramwajowy, a NO2 to spaliny.
+Silnik nie ma kierunku „optimum”, więc „szkoła obok” ustawia „dalej = lepiej” z małą wagą.
+Pierwsze brzmienie twierdzenia o turystach dało 0,54 na „mam dość turystów z walizkami”.
+Twierdzenie „Osobie przeszkadzają turyści…” daje 0,95.
+
+### Reguła sprzecznych kierunków
+
+1. „Nie chcę” wygrywa kierunek swojej warstwy: z profilem (Inwestor + „budowy” → pozwolenia
+   mniej), z bieżącymi ustawieniami i z potrzebą na tak („dzieci” + „szkoła obok” → plac zabaw
+   dalej). Waga tej warstwy to maksimum tylko z wag zgodnych z tym kierunkiem. Waga 4 placu
+   zabaw z „dzieci” nie wzmacnia więc „placu zabaw dalej”.
+2. Dwie potrzeby na tak z przeciwnymi kierunkami: wygrywa silniejsza, a brak siły liczy się
+   jak 3. Przy remisie wygrywa wcześniejsza w POTRZEBY. Dziś żadne dwie nie są sprzeczne.
+   Pierwsza będzie „życie nocne” z #183 przeciw „ciszy”.
+3. Kierunek z profilu albo bieżących ustawień wygrywa z potrzebą na tak, bez zmian od #177.
+
+### Bez sieci: przypadki syntetyczne (`node src/ai/pomiar/spelnienie.ts --182`)
+
+Mamy 21 przypadków „nie chcę”: 7 id × 3 konteksty (Rodzina + dzieci, Singiel + bez samochodu,
+Senior + zdrowie), top 100 adresów. Top odsuwa się od rzeczy niechcianej w 19 z 21 przypadków
+i nie pogarsza się w żadnym. W dwóch pozostałych top już był od niej wolny. Przykłady:
+- bary w 300 m: Singiel 99% → 0% top;
+- noclegi w 300 m: 59–100% → 2–39%;
+- szkoła: mediana 146–208 m → 230–283 m;
+- zakład PRTR: +875–1480 m;
+- hałas > 55 dB u Singla: 41% → 0%.
+
+Siła na 8 potrzebach (16 wskaźników), profil → profil + potrzeba z siłą 1, 2 i 3: siła 3 przesuwa
+top co najmniej tak mocno jak 1 w 14 z 16 wskaźników. Przykłady: zieleń w 100 m +2 / +3 / +5 pp,
+weterynarz −36 / −70 / −73 m, droga rowerowa −6 / −6 / −15 m. W dwóch wyjątkach profil już ma
+tę warstwę z wagą 4 (przedszkole u Rodziny, przystanek u Singla), więc zmiana to szum: +3 m
+i +0,3 m.
+
+### Na żywo: końcowe zapytanie
+
+Zapytanie ma 32 pytania, czyli cały nowy limit pośrednika (16 → 32): 22 z #183, 7 „nie chcę”
+i 3 o siłę. Puściliśmy je dwa razy na tych samych 24 zdaniach przez `przetworzOdpowiedzi`.
+Pierwszy raz było przed scaleniem #183: 26 pytań i 6 zaślepek noul w miejsce jego potrzeb.
+Drugi raz po scaleniu, z prawdziwymi twierdzeniami #183. Oba przebiegi dały te same wyniki:
+- siła trafna 19 z 26 (73%);
+- „nie chcę” trafione 9 z 10, fałszywe 0, w tym na 5 zdaniach kontrolnych: „chcę knajpy blisko”,
+  „pod wynajem, gdzie się buduje”, „blisko szkoły dla syna”, „blisko hali, chodzę na koncerty”
+  i „zakładów się nie boję”;
+- jedyne pominięcie: „nie przy samym boisku szkolnym” (szkola_obok 0,38).
+
+Opóźnienie i rozmiar (pośrednik czeka 800 ms, limit znaków to 60 tys.):
+- z zaślepkami: mediana 295 ms, p90 395 ms, max 618 ms;
+- z prawdziwym #183: mediana 306 ms, p90 433 ms, max 460 ms;
+- pytania mają 12,1 tys. znaków.
+
+Wywołania na żywo: 88 (16 + 24 w próbie źródeł siły, 24 + 24 w sprawdzianach końcowych).
+
 ## Na slajd
 
 **Zbiór kontrolny nr 7 (#174).** To 120 opisów i 150 pytań, które napisały na ślepo osobne

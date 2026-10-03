@@ -398,6 +398,17 @@ describe('sprawdzZapytanie – opisy strukturalne (#163)', () => {
     assert.equal(z.blad, undefined)
   })
 
+  it('#182: limit 32 pytań – 32 przechodzi, 33 nie', () => {
+    const n = (ile) => ({
+      stan: 'x',
+      pytania: Object.fromEntries(
+        Array.from({ length: ile }, (_, i) => [`p${i}`, { typ: 'noul', polecenie: 'p' }]),
+      ),
+    })
+    assert.equal(sprawdzZapytanie(n(32)).blad, undefined)
+    assert.match(sprawdzZapytanie(n(33)).blad ?? '', /32/)
+  })
+
   it('całe pytania ponad limit znaków → błąd, a duże zapytanie z samymi tekstami przechodzi', () => {
     const opcje = (n, dl) =>
       Object.fromEntries(Array.from({ length: n }, (_, i) => [`o${i}`, 'x'.repeat(dl)]))
