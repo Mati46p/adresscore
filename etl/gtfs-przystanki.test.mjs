@@ -52,7 +52,7 @@ test('GTFS: wyjątek kalendarza aktywuje kurs, bez wsiadania nie liczy peronu', 
     'calendar_dates.txt': strToU8('service_id,date,exception_type\ns,20261003,1\n'),
     'trips.txt': strToU8('trip_id,service_id\nt,s\n'),
     'stop_times.txt': strToU8(
-      'trip_id,arrival_time,departure_time,stop_id,stop_sequence,stop_headsign,pickup_type,drop_off_type\nt,07:00:00,07:00:00,bez_wsiadania,1,,1,0\nt,07:05:00,07:05:00,z_wsiadaniem,2,,0,0\n',
+      'trip_id,arrival_time,departure_time,stop_id,stop_sequence,stop_headsign,pickup_type,drop_off_type\nt,07:00:00,07:00:00,bez_wsiadania,1,"Centrum, Kraków",1,0\nt,07:05:00,07:05:00,z_wsiadaniem,2,"Centrum, Kraków",0,0',
     ),
   }
   assert.deepEqual([...aktywneStopIds(pliki, '2026-10-03')], ['z_wsiadaniem'])

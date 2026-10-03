@@ -102,29 +102,41 @@ export function aktywneStopIds(pliki, data) {
   const przystanki = new Set()
   let reszta = ''
   let pierwsza = true
+  const przecinekPoPolu = (linia, od) => {
+    let cytat = false
+    for (let i = od; i < linia.length; i++) {
+      if (linia[i] === '"') {
+        if (cytat && linia[i + 1] === '"') i++
+        else cytat = !cytat
+      } else if (linia[i] === ',' && !cytat) return i
+    }
+    return -1
+  }
+  const dodajLinie = (linia) => {
+    if (pierwsza) {
+      pierwsza = false
+      if (!linia.replace(/^\uFEFF/, '').startsWith('trip_id,arrival_time,departure_time,stop_id,'))
+        throw new Error('GTFS: nieoczekiwany układ stop_times.txt')
+      return
+    }
+    const a = przecinekPoPolu(linia, 0)
+    if (a < 0 || !kursy.has(linia.slice(0, a))) return
+    const b = przecinekPoPolu(linia, a + 1)
+    const c = przecinekPoPolu(linia, b + 1)
+    const d = przecinekPoPolu(linia, c + 1)
+    const e = przecinekPoPolu(linia, d + 1)
+    const f = przecinekPoPolu(linia, e + 1)
+    const g = przecinekPoPolu(linia, f + 1)
+    if (b < 0 || c < 0 || d < 0 || e < 0 || f < 0 || g < 0) return
+    if (linia.slice(f + 1, g) !== '1') przystanki.add(linia.slice(c + 1, d))
+  }
   for (let od = 0; od < bajty.length; od += 1024 * 1024) {
     const tekst = reszta + dekoder.decode(bajty.subarray(od, od + 1024 * 1024), { stream: true })
     const linie = tekst.split('\n')
     reszta = linie.pop()
-    for (const linia of linie) {
-      if (pierwsza) {
-        pierwsza = false
-        if (!linia.startsWith('trip_id,arrival_time,departure_time,stop_id,'))
-          throw new Error('GTFS: nieoczekiwany układ stop_times.txt')
-        continue
-      }
-      const a = linia.indexOf(',')
-      if (a < 0 || !kursy.has(linia.slice(0, a))) continue
-      const b = linia.indexOf(',', a + 1)
-      const c = linia.indexOf(',', b + 1)
-      const d = linia.indexOf(',', c + 1)
-      const e = linia.indexOf(',', d + 1)
-      const f = linia.indexOf(',', e + 1)
-      const g = linia.indexOf(',', f + 1)
-      if (b < 0 || c < 0 || d < 0 || e < 0 || f < 0 || g < 0) continue
-      if (linia.slice(f + 1, g) !== '1') przystanki.add(linia.slice(c + 1, d))
-    }
+    for (const linia of linie) dodajLinie(linia)
   }
+  if (reszta) dodajLinie(reszta)
   if (!przystanki.size) throw new Error(`GTFS: brak obsługiwanych przystanków na ${data}`)
   return przystanki
 }
