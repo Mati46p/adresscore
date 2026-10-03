@@ -5,7 +5,6 @@ import { BIZNESY, PERSONY, type PersonaId, TRYBY, type Tryb, warstwyBiznesu } fr
 import {
   type KierunekOceny,
   KOLEJNOSC_KATEGORII,
-  KONTEKST_DO_WYNIKU,
   kierunekEfektywny,
   WAGA_MAX,
   type WskaznikPrzygotowany,
@@ -90,9 +89,7 @@ export function PanelFiltrow() {
     wyborcze.find((w) => wagaUzytkownika(wagi, w.meta.id) > 0) ??
     wyborcze.find((w) => kierunki[w.meta.id]) ??
     wyborcze[0]
-  const liczone = warstwyPanelu.filter(
-    (w) => w.meta.kategoria !== 'kontekst' || KONTEKST_DO_WYNIKU[w.meta.id],
-  )
+  const liczone = warstwyPanelu.filter((w) => w.meta.kategoria !== 'kontekst')
   const aktywne = liczone.filter(
     (w) => wagaUzytkownika(wagi, w.meta.id) > 0 && kierunekEfektywny(w.meta, kierunki) !== null,
   ).length
@@ -358,9 +355,6 @@ function Warstwa({
   const informacyjna = meta.kategoria === 'kontekst'
   const neutralna = meta.kierunek === 'neutralny'
   const kierunek = kierunekEfektywny(meta, kierunki)
-  const dobrowolna = Boolean(KONTEKST_DO_WYNIKU[meta.id])
-  const niedostepnaCena = meta.id === 'cena_m2_mediana' && Boolean(meta.atrapa)
-  const wlaczona = dobrowolna && !niedostepnaCena && waga > 0 && kierunek !== null
 
   return (
     <li className="panel-warstwa" title={meta.opis}>
@@ -371,82 +365,7 @@ function Warstwa({
       {meta.atrapa && <span className="atrapa panel-atrapa">dane przykładowe</span>}
 
       {informacyjna ? (
-        dobrowolna ? (
-          <div className="panel-kontekst-sterowanie">
-            {meta.id === 'drzewa_100m' && (
-              <p className="panel-uwaga">
-                Ewidencja ZZM jest niepełna: obejmuje tylko część drzew w Krakowie. Włącz ją
-                świadomie, jeśli mimo tego chcesz uwzględnić tę liczbę w wyniku.
-              </p>
-            )}
-            {niedostepnaCena && (
-              <p className="panel-nota">
-                Cena m² ma teraz dane przykładowe. Ocena zostanie udostępniona po podłączeniu danych
-                RCN; atrapa nie wpływa na wynik.
-              </p>
-            )}
-            <button
-              type="button"
-              className="seg panel-prog-przycisk"
-              aria-pressed={wlaczona}
-              disabled={niedostepnaCena}
-              onClick={() => {
-                if (wlaczona) ustawWage(meta.id, 0)
-                else {
-                  if (meta.kierunek === 'neutralny' && !kierunki[meta.id])
-                    ustawKierunek(
-                      meta.id,
-                      czyWarstwaWyborow(meta.id) ? 'wiecej-lepiej' : 'mniej-lepiej',
-                    )
-                  ustawWage(meta.id, 2)
-                }
-              }}
-            >
-              {wlaczona ? 'Uwzględniane w wyniku – wyłącz' : 'Uwzględnij w wyniku'}
-            </button>
-            {!wlaczona && !niedostepnaCena && (
-              <p className="panel-info">Tylko informacyjnie – bez wpływu na wynik.</p>
-            )}
-            <>
-              <div
-                role="group"
-                aria-label={`Preferencja: ${meta.nazwa}`}
-                className="panel-seg-grupa panel-prog-warunki"
-              >
-                {kierunkiWarstwy(meta).map((k) => (
-                  <button
-                    key={k}
-                    type="button"
-                    className="seg panel-kier"
-                    aria-pressed={wlaczona && kierunek === k}
-                    disabled={!wlaczona || niedostepnaCena}
-                    onClick={() => ustawKierunek(meta.id, k)}
-                  >
-                    {etykietaKierunku(meta, k)}
-                  </button>
-                ))}
-              </div>
-              {wlaczona && (
-                <div role="group" aria-label={`Waga: ${meta.nazwa}`} className="panel-seg-grupa">
-                  {SEGMENTY_WAGI.map((n) => (
-                    <button
-                      key={n}
-                      type="button"
-                      className="seg panel-seg"
-                      aria-pressed={waga === n}
-                      aria-label={`Waga ${n} z 4: ${meta.nazwa}`}
-                      onClick={() => ustawWage(meta.id, n)}
-                    >
-                      {n}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </>
-          </div>
-        ) : (
-          <p className="panel-info">Tylko warstwa informacyjna, bez wpływu na wynik</p>
-        )
+        <p className="panel-info">Tylko warstwa informacyjna, bez wpływu na wynik</p>
       ) : (
         <>
           <div className="panel-sterowanie">

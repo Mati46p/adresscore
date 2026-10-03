@@ -71,11 +71,11 @@ function scena(punkty: [number, number, number | null][]): WejscieSasiadow {
   }
 }
 
-// 0: wynik 50 (D); 1: 90 (A) 100 m; 2: 75 (B) 200 m; 3: 95 (A) 800 m – za daleko.
+// 0: wynik 50 (D); 1: 90 (A) 100 m; 2: 70 (B) 200 m; 3: 95 (A) 800 m – za daleko.
 const SCENA = scena([
   [0, 0, 50],
   [100, 0, 90],
-  [0, 200, 75],
+  [0, 200, 70],
   [800, 0, 95],
 ])
 

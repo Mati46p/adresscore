@@ -106,12 +106,12 @@ describe('odlegloscGeodezyjnaM', () => {
 describe('lepsiSasiedzi – brak kandydatów', () => {
   it('nikt w promieniu nie ma lepszej litery', () => {
     const { adresy, wskazniki } = scena([
-      { dx: 0, dy: 0, cisza: 80, dojazd: 80 }, // 80 → B
+      { dx: 0, dy: 0, cisza: 80, dojazd: 80 }, // 80 → A
       { dx: 100, dy: 0, cisza: 80, dojazd: 80 }, // ta sama litera
       { dx: 0, dy: 200, cisza: 50, dojazd: 50 }, // gorsza
     ])
     const r = lepsiSasiedzi(0, adresy, wskazniki, { wagi: WAGI })
-    assert.equal(r.wyjsciowy.litera, 'B')
+    assert.equal(r.wyjsciowy.litera, 'A')
     assert.deepEqual(r.kandydaci, [])
   })
 
@@ -176,7 +176,7 @@ describe('lepsiSasiedzi – dealbreakery', () => {
       wagi: { cisza: 4 },
       kierunki: { cisza: 'mniej-lepiej' },
     })
-    assert.equal(r.wyjsciowy.litera, 'B')
+    assert.equal(r.wyjsciowy.litera, 'A')
     assert.deepEqual(r.kandydaci, [])
   })
 })

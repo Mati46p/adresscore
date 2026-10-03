@@ -202,7 +202,9 @@ export function ustawieniaPersony(
       wagi[id] = 0
       continue
     }
-    let w = persona.wagi[id] ?? domyslnaWaga ?? persona.wagaNowych
+    // „Od zera” obiecuje same zera, więc domyślna waga nowej warstwy jej nie dotyczy.
+    const domyslna = persona.id === 'od-zera' ? undefined : domyslnaWaga
+    let w = persona.wagi[id] ?? domyslna ?? persona.wagaNowych
     if (w > 0) w = Math.min(Math.max(w + (MODYFIKATORY_TRYBU[tryb][kategoria] ?? 0), 1), 4)
     wagi[id] = w
     const k = persona.kierunki?.[id]

@@ -26,14 +26,19 @@ export const KOLEJNOSC_KATEGORII = [
 type BrakujaceKategorie = Exclude<KategoriaId, (typeof KOLEJNOSC_KATEGORII)[number]>
 export const KATEGORIE_KOMPLETNE: [BrakujaceKategorie] extends [never] ? true : never = true
 
-/** Dolne progi liter. Wynik poniżej ostatniego progu = G. */
+/**
+ * Dolne progi liter. Wynik poniżej ostatniego progu = G.
+ * Wynik to średnia ważona ocen rangowych, więc skupia się wokół 50 – im więcej warstw, tym
+ * ciaśniej. Progi co 10 punktów wokół 50 dają na danych Krakowa A dla ok. 5% najlepszych adresów
+ * (przy progach 85/70/…/10 litery A i G praktycznie nie występowały, a 78% adresów miało C lub D).
+ */
 export const PROGI_LITER = [
-  ['A', 85],
-  ['B', 70],
+  ['A', 75],
+  ['B', 65],
   ['C', 55],
-  ['D', 40],
-  ['E', 25],
-  ['F', 10],
+  ['D', 45],
+  ['E', 35],
+  ['F', 25],
 ] as const
 export type Litera = (typeof PROGI_LITER)[number][0] | 'G'
 
@@ -54,7 +59,11 @@ export function literaZWyniku(wynik: number | null): Litera | null {
 // „mniej = lepiej" – po odwróceniu 98% adresów miało ≥ 70 i mapa była „wszędzie dobra".
 // Na rangach mediana ma 50 w obu kierunkach, a odwrócenie kierunku daje dokładne lustro.
 // - Remisy dostają średnią rangę (ważne przy wielu zerach): u = (średnia pozycja w posortowanych
-//   danych) / (n − 1). Najniższa wartość bez remisu ma 0, najwyższa 1, mediana 0,5.
+//   danych) / (n − 1). Mediana ma 0,5.
+// - Wyjątek: blok remisu na krańcu rozkładu dostaje 0 albo 1, nie średnią. Inaczej 61% adresów
+//   bez azbestu w promieniu 100 m miałoby ocenę 61, a adres z ciszą poniżej progu mapy hałasu 76 –
+//   brak zagrożenia „tracił” punkty tylko dlatego, że dzieli go z wieloma adresami. Dotyczy też
+//   bloku z przycięcia do `zakres` (np. ponad połowa adresów dalej niż 500 m od osuwiska).
 // - `zakres` tylko przycina wartości odstające przed liczeniem rang, nie wyznacza skali.
 // - Rangi liczymy raz na warstwę: posortowane unikalne wartości z ich rangami (węzły), potem
 //   wyszukiwanie binarne. Przy więcej niż WEZLY_MAKS unikalnych wartościach bierzemy węzły
@@ -64,8 +73,13 @@ export function literaZWyniku(wynik: number | null): Litera | null {
 //
 // Warstwy z normą (`meta.norma`, np. PM2,5) zostają na skali odcinkowo liniowej na [od, do]:
 // - przedział to `meta.zakres`, a bez zakresu 5. i 95. percentyl danych;
-// - norma wewnątrz przedziału to punkt 50: przekroczenie przepisu zawsze daje ocenę poniżej
-//   połowy. Norma na brzegu przedziału (WHO PM2,5 = 5 przy zakresie 5–30) zostawia skalę liniową.
+// - norma to punkt 50: przekroczenie normy zawsze daje ocenę poniżej połowy, dotrzymanie – co
+//   najmniej połowę. Norma na brzegu albo poza przedziałem (WHO PM2,5 = 5 przy zakresie 5–30)
+//   ściska cały przedział do jednej połowy skali, zamiast ją pomijać.
+//
+// Warstwy gminne i powiatowe (kilkanaście jednostek, jedna z nich to większość adresów) idą na
+// skalę liniową od najniższej do najwyższej wartości. Ranga kilkunastu liczb udaje precyzję,
+// a remis Krakowa w środku rozkładu przestawiał pozostałe gminy na krańce.
 //
 // Warstwy dyskretne (najwyżej MAKS_POZIOMOW różnych wartości: strefy 0/1, powódź 0–4) też
 // zostają na skali liniowej. Ranga kategorii nic nie mówi, a przy przewadze zer psuje ocenę:
@@ -79,9 +93,9 @@ export interface Skala {
   /** Skala liniowa: początek przedziału. Skala rangowa: najniższa wartość po przycięciu. */
   od: number
   do: number
-  /** Punkt 50 na skali albo null, gdy norma nie leży wewnątrz przedziału. */
+  /** Punkt 50 na skali (może leżeć na brzegu albo poza przedziałem) albo null bez normy. */
   norma: number | null
-  zrodlo: 'zakres' | 'percentyle' | 'rangi' | 'brak'
+  zrodlo: 'zakres' | 'percentyle' | 'jednostki' | 'rangi' | 'brak'
   /** Skala rangowa: rosnące wartości węzłów. */
   wezly?: number[]
   /** Skala rangowa: ranga 0–1 każdego węzła (średnia przy remisach). */
@@ -149,6 +163,10 @@ function skalaRangowa(posortowane: Float64Array): Skala {
     }
     i = j + 1
   }
+  if (wezly.length > 1) {
+    rangi[0] = 0
+    rangi[rangi.length - 1] = 1
+  }
   return {
     od: posortowane[0] as number,
     do: posortowane[n - 1] as number,
@@ -174,14 +192,22 @@ function skalaLiniowa(meta: WskaznikMeta, posortowane: () => Float64Array): Skal
   }
   if (!(doo > od)) return { od, do: doo, norma: null, zrodlo: 'brak' }
   const n = meta.norma?.wartosc
-  const norma = n !== undefined && n > od && n < doo ? n : null
-  return { od, do: doo, norma, zrodlo }
+  return { od, do: doo, norma: n !== undefined && Number.isFinite(n) ? n : null, zrodlo }
 }
+
+const JEDNOSTKI_ADMINISTRACYJNE: readonly WskaznikMeta['rozdzielczosc'][] = ['gmina', 'powiat']
 
 export function zbudujSkale(meta: WskaznikMeta, wartosci: readonly (number | null)[]): Skala {
   if (meta.norma) return skalaLiniowa(meta, () => posortowaneLiczby(wartosci))
   const liczby = posortowaneLiczby(wartosci, meta.zakres)
   if (liczby.length === 0) return { od: Number.NaN, do: Number.NaN, norma: null, zrodlo: 'brak' }
+  if (JEDNOSTKI_ADMINISTRACYJNE.includes(meta.rozdzielczosc)) {
+    const od = liczby[0] as number
+    const doo = liczby[liczby.length - 1] as number
+    // Jedna wartość dla wszystkich: jak przy skali rangowej – 50, nie brak danych.
+    if (!(doo > od)) return skalaRangowa(liczby)
+    return { od, do: doo, norma: null, zrodlo: 'jednostki' }
+  }
   // Wszystkie adresy mają taki sam poprawny pomiar: 50 jest uczciwsze od „brak danych”.
   // Dla klas ze znanym zakresem (np. sama wartość 0 w strefie 0/1) zostaje skala liniowa.
   if (!meta.zakres && liczby[0] === liczby[liczby.length - 1]) return skalaRangowa(liczby)
@@ -214,44 +240,26 @@ export function pozycjaNaSkali(wartosc: number | null | undefined, skala: Skala)
     return ra + ((rb - ra) * (x - a)) / (b - a)
   }
   // Skala liniowa: norma (jeśli jest) ląduje dokładnie na 0,5.
-  if (norma === null) return (x - od) / (doo - od)
+  const t = (x - od) / (doo - od)
+  if (norma === null) return t
+  // Norma na brzegu albo poza przedziałem: cały przedział po jednej stronie normy.
+  if (norma <= od) return 0.5 + 0.5 * t
+  if (norma >= doo) return 0.5 * t
   if (x <= norma) return (0.5 * (x - od)) / (norma - od)
   return 0.5 + (0.5 * (x - norma)) / (doo - norma)
 }
 
 function ocenaZPozycji(u: number, kierunek: KierunekOceny): number {
-  if (kierunek === 'wiecej-lepiej') return 100 * u
-  if (kierunek === 'mniej-lepiej') return 100 - 100 * u
-  return 100 - 100 * u
+  return kierunek === 'wiecej-lepiej' ? 100 * u : 100 - 100 * u
 }
 
 /** Kierunek, który faktycznie liczy ocenę; null = wskaźnik nie wchodzi do wyniku. */
 export function kierunekEfektywny(meta: WskaznikMeta, kierunki?: Kierunki): KierunekOceny | null {
-  if (meta.kategoria === 'kontekst' && !KONTEKST_DO_WYNIKU[meta.id]) return null
+  if (meta.kategoria === 'kontekst') return null
   // Atrapa ceny nie może zmienić prawdziwego wyniku, nawet przez stare ustawienia w URL.
   if (meta.id === 'cena_m2_mediana' && meta.atrapa) return null
   const k = kierunki?.[meta.id] ?? meta.kierunek
   return k === 'neutralny' ? null : k
-}
-
-/** Jedynie te fakty z kontekstu mogą być dobrowolnie oceniane. */
-export const KONTEKST_DO_WYNIKU: Readonly<Record<string, KategoriaId>> = {
-  cena_m2_mediana: 'spolecznosc',
-  drzewa_100m: 'codziennosc',
-  ludnosc_1km: 'codziennosc',
-  sejm2023_lista_1: 'kontekst',
-  sejm2023_lista_2: 'kontekst',
-  sejm2023_lista_3: 'kontekst',
-  sejm2023_lista_4: 'kontekst',
-  sejm2023_lista_5: 'kontekst',
-  sejm2023_lista_6: 'kontekst',
-  sejm2023_lista_7: 'kontekst',
-}
-
-function kategoriaWarstwy(meta: WskaznikMeta, liczona: boolean): KategoriaId {
-  return liczona && meta.kategoria === 'kontekst'
-    ? (KONTEKST_DO_WYNIKU[meta.id] ?? meta.kategoria)
-    : meta.kategoria
 }
 
 /** Ocena 0–100, gdzie 100 = najlepiej. Brak danych albo brak kierunku → null, nigdy 0. */
@@ -383,8 +391,7 @@ export function wynikAdresu(
   let sumaZDanymi = 0
   const surowe = wskazniki.map((w) => {
     const wu = wagaUzytkownika(wagi, w.meta.id)
-    const kierunek =
-      w.meta.kategoria === 'kontekst' && wu === 0 ? null : kierunekEfektywny(w.meta, kierunki)
+    const kierunek = kierunekEfektywny(w.meta, kierunki)
     const wartosc = w.wartosci[i] ?? null
     const ocena = kierunek ? ocenyWskaznika(w, kierunek)[i] : Number.NaN
     const liczona = kierunek !== null && wu > 0
@@ -401,7 +408,7 @@ export function wynikAdresu(
     return {
       id: s.w.meta.id,
       meta: s.w.meta,
-      kategoria: kategoriaWarstwy(s.w.meta, s.liczona),
+      kategoria: s.w.meta.kategoria,
       wartosc: s.wartosc,
       etykieta: s.w.slownikEtykiet?.[s.w.etykiety?.[i] ?? ''] ?? s.w.etykiety?.[i] ?? null,
       ocena: s.ocena,
