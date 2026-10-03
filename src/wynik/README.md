@@ -83,6 +83,26 @@ Filtr nieznanej warstwy nic nie wyklucza, ale zostaje w stanie i w URL.
 - `wykluczoneHeksy(wykluczony, grupy)` daje heksy, w których wszystkie adresy są wykluczone. `MapaKrakowa` dostaje je w propie `wykluczone`.
 - `useWyniki()` zwraca `wykluczenia` i `wykluczoneHeksy`. Ranking pomija wykluczone adresy, a średnie heksów liczą się bez nich.
 
+## Lepszy sąsiad – `sasiedzi.ts` (czysta funkcja, #93)
+
+`lepsiSasiedzi(i, adresy, wskazniki, { wagi, kierunki, filtry }, opcje?)` daje
+`{ wyjsciowy: { wynik, litera, pewnosc, cenaM2 }, kandydaci: LepszySasiad[] }`: do 3 adresów
+w promieniu 500 m z literą lepszą niż adres `i`. Kartę (#94) i mapę (#95) robią osobne zadania.
+
+- Kandydaci z pierścieni H3 wokół heksu adresu, potem odległość geodezyjna (`odlegloscM`) ≤ 500 m.
+- Wynik liczy `wynikAdresu` z bieżącymi wagami i kierunkami. Adres naruszający dealbreaker nie jest
+  kandydatem; brak danych dla filtra nie wyklucza. Adres wyjściowy bez wyniku = pusta lista.
+- Cena: `cena_m2_mediana` w granicach ±15%. Brak ceny po którejś stronie (albo warstwa-atrapa) =
+  kandydat zostaje z `cena: { stan: 'brak', podpis: 'brak cen transakcyjnych' }`.
+- `wyroznia`: do 2 kategorii z największą przewagą wkładu, z `opis` słowami („znacznie ciszej i zdrowiej”).
+  Szara kategoria po którejś stronie nie wchodzi do porównania. Punktów nie pokazuj.
+- `nizszaPewnosc`: kandydat ma niższą pewność niż adres wyjściowy – oznacz go na karcie.
+- Jeden wpis na budynek, budynek adresu wyjściowego pominięty. `opcje.budynekAdresu(i)` podaje klucz
+  budynku (np. z obrysów `miasto3d`); bez niego ten sam budynek = ta sama ulica, ten sam numer bez
+  litery („5”, „5A”) i ≤ 30 m.
+- Kolejność: lepsza litera → bliżej → wyższy wynik → niższy indeks.
+- Pierwsze wywołanie liczy indeks heksów i oceny warstw (ok. 200 ms przy 177 tys. adresów), kolejne trwają kilka ms.
+
 ## Stan – `stan.ts`
 
 - `useStan((s) => s.pole)` czyta stan. Selektor zwraca pole stanu albo prymityw, nigdy nowy obiekt.
