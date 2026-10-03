@@ -103,6 +103,43 @@ w promieniu 500 m z literą lepszą niż adres `i`. Kartę (#94) i mapę (#95) r
 - Kolejność: lepsza litera → bliżej → wyższy wynik → niższy indeks.
 - Pierwsze wywołanie liczy indeks heksów i oceny warstw (ok. 200 ms przy 177 tys. adresów), kolejne trwają kilka ms.
 
+### Wspólny stan karty i mapy – `sasiedziStan.ts` + `useSasiedzi.ts` (#94)
+
+Jeden stan dla sekcji na karcie (`src/karta/okolica/LepszySasiad.tsx`) i znaczników na mapie (#95).
+Stan trzyma tylko `{ zrodlo: number | null, wybrany: number | null }` – adres, dla którego sekcja
+jest otwarta, i pozycję podświetlonego kandydata. Listę kandydatów liczy `policzSasiadow` z bieżącymi
+wagami, kierunkami i filtrami (pamięć ostatniego wyniku w module), więc zmiana wagi przelicza kartę
+i mapę naraz. Sekcja otwarta dla innego adresu niż `stan.wybrany` = zamknięta (pusta lista).
+
+| Eksport | Co robi |
+|---|---|
+| `otworzSasiadow(i)`, `zamknijSasiadow()`, `przelaczSasiadow(i)` | Otwiera/zamyka sekcję. Zamknięcie czyści kandydatów i podświetlenie – znaczniki znikają. |
+| `wybierzSasiada(k \| null)` | Podświetla kandydata `k` (pozycja w liście) na karcie i mapie. |
+| `otworzKarteSasiada(adres)` | Zamyka sekcję i otwiera kartę kandydata (`pokazOkolice`). |
+| `porownajZSasiadem(zrodlo, adres)` | Dodaje oba adresy do Porównania (#48) i przechodzi tam; `'pelne'`, gdy się nie mieszczą (nic nie zmienia). |
+| `useStanSasiadow(selektor)` | Czyta stan jak `useStan`. |
+| `useLepsiSasiedzi()` (useSasiedzi.ts) | `{ otwarta, wynik: LepsiSasiedzi \| null, wybrany }` dla karty. |
+| `usePropsSasiadowMapy()` (useSasiedzi.ts) | Gotowe propsy dla komponentu znaczników na mapie (niżej). |
+
+Propsy mapy (`PropsSasiadowMapy`):
+
+```ts
+kandydaci: readonly { adres: number; lon: number; lat: number; litera: Litera; etykieta: string }[]
+srodek: { lon: number; lat: number } | null   // adres wyjściowy; null = sekcja zamknięta
+promienM: number                              // 500
+wybrany: number | null                        // pozycja w `kandydaci`
+onWybierz: (k: number | null) => void         // podświetla kandydata k (pozycja w `kandydaci`)
+onOtworz: (k: number) => void                 // otwiera kartę kandydata k i zamyka sekcję
+```
+
+Pusta `kandydaci` i `srodek: null` = nic nie rysuj. `kandydaci` ma stałą tożsamość dla tego samego
+wyniku. Podpięcie w miejscu, gdzie renderuje się mapa:
+
+```tsx
+const sasiedzi = usePropsSasiadowMapy()
+<MapaKrakowa … sasiedzi={sasiedzi} />   // albo {...sasiedzi} na komponencie znaczników z #95
+```
+
 ## Stan – `stan.ts`
 
 - `useStan((s) => s.pole)` czyta stan. Selektor zwraca pole stanu albo prymityw, nigdy nowy obiekt.

@@ -8,6 +8,7 @@ import { dodajDoPorownania, hrefDla, przejdz, useStan } from '@/wynik/stan'
 import { useWynikAdresu } from '@/wynik/useWyniki'
 import { Etykieta } from './Etykieta'
 import type { LiteraEtykiety } from './kolory'
+import { LepszySasiad } from './LepszySasiad'
 import { SzczegolySzkoly } from './SzczegolySzkoly'
 import {
   liczbaPL,
@@ -108,6 +109,8 @@ export function EkranOkolica() {
           <CoByToZmienilo warstwy={wynik.warstwy} />
         </Suspense>
       </section>
+
+      <LepszySasiad adres={stan.wybrany} />
 
       <Sekcja3D />
 
