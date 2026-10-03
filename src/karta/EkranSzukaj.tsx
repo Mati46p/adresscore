@@ -6,7 +6,6 @@ import { useWyniki } from '@/wynik/useWyniki'
 import { PanelFiltrow } from './panel/PanelFiltrow'
 import { Ranking } from './Ranking'
 import { najblizszyAdres } from './wyszukiwarka/najblizszy'
-import { Wyszukiwarka } from './wyszukiwarka/Wyszukiwarka'
 
 // Stała, bo nowa pusta mapa przy każdym renderze wymuszałaby przemalowanie warstwy heksów.
 const BRAK_HEKSOW: ReadonlyMap<string, number | null> = new Map()
@@ -33,13 +32,11 @@ export function EkranSzukaj() {
         <div className="szukaj-wyszukaj">
           <div className="panel-wstep">
             <h1 tabIndex={-1}>Znajdź okolicę w Krakowie</h1>
-            <p>Profil i wagi poniżej od razu przeliczają kolory na mapie.</p>
+            <p>
+              Profil i wagi poniżej od razu przeliczają kolory na mapie. Kliknij mapę, żeby zobaczyć
+              okolicę.
+            </p>
           </div>
-          {dane.stan === 'gotowe' ? (
-            <Wyszukiwarka adresy={dane.adresy} onWybierz={pokazOkolice} />
-          ) : (
-            <p className="etykieta-sekcji">Wczytuję adresy…</p>
-          )}
         </div>
         <aside aria-label="Filtry" className="szukaj-filtry">
           <PanelFiltrow />
