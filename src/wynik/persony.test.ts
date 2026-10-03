@@ -1,5 +1,6 @@
 // Uruchom: node --test src/wynik/
 import assert from 'node:assert/strict'
+import { readdirSync, readFileSync } from 'node:fs'
 import { describe, it } from 'node:test'
 import { BIZNESY, PERSONY, TRYBY, ustawieniaPersony } from './persony.ts'
 import { czytajHash, zapiszHash } from './url.ts'
@@ -23,10 +24,34 @@ describe('persony', () => {
     }
   })
 
-  it('nieznane id z persony pomija, nowa warstwa dostaje wagę domyślną', () => {
+  it('nieznane id z persony pomija, nowa warstwa czeka na świadome włączenie', () => {
     const { wagi } = ustawieniaPersony('rodzina', 'kupuje', manifest)
     assert.deepEqual(Object.keys(wagi).sort(), manifest.map((m) => m.id).sort())
-    assert.equal(wagi.nowa_warstwa, 2)
+    assert.equal(wagi.nowa_warstwa, 0)
+  })
+
+  it('profile włączają różne podzbiory istniejących warstw, bez polityki i atrapy ceny', () => {
+    const katalog = readdirSync('public/dane/wskazniki')
+      .filter((plik) => plik.endsWith('.json'))
+      .map((plik) => JSON.parse(readFileSync(`public/dane/wskazniki/${plik}`, 'utf8')).meta)
+    const znane = new Set(katalog.map((m) => m.id))
+    for (const p of PERSONY) {
+      for (const id of Object.keys(p.wagi)) assert.ok(znane.has(id), `${p.id}: ${id}`)
+      const { wagi } = ustawieniaPersony(p.id, 'kupuje', katalog)
+      const aktywne = Object.values(wagi).filter((w) => w > 0).length
+      if (p.id === 'od-zera') assert.equal(aktywne, 0)
+      else assert.ok(aktywne >= 10 && aktywne <= 25, `${p.id}: ${aktywne}`)
+      assert.equal(wagi.cena_m2_mediana, 0)
+      for (let i = 1; i <= 7; i++) assert.equal(wagi[`sejm2023_lista_${i}`], 0)
+    }
+    const rodzina = ustawieniaPersony('rodzina', 'kupuje', katalog).wagi
+    const singiel = ustawieniaPersony('singiel', 'kupuje', katalog).wagi
+    const senior = ustawieniaPersony('senior', 'kupuje', katalog).wagi
+    const inwestor = ustawieniaPersony('inwestor', 'kupuje', katalog).wagi
+    assert.ok((rodzina.przedszkole_odleglosc ?? 0) > (singiel.przedszkole_odleglosc ?? 0))
+    assert.ok((singiel.rynek_czas_min ?? 0) > (rodzina.rynek_czas_min ?? 0))
+    assert.ok((senior.przychodnia_odleglosc ?? 0) > (inwestor.przychodnia_odleglosc ?? 0))
+    assert.ok((inwestor.inwestycje_500m ?? 0) > (senior.inwestycje_500m ?? 0))
   })
 
   it('kontekst zawsze 0, od zera wszędzie 0', () => {

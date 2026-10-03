@@ -94,9 +94,7 @@ describe('okolice Krakowa – kolejność zgodna z wiedzą o mieście', () => {
     lepsza('singiel', 'Stare Miasto', 'Zielonki')
   })
 
-  it('singiel: Kazimierz > Wieliczka', {
-    todo: 'po dodaniu warstw obwarzanka Wieliczka wyprzedza Kazimierz; profil wymaga ponownej kalibracji',
-  }, () => {
+  it('singiel: Kazimierz > Wieliczka', () => {
     lepsza('singiel', 'Kazimierz', 'Wieliczka')
   })
 
@@ -109,10 +107,9 @@ describe('okolice Krakowa – kolejność zgodna z wiedzą o mieście', () => {
   })
 })
 
-// Znane rozjazdy (#78). Przyczyna wspólna: persona waży jawnie 7 warstw (suma wag 21),
-// a ~85 pozostałych dostaje wagaNowych = 2 (bezpieczeństwo +1 w trybie „kupuję"), razem ~150.
-// Profil to więc ~14% wyniku – resztę wyznaczają odległości do usług, które premiują gęstą
-// zabudowę niezależnie od persony. Dochodzą błędy/luki danych opisane przy przypadkach.
+// Znane rozjazdy (#78). Po ograniczeniu wag do jawnych warstw profile nadal premiują
+// dostępność codziennych usług i transportu. Poniższe porównania są subiektywnymi
+// hipotezami do ponownej oceny wraz z jakością danych dla danych lokalizacji.
 describe('okolice Krakowa – znane rozjazdy (todo, do poprawy wag lub danych)', () => {
   it(
     'rodzina: Wola Justowska > Stare Miasto',
@@ -125,7 +122,7 @@ describe('okolice Krakowa – znane rozjazdy (todo, do poprawy wag lub danych)',
   it(
     'senior: Wola Justowska > Kazimierz',
     {
-      todo: 'wagi: cisza i powietrze persony toną w wagaNowych, Wola ma najniższy wynik z 11 okolic',
+      todo: 'przychodnia, apteka i transport mają duże wagi; trzeba zweryfikować, czy Wola rzeczywiście powinna wyprzedzać Kazimierz dla seniora',
     },
     () => lepsza('senior', 'Wola Justowska', 'Kazimierz'),
   )
@@ -141,7 +138,7 @@ describe('okolice Krakowa – znane rozjazdy (todo, do poprawy wag lub danych)',
   it(
     'inwestor: Ruczaj > Stare Miasto (największy front budowy w mieście)',
     {
-      todo: 'wagi: inwestycje_500m (4) to 1 z ~90 warstw; Stare Miasto wygrywa usługami',
+      todo: 'pozwolenia na budowę mają wagę 4, ale Stare Miasto wygrywa dostępnością; trzeba zweryfikować dane i założenie o przewadze Ruczaju',
     },
     () => lepsza('inwestor', 'Ruczaj', 'Stare Miasto'),
   )

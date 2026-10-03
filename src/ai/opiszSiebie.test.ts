@@ -709,7 +709,7 @@ describe('wagiZeZrozumienia', () => {
     assert.equal(u.persona, 'wlasna')
     assert.equal(u.wagi.przedszkole_odleglosc, 4)
     assert.equal(u.wagi.zielen_udzial, 4)
-    assert.equal(u.wagi.halas_ldwn, 3) // „rodzina” 3, spokój ≥ 3 nie obniża
+    assert.equal(u.wagi.halas_ldwn, 4) // „rodzina” 4, spokój ≥ 3 nie obniża
     assert.equal(u.wagi.udzial_0_14, 0)
     // Kierunki persony przechodzą dalej.
     assert.equal(u.kierunki.inwestycje_500m, 'mniej-lepiej')

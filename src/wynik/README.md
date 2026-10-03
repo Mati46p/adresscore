@@ -52,10 +52,11 @@ Kolory: `PALETA_WYNIKU` (5 stopni z makiety, od słabo do idealnie) i `KOLOR_BRA
 
 - `PERSONY`: `rodzina`, `singiel`, `senior`, `inwestor`, `od-zera`. Każda ma `wagi`, opcjonalne `kierunki` i `wagaNowych`.
 - `TRYBY`: `kupuje`, `wynajmuje`, `biznes`. Kupno i najem używają person oraz modyfikatorów
-  kategorii; biznes pokazuje odległość od sklepu i ludność NSP 2021. Atrapa sklepu dostaje wagę 0
-  i nie jest pokazywana jako rzeczywista konkurencja.
+  kategorii. Biznes ocenia odległość od wybranego rodzaju usługi (sklep spożywczy,
+  gastronomia, apteka lub weterynarz) oraz ludność NSP 2021. Warstwa przykładowa dostaje wagę 0.
 - `ustawieniaPersony(persona, tryb, metaWskaznikow)` daje `{ wagi, kierunki }` dla żywych warstw.
-  Nieznane id persona pomija. Nowa warstwa z manifestu dostaje `wagaNowych`.
+  Nieznane id persona pomija. Nowa warstwa z manifestu ma wagę 0, dopóki nie zostanie
+  świadomie dodana do profilu. Profil `od-zera` pozostawia wszystkie wagi na 0.
 
 ## Dane – `dane.ts`
 
