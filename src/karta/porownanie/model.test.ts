@@ -42,6 +42,11 @@ test('werdykt nie wskazuje zwycięzcy przy małej dostępności danych lub remis
   assert.match(werdykt([okolica('A', 80), okolica('B', 79.5)]), /zbliżone/)
 })
 
+test('różnica w werdykcie odpowiada zaokrąglonym liczbom widocznym na ekranie', () => {
+  assert.match(werdykt([okolica('A', 80.49), okolica('B', 79.51)]), /zbliżone/)
+  assert.match(werdykt([okolica('A', 80.51), okolica('B', 79.49)]), /2 pkt więcej/)
+})
+
 test('linia priorytetów odczytuje wagi kategorii, a radar odrzuca braki', () => {
   const wagi = priorytety([okolica('A', 70)])
   assert.equal(wagi.codziennosc, 1)

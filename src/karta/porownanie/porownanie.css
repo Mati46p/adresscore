@@ -38,6 +38,12 @@
   flex-wrap: wrap;
   gap: 8px;
 }
+.porownanie-dodaj {
+  max-width: 560px;
+}
+.porownanie-dodaj h2 {
+  margin-bottom: 8px;
+}
 .porownanie-adres {
   display: inline-flex;
   align-items: center;
@@ -50,8 +56,17 @@
 .porownanie-adres button {
   border: 0;
   background: transparent;
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 8px;
   font-size: 20px;
   cursor: pointer;
+}
+.porownanie-adres button:focus-visible {
+  outline: 2px solid #1f5c46;
+  outline-offset: 2px;
 }
 .porownanie-kropka {
   width: 10px;
@@ -71,15 +86,44 @@
 .porownanie-wykres {
   text-align: center;
 }
+.porownanie-wykres__przewijanie {
+  overflow-x: auto;
+}
+.porownanie-wykres__przewijanie:focus-visible {
+  outline: 2px solid #1f5c46;
+  outline-offset: 2px;
+}
 .porownanie-wykres svg {
-  width: min(100%, 560px);
+  display: block;
+  width: max(100%, 560px);
+  max-width: 600px;
   height: auto;
+  margin: auto;
 }
 .porownanie-wykres p {
   margin: 0 auto;
   max-width: 60ch;
   color: var(--tekst-2);
   font-size: 13px;
+}
+.porownanie-wykres__tekst {
+  margin-top: 12px;
+  text-align: left;
+}
+.porownanie-wykres__tekst summary {
+  cursor: pointer;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  color: #1f5c46;
+  font-weight: 600;
+}
+.porownanie-wykres__tekst ul {
+  margin: 8px 0;
+  padding-left: 24px;
+}
+.porownanie-wykres__tekst li {
+  margin: 4px 0;
 }
 .porownanie-tabela {
   overflow-x: auto;

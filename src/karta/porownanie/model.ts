@@ -60,13 +60,17 @@ export function werdykt(okolicy: readonly OkolicaPorownania[]): string {
   if (!pierwsza || pierwsza.wynik.wynik === null) return 'Brak wyniku do porównania.'
   if (!druga || druga.wynik.wynik === null)
     return 'Dodaj drugi adres z wynikiem, aby zobaczyć werdykt.'
-  const roznica = (pierwsza.wynik.wynik ?? 0) - druga.wynik.wynik
+  // Ranking zachowuje dokładność, ale werdykt musi zgadzać się z liczbami widocznymi na karcie.
+  const roznica = Math.round(pierwsza.wynik.wynik) - Math.round(druga.wynik.wynik)
   if (roznica < 1)
     return 'Najwyższe wyniki są bardzo zbliżone. Sprawdź kategorie i dostępność danych.'
   if (pierwsza.wynik.pewnosc < 0.5 || druga.wynik.pewnosc < 0.5)
     return 'Dane dla najwyższych wyników są niepełne. Nie wskazujemy zwycięzcy.'
-  return `${pierwsza.nazwa} ma najwyższy wynik dla obecnych wag (${Math.round(roznica)} pkt więcej niż ${druga.nazwa}).`
+  return `${pierwsza.nazwa} ma najwyższy wynik dla obecnych wag (${roznica} pkt więcej niż ${druga.nazwa}).`
 }
+
+export const RADAR_X = 300
+export const RADAR_Y = 225
 
 export function punktyRadaru(wartosci: readonly (number | null)[], promien = 140): string | null {
   if (wartosci.length < 3 || wartosci.some((v) => v === null || !Number.isFinite(v))) return null
@@ -74,7 +78,7 @@ export function punktyRadaru(wartosci: readonly (number | null)[], promien = 140
     .map((v, i) => {
       const kat = -Math.PI / 2 + (i * 2 * Math.PI) / wartosci.length
       const r = (Math.min(100, Math.max(0, v as number)) / 100) * promien
-      return `${(200 + Math.cos(kat) * r).toFixed(1)},${(190 + Math.sin(kat) * r).toFixed(1)}`
+      return `${(RADAR_X + Math.cos(kat) * r).toFixed(1)},${(RADAR_Y + Math.sin(kat) * r).toFixed(1)}`
     })
     .join(' ')
 }
