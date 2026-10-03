@@ -203,6 +203,20 @@
   background: #f0f2ef;
   color: var(--tekst-2);
 }
+.panel-kontekst-sterowanie {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+}
+.panel-kontekst-sterowanie .panel-seg-grupa {
+  flex-wrap: wrap;
+}
+.panel-kontekst-sterowanie .panel-prog-przycisk:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
 .panel-pytanie {
   flex: 0 0 100%;
   font-size: 13px;

@@ -65,6 +65,72 @@ const budowy = wsk(
 const wszystkie = [halas, zielen, sklep, cena, budowy]
 const wagi = { halas: 2, zielen: 1, sklep: 1, cena: 4, budowy: 3 }
 
+describe('dobrowolne punktowanie kontekstu i stref 0/1', () => {
+  it('strefa ocenia 1 i 0 zgodnie z wyborem, bez kierunku pozostaje neutralna', () => {
+    const strefa = wsk(
+      { id: 'sct_w_strefie', kategoria: 'transport', kierunek: 'neutralny', zakres: [0, 1] },
+      [0, 1],
+    )
+    const w = { sct_w_strefie: 2 }
+    assert.equal(wynikAdresu(0, [strefa], w).wynik, null)
+    assert.equal(wynikAdresu(0, [strefa], w, { sct_w_strefie: 'optimum' }).wynik, null)
+    assert.equal(wynikAdresu(1, [strefa], w, { sct_w_strefie: 'wiecej-lepiej' }).wynik, 100)
+    assert.equal(wynikAdresu(0, [strefa], w, { sct_w_strefie: 'mniej-lepiej' }).wynik, 100)
+    assert.equal(wynikiWszystkich([strefa], w, { sct_w_strefie: 'mniej-lepiej' }, 2)[1], 0)
+  })
+
+  it('drzewa są kontekstem do chwili świadomego nadania wagi', () => {
+    const drzewa = wsk(
+      {
+        id: 'drzewa_100m',
+        kategoria: 'kontekst',
+        kierunek: 'wiecej-lepiej',
+        zakres: [0, 100],
+      },
+      [0, 100],
+    )
+    const baza = wsk({ id: 'baza', zakres: [0, 100] }, [50, 50])
+    const bez = wynikAdresu(1, [baza, drzewa], { baza: 2, drzewa_100m: 0 })
+    const z = wynikAdresu(1, [baza, drzewa], { baza: 2, drzewa_100m: 2 })
+    assert.equal(bez.wynik, 50)
+    assert.equal(bez.warstwy[1]?.ocena, null)
+    assert.equal(z.wynik, 75)
+    assert.equal(z.warstwy[1]?.kategoria, 'codziennosc')
+    assert.equal(z.kategorie.find((k) => k.kategoria === 'codziennosc')?.ocena, 100)
+    assert.equal(
+      wynikAdresu(0, [drzewa], { drzewa_100m: 2 }, { drzewa_100m: 'mniej-lepiej' }).wynik,
+      100,
+    )
+    assert.deepEqual(
+      Array.from(wynikiWszystkich([drzewa], { drzewa_100m: 0 }, {}, 2)).map(Number.isNaN),
+      [true, true],
+    )
+  })
+
+  it('atrapa ceny jest zablokowana; realna cena działa dopiero po opt-in', () => {
+    const m = {
+      id: 'cena_m2_mediana',
+      kategoria: 'kontekst' as const,
+      kierunek: 'neutralny' as const,
+      zakres: [5000, 15000] as [number, number],
+    }
+    const atrapa = wsk({ ...m, atrapa: true }, [5000, 15000])
+    const realna = wsk({ ...m, atrapa: false }, [5000, 15000])
+    const ustawienia = { cena_m2_mediana: 'mniej-lepiej' as const }
+    assert.equal(wynikAdresu(0, [atrapa], { cena_m2_mediana: 4 }, ustawienia).wynik, null)
+    assert.equal(wynikAdresu(0, [realna], { cena_m2_mediana: 0 }, ustawienia).wynik, null)
+    assert.equal(wynikAdresu(0, [realna], { cena_m2_mediana: 2 }, ustawienia).wynik, 100)
+    assert.equal(
+      wynikAdresu(1, [realna], { cena_m2_mediana: 2 }, { cena_m2_mediana: 'wiecej-lepiej' }).wynik,
+      100,
+    )
+    assert.equal(
+      wynikAdresu(0, [realna], { cena_m2_mediana: 2 }, ustawienia).warstwy[0]?.kategoria,
+      'przyszlosc',
+    )
+  })
+})
+
 describe('ocena wskaźnika', () => {
   it('brak danych to null, nigdy 0', () => {
     assert.equal(ocenWartosc(null, halas.skala, 'mniej-lepiej'), null)

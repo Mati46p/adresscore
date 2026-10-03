@@ -6,6 +6,7 @@ import { PERSONY, type PersonaId, TRYBY } from '@/wynik/persony'
 import {
   type KierunekOceny,
   KOLEJNOSC_KATEGORII,
+  KONTEKST_DO_WYNIKU,
   kierunekEfektywny,
   WAGA_MAX,
   type WskaznikPrzygotowany,
@@ -23,6 +24,7 @@ import {
 } from '@/wynik/stan'
 import { useWyniki } from '@/wynik/useWyniki'
 import './panel.css'
+import { etykietaKierunku, kierunkiWarstwy } from './preferencje'
 
 const SEGMENTY_WAGI = Array.from({ length: WAGA_MAX + 1 }, (_, n) => n)
 
@@ -32,19 +34,9 @@ const KIERUNKI: readonly { id: KierunekOceny; znak: string }[] = [
   { id: 'optimum', znak: '≈' },
 ]
 
-function etykietaKierunku(meta: WskaznikMeta, kierunek: KierunekOceny): string {
-  if (kierunek === 'optimum') return 'Umiarkowanie = lepiej'
-  const mniej = kierunek === 'mniej-lepiej'
-  if (meta.id.endsWith('_odleglosc')) return mniej ? 'Bliżej lepiej' : 'Dalej lepiej'
-  if (meta.id === 'powodz_1proc') return mniej ? 'Płycej lepiej' : 'Głębiej lepiej'
-  if (meta.jednostka === 'min' || meta.jednostka === 'h')
-    return mniej ? 'Krócej lepiej' : 'Dłużej lepiej'
-  return mniej ? 'Mniej = lepiej' : 'Więcej = lepiej'
-}
-
 const OPIS_TRYBU: Record<string, string> = {
   kupuje:
-    'Mocniej liczy się przyszłość okolicy i ryzyko (waga +1). Cena m² z RCN jest na razie tylko kontekstem na karcie i nie wchodzi do wyniku.',
+    'Mocniej liczy się przyszłość okolicy i ryzyko (waga +1). Cena m² jest informacyjna, dopóki samodzielnie nie włączysz jej w sekcji Kontekst po podłączeniu danych RCN.',
   wynajmuje:
     'Mocniej liczy się dojazd (waga +1), słabiej przyszłość okolicy (waga −1). Szacunek czynszu: wkrótce – nie mamy jeszcze danych o najmie.',
 }
@@ -85,7 +77,9 @@ export function PanelFiltrow() {
   }, [persona])
 
   const wskazniki = dane.stan === 'gotowe' ? dane.wskazniki : []
-  const liczone = wskazniki.filter((w) => w.meta.kategoria !== 'kontekst')
+  const liczone = wskazniki.filter(
+    (w) => w.meta.kategoria !== 'kontekst' || KONTEKST_DO_WYNIKU[w.meta.id],
+  )
   const aktywne = liczone.filter(
     (w) => wagaUzytkownika(wagi, w.meta.id) > 0 && kierunekEfektywny(w.meta, kierunki) !== null,
   ).length
@@ -197,7 +191,7 @@ export function PanelFiltrow() {
         </div>
         <p className="panel-uwaga">
           Waga 0–4 mówi, jak ważna jest dla Ciebie warstwa: 0 – pomijam, 4 – bardzo ważne. Kierunek
-          mówi, czy lepiej więcej, czy mniej.
+          wskazuje, które miejsca wolisz. Warstwy kontekstu liczą się dopiero po włączeniu.
         </p>
         <div className="panel-akcje">
           <button
@@ -251,10 +245,15 @@ function GrupaWarstw({
 }: GrupaProps) {
   const [otwarta, setOtwarta] = useState(poczatkowoOtwarta)
   const informacyjna = kategoria === 'kontekst'
-  const aktywne = warstwy.filter((w) => wagaUzytkownika(wagi, w.meta.id) > 0).length
-  const suma = warstwy.reduce((s, w) => s + wagaUzytkownika(wagi, w.meta.id), 0)
+  const aktywne = warstwy.filter(
+    (w) => wagaUzytkownika(wagi, w.meta.id) > 0 && kierunekEfektywny(w.meta, kierunki) !== null,
+  ).length
+  const suma = warstwy.reduce(
+    (s, w) => s + (kierunekEfektywny(w.meta, kierunki) ? wagaUzytkownika(wagi, w.meta.id) : 0),
+    0,
+  )
   const podsumowanie = informacyjna
-    ? `${warstwy.length} informacyjn${warstwy.length === 1 ? 'a' : 'e'}`
+    ? `${warstwy.length} informacyjne · ${aktywne} w wyniku`
     : `${aktywne} z ${warstwy.length} · suma wag ${suma}`
   const idListy = `panel-grupa-${kategoria}`
 
@@ -306,6 +305,9 @@ function Warstwa({
   const informacyjna = meta.kategoria === 'kontekst'
   const neutralna = meta.kierunek === 'neutralny'
   const kierunek = kierunekEfektywny(meta, kierunki)
+  const dobrowolna = Boolean(KONTEKST_DO_WYNIKU[meta.id])
+  const niedostepnaCena = meta.id === 'cena_m2_mediana' && Boolean(meta.atrapa)
+  const wlaczona = dobrowolna && !niedostepnaCena && waga > 0 && kierunek !== null
 
   return (
     <li className="panel-warstwa" title={meta.opis}>
@@ -316,7 +318,79 @@ function Warstwa({
       {meta.atrapa && <span className="atrapa panel-atrapa">dane przykładowe</span>}
 
       {informacyjna ? (
-        <p className="panel-info">Tylko warstwa informacyjna, bez wpływu na wynik</p>
+        dobrowolna ? (
+          <div className="panel-kontekst-sterowanie">
+            {meta.id === 'drzewa_100m' && (
+              <p className="panel-uwaga">
+                Ewidencja ZZM jest niepełna: obejmuje tylko część drzew w Krakowie. Włącz ją
+                świadomie, jeśli mimo tego chcesz uwzględnić tę liczbę w wyniku.
+              </p>
+            )}
+            {niedostepnaCena && (
+              <p className="panel-nota">
+                Cena m² ma teraz dane przykładowe. Ocena zostanie udostępniona po podłączeniu danych
+                RCN; atrapa nie wpływa na wynik.
+              </p>
+            )}
+            <button
+              type="button"
+              className="seg panel-prog-przycisk"
+              aria-pressed={wlaczona}
+              disabled={niedostepnaCena}
+              onClick={() => {
+                if (wlaczona) ustawWage(meta.id, 0)
+                else {
+                  if (meta.kierunek === 'neutralny' && !kierunki[meta.id])
+                    ustawKierunek(meta.id, 'mniej-lepiej')
+                  ustawWage(meta.id, 2)
+                }
+              }}
+            >
+              {wlaczona ? 'Uwzględniane w wyniku – wyłącz' : 'Uwzględnij w wyniku'}
+            </button>
+            {!wlaczona && !niedostepnaCena && (
+              <p className="panel-info">Tylko informacyjnie – bez wpływu na wynik.</p>
+            )}
+            <>
+              <div
+                role="group"
+                aria-label={`Preferencja: ${meta.nazwa}`}
+                className="panel-seg-grupa panel-prog-warunki"
+              >
+                {kierunkiWarstwy(meta).map((k) => (
+                  <button
+                    key={k}
+                    type="button"
+                    className="seg panel-kier"
+                    aria-pressed={wlaczona && kierunek === k}
+                    disabled={!wlaczona || niedostepnaCena}
+                    onClick={() => ustawKierunek(meta.id, k)}
+                  >
+                    {etykietaKierunku(meta, k)}
+                  </button>
+                ))}
+              </div>
+              {wlaczona && (
+                <div role="group" aria-label={`Waga: ${meta.nazwa}`} className="panel-seg-grupa">
+                  {SEGMENTY_WAGI.map((n) => (
+                    <button
+                      key={n}
+                      type="button"
+                      className="seg panel-seg"
+                      aria-pressed={waga === n}
+                      aria-label={`Waga ${n} z 4: ${meta.nazwa}`}
+                      onClick={() => ustawWage(meta.id, n)}
+                    >
+                      {n}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </>
+          </div>
+        ) : (
+          <p className="panel-info">Tylko warstwa informacyjna, bez wpływu na wynik</p>
+        )
       ) : (
         <>
           <div className="panel-sterowanie">
@@ -346,7 +420,7 @@ function Warstwa({
               Co jest lepsze?
             </span>
             <div role="group" aria-labelledby={`kier-${meta.id}`} className="panel-seg-grupa">
-              {KIERUNKI.filter((k) => k.id !== 'optimum' || neutralna).map((k) => (
+              {KIERUNKI.filter((k) => kierunkiWarstwy(meta).includes(k.id)).map((k) => (
                 <button
                   key={k.id}
                   type="button"
@@ -377,7 +451,7 @@ function Warstwa({
           )}
         </>
       )}
-      <TwardyProg meta={meta} filtr={filtr} />
+      {!dobrowolna && <TwardyProg meta={meta} filtr={filtr} />}
     </li>
   )
 }
