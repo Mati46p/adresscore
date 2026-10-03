@@ -138,7 +138,7 @@ export function EkranBiznes() {
       <div className="biznes-glowa">
         <div>
           <p className="biznes-etykieta">TRYB BIZNESOWY</p>
-          <h1 tabIndex={-1}>Gdzie otworzyć {nazwaBranzy.toLocaleLowerCase('pl')}?</h1>
+          <h1 tabIndex={-1}>Lokalizacja dla branży „{nazwaBranzy}”</h1>
           <p>
             Wybierz branżę, a następnie postaw punkt A lub B na mapie. Kolor pokazuje liczbę adresów
             w zasięgu na jeden istniejący punkt.
