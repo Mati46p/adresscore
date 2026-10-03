@@ -1,0 +1,2558 @@
+{
+ "opis": "Zestaw kontrolny nr 8 (siła, „nie chcę”, nowe potrzeby) – wejście pisane (typed) „opisz siebie”, Kraków i gminy ościenne. Napisany na ślepo przez agenta AI bez dostępu do kodu aplikacji, promptów ani wcześniejszych zestawów; jedynym wejściem były etykiety.txt i warstwy.txt. Data: 2026-10-04.",
+ "zasady": "Etykieta = przyszły mieszkaniec (gdy ktoś pisze w czyimś imieniu, potrzeby i persona dotyczą tej osoby). persona null z pustymi potrzebami i nie_chce tylko gdy nikt faktycznie nie szuka albo brak jakiegokolwiek sygnału; null z potrzebami = profilu nie da się określić. Senior (wiek/emerytura, także senior w gospodarstwie) → persona senior; osoba wprost mieszkająca sama → singiel; dzieci w gospodarstwie → rodzina; zakup pod najem/lokata bez zamieszkania → inwestor. Siła wyłącznie z brzmienia tekstu: 1 = „przydałby się”, „fajnie/miło by było”, „dobrze by było”, „bonus”; 2 = „ważne”, „potrzebuję”, „chcę”, albo neutralne stwierdzenie faktu (np. „studiuję na AGH”, „mam psa”, „mam 70 lat”); 3 = „musi”, „warunek”, „podstawa”, „must have”, „bez tego nie biorę”, „najważniejsze”, „bardzo ważne”, „koniecznie”. nie_chce tylko przy wyraźnej niechęci do czegoś w pobliżu domu (nie: niechęć do jazdy ruchliwą drogą, nie: turyści wspomniani jako obojętni). Wózek dziecięcy ≠ potrzeba wozek; laska, kule, balkonik, słabowzroczność = ograniczona mobilność → wozek. Praca nocna w centrum ≠ zycie_nocne. Bez nadinterpretacji: brak etykiety, gdy słownik jej nie przewiduje (np. tramwaj, internet, kościół).",
+ "pozycje": [
+  {
+   "id": "K8-A001",
+   "tekst": "jezdze autem do pracy w Niepolomicach codziennie, wiec musze miec gdzie zaparkowac pod blokiem. bez miejsca parkingowego nie biore",
+   "persona": null,
+   "potrzeby": [
+    "auto"
+   ],
+   "sila": {
+    "auto": 3
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba",
+    "sila_3"
+   ]
+  },
+  {
+   "id": "K8-A002",
+   "tekst": "dojezdzam autem do Skawiny, wazne zeby szybko wyjechac na obwodnice a nie stac w korkach przez cale miasto",
+   "persona": null,
+   "potrzeby": [
+    "auto"
+   ],
+   "sila": {
+    "auto": 2
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba"
+   ]
+  },
+  {
+   "id": "K8-A003",
+   "tekst": "my z mezem i dwojka dzieci, oboje jezdzimy samochodem do pracy. musi byc garaz albo chociaz miejsce na posesji, nie bedziemy krazyc po osiedlu wieczorem",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci",
+    "auto"
+   ],
+   "sila": {
+    "dzieci": 2,
+    "auto": 3
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba",
+    "sila_3"
+   ]
+  },
+  {
+   "id": "K8-A004",
+   "tekst": "Mam elektryka, fajnie jakby gdzieś niedaleko była ładowarka. Poza tym szukam spokojnej okolicy.",
+   "persona": null,
+   "potrzeby": [
+    "auto",
+    "cisza"
+   ],
+   "sila": {
+    "auto": 1,
+    "cisza": 2
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba",
+    "sila_1"
+   ]
+  },
+  {
+   "id": "K8-A005",
+   "tekst": "nie mam zamiaru sprzedawac auta ale chce mieszkac przy rynku. parking musi byc, bez tego nie ma tematu",
+   "persona": null,
+   "potrzeby": [
+    "auto"
+   ],
+   "sila": {
+    "auto": 3
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba",
+    "sila_3",
+    "sprzeczne"
+   ]
+  },
+  {
+   "id": "K8-A006",
+   "tekst": "jestem kierowca, wracam z bazy w Modlniczce nad ranem i spie do 14. potrzebuje ciszy w dzien i zeby autem do bazy bylo niedaleko",
+   "persona": null,
+   "potrzeby": [
+    "auto",
+    "cisza"
+   ],
+   "sila": {
+    "auto": 2,
+    "cisza": 2
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba"
+   ]
+  },
+  {
+   "id": "K8-A007",
+   "tekst": "emeryt, ale jeszcze jezdze samochodem na dzialke i do lekarza. wazne zeby latwo bylo zaparkowac",
+   "persona": "senior",
+   "potrzeby": [
+    "senior",
+    "auto"
+   ],
+   "sila": {
+    "senior": 2,
+    "auto": 2
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba"
+   ]
+  },
+  {
+   "id": "K8-A008",
+   "tekst": "kupuje pod wynajem, najemcy pytaja o parking wiec przydalby sie, ale to nie warunek",
+   "persona": "inwestor",
+   "potrzeby": [
+    "inwestycja",
+    "auto"
+   ],
+   "sila": {
+    "inwestycja": 2,
+    "auto": 1
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba",
+    "sila_1"
+   ]
+  },
+  {
+   "id": "K8-A009",
+   "tekst": "szukam dla syna, dostal prace w Zabierzowie i bedzie dojezdzal autem. wazne zeby nie stal godzine w korkach",
+   "persona": null,
+   "potrzeby": [
+    "auto"
+   ],
+   "sila": {
+    "auto": 2
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba",
+    "w_imieniu"
+   ]
+  },
+  {
+   "id": "K8-A010",
+   "tekst": "robota w Niepołomicach na zmiany, autobusem się nie da. muszę mieć dobry wyjazd autem na wschód",
+   "persona": null,
+   "potrzeby": [
+    "auto"
+   ],
+   "sila": {
+    "auto": 3
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba",
+    "sila_3"
+   ]
+  },
+  {
+   "id": "K8-A011",
+   "tekst": "mam auto ale jezdze nim raz w tygodniu, parking nie musi byc pod samym domem, jakies miejsce w okolicy by sie przydalo",
+   "persona": null,
+   "potrzeby": [
+    "auto"
+   ],
+   "sila": {
+    "auto": 1
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba",
+    "sila_1"
+   ]
+  },
+  {
+   "id": "K8-A012",
+   "tekst": "jezdze autem wszedzie ale chcialbym zeby bylo czyste powietrze i zero ruchu pod oknem",
+   "persona": null,
+   "potrzeby": [
+    "auto",
+    "powietrze"
+   ],
+   "sila": {
+    "auto": 2,
+    "powietrze": 2
+   },
+   "nie_chce": [
+    "duza_droga"
+   ],
+   "cechy": [
+    "nowa_potrzeba",
+    "nie_chce",
+    "sprzeczne"
+   ]
+  },
+  {
+   "id": "K8-A013",
+   "tekst": "jestem na wozku od wypadku 3 lata temu. winda w budynku i obnizone krawezniki to dla mnie warunek, inaczej nie wyjde z domu",
+   "persona": null,
+   "potrzeby": [
+    "wozek"
+   ],
+   "sila": {
+    "wozek": 3
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba",
+    "sila_3"
+   ]
+  },
+  {
+   "id": "K8-A014",
+   "tekst": "mam 74 lata i chodze o lasce, schody to juz dla mnie meka. przychodnia musi byc blisko",
+   "persona": "senior",
+   "potrzeby": [
+    "senior",
+    "wozek",
+    "zdrowie"
+   ],
+   "sila": {
+    "senior": 2,
+    "wozek": 2,
+    "zdrowie": 3
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba",
+    "sila_3"
+   ]
+  },
+  {
+   "id": "K8-A015",
+   "tekst": "mama ma 81 lat i porusza sie na wozku. szukamy dla niej czegos na parterze albo z winda, bez windy odpada. przychodnia tez musi byc w poblizu",
+   "persona": "senior",
+   "potrzeby": [
+    "senior",
+    "wozek",
+    "zdrowie"
+   ],
+   "sila": {
+    "senior": 2,
+    "wozek": 3,
+    "zdrowie": 3
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba",
+    "sila_3",
+    "w_imieniu"
+   ]
+  },
+  {
+   "id": "K8-A016",
+   "tekst": "mam stwardnienie rozsiane, coraz gorzej z chodzeniem. wazne zeby chodniki byly rowne i niedaleko byl przystanek z niskopodlogowym tramwajem",
+   "persona": null,
+   "potrzeby": [
+    "wozek"
+   ],
+   "sila": {
+    "wozek": 2
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba"
+   ]
+  },
+  {
+   "id": "K8-A017",
+   "tekst": "jezdze na wozku i pracuje zdalnie, wiec duzo czasu spedzam w domu. dobrze by bylo miec gdzie wyjechac na spacer po plaskim",
+   "persona": null,
+   "potrzeby": [
+    "wozek",
+    "praca_zdalna"
+   ],
+   "sila": {
+    "wozek": 2,
+    "praca_zdalna": 2
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba"
+   ]
+  },
+  {
+   "id": "K8-A018",
+   "tekst": "Syn ma 9 lat i jest na wózku. Szkoła integracyjna blisko i dostępne chodniki to podstawa.",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci",
+    "wozek"
+   ],
+   "sila": {
+    "dzieci": 3,
+    "wozek": 3
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba",
+    "sila_3"
+   ]
+  },
+  {
+   "id": "K8-A019",
+   "tekst": "po operacji biodra bede pare miesiecy o kulach, przydalaby sie winda",
+   "persona": null,
+   "potrzeby": [
+    "wozek"
+   ],
+   "sila": {
+    "wozek": 1
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba",
+    "sila_1"
+   ]
+  },
+  {
+   "id": "K8-A020",
+   "tekst": "tata 68 lat po udarze, chodzi z balkonikiem. szukam mu czegos blisko mnie na Podgorzu, jak najmniej kraweznikow i schodow, to bardzo wazne",
+   "persona": "senior",
+   "potrzeby": [
+    "senior",
+    "wozek"
+   ],
+   "sila": {
+    "senior": 2,
+    "wozek": 3
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba",
+    "sila_3",
+    "w_imieniu"
+   ]
+  },
+  {
+   "id": "K8-A021",
+   "tekst": "wozek z malym + drugie dziecko w drodze. winda koniecznie, nie bede nosic wozka na 3 pietro",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci"
+   ],
+   "sila": {
+    "dzieci": 3
+   },
+   "nie_chce": [],
+   "cechy": [
+    "sila_3"
+   ]
+  },
+  {
+   "id": "K8-A022",
+   "tekst": "uzywam wozka elektrycznego i sam robie zakupy. musze miec sklep w zasiegu bez podjazdow pod gorke, inaczej jestem uziemiony",
+   "persona": null,
+   "potrzeby": [
+    "wozek",
+    "sklepy"
+   ],
+   "sila": {
+    "wozek": 3,
+    "sklepy": 3
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba",
+    "sila_3"
+   ]
+  },
+  {
+   "id": "K8-A023",
+   "tekst": "niedowidze i chodze z biala laska, wazne zeby chodniki byly rowne a przejscia z sygnalizacja dzwiekowa",
+   "persona": null,
+   "potrzeby": [
+    "wozek"
+   ],
+   "sila": {
+    "wozek": 2
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba"
+   ]
+  },
+  {
+   "id": "K8-A024",
+   "tekst": "jestem na wózku, ale mam auto przystosowane. miejsce dla niepełnosprawnych pod blokiem albo garaż podziemny z windą to warunek",
+   "persona": null,
+   "potrzeby": [
+    "wozek",
+    "auto"
+   ],
+   "sila": {
+    "wozek": 3,
+    "auto": 3
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba",
+    "sila_3"
+   ]
+  },
+  {
+   "id": "K8-A025",
+   "tekst": "moja dziewczyna jezdzi na wozku, szukamy razem. ja od czasu do czasu pracuje z domu, wiec fajnie jakby bylo spokojnie",
+   "persona": null,
+   "potrzeby": [
+    "wozek",
+    "praca_zdalna",
+    "cisza"
+   ],
+   "sila": {
+    "wozek": 2,
+    "praca_zdalna": 1,
+    "cisza": 1
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba",
+    "sila_1"
+   ]
+  },
+  {
+   "id": "K8-A026",
+   "tekst": "mam 80 lat, nogi juz nie te. pierwsze pietro max albo winda, apteka blisko, przydalby sie tez jakis park",
+   "persona": "senior",
+   "potrzeby": [
+    "senior",
+    "wozek",
+    "zdrowie",
+    "zielen"
+   ],
+   "sila": {
+    "senior": 2,
+    "wozek": 2,
+    "zdrowie": 2,
+    "zielen": 1
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba",
+    "sila_1"
+   ]
+  },
+  {
+   "id": "K8-A027",
+   "tekst": "jestem na wozku a marze o domku pod lasem w Zielonkach, wiem ze tam chodnikow prawie nie ma. ale zielen musi byc",
+   "persona": null,
+   "potrzeby": [
+    "wozek",
+    "zielen"
+   ],
+   "sila": {
+    "wozek": 2,
+    "zielen": 3
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba",
+    "sila_3",
+    "sprzeczne"
+   ]
+  },
+  {
+   "id": "K8-A028",
+   "tekst": "pracuje z domu, 8h przy biurku. wazne zeby bylo cicho w dzien, bez budowy za oknem bo mam calle",
+   "persona": null,
+   "potrzeby": [
+    "praca_zdalna",
+    "cisza"
+   ],
+   "sila": {
+    "praca_zdalna": 2,
+    "cisza": 2
+   },
+   "nie_chce": [
+    "budowy"
+   ],
+   "cechy": [
+    "nowa_potrzeba",
+    "nie_chce"
+   ]
+  },
+  {
+   "id": "K8-A029",
+   "tekst": "programista, full remote, wiec warunki do pracy z domu musza byc. cisza to podstawa, sasiedzi z wiertarka i ulica pod oknem odpadaja",
+   "persona": null,
+   "potrzeby": [
+    "praca_zdalna",
+    "cisza"
+   ],
+   "sila": {
+    "praca_zdalna": 3,
+    "cisza": 3
+   },
+   "nie_chce": [
+    "duza_droga"
+   ],
+   "cechy": [
+    "nowa_potrzeba",
+    "nie_chce",
+    "sila_3"
+   ]
+  },
+  {
+   "id": "K8-A030",
+   "tekst": "pracuje hybrydowo, 3 dni z domu i 2 w biurze na Zablociu",
+   "persona": null,
+   "potrzeby": [
+    "praca_zdalna",
+    "praca_centrum"
+   ],
+   "sila": {
+    "praca_zdalna": 2,
+    "praca_centrum": 2
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba"
+   ]
+  },
+  {
+   "id": "K8-A031",
+   "tekst": "tlumaczka, siedze w domu calymi dniami. wazne zeby blisko byl park na przerwe i zeby bylo cicho, bo inaczej sie nie skupie",
+   "persona": null,
+   "potrzeby": [
+    "praca_zdalna",
+    "zielen",
+    "cisza"
+   ],
+   "sila": {
+    "praca_zdalna": 2,
+    "zielen": 2,
+    "cisza": 2
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba"
+   ]
+  },
+  {
+   "id": "K8-A032",
+   "tekst": "home office od covidu i tak zostalo. okolica ma byc spokojna i bez budowy obok, nic wiecej nie potrzebuje",
+   "persona": null,
+   "potrzeby": [
+    "praca_zdalna",
+    "cisza"
+   ],
+   "sila": {
+    "praca_zdalna": 2,
+    "cisza": 2
+   },
+   "nie_chce": [
+    "budowy"
+   ],
+   "cechy": [
+    "nowa_potrzeba",
+    "nie_chce"
+   ]
+  },
+  {
+   "id": "K8-A033",
+   "tekst": "Pracuję zdalnie dla firmy z Warszawy, raz w miesiącu tam lecę. Lotnisko w miarę blisko by się przydało.",
+   "persona": null,
+   "potrzeby": [
+    "praca_zdalna",
+    "lotnisko"
+   ],
+   "sila": {
+    "praca_zdalna": 2,
+    "lotnisko": 1
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba",
+    "sila_1"
+   ]
+  },
+  {
+   "id": "K8-A034",
+   "tekst": "freelancer grafik, robie z domu i nie znosze halasu z ulicy. tylko nie przy alejach",
+   "persona": null,
+   "potrzeby": [
+    "praca_zdalna",
+    "cisza"
+   ],
+   "sila": {
+    "praca_zdalna": 2,
+    "cisza": 2
+   },
+   "nie_chce": [
+    "duza_droga"
+   ],
+   "cechy": [
+    "nowa_potrzeba",
+    "nie_chce"
+   ]
+  },
+  {
+   "id": "K8-A035",
+   "tekst": "oboje pracujemy z domu, dwojka dzieci przedszkolnych. przedszkole musi byc blisko bo inaczej nie ogarniemy",
+   "persona": "rodzina",
+   "potrzeby": [
+    "praca_zdalna",
+    "dzieci"
+   ],
+   "sila": {
+    "praca_zdalna": 2,
+    "dzieci": 3
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba",
+    "sila_3"
+   ]
+  },
+  {
+   "id": "K8-A036",
+   "tekst": "pracuje z domu ale wieczorami lubie wyjsc na piwo, wiec Kazimierz albo Podgorze. tylko nie nad knajpa, w dzien mam spotkania a w nocy chce spac",
+   "persona": null,
+   "potrzeby": [
+    "praca_zdalna",
+    "zycie_nocne",
+    "cisza"
+   ],
+   "sila": {
+    "praca_zdalna": 2,
+    "zycie_nocne": 2,
+    "cisza": 2
+   },
+   "nie_chce": [
+    "zycie_nocne_obok"
+   ],
+   "cechy": [
+    "nowa_potrzeba",
+    "nie_chce",
+    "sprzeczne"
+   ]
+  },
+  {
+   "id": "K8-A037",
+   "tekst": "remote, nie musze nigdzie dojezdzac. moge mieszkac nawet pod krakowem byle internet byl i sklep",
+   "persona": null,
+   "potrzeby": [
+    "praca_zdalna",
+    "sklepy"
+   ],
+   "sila": {
+    "praca_zdalna": 2,
+    "sklepy": 3
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba",
+    "sila_3"
+   ]
+  },
+  {
+   "id": "K8-A038",
+   "tekst": "na emeryturze dorabiam zdalnie jako ksiegowa, ze 4h dziennie przy komputerze w domu",
+   "persona": "senior",
+   "potrzeby": [
+    "senior",
+    "praca_zdalna"
+   ],
+   "sila": {
+    "senior": 2,
+    "praca_zdalna": 2
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba"
+   ]
+  },
+  {
+   "id": "K8-A039",
+   "tekst": "pracuje zdalnie i biegam w poludnie zamiast lunchu, Blonia albo bulwary w poblizu bylyby super",
+   "persona": null,
+   "potrzeby": [
+    "praca_zdalna",
+    "sport"
+   ],
+   "sila": {
+    "praca_zdalna": 2,
+    "sport": 1
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba",
+    "sila_1"
+   ]
+  },
+  {
+   "id": "K8-A040",
+   "tekst": "szukam dla brata ktory wraca z Irlandii, dalej bedzie pracowal zdalnie dla tamtej firmy, wazne zeby mial cicho",
+   "persona": null,
+   "potrzeby": [
+    "praca_zdalna",
+    "cisza"
+   ],
+   "sila": {
+    "praca_zdalna": 2,
+    "cisza": 2
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba",
+    "w_imieniu"
+   ]
+  },
+  {
+   "id": "K8-A041",
+   "tekst": "nagrywam podcasty i montuje w domu, to moja praca i bez spokojnego miejsca do nagran nie ma o czym mowic. stadion obok to bylby dramat",
+   "persona": null,
+   "potrzeby": [
+    "praca_zdalna"
+   ],
+   "sila": {
+    "praca_zdalna": 3
+   },
+   "nie_chce": [
+    "imprezy"
+   ],
+   "cechy": [
+    "nowa_potrzeba",
+    "nie_chce",
+    "sila_3"
+   ]
+  },
+  {
+   "id": "K8-A042",
+   "tekst": "lubie wyjsc na miasto w weekend, fajnie by bylo miec jakies knajpy w zasiegu spaceru",
+   "persona": null,
+   "potrzeby": [
+    "zycie_nocne"
+   ],
+   "sila": {
+    "zycie_nocne": 1
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba",
+    "sila_1"
+   ]
+  },
+  {
+   "id": "K8-A043",
+   "tekst": "chce byc blisko knajp ale nie pod samym oknem",
+   "persona": null,
+   "potrzeby": [
+    "zycie_nocne"
+   ],
+   "sila": {
+    "zycie_nocne": 2
+   },
+   "nie_chce": [
+    "zycie_nocne_obok"
+   ],
+   "cechy": [
+    "nowa_potrzeba",
+    "nie_chce"
+   ]
+  },
+  {
+   "id": "K8-A044",
+   "tekst": "Mam 26 lat, mieszkam sama. Koncerty, kluby, knajpy – to moje życie. Bez nocnych autobusów i knajp w okolicy się nie przeprowadzę.",
+   "persona": "singiel",
+   "potrzeby": [
+    "singiel",
+    "zycie_nocne"
+   ],
+   "sila": {
+    "singiel": 2,
+    "zycie_nocne": 3
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba",
+    "sila_3"
+   ]
+  },
+  {
+   "id": "K8-A045",
+   "tekst": "lubie zjesc na miescie i wyskoczyc na drinka, ale bez przesady. na kazimierzu bym nie chcial, za duzo turystow i airbnb",
+   "persona": null,
+   "potrzeby": [
+    "zycie_nocne"
+   ],
+   "sila": {
+    "zycie_nocne": 1
+   },
+   "nie_chce": [
+    "turysci"
+   ],
+   "cechy": [
+    "nowa_potrzeba",
+    "nie_chce",
+    "sila_1"
+   ]
+  },
+  {
+   "id": "K8-A046",
+   "tekst": "uwielbiam kluby na Kazimierzu i chce do nich miec 5 minut pieszo. a jednoczesnie spie bardzo czujnie i w nocy musi byc cisza",
+   "persona": null,
+   "potrzeby": [
+    "zycie_nocne",
+    "cisza"
+   ],
+   "sila": {
+    "zycie_nocne": 2,
+    "cisza": 3
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba",
+    "sila_3",
+    "sprzeczne"
+   ]
+  },
+  {
+   "id": "K8-A047",
+   "tekst": "student UJ, chce cos blisko miasteczka albo centrum, zeby wracac z imprez pieszo",
+   "persona": null,
+   "potrzeby": [
+    "student",
+    "zycie_nocne"
+   ],
+   "sila": {
+    "student": 2,
+    "zycie_nocne": 2
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba"
+   ]
+  },
+  {
+   "id": "K8-A048",
+   "tekst": "kupuje kawalerke pod najem krotkoterminowy, liczy sie bliskosc rynku i knajp, turystom to pasuje",
+   "persona": "inwestor",
+   "potrzeby": [
+    "inwestycja",
+    "zycie_nocne"
+   ],
+   "sila": {
+    "inwestycja": 2,
+    "zycie_nocne": 2
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba"
+   ]
+  },
+  {
+   "id": "K8-A049",
+   "tekst": "mamy malucha ale dalej chcemy miec knajpy i kino w zasiegu spaceru, nie zamierzamy sie zakopac na wsi. zlobek tez wazny",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci",
+    "zycie_nocne"
+   ],
+   "sila": {
+    "dzieci": 2,
+    "zycie_nocne": 2
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba"
+   ]
+  },
+  {
+   "id": "K8-A050",
+   "tekst": "byloby milo miec jakis pub na rogu, w sumie tyle",
+   "persona": null,
+   "potrzeby": [
+    "zycie_nocne"
+   ],
+   "sila": {
+    "zycie_nocne": 1
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba",
+    "sila_1"
+   ]
+  },
+  {
+   "id": "K8-A051",
+   "tekst": "barman, koncze prace o 3 w nocy na Florianskiej. musze miec blisko albo nocny autobus pod dom, inaczej odpada",
+   "persona": null,
+   "potrzeby": [
+    "praca_centrum"
+   ],
+   "sila": {
+    "praca_centrum": 3
+   },
+   "nie_chce": [],
+   "cechy": [
+    "sila_3"
+   ]
+  },
+  {
+   "id": "K8-A052",
+   "tekst": "jestem erasmus z hiszpanii, studiuje UEK jeden semestr. chce miejsce gdzie duzo barow i ludzi",
+   "persona": null,
+   "potrzeby": [
+    "student",
+    "zycie_nocne"
+   ],
+   "sila": {
+    "student": 2,
+    "zycie_nocne": 2
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba"
+   ]
+  },
+  {
+   "id": "K8-A053",
+   "tekst": "wychodze na miasto ze 2 razy w miesiacu, wiec nie musi byc tuz obok, ale zeby taksowka nie kosztowala majatku by sie przydalo",
+   "persona": null,
+   "potrzeby": [
+    "zycie_nocne"
+   ],
+   "sila": {
+    "zycie_nocne": 1
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba",
+    "sila_1"
+   ]
+  },
+  {
+   "id": "K8-A054",
+   "tekst": "silownia rano, bar wieczorem, taki ze mnie typ. obie rzeczy musza byc w zasiegu",
+   "persona": null,
+   "potrzeby": [
+    "sport",
+    "zycie_nocne"
+   ],
+   "sila": {
+    "sport": 3,
+    "zycie_nocne": 3
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba",
+    "sila_3"
+   ]
+  },
+  {
+   "id": "K8-A055",
+   "tekst": "mam psa, ale zieleni nie potrzebuje, chodzimy po chodniku. najwazniejsze zeby bylo blisko centrum i knajp",
+   "persona": null,
+   "potrzeby": [
+    "pies",
+    "zycie_nocne"
+   ],
+   "sila": {
+    "pies": 2,
+    "zycie_nocne": 3
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba",
+    "sila_3",
+    "sprzeczne"
+   ]
+  },
+  {
+   "id": "K8-A056",
+   "tekst": "biegam 3x w tygodniu, wazne zeby bylo gdzie biegac niedaleko domu",
+   "persona": null,
+   "potrzeby": [
+    "sport"
+   ],
+   "sila": {
+    "sport": 2
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba"
+   ]
+  },
+  {
+   "id": "K8-A057",
+   "tekst": "trenuje triathlon. basen blisko i wyjazd rowerem szosowym poza miasto to dla mnie podstawa",
+   "persona": null,
+   "potrzeby": [
+    "sport",
+    "rower"
+   ],
+   "sila": {
+    "sport": 3,
+    "rower": 3
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba",
+    "sila_3"
+   ]
+  },
+  {
+   "id": "K8-A058",
+   "tekst": "chodze na silownie 4-5 razy w tygodniu, dobrze by bylo zeby byla w odleglosci spaceru",
+   "persona": null,
+   "potrzeby": [
+    "sport"
+   ],
+   "sila": {
+    "sport": 1
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba",
+    "sila_1"
+   ]
+  },
+  {
+   "id": "K8-A059",
+   "tekst": "syn trenuje pilke, corka plywa. zajecia sportowe dla dzieci blisko sa dla nas wazne",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci",
+    "sport"
+   ],
+   "sila": {
+    "dzieci": 2,
+    "sport": 2
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba"
+   ]
+  },
+  {
+   "id": "K8-A060",
+   "tekst": "mam 69 lat i codziennie chodze z kijkami, nordic walking. potrzebuje parku albo walow nad Wisla niedaleko",
+   "persona": "senior",
+   "potrzeby": [
+    "senior",
+    "sport",
+    "zielen"
+   ],
+   "sila": {
+    "senior": 2,
+    "sport": 2,
+    "zielen": 2
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba"
+   ]
+  },
+  {
+   "id": "K8-A061",
+   "tekst": "wspinam sie, scianka wspinaczkowa blisko to must have",
+   "persona": null,
+   "potrzeby": [
+    "sport"
+   ],
+   "sila": {
+    "sport": 3
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba",
+    "sila_3"
+   ]
+  },
+  {
+   "id": "K8-A062",
+   "tekst": "biegam codziennie wiec chcialabym blisko Blon, ale nie chce zadnego stadionu w okolicy bo mecze to koszmar",
+   "persona": null,
+   "potrzeby": [
+    "sport"
+   ],
+   "sila": {
+    "sport": 2
+   },
+   "nie_chce": [
+    "imprezy"
+   ],
+   "cechy": [
+    "nowa_potrzeba",
+    "nie_chce",
+    "sprzeczne"
+   ]
+  },
+  {
+   "id": "K8-A063",
+   "tekst": "jezdze na rolkach i rowerze. sciezki rowerowe to podstawa, a skatepark bylby bonusem",
+   "persona": null,
+   "potrzeby": [
+    "rower",
+    "sport"
+   ],
+   "sila": {
+    "rower": 3,
+    "sport": 1
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba",
+    "sila_1",
+    "sila_3"
+   ]
+  },
+  {
+   "id": "K8-A064",
+   "tekst": "studiuje na AWF, wiec wiadomo, wazne blisko uczelni bo mam treningi rano i wieczorem",
+   "persona": null,
+   "potrzeby": [
+    "student",
+    "sport"
+   ],
+   "sila": {
+    "student": 2,
+    "sport": 2
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba"
+   ]
+  },
+  {
+   "id": "K8-A065",
+   "tekst": "chce zaczac biegac, moze jak bede miec park pod nosem to sie zmotywuje",
+   "persona": null,
+   "potrzeby": [
+    "sport",
+    "zielen"
+   ],
+   "sila": {
+    "sport": 1,
+    "zielen": 1
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba",
+    "sila_1"
+   ]
+  },
+  {
+   "id": "K8-A066",
+   "tekst": "mamy dwojke nastolatkow, oboje w klubach sportowych, plus pies. potrzebujemy zieleni i hali sportowej w okolicy",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci",
+    "sport",
+    "pies",
+    "zielen"
+   ],
+   "sila": {
+    "dzieci": 2,
+    "sport": 2,
+    "pies": 2,
+    "zielen": 2
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba"
+   ]
+  },
+  {
+   "id": "K8-A067",
+   "tekst": "szukam dla tesciow, oboje po 66 i dalej biegaja maratony :) chca mieszkac blisko lasu",
+   "persona": "senior",
+   "potrzeby": [
+    "senior",
+    "sport",
+    "zielen"
+   ],
+   "sila": {
+    "senior": 2,
+    "sport": 2,
+    "zielen": 2
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba",
+    "w_imieniu"
+   ]
+  },
+  {
+   "id": "K8-A068",
+   "tekst": "Mam 34 lata, singiel, pracuję w biurowcu przy Dworcu Głównym. Siłownia w okolicy by się przydała, knajpy też.",
+   "persona": "singiel",
+   "potrzeby": [
+    "singiel",
+    "praca_centrum",
+    "sport",
+    "zycie_nocne"
+   ],
+   "sila": {
+    "singiel": 2,
+    "praca_centrum": 2,
+    "sport": 1,
+    "zycie_nocne": 1
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba",
+    "sila_1"
+   ]
+  },
+  {
+   "id": "K8-A069",
+   "tekst": "studiuje na AGH, 2 rok. szukam pokoju tak zeby dojechac na zajecia w 20 min i zeby nie bylo drogo",
+   "persona": null,
+   "potrzeby": [
+    "student"
+   ],
+   "sila": {
+    "student": 2
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba"
+   ]
+  },
+  {
+   "id": "K8-A070",
+   "tekst": "dostalam sie na medycyne na UJ, szukam stancji niedaleko Pradnika. moze byc pokoj, byle tanio",
+   "persona": null,
+   "potrzeby": [
+    "student"
+   ],
+   "sila": {
+    "student": 2
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba"
+   ]
+  },
+  {
+   "id": "K8-A071",
+   "tekst": "corka zaczyna studia na Politechnice od pazdziernika, szukamy jej czegos bezpiecznego, zeby wracala wieczorem bez strachu",
+   "persona": null,
+   "potrzeby": [
+    "student",
+    "bezpieczenstwo"
+   ],
+   "sila": {
+    "student": 2,
+    "bezpieczenstwo": 2
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba",
+    "w_imieniu"
+   ]
+  },
+  {
+   "id": "K8-A072",
+   "tekst": "doktorant na AGH, mieszkam sam. na uczelni bywam 2 razy w tygodniu, wiec bliskosc AGH by sie przydala, ale nie musi. sklep czynny do pozna tez by sie przydal",
+   "persona": "singiel",
+   "potrzeby": [
+    "student",
+    "singiel",
+    "sklepy"
+   ],
+   "sila": {
+    "student": 1,
+    "singiel": 2,
+    "sklepy": 1
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba",
+    "sila_1"
+   ]
+  },
+  {
+   "id": "K8-A073",
+   "tekst": "w tygodniu pracuje w centrum, a w weekendy mam zaoczne na UP. dojazd na uczelnie by sie przydal, ale praca jest najwazniejsza",
+   "persona": null,
+   "potrzeby": [
+    "student",
+    "praca_centrum"
+   ],
+   "sila": {
+    "student": 1,
+    "praca_centrum": 3
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba",
+    "sila_1",
+    "sila_3"
+   ]
+  },
+  {
+   "id": "K8-A074",
+   "tekst": "inwestuje w mieszkanie pod wynajem dla studentow, wazne blisko AGH i UJ i z dobrym dojazdem tramwajem",
+   "persona": "inwestor",
+   "potrzeby": [
+    "inwestycja",
+    "student"
+   ],
+   "sila": {
+    "inwestycja": 2,
+    "student": 2
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba"
+   ]
+  },
+  {
+   "id": "K8-A075",
+   "tekst": "studentka i jednoczesnie mama 2latka. zlobek i uczelnia blisko to bardzo wazne",
+   "persona": "rodzina",
+   "potrzeby": [
+    "student",
+    "dzieci"
+   ],
+   "sila": {
+    "student": 3,
+    "dzieci": 3
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba",
+    "sila_3"
+   ]
+  },
+  {
+   "id": "K8-A076",
+   "tekst": "studiuje informatyke, w nocy gram albo koduje. impreza pod oknem raczej nie",
+   "persona": null,
+   "potrzeby": [
+    "student"
+   ],
+   "sila": {
+    "student": 2
+   },
+   "nie_chce": [
+    "zycie_nocne_obok"
+   ],
+   "cechy": [
+    "nowa_potrzeba",
+    "nie_chce"
+   ]
+  },
+  {
+   "id": "K8-A077",
+   "tekst": "studentka ASP, wazne zeby bylo blisko pracowni. fajne miejsca na wieczor w okolicy by sie przydaly",
+   "persona": null,
+   "potrzeby": [
+    "student",
+    "zycie_nocne"
+   ],
+   "sila": {
+    "student": 2,
+    "zycie_nocne": 1
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba",
+    "sila_1"
+   ]
+  },
+  {
+   "id": "K8-A078",
+   "tekst": "student, chce taniej wiec moge mieszkac za miastem, ale auta nie mam a dojazd na 8 rano na uczelnie musi byc szybki",
+   "persona": null,
+   "potrzeby": [
+    "student",
+    "bez_samochodu"
+   ],
+   "sila": {
+    "student": 3,
+    "bez_samochodu": 2
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba",
+    "sila_3",
+    "sprzeczne"
+   ]
+  },
+  {
+   "id": "K8-A079",
+   "tekst": "zaczynam doktorat na UJ i przeprowadzam sie z partnerka. ona czasem pracuje z domu, wiec przydalby sie spokoj w dzien",
+   "persona": null,
+   "potrzeby": [
+    "student",
+    "praca_zdalna"
+   ],
+   "sila": {
+    "student": 2,
+    "praca_zdalna": 1
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba",
+    "sila_1"
+   ]
+  },
+  {
+   "id": "K8-A080",
+   "tekst": "dla siostry, zaczyna studia na UEK i pierwszy raz bedzie mieszkac sama. moze cos z nocnym autobusem bo lubi wyjsc wieczorem",
+   "persona": "singiel",
+   "potrzeby": [
+    "student",
+    "singiel",
+    "zycie_nocne"
+   ],
+   "sila": {
+    "student": 2,
+    "singiel": 2,
+    "zycie_nocne": 1
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba",
+    "sila_1",
+    "w_imieniu"
+   ]
+  },
+  {
+   "id": "K8-A081",
+   "tekst": "Rodzina 2+2, szukamy domu w Wieliczce albo Niepołomicach. Ważne: szkoła blisko, ale nie pod samym oknem.",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci"
+   ],
+   "sila": {
+    "dzieci": 2
+   },
+   "nie_chce": [
+    "szkola_obok"
+   ],
+   "cechy": [
+    "nie_chce"
+   ]
+  },
+  {
+   "id": "K8-A082",
+   "tekst": "tylko nie obok zakladow, w Nowej Hucie mieszkalam przy kombinacie i wiecej nie chce. czyste powietrze musi byc",
+   "persona": null,
+   "potrzeby": [
+    "powietrze"
+   ],
+   "sila": {
+    "powietrze": 3
+   },
+   "nie_chce": [
+    "przemysl"
+   ],
+   "cechy": [
+    "nie_chce",
+    "sila_3"
+   ]
+  },
+  {
+   "id": "K8-A083",
+   "tekst": "Mam psa, owczarka, musi mieć gdzie się wybiegać. Bez parku w pobliżu nie ma szans.",
+   "persona": null,
+   "potrzeby": [
+    "pies",
+    "zielen"
+   ],
+   "sila": {
+    "pies": 2,
+    "zielen": 3
+   },
+   "nie_chce": [],
+   "cechy": [
+    "sila_3"
+   ]
+  },
+  {
+   "id": "K8-A084",
+   "tekst": "szukam czegos spokojnego, bron Boze przy Alejach Trzech Wieszczow",
+   "persona": null,
+   "potrzeby": [
+    "cisza"
+   ],
+   "sila": {
+    "cisza": 2
+   },
+   "nie_chce": [
+    "duza_droga"
+   ],
+   "cechy": [
+    "nie_chce"
+   ]
+  },
+  {
+   "id": "K8-A085",
+   "tekst": "Inwestycyjnie: kawalerka, dobra lokalizacja, wzrost wartości. Turyści mi nie przeszkadzają, i tak nie będę tam mieszkał.",
+   "persona": "inwestor",
+   "potrzeby": [
+    "inwestycja"
+   ],
+   "sila": {
+    "inwestycja": 2
+   },
+   "nie_chce": [],
+   "cechy": []
+  },
+  {
+   "id": "K8-A086",
+   "tekst": "emerytka, mieszkam sama. kosciol, przychodnia, sklep, wszystko na piechote. halas z ulicy mnie meczy",
+   "persona": "senior",
+   "potrzeby": [
+    "senior",
+    "singiel",
+    "zdrowie",
+    "sklepy"
+   ],
+   "sila": {
+    "senior": 2,
+    "singiel": 2,
+    "zdrowie": 2,
+    "sklepy": 2
+   },
+   "nie_chce": [
+    "duza_droga"
+   ],
+   "cechy": [
+    "nie_chce"
+   ]
+  },
+  {
+   "id": "K8-A087",
+   "tekst": "jezdze rowerem do pracy na Kampus UJ, musi byc sciezka rowerowa, nie chce jechac miedzy tirami",
+   "persona": null,
+   "potrzeby": [
+    "rower"
+   ],
+   "sila": {
+    "rower": 3
+   },
+   "nie_chce": [],
+   "cechy": [
+    "sila_3"
+   ]
+  },
+  {
+   "id": "K8-A088",
+   "tekst": "mamy dwojke malych dzieci i astmatyka w domu. powietrze to priorytet, zadnych kominow fabrycznych w okolicy",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci",
+    "powietrze"
+   ],
+   "sila": {
+    "dzieci": 2,
+    "powietrze": 3
+   },
+   "nie_chce": [
+    "przemysl"
+   ],
+   "cechy": [
+    "nie_chce",
+    "sila_3"
+   ]
+  },
+  {
+   "id": "K8-A089",
+   "tekst": "w krakowie wszedzie dzwigi. chcialabym gdzies gdzie juz wszystko stoi i nikt nic nie kopie",
+   "persona": null,
+   "potrzeby": [],
+   "sila": {},
+   "nie_chce": [
+    "budowy"
+   ],
+   "cechy": [
+    "nie_chce"
+   ]
+  },
+  {
+   "id": "K8-A090",
+   "tekst": "Bezpieczna okolica to dla mnie numer jeden, wracam późno z pracy. Mieszkam sama.",
+   "persona": "singiel",
+   "potrzeby": [
+    "bezpieczenstwo",
+    "singiel"
+   ],
+   "sila": {
+    "bezpieczenstwo": 3,
+    "singiel": 2
+   },
+   "nie_chce": [],
+   "cechy": [
+    "sila_3"
+   ]
+  },
+  {
+   "id": "K8-A091",
+   "tekst": "nie chce mieszkac przy stadionie Cracovii ani Wisly, mam dosc kibicow pod blokiem. poza tym obojetne",
+   "persona": null,
+   "potrzeby": [],
+   "sila": {},
+   "nie_chce": [
+    "imprezy"
+   ],
+   "cechy": [
+    "nie_chce"
+   ]
+  },
+  {
+   "id": "K8-A092",
+   "tekst": "Szukamy dla rodziców (oboje po 70), żeby byli blisko nas na Woli Justowskiej. Lekarz i sklep blisko, cisza.",
+   "persona": "senior",
+   "potrzeby": [
+    "senior",
+    "zdrowie",
+    "sklepy",
+    "cisza"
+   ],
+   "sila": {
+    "senior": 2,
+    "zdrowie": 2,
+    "sklepy": 2,
+    "cisza": 2
+   },
+   "nie_chce": [],
+   "cechy": [
+    "w_imieniu"
+   ]
+  },
+  {
+   "id": "K8-A093",
+   "tekst": "nie chce mieszkac tam gdzie co drugie mieszkanie to airbnb i walizki na schodach co weekend",
+   "persona": null,
+   "potrzeby": [],
+   "sila": {},
+   "nie_chce": [
+    "turysci"
+   ],
+   "cechy": [
+    "nie_chce"
+   ]
+  },
+  {
+   "id": "K8-A094",
+   "tekst": "Pies + dziecko + home office. Zieleń ważna, cisza ważna, reszta jak los da.",
+   "persona": "rodzina",
+   "potrzeby": [
+    "pies",
+    "dzieci",
+    "praca_zdalna",
+    "zielen",
+    "cisza"
+   ],
+   "sila": {
+    "pies": 2,
+    "dzieci": 2,
+    "praca_zdalna": 2,
+    "zielen": 2,
+    "cisza": 2
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba"
+   ]
+  },
+  {
+   "id": "K8-A095",
+   "tekst": "chcemy kupic dzialke pod dom w Michalowicach, tylko nie z widokiem na S7 i halasem z trasy",
+   "persona": null,
+   "potrzeby": [],
+   "sila": {},
+   "nie_chce": [
+    "duza_droga"
+   ],
+   "cechy": [
+    "nie_chce"
+   ]
+  },
+  {
+   "id": "K8-A096",
+   "tekst": "mlody tata, coreczka ma 1,5 roku. plac zabaw blisko by sie przydal, ale nie tak zeby wrzaski pod oknem byly caly dzien",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci"
+   ],
+   "sila": {
+    "dzieci": 1
+   },
+   "nie_chce": [
+    "szkola_obok"
+   ],
+   "cechy": [
+    "nie_chce",
+    "sila_1"
+   ]
+  },
+  {
+   "id": "K8-A097",
+   "tekst": "pracuje na nocki w szpitalu w Prokocimiu i spie w dzien. szkola pod oknem odpada, budowa tez",
+   "persona": null,
+   "potrzeby": [],
+   "sila": {},
+   "nie_chce": [
+    "szkola_obok",
+    "budowy"
+   ],
+   "cechy": [
+    "nie_chce"
+   ]
+  },
+  {
+   "id": "K8-A098",
+   "tekst": "babcia 85 lat mieszka ze mna. szukamy czegos z apteka i lekarzem tuz obok",
+   "persona": "senior",
+   "potrzeby": [
+    "senior",
+    "zdrowie"
+   ],
+   "sila": {
+    "senior": 2,
+    "zdrowie": 2
+   },
+   "nie_chce": [],
+   "cechy": []
+  },
+  {
+   "id": "K8-A099",
+   "tekst": "nie znosze tlumow i koncertow pod domem, Tauron Arena w okolicy odpada",
+   "persona": null,
+   "potrzeby": [],
+   "sila": {},
+   "nie_chce": [
+    "imprezy"
+   ],
+   "cechy": [
+    "nie_chce"
+   ]
+  },
+  {
+   "id": "K8-A100",
+   "tekst": "chce mieszkac blisko centrum, bez samochodu, rower i tramwaj. turystycznego starego miasta nie chce",
+   "persona": null,
+   "potrzeby": [
+    "bez_samochodu",
+    "rower"
+   ],
+   "sila": {
+    "bez_samochodu": 2,
+    "rower": 2
+   },
+   "nie_chce": [
+    "turysci"
+   ],
+   "cechy": [
+    "nie_chce"
+   ]
+  },
+  {
+   "id": "K8-A101",
+   "tekst": "Mieszkanie dla mnie i kota, cisza i zieleń, bez budów dookoła. Mieszkam sam od rozwodu.",
+   "persona": "singiel",
+   "potrzeby": [
+    "singiel",
+    "cisza",
+    "zielen"
+   ],
+   "sila": {
+    "singiel": 2,
+    "cisza": 2,
+    "zielen": 2
+   },
+   "nie_chce": [
+    "budowy"
+   ],
+   "cechy": [
+    "nie_chce"
+   ]
+  },
+  {
+   "id": "K8-A102",
+   "tekst": "dwa psy, duze. ogrodek albo przynajmniej las obok, to musi byc",
+   "persona": null,
+   "potrzeby": [
+    "pies",
+    "zielen"
+   ],
+   "sila": {
+    "pies": 2,
+    "zielen": 3
+   },
+   "nie_chce": [],
+   "cechy": [
+    "sila_3"
+   ]
+  },
+  {
+   "id": "K8-A103",
+   "tekst": "przydaloby sie zeby bylo bezpiecznie i zeby jakis zielony skwer byl. no i nie przy ruchliwej trasie",
+   "persona": null,
+   "potrzeby": [
+    "bezpieczenstwo",
+    "zielen"
+   ],
+   "sila": {
+    "bezpieczenstwo": 1,
+    "zielen": 1
+   },
+   "nie_chce": [
+    "duza_droga"
+   ],
+   "cechy": [
+    "nie_chce",
+    "sila_1"
+   ]
+  },
+  {
+   "id": "K8-A104",
+   "tekst": "inwestor, szukam tam gdzie planuja metro albo nowy tramwaj, wzrost cen to jedyne kryterium",
+   "persona": "inwestor",
+   "potrzeby": [
+    "inwestycja"
+   ],
+   "sila": {
+    "inwestycja": 3
+   },
+   "nie_chce": [],
+   "cechy": [
+    "sila_3"
+   ]
+  },
+  {
+   "id": "K8-A105",
+   "tekst": "Nie chcę mieszkać na budowie. Kupiliśmy kiedyś na nowym osiedlu i przez 5 lat obok stawiali kolejne bloki.",
+   "persona": null,
+   "potrzeby": [],
+   "sila": {},
+   "nie_chce": [
+    "budowy"
+   ],
+   "cechy": [
+    "nie_chce"
+   ]
+  },
+  {
+   "id": "K8-A106",
+   "tekst": "nie chcemy blisko huty ani przy obwodnicy. dwojka dzieci, szkola podstawowa w zasiegu spaceru jest wazna",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci"
+   ],
+   "sila": {
+    "dzieci": 2
+   },
+   "nie_chce": [
+    "przemysl",
+    "duza_droga"
+   ],
+   "cechy": [
+    "nie_chce"
+   ]
+  },
+  {
+   "id": "K8-A107",
+   "tekst": "pracuje w centrum na Grzegorzeckiej, chce dojezdzac tramwajem max 20 min. auta nie mam i miec nie bede",
+   "persona": null,
+   "potrzeby": [
+    "praca_centrum",
+    "bez_samochodu"
+   ],
+   "sila": {
+    "praca_centrum": 2,
+    "bez_samochodu": 3
+   },
+   "nie_chce": [],
+   "cechy": [
+    "sila_3"
+   ]
+  },
+  {
+   "id": "K8-A108",
+   "tekst": "jestem w ciazy, pierwsze dziecko. szukamy z mezem czegos z zielenia i lekarzem blisko",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci",
+    "zielen",
+    "zdrowie"
+   ],
+   "sila": {
+    "dzieci": 2,
+    "zielen": 2,
+    "zdrowie": 2
+   },
+   "nie_chce": [],
+   "cechy": []
+  },
+  {
+   "id": "K8-A109",
+   "tekst": "nie chce zadnych zakladow w okolicy, mam alergie i astme",
+   "persona": null,
+   "potrzeby": [
+    "powietrze"
+   ],
+   "sila": {
+    "powietrze": 2
+   },
+   "nie_chce": [
+    "przemysl"
+   ],
+   "cechy": [
+    "nie_chce"
+   ]
+  },
+  {
+   "id": "K8-A110",
+   "tekst": "cos przy lesie wolskim, cisza zielen powietrze. na stare lata mi sie nalezy",
+   "persona": "senior",
+   "potrzeby": [
+    "senior",
+    "cisza",
+    "zielen",
+    "powietrze"
+   ],
+   "sila": {
+    "senior": 2,
+    "cisza": 2,
+    "zielen": 2,
+    "powietrze": 2
+   },
+   "nie_chce": [],
+   "cechy": []
+  },
+  {
+   "id": "K8-A111",
+   "tekst": "nie mam auta, dojezdzam pociagiem do pracy w Zabierzowie, stacja blisko to warunek",
+   "persona": null,
+   "potrzeby": [
+    "bez_samochodu"
+   ],
+   "sila": {
+    "bez_samochodu": 3
+   },
+   "nie_chce": [],
+   "cechy": [
+    "sila_3"
+   ]
+  },
+  {
+   "id": "K8-A112",
+   "tekst": "nie chcemy mieszkac przy szkole, mamy niemowle i drzemki sa swiete",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci"
+   ],
+   "sila": {
+    "dzieci": 2
+   },
+   "nie_chce": [
+    "szkola_obok"
+   ],
+   "cechy": [
+    "nie_chce"
+   ]
+  },
+  {
+   "id": "K8-A113",
+   "tekst": "Kocham Nową Hutę, ale nie przy samym kombinacie. Szukam zieleni i spokoju.",
+   "persona": null,
+   "potrzeby": [
+    "zielen",
+    "cisza"
+   ],
+   "sila": {
+    "zielen": 2,
+    "cisza": 2
+   },
+   "nie_chce": [
+    "przemysl"
+   ],
+   "cechy": [
+    "nie_chce"
+   ]
+  },
+  {
+   "id": "K8-A114",
+   "tekst": "lekarz rodzinny blisko i apteka, reszta bez znaczenia. choruje przewlekle",
+   "persona": null,
+   "potrzeby": [
+    "zdrowie"
+   ],
+   "sila": {
+    "zdrowie": 3
+   },
+   "nie_chce": [],
+   "cechy": [
+    "sila_3"
+   ]
+  },
+  {
+   "id": "K8-A115",
+   "tekst": "wazne ze sklepy blisko, nie mam czasu jezdzic po zakupy. i nie chce przy duzej ulicy",
+   "persona": null,
+   "potrzeby": [
+    "sklepy"
+   ],
+   "sila": {
+    "sklepy": 2
+   },
+   "nie_chce": [
+    "duza_droga"
+   ],
+   "cechy": [
+    "nie_chce"
+   ]
+  },
+  {
+   "id": "K8-A116",
+   "tekst": "szukam dla siebie i corki 7 lat, samotna mama. bezpieczenstwo i szkola blisko, to podstawa",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci",
+    "bezpieczenstwo"
+   ],
+   "sila": {
+    "dzieci": 3,
+    "bezpieczenstwo": 3
+   },
+   "nie_chce": [],
+   "cechy": [
+    "sila_3"
+   ]
+  },
+  {
+   "id": "K8-A117",
+   "tekst": "chcemy wyprowadzic sie z centrum bo za duzo turystow i imprez pod oknem. cos spokojnego w Bronowicach",
+   "persona": null,
+   "potrzeby": [
+    "cisza"
+   ],
+   "sila": {
+    "cisza": 2
+   },
+   "nie_chce": [
+    "turysci",
+    "zycie_nocne_obok"
+   ],
+   "cechy": [
+    "nie_chce"
+   ]
+  },
+  {
+   "id": "K8-A118",
+   "tekst": "kupuje dla siebie ale tez jako lokate kapitalu, wiec wazne zeby cena rosla. przez pierwsze lata bede tam mieszkac sama",
+   "persona": "singiel",
+   "potrzeby": [
+    "singiel",
+    "inwestycja"
+   ],
+   "sila": {
+    "singiel": 2,
+    "inwestycja": 2
+   },
+   "nie_chce": [],
+   "cechy": []
+  },
+  {
+   "id": "K8-A119",
+   "tekst": "pies maly, nie trzeba duzo zieleni, ale jakis trawnik do siku by sie przydal",
+   "persona": null,
+   "potrzeby": [
+    "pies",
+    "zielen"
+   ],
+   "sila": {
+    "pies": 2,
+    "zielen": 1
+   },
+   "nie_chce": [],
+   "cechy": [
+    "sila_1"
+   ]
+  },
+  {
+   "id": "K8-A120",
+   "tekst": "pracuje na lotnisku w Balicach, zmiany od 5 rano. musze byc blisko lotniska",
+   "persona": null,
+   "potrzeby": [
+    "lotnisko"
+   ],
+   "sila": {
+    "lotnisko": 3
+   },
+   "nie_chce": [],
+   "cechy": [
+    "sila_3"
+   ]
+  },
+  {
+   "id": "K8-A121",
+   "tekst": "szukamy dla nas i dziadka z demencja. musi byc cicho i przychodnia blisko, zadnych knajp ani stadionow obok bo go to stresuje",
+   "persona": "senior",
+   "potrzeby": [
+    "senior",
+    "cisza",
+    "zdrowie"
+   ],
+   "sila": {
+    "senior": 2,
+    "cisza": 3,
+    "zdrowie": 3
+   },
+   "nie_chce": [
+    "zycie_nocne_obok",
+    "imprezy"
+   ],
+   "cechy": [
+    "nie_chce",
+    "sila_3"
+   ]
+  },
+  {
+   "id": "K8-A122",
+   "tekst": "nie chce obok kolejnego osiedla w budowie ani przy ruchliwej drodze, dzieci male",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci"
+   ],
+   "sila": {
+    "dzieci": 2
+   },
+   "nie_chce": [
+    "budowy",
+    "duza_droga"
+   ],
+   "cechy": [
+    "nie_chce"
+   ]
+  },
+  {
+   "id": "K8-A123",
+   "tekst": "chce mieszkac w samym centrum, w srodku wszystkiego, ale zeby bylo cicho jak na wsi",
+   "persona": null,
+   "potrzeby": [
+    "cisza"
+   ],
+   "sila": {
+    "cisza": 2
+   },
+   "nie_chce": [],
+   "cechy": [
+    "sprzeczne"
+   ]
+  },
+  {
+   "id": "K8-A124",
+   "tekst": "czworka dzieci, chcemy blisko szkoly, ale szkoly pod samym oknem nie chce bo w obecnym mieszkaniu oszalalam",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci"
+   ],
+   "sila": {
+    "dzieci": 2
+   },
+   "nie_chce": [
+    "szkola_obok"
+   ],
+   "cechy": [
+    "nie_chce",
+    "sprzeczne"
+   ]
+  },
+  {
+   "id": "K8-A125",
+   "tekst": "jestem kibicem Wisly, chodze na kazdy mecz i chce miec stadion blisko. ale po meczu pod blokiem ma byc spokojnie, wiem ze to sie gryzie",
+   "persona": null,
+   "potrzeby": [
+    "cisza"
+   ],
+   "sila": {
+    "cisza": 2
+   },
+   "nie_chce": [],
+   "cechy": [
+    "sprzeczne"
+   ]
+  },
+  {
+   "id": "K8-A126",
+   "tekst": "chcemy domek z ogrodem za miastem, duzo zieleni, ale nie mamy auta i nie planujemy miec",
+   "persona": null,
+   "potrzeby": [
+    "zielen",
+    "bez_samochodu"
+   ],
+   "sila": {
+    "zielen": 2,
+    "bez_samochodu": 2
+   },
+   "nie_chce": [],
+   "cechy": [
+    "sprzeczne"
+   ]
+  },
+  {
+   "id": "K8-A127",
+   "tekst": "szukam dla mamy, ma 77 lat i jest sama od smierci taty. lekarz blisko, sklep i zeby bylo bezpiecznie",
+   "persona": "senior",
+   "potrzeby": [
+    "senior",
+    "singiel",
+    "zdrowie",
+    "sklepy",
+    "bezpieczenstwo"
+   ],
+   "sila": {
+    "senior": 2,
+    "singiel": 2,
+    "zdrowie": 2,
+    "sklepy": 2,
+    "bezpieczenstwo": 2
+   },
+   "nie_chce": [],
+   "cechy": [
+    "w_imieniu"
+   ]
+  },
+  {
+   "id": "K8-A128",
+   "tekst": "pytam w imieniu przyjaciela z Ukrainy, przyjezdza z zona i dwojka dzieci. potrzebuja szkoly z oddzialem przygotowawczym niedaleko",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci"
+   ],
+   "sila": {
+    "dzieci": 2
+   },
+   "nie_chce": [],
+   "cechy": [
+    "w_imieniu"
+   ]
+  },
+  {
+   "id": "K8-A129",
+   "tekst": "kupuje mieszkanie dla corki, ma 30 lat, jest na wozku i pracuje zdalnie. dostepnosc to absolutny warunek",
+   "persona": null,
+   "potrzeby": [
+    "wozek",
+    "praca_zdalna"
+   ],
+   "sila": {
+    "wozek": 3,
+    "praca_zdalna": 2
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba",
+    "sila_3",
+    "w_imieniu"
+   ]
+  },
+  {
+   "id": "K8-A130",
+   "tekst": "sprzedalem dom w Bochni, chce byc blizej wnukow w Krakowie. 72 lata, zona tez. byle nie przy glownej ulicy i zeby lekarz byl",
+   "persona": "senior",
+   "potrzeby": [
+    "senior",
+    "zdrowie"
+   ],
+   "sila": {
+    "senior": 2,
+    "zdrowie": 3
+   },
+   "nie_chce": [
+    "duza_droga"
+   ],
+   "cechy": [
+    "nie_chce",
+    "sila_3"
+   ]
+  },
+  {
+   "id": "K8-A131",
+   "tekst": "szukam spokojnego miejsca, przydalaby sie cisza, ale nie jest to jakis wymog",
+   "persona": null,
+   "potrzeby": [
+    "cisza"
+   ],
+   "sila": {
+    "cisza": 1
+   },
+   "nie_chce": [],
+   "cechy": [
+    "sila_1"
+   ]
+  },
+  {
+   "id": "K8-A132",
+   "tekst": "dwojka dzieci, pies i jedno auto. szkola, park, parking, wszystko wazne, szkola najbardziej",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci",
+    "zielen",
+    "pies",
+    "auto"
+   ],
+   "sila": {
+    "dzieci": 3,
+    "zielen": 2,
+    "pies": 2,
+    "auto": 2
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba",
+    "sila_3"
+   ]
+  },
+  {
+   "id": "K8-A133",
+   "tekst": "mam 29 lat, mieszkam sam, pracuje w IT w Kapelance. chce dojezdzac rowerem i miec silownie pod blokiem, to drugie musi byc",
+   "persona": "singiel",
+   "potrzeby": [
+    "singiel",
+    "rower",
+    "sport"
+   ],
+   "sila": {
+    "singiel": 2,
+    "rower": 2,
+    "sport": 3
+   },
+   "nie_chce": [],
+   "cechy": [
+    "nowa_potrzeba",
+    "sila_3"
+   ]
+  },
+  {
+   "id": "K8-A134",
+   "tekst": "mieszkalam pod Wawelem i mam dosc wycieczek i grup z parasolkami. tym razem cokolwiek bez turystow, to warunek",
+   "persona": null,
+   "potrzeby": [],
+   "sila": {},
+   "nie_chce": [
+    "turysci"
+   ],
+   "cechy": [
+    "nie_chce"
+   ]
+  },
+  {
+   "id": "K8-A135",
+   "tekst": "mama z dwojka, bez auta. zeby przedszkole i sklep bylo na piechote, a ruchliwa ulica nie pod oknem",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci",
+    "bez_samochodu",
+    "sklepy"
+   ],
+   "sila": {
+    "dzieci": 2,
+    "bez_samochodu": 2,
+    "sklepy": 2
+   },
+   "nie_chce": [
+    "duza_droga"
+   ],
+   "cechy": [
+    "nie_chce"
+   ]
+  },
+  {
+   "id": "K8-A136",
+   "tekst": "szukam pod inwestycje, ale nie w okolicy zakladow ani wielkich budow, to zbija cene",
+   "persona": "inwestor",
+   "potrzeby": [
+    "inwestycja"
+   ],
+   "sila": {
+    "inwestycja": 2
+   },
+   "nie_chce": [
+    "przemysl",
+    "budowy"
+   ],
+   "cechy": [
+    "nie_chce"
+   ]
+  },
+  {
+   "id": "K8-A137",
+   "tekst": "test",
+   "persona": null,
+   "potrzeby": [],
+   "sila": {},
+   "nie_chce": [],
+   "cechy": [
+    "nikt_nie_szuka"
+   ]
+  },
+  {
+   "id": "K8-A138",
+   "tekst": "sprawdzam tylko jak to dziala, nigdzie sie nie przeprowadzam",
+   "persona": null,
+   "potrzeby": [],
+   "sila": {},
+   "nie_chce": [],
+   "cechy": [
+    "nikt_nie_szuka"
+   ]
+  },
+  {
+   "id": "K8-A139",
+   "tekst": "robie projekt na studia o aplikacjach z danymi przestrzennymi, chcialam zobaczyc co to wyswietla",
+   "persona": null,
+   "potrzeby": [],
+   "sila": {},
+   "nie_chce": [],
+   "cechy": [
+    "nikt_nie_szuka"
+   ]
+  },
+  {
+   "id": "K8-A140",
+   "tekst": "mieszkam na Kurdwanowie od 40 lat i nigdzie sie nie ruszam, ciekawi mnie tylko co ta apka powie o mojej ulicy",
+   "persona": null,
+   "potrzeby": [],
+   "sila": {},
+   "nie_chce": [],
+   "cechy": [
+    "nikt_nie_szuka"
+   ]
+  },
+  {
+   "id": "K8-A141",
+   "tekst": "jestem posrednikiem, sprawdzam czy moge to polecac klientom",
+   "persona": null,
+   "potrzeby": [],
+   "sila": {},
+   "nie_chce": [],
+   "cechy": [
+    "nikt_nie_szuka"
+   ]
+  },
+  {
+   "id": "K8-A142",
+   "tekst": "asdfgh",
+   "persona": null,
+   "potrzeby": [],
+   "sila": {},
+   "nie_chce": [],
+   "cechy": [
+    "nikt_nie_szuka"
+   ]
+  },
+  {
+   "id": "K8-A143",
+   "tekst": "kolega przyslal link, zobacze co to jest",
+   "persona": null,
+   "potrzeby": [],
+   "sila": {},
+   "nie_chce": [],
+   "cechy": [
+    "nikt_nie_szuka"
+   ]
+  },
+  {
+   "id": "K8-A144",
+   "tekst": "dziennikarka, pisze tekst o jakosci powietrza w gminach pod Krakowem. nie szukam mieszkania",
+   "persona": null,
+   "potrzeby": [],
+   "sila": {},
+   "nie_chce": [],
+   "cechy": [
+    "nikt_nie_szuka"
+   ]
+  },
+  {
+   "id": "K8-A145",
+   "tekst": "szukam mieszkania w krakowie",
+   "persona": null,
+   "potrzeby": [],
+   "sila": {},
+   "nie_chce": [],
+   "cechy": [
+    "bez_sygnalu"
+   ]
+  },
+  {
+   "id": "K8-A146",
+   "tekst": "chce sie przeprowadzic, nie wiem jeszcze gdzie, cos fajnego",
+   "persona": null,
+   "potrzeby": [],
+   "sila": {},
+   "nie_chce": [],
+   "cechy": [
+    "bez_sygnalu"
+   ]
+  },
+  {
+   "id": "K8-A147",
+   "tekst": "hej, co polecacie?",
+   "persona": null,
+   "potrzeby": [],
+   "sila": {},
+   "nie_chce": [],
+   "cechy": [
+    "bez_sygnalu"
+   ]
+  },
+  {
+   "id": "K8-A148",
+   "tekst": "Dzień dobry, interesuje mnie zakup mieszkania. Pozdrawiam",
+   "persona": null,
+   "potrzeby": [],
+   "sila": {},
+   "nie_chce": [],
+   "cechy": [
+    "bez_sygnalu"
+   ]
+  },
+  {
+   "id": "K8-A149",
+   "tekst": "nie wiem czego chce, pokaz cos",
+   "persona": null,
+   "potrzeby": [],
+   "sila": {},
+   "nie_chce": [],
+   "cechy": [
+    "bez_sygnalu"
+   ]
+  },
+  {
+   "id": "K8-A150",
+   "tekst": "przeprowadzka w marcu, okolice krakowa",
+   "persona": null,
+   "potrzeby": [],
+   "sila": {},
+   "nie_chce": [],
+   "cechy": [
+    "bez_sygnalu"
+   ]
+  }
+ ]
+}

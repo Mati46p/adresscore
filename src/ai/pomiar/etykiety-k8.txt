@@ -1,0 +1,43 @@
+# Potrzeby (id – nazwa) – 15 dotychczasowych + 6 nowych (#183)
+dzieci – dzieci
+pies – pies
+zielen – zieleń
+powietrze – czyste powietrze
+rower – rower
+bez_samochodu – bez samochodu
+senior – senior
+praca_centrum – praca w centrum
+zdrowie – lekarz blisko
+lotnisko – lotnisko
+cisza – cisza
+sklepy – sklepy pod ręką
+bezpieczenstwo – bezpieczeństwo
+inwestycja – inwestycja
+singiel – mieszkam sam
+auto – mam samochód, potrzebuję parkowania i dojazdu autem
+wozek – poruszam się na wózku / mam ograniczoną mobilność (bariery, krawężniki, dostępność)
+praca_zdalna – pracuję zdalnie z domu
+zycie_nocne – lubię życie nocne, knajpy, kluby w pobliżu
+sport – sport i aktywność (siłownia, bieganie, obiekty sportowe)
+student – student (uczelnia, akademik, tani dojazd)
+
+# Siła potrzeby (#182) – dla każdej potrzeby w złocie
+1 – wspomniana lekko / „byłoby miło”
+2 – wyraźnie ważna
+3 – bardzo ważna / warunek konieczny
+
+# „Nie chcę” (#182) – rzeczy, których osoba NIE chce w pobliżu
+zycie_nocne_obok – knajpy, kluby, hałas nocny pod oknem
+turysci – dużo turystów, najem krótkoterminowy
+szkola_obok – szkoła / plac zabaw tuż obok (hałas dzieci)
+duza_droga – ruchliwa ulica / trasa pod oknem
+przemysl – zakłady, kominy, przemysł w pobliżu
+imprezy – stadiony, hale, imprezy masowe w pobliżu
+budowy – dużo budów / nowych inwestycji wokół
+
+# Profile (id – nazwa)
+rodzina – Rodzina z dziećmi
+singiel – Singiel w centrum
+senior – Senior
+inwestor – Inwestor
+null – nie da się określić / nikt nie szuka

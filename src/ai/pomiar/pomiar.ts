@@ -11,6 +11,8 @@
 //   … --zbior kontrolny5    # piąty zbiór na ślepo (#163), mierzony raz: przed i po w jednym wywołaniu
 //   … --zbior kontrolny6    # szósty zbiór na ślepo (#170, 150 + 150), mierzony raz; + przedziały Wilsona
 //   … --zbior kontrolny7    # siódmy zbiór na ślepo (#174, 120 + 150): pomiar #172 i #173 osobno
+//   … --zbior kontrolny8    # ósmy zbiór na ślepo (#184, 150 opisów, bez B): siła, „nie chcę”,
+//                           # nowe potrzeby – pomiar #182 i #183 osobno
 //   … --zbior-wlasny a.json b.json  # własne zbiory do strojenia (#163), z błędami pozycja po pozycji
 //   … --przed-po <commit> --wyjscie-przed p.json --wyjscie po.json [--wyjscie-proste s.json]
 //                           # #163: JEDNO wywołanie na pozycję z pytaniami trzech wersji naraz:
@@ -73,6 +75,10 @@ interface PozycjaOpisz {
   potrzeby: string[]
   kategorie_wazne?: string[]
   kategorie_niewazne?: string[]
+  /** #184 (zbiór nr 8): siła każdej potrzeby wzorca, 1–3. */
+  sila?: Record<string, number>
+  /** #184 (zbiór nr 8): rzeczy, których osoba nie chce w pobliżu (id ze słownika #182). */
+  nie_chce?: string[]
 }
 interface PozycjaZapytaj {
   id: string
@@ -94,7 +100,7 @@ const NAZWA_ZBIORU = iZbior >= 0 ? argv[iZbior + 1] : undefined
  * poleceń i zbioru nr 1. Wybór części wersji końcowej patrzył na zbiór nr 1, więc wynik
  * nagłówkowy daje zbiór nr 2, mierzony raz. Raport jak dla `kontrolny`: tylko liczby zbiorcze.
  */
-const PLIKI_KONTROLNE: Record<string, { opisz: string; zapytaj: string }> = {
+const PLIKI_KONTROLNE: Record<string, { opisz: string; zapytaj?: string }> = {
   kontrolny: { opisz: 'kontrolny-opisz.json', zapytaj: 'kontrolny-zapytaj.json' },
   kontrolny2: { opisz: 'kontrolny2-opisz.json', zapytaj: 'kontrolny2-zapytaj.json' },
   // #153: trzeci zbiór na ślepo, z cechami pułapek (`domownik`, `cudza_sytuacja`,
@@ -110,6 +116,9 @@ const PLIKI_KONTROLNE: Record<string, { opisz: string; zapytaj: string }> = {
   // #174: siódmy zbiór na ślepo (120 opisów, 150 pytań), cechy `lagodne` (#172) i
   // `przypadkowe_slowo` (#173) – cztery osobne przebiegi: bez zmian, każda osobno, obie.
   kontrolny7: { opisz: 'kontrolny7-opisz.json', zapytaj: 'kontrolny7-zapytaj.json' },
+  // #184: ósmy zbiór na ślepo, tylko „opisz siebie” (150 opisów) – pola `sila` (1–3)
+  // i `nie_chce`, sześć nowych potrzeb (#183); słownik etykiet: etykiety-k8.txt.
+  kontrolny8: { opisz: 'kontrolny8-opisz.json' },
 }
 if (NAZWA_ZBIORU !== undefined && !PLIKI_KONTROLNE[NAZWA_ZBIORU]) {
   console.error(
@@ -134,16 +143,18 @@ const czytajWlasny = (plik: string | undefined) =>
 const ZBIOR_A_SUROWY: PozycjaOpisz[] = KONTROLNY
   ? (czytaj(PLIKI.opisz).pozycje as PozycjaOpisz[]).map((p) => ({
       ...p,
-      nic: p.nic ?? (p.persona === null && p.potrzeby.length === 0),
+      nic: p.nic ?? (p.persona === null && p.potrzeby.length === 0 && !(p.nie_chce ?? []).length),
     }))
   : WLASNY
     ? czytajWlasny(WLASNY.opisz)
     : czytaj('zbior-opisz.json').pozycje
 const ZBIOR_B_SUROWY: PozycjaZapytaj[] = KONTROLNY
-  ? (czytaj(PLIKI.zapytaj).pozycje as PozycjaZapytaj[]).map((p) => ({
-      ...p,
-      tematy: p.tematy.filter((t) => !(t.length === 1 && t[0] === NIE_WIEM)),
-    }))
+  ? PLIKI.zapytaj === undefined
+    ? [] // #184: zbiór nr 8 ma tylko część A
+    : (czytaj(PLIKI.zapytaj).pozycje as PozycjaZapytaj[]).map((p) => ({
+        ...p,
+        tematy: p.tematy.filter((t) => !(t.length === 1 && t[0] === NIE_WIEM)),
+      }))
   : WLASNY
     ? czytajWlasny(WLASNY.zapytaj)
     : czytaj('zbior-zapytaj.json').pozycje
@@ -955,6 +966,17 @@ function przeliczProg(w: WynikB, prog: number): string[] {
 
 // ── Raport ────────────────────────────────────────────────────────────────────────────────
 
+/** #184: zbiór bez części B (nr 8) – bez pustych sekcji i wierszy B w raporcie. */
+export function bezCzesciB(linie: readonly string[]): string[] {
+  const out: string[] = []
+  let wB = false
+  for (const l of linie) {
+    if (l.startsWith('## ')) wB = l.startsWith('## B') || l.startsWith('## Przekrój po cechach – B')
+    if (!wB && !l.startsWith('| B')) out.push(l)
+  }
+  return out
+}
+
 function raport(a: WynikA[], b: WynikB[], naZywo: boolean) {
   const wszystkie = ['reguly', 'jev_surowy', 'jev_z_zapasem']
   const systemyA = wszystkie.filter((s) => a.some((w) => w.systemy[s]))
@@ -1365,7 +1387,7 @@ function raport(a: WynikA[], b: WynikB[], naZywo: boolean) {
 
   if (KONTROLNY) {
     out.push('', 'Zbiór kontrolny: bez błędów pozycja po pozycji (nie stroimy na nim).')
-    return { tekst: out.join('\n'), podsumowanie }
+    return { tekst: (b.length ? out : bezCzesciB(out)).join('\n'), podsumowanie }
   }
   out.push('', '## Błędy', '')
   for (const s of wszystkie) {

@@ -270,6 +270,81 @@ for (const k of kontrolne) {
   })
 }
 
+/**
+ * #184: zbiór nr 8 (150 opisów, tylko „opisz siebie”), z siłą potrzeby (`sila`, 1–3)
+ * i „nie chcę” (`nie_chce`). Ma sześć nowych potrzeb (#183) i id „nie chcę” (#182), których
+ * kod mógł jeszcze nie znać, kiedy zbiór wchodził. Dlatego id sprawdzamy względem wspólnego
+ * słownika, z którego pisał autor zbioru (etykiety-k8.txt), a nie względem POTRZEBY.
+ */
+describe('zbiór kontrolny nr 8 „opisz siebie” (na ślepo, #184)', () => {
+  interface PozycjaK8 extends PozycjaOpisz {
+    sila: Record<string, number>
+    nie_chce: string[]
+    cechy: string[]
+  }
+  const k8: PozycjaK8[] = czytaj('kontrolny8-opisz.json').pozycje
+  const slownik = readFileSync(new URL('etykiety-k8.txt', URL_ZBIOROW), 'utf8')
+  const sekcja = (naglowek: string) => {
+    const s = slownik.split(/^# /m).find((x) => x.startsWith(naglowek))
+    assert.ok(s, `brak sekcji ${naglowek} w etykiety-k8.txt`)
+    return new Set(
+      s
+        .split('\n')
+        .slice(1)
+        .map((l) => l.split(' – ')[0]?.trim() ?? '')
+        .filter(Boolean),
+    )
+  }
+  const potrzeby = sekcja('Potrzeby')
+  const nieChce = sekcja('„Nie chcę”')
+  const profile = sekcja('Profile')
+
+  it('słownik: 15 dotychczasowych potrzeb + 6 nowych, 7 „nie chcę”, profile istnieją', () => {
+    for (const id of ['auto', 'wozek', 'praca_zdalna', 'zycie_nocne', 'sport', 'student'])
+      assert.ok(potrzeby.has(id), id)
+    assert.equal(potrzeby.size, 21)
+    assert.equal(nieChce.size, 7)
+    const persony = new Set(PERSONY.map((p) => p.id as string))
+    for (const id of profile) if (id !== 'null') assert.ok(persony.has(id), id)
+  })
+
+  /**
+   * Dwa krótkie opisy bez sygnału (18 i 28 znaków) autor zbioru nr 8 napisał na ślepo dosłownie
+   * tak samo jak K7-A048 i K7-A051 – jak K3-B05 i K4-B25 wyżej. Zbiór wszedł bajt w bajt, więc
+   * ich nie zmieniamy; w swoim zbiorze nadal muszą być unikalne.
+   */
+  const POWTORZENIA_K8 = new Set(['K8-A145', 'K8-A147'])
+
+  it('150 pozycji, unikalne id i teksty, inne niż w pozostałych zbiorach', () => {
+    assert.equal(k8.length, 150)
+    bezPowtorzen(
+      k8.map((p) => p.id),
+      'id',
+    )
+    bezPowtorzen(
+      k8.map((p) => p.tekst),
+      'tekst (w tym zbiorze)',
+    )
+    bezPowtorzen(
+      [...wszystkieOpisy, ...k8.filter((p) => !POWTORZENIA_K8.has(p.id))].map((p) => p.tekst),
+      'tekst (także względem pozostałych zbiorów)',
+    )
+  })
+
+  it('id potrzeb, „nie chcę” i profili są w słowniku; siła 1–3 dla każdej potrzeby', () => {
+    for (const p of k8) {
+      if (p.persona !== null) assert.ok(profile.has(p.persona), `${p.id}: nieznany profil`)
+      for (const id of p.potrzeby) assert.ok(potrzeby.has(id), `${p.id}: nieznana potrzeba ${id}`)
+      bezPowtorzen(p.potrzeby, `${p.id} potrzeby`)
+      for (const id of p.nie_chce) assert.ok(nieChce.has(id), `${p.id}: nieznane „nie chcę” ${id}`)
+      bezPowtorzen(p.nie_chce, `${p.id} nie_chce`)
+      assert.deepEqual(Object.keys(p.sila).sort(), [...p.potrzeby].sort(), `${p.id}: klucze siły`)
+      for (const v of Object.values(p.sila)) assert.ok([1, 2, 3].includes(v), `${p.id}: siła ${v}`)
+      assert.ok(Array.isArray(p.cechy), `${p.id}: cechy`)
+    }
+  })
+})
+
 describe('#176: mapa warstw wycofanych w #171 (wycofane.ts)', () => {
   const warstwy = warstwyJev()
 
