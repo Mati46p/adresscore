@@ -9,9 +9,12 @@
 // - Wynik ważony heksu = średnia ważona ocen warstw heksu. Przeglądarka z pełnymi danymi
 //   liczyłaby najpierw wynik adresu, potem średnią po heksie – przy pełnych danych to to samo
 //   (średnia jest liniowa), różnica pojawia się tylko przy lukach w danych w obrębie heksu.
-// - Obszar bez danych = wyłączony (#34): heks dostaje kolor tylko, gdy każda warstwa z wagą > 0
-//   ma dane dla co najmniej PROG_UDZIALU adresów heksu. Inaczej null – „brak danych dla
-//   wybranych warstw", a nie wynik z części warstw (np. obwarzanek bez warstw MSIP).
+// - Obszar bez danych = wyłączony (#34, #148): heks dostaje kolor, gdy warstwy z danymi niosą
+//   co najmniej PROG_UDZIALU łącznej wagi (średnia ważona udziału adresów z danymi – ta sama
+//   „pewność" co na karcie adresu). Inaczej null – „brak danych dla wybranych warstw".
+//   Wcześniej wystarczyła jedna ważona warstwa z luką; przy ~26 warstwach tylko-Kraków albo
+//   tylko-obwarzanek gasło tak pół mapy albo cała (np. hałas poza Krakowem: 0% w Krakowie).
+//   Warstwa bez pliku heksów liczy się jak brak danych, nie wyłącza heksu sama.
 import type { WskaznikMeta } from '../kontrakty/index.ts'
 import { ocenFiltr, type TwardyFiltr } from './filtry.ts'
 import {
@@ -26,14 +29,14 @@ import {
   wagaUzytkownika,
 } from './silnik.ts'
 
-/** Heks jest wyłączony, gdy którakolwiek ważona warstwa ma dane dla mniej niż połowy adresów. */
+/** Heks jest wyłączony, gdy warstwy z danymi niosą mniej niż połowę łącznej wagi. */
 export const PROG_UDZIALU = 0.5
 export const BRAK = 255
 
-const udzialWarstwy = new WeakMap<WskaznikPrzygotowany, WeakMap<GrupyHeksow, Uint8Array>>()
+const udzialWarstwy = new WeakMap<WskaznikPrzygotowany, WeakMap<GrupyHeksow, Float32Array>>()
 
-/** Zapis 1, gdy co najmniej połowa adresów heksu ma pomiar z danej warstwy. */
-function pokrycieWarstwy(w: WskaznikPrzygotowany, grupy: GrupyHeksow): Uint8Array {
+/** Udział adresów heksu (0–1) z pomiarem z danej warstwy. */
+function pokrycieWarstwy(w: WskaznikPrzygotowany, grupy: GrupyHeksow): Float32Array {
   let poGrupach = udzialWarstwy.get(w)
   if (!poGrupach) {
     poGrupach = new WeakMap()
@@ -49,15 +52,16 @@ function pokrycieWarstwy(w: WskaznikPrzygotowany, grupy: GrupyHeksow): Uint8Arra
     const v = w.wartosci[i]
     if (v !== null && v !== undefined && Number.isFinite(v)) zDanymi[h] = (zDanymi[h] as number) + 1
   }
-  const pokrycie = new Uint8Array(grupy.heksy.length)
+  const pokrycie = new Float32Array(grupy.heksy.length)
   for (let h = 0; h < pokrycie.length; h++) {
-    pokrycie[h] = (zDanymi[h] as number) * 2 >= (razem[h] as number) ? 1 : 0
+    const r = razem[h] as number
+    pokrycie[h] = r > 0 ? (zDanymi[h] as number) / r : 0
   }
   poGrupach.set(grupy, pokrycie)
   return pokrycie
 }
 
-/** Po ocenie adresów wyłącza heks z luką w którejkolwiek ważonej warstwie. */
+/** Po ocenie adresów wyłącza heks, w którym warstwy z danymi niosą < PROG_UDZIALU wagi. */
 export function zakryjBrakiHeksow(
   srednie: Float32Array,
   grupy: GrupyHeksow,
@@ -75,12 +79,18 @@ export function zakryjBrakiHeksow(
   if (liczone.length === 0) return srednie
   const mapa = new Map(wskazniki.map((w) => [w.meta.id, w]))
   const wynik = new Float32Array(srednie)
-  for (const { id } of liczone) {
+  const zDanymi = new Float64Array(wynik.length)
+  let wszystkie = 0
+  for (const { id, waga } of liczone) {
+    wszystkie += waga
     const w = mapa.get(id)
     if (!w) continue
     const pokrycie = pokrycieWarstwy(w, grupy)
-    for (let h = 0; h < wynik.length; h++) if (!pokrycie[h]) wynik[h] = Number.NaN
+    for (let h = 0; h < wynik.length; h++)
+      zDanymi[h] = (zDanymi[h] as number) + waga * (pokrycie[h] as number)
   }
+  for (let h = 0; h < wynik.length; h++)
+    if ((zDanymi[h] as number) < PROG_UDZIALU * wszystkie) wynik[h] = Number.NaN
   return wynik
 }
 
@@ -175,7 +185,6 @@ export function wynikiHeksow(
   const wartosc = new Float32Array(H).fill(Number.NaN)
   const pewnosc = new Float32Array(H)
   if (liczone.length === 0) return { wartosc, pewnosc }
-  const progUdzialu = PROG_UDZIALU * skalaUdzialu
   const wiersze = liczone.map((l) => {
     const w = warstwy(l.id)
     return { ...l, ocena: w?.ocena[res] ?? null, udzial: w?.udzial[res] ?? null }
@@ -185,23 +194,19 @@ export function wynikiHeksow(
     let sumaWag = 0
     let wszystkie = 0
     let zDanymi = 0
-    let wylaczony = false
     for (const { ocena, udzial, kierunek, waga } of wiersze) {
       wszystkie += waga
-      if (!ocena || !udzial) {
-        wylaczony = true
-        continue
-      }
+      // Warstwa bez pliku heksów = brak danych w każdym heksie (obniża pokrycie, nie wyłącza).
+      if (!ocena || !udzial) continue
       const u = udzial[h] as number
       zDanymi += (waga * u) / skalaUdzialu
-      if (u < progUdzialu) wylaczony = true
       const o = ocena[h] as number
       if (o === BRAK) continue
       suma += waga * ocenaWKierunku(o / skalaOceny, kierunek)
       sumaWag += waga
     }
     pewnosc[h] = wszystkie > 0 ? zDanymi / wszystkie : 0
-    if (!wylaczony && sumaWag > 0) wartosc[h] = suma / sumaWag
+    if (sumaWag > 0 && (pewnosc[h] as number) >= PROG_UDZIALU) wartosc[h] = suma / sumaWag
   }
   return { wartosc, pewnosc }
 }

@@ -47,7 +47,7 @@ const warstwy = [
   { meta: meta('luka'), wersjaAdresow: adresy.wersja, wartosci: [null, null, 90] },
 ]
 
-test('kompakt zachowuje heksy i wyłącza obszar z luką ważonej warstwy', async () => {
+test('kompakt zachowuje heksy i wyłącza obszar, gdzie warstwy z danymi niosą < połowy wagi', async () => {
   const { indeks, pliki } = zbudujKompakt(adresy, warstwy)
   const manifest = {
     wygenerowano: 'test',
@@ -85,17 +85,22 @@ test('kompakt zachowuje heksy i wyłącza obszar z luką ważonej warstwy', asyn
     skalaUdzialu: heksy.naglowek.skalaUdzialu,
     poziomy: { 10: { heksy: ids, liczba: sekcja(heksy, 'liczba10') } },
   }
-  const wynik = wynikiHeksow(
-    podstawa,
-    10,
-    [
-      { id: 'pelna', kierunek: 'wiecej-lepiej', waga: 1 },
-      { id: 'luka', kierunek: 'wiecej-lepiej', waga: 1 },
-    ],
-    (id) => ({ pelna, luka })[id],
-  )
+  const policz = (wagaLuki) =>
+    wynikiHeksow(
+      podstawa,
+      10,
+      [
+        { id: 'pelna', kierunek: 'wiecej-lepiej', waga: 1 },
+        { id: 'luka', kierunek: 'wiecej-lepiej', waga: wagaLuki },
+      ],
+      (id) => ({ pelna, luka })[id] ?? null,
+    )
+  // Warstwa z luką niesie 3/4 wagi, a w heksie 0 nie ma danych → pokrycie 25% < 50% → wyłączony.
+  const wynik = policz(3)
   assert.ok(Number.isNaN(wynik.wartosc[ids.indexOf(komorki[0])]))
   assert.ok(Number.isFinite(wynik.wartosc[ids.indexOf(komorki[1])]))
+  // Równe wagi: połowa wagi ma dane (np. warstwa tylko-Kraków poza Krakowem) → heks zostaje (#148).
+  assert.ok(Number.isFinite(policz(1).wartosc[ids.indexOf(komorki[0])]))
 })
 
 const katalog = new URL('../public/dane/kompakt/', import.meta.url)
