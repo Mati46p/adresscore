@@ -445,6 +445,62 @@ describe('tematy – pytania złożone (#146)', () => {
     assert.deepEqual(na?.warstwy, ['halas_ldwn', 'przystanek_odleglosc'])
   })
 
+  it('#173: próg tematu 0,7 – 0,69 nic nie dokłada, 0,70 dokłada', () => {
+    assert.equal(PROG_TEMATU, 0.7)
+    for (const [noul, warstwy] of [
+      [0.69, ['halas_ldwn']],
+      [0.7, ['halas_ldwn', 'przystanek_odleglosc']],
+      [0.71, ['halas_ldwn', 'przystanek_odleglosc']],
+    ] as const)
+      assert.deepEqual(
+        przetworzWiele(odp('halas_ldwn', 0.9, { komunikacja: noul }), pelna, 'Słychać tramwaje?')
+          ?.warstwy,
+        warstwy,
+        String(noul),
+      )
+  })
+
+  it('#173: temat z noul 0,6–0,7 (pas zbędnych doklejek) nie dokłada warstwy – także w zapasie', () => {
+    // Typowe fałszywe dodatki z przebiegów: hałas, powietrze, zieleń, zdrowie 0,61–0,69.
+    const slabe = {
+      halas: 0.67,
+      powietrze: 0.66,
+      zielen: 0.61,
+      zdrowie: 0.68,
+      bezpieczenstwo: 0.69,
+    }
+    assert.deepEqual(
+      przetworzWiele(odp('przystanek_odleglosc', 0.95, slabe), pelna, 'Daleko na przystanek?')
+        ?.warstwy,
+      ['przystanek_odleglosc'],
+    )
+    // Słaby wybór główny (< 0,5) → reguły; słabe tematy nadal nic nie dokładają (#156 R5).
+    const r = regulyZTematami(odp('halas_ldwn', 0.4, slabe), pelna, 'Jak głośno?')
+    assert.deepEqual(r, { warstwy: ['halas_ldwn'] })
+  })
+
+  it('#173: mocne tematy w pytaniu złożonym dokładają jak dotąd (do 3, malejąco po noul)', () => {
+    const w = przetworzWiele(
+      odp('halas_ldwn', 0.95, { halas: 0.97, zielen: 0.93, komunikacja: 0.85, powietrze: 0.65 }),
+      pelna,
+      'Czy jest cicho, zielono i blisko do tramwaju?',
+    )
+    assert.deepEqual(w?.warstwy, ['halas_ldwn', 'zielen_worldcover_100m', 'przystanek_odleglosc'])
+  })
+
+  it('#173: drugie wywołanie (#153) rusza od tego samego progu tematu', () => {
+    const pytanie = 'Przedszkole, a dla młodszego coś na cały dzień?'
+    const z = (noul: number) =>
+      drugieWywolanie(
+        odp('przedszkole_odleglosc', 0.9, { szkoly: noul }),
+        ['przedszkole_odleglosc'],
+        pelna,
+        pytanie,
+      )
+    assert.equal(z(0.68), null)
+    assert.equal(z(PROG_TEMATU)?.temat, 'szkoly')
+  })
+
   it('temat warstwy głównej nic nie dokłada; reguły wskazują lepszą warstwę z grupy', () => {
     const w = przetworzWiele(
       odp('pm25_srednia', 0.9, { powietrze: 0.99, zielen: 0.9 }),
@@ -459,7 +515,7 @@ describe('tematy – pytania złożone (#146)', () => {
     // Przedszkole + żłobek: JEV wybiera przedszkole, temat szkół ma noul wysoko, reguły trafiają
     // w obie warstwy – druga stoi zaraz po pierwszej.
     const w = przetworzWiele(
-      odp('przedszkole_odleglosc', 0.9, { szkoly: 0.98, demografia: 0.65 }),
+      odp('przedszkole_odleglosc', 0.9, { szkoly: 0.98, demografia: 0.75 }),
       pelna,
       'Blisko do przedszkola i żłobka?',
     )

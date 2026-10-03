@@ -414,11 +414,13 @@ export const TEMATY: readonly Temat[] = [
 ]
 
 /**
- * Od tej oceny twierdzenia temat dokłada warstwę. 0,6 jak PROG_POTRZEBY w „opisz siebie”:
- * w pomiarze #18 noul dla potrzeb, o które tekst pyta, miał średnio 0,82, a dla pozostałych
- * 0,21 – próg tuż nad środkiem skali odcina szum, a nie gubi tematów wyraźnie nazwanych.
+ * Od tej oceny twierdzenia temat dokłada warstwę (≥, włącznie). #173: 0,6 → 0,7. Przeliczenie
+ * zapisanych przebiegów (zbiór do strojenia i zbiory nr 2–6, bez nowych wywołań): dodatki
+ * z noul 0,6–0,7 były w większości fałszywe (14 fałszywych na 4 trafne), a od 0,7 do 0,8 już
+ * pół na pół. 0,7 tnie pytania pojedyncze z fałszywym dodatkiem 22 → 12 (na 179), pokrycie
+ * złożonych 65,6% → 64,2%. Jeden próg dla wszystkich tematów – szczegóły w WYNIKI.md.
  */
-export const PROG_TEMATU = 0.6
+export const PROG_TEMATU = 0.7
 /** Karta pokazuje najwyżej tyle odpowiedzi naraz. */
 export const MAKS_ODPOWIEDZI = 3
 
@@ -641,7 +643,11 @@ function dobierz(
 
 /** Id pytania w drugim wywołaniu. */
 export const ID_DRUGIEJ = 'druga'
-/** Pewność drugiego wyboru od tej wartości – jak PROG_TEMATU (dokładamy, a nie odpowiadamy). */
+/**
+ * Pewność drugiego wyboru od tej wartości (dokładamy, a nie odpowiadamy). Ustalona razem
+ * z dawnym PROG_TEMATU 0,6; #173 podniósł tylko próg tematu – drugie wywołanie i tak rusza
+ * dopiero przy temacie ≥ PROG_TEMATU.
+ */
 export const PROG_DRUGIEJ = 0.6
 
 /**

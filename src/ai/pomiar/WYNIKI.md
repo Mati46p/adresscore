@@ -2139,6 +2139,107 @@ inne okna: 158 i 235 wywołań.
   (`nieudane`);
 - sekcję raportu z przedziałami Wilsona i testem McNemara (`wilson`, `mcnemar`).
 
+## Próg tematu (#173)
+
+**`PROG_TEMATU` 0,6 → 0,7.** Nic więcej się nie zmienia: pasmo wyboru głównego, propozycje
+i „opisz siebie” zostają bez zmian. Ten sam próg dalej uruchamia drugie wywołanie (#153), bo to
+bezpośrednie użycie `PROG_TEMATU`. `PROG_DRUGIEJ` (pewność drugiego wyboru) zostaje 0,6.
+
+**Problem.** Na zbiorze nr 6 JEV dokładał zbędną warstwę do 15 ze 105 pojedynczych pytań (#170).
+Tam progu nie zmieniałem, żeby nie stroić pod zbiór nr 6.
+
+### Metoda: tylko zbiory użyte, bez nowych wywołań
+
+Zapisane przebiegi mają oceny noul wszystkich tematów. Wynik przy innym progu składam od nowa
+bieżącym kodem (`przetworzWiele`, a pod progiem pewności `regulyZTematami`). Drugie wywołanie
+odtwarzam z zapisu tylko wtedy, gdy jego temat nadal przechodzi próg.
+
+- Zbiory: do strojenia (B, 28 pytań, oba przebiegi A/A z #170) oraz kontrolne nr 2–6.
+- Zbioru nr 7 nie otwierałem. Na nim osobny agent zmierzy tę zmianę na ślepo.
+- Zgodność odtworzenia przy 0,6 z tym, co pokazano na żywo: zbiory nr 4–6 – 100%. Na zbiorach
+  nr 2 i 3 różnią się po 2 pytania, bo kod zmienił się od tamtych pomiarów (#156 R5).
+- Zbiory nr 2–4 zmierzono jeszcze ze starszymi twierdzeniami tematów (przed #163), więc ich
+  noul jest tylko przybliżeniem dzisiejszego.
+
+### Krzywa: fałszywe dodatki kontra pokrycie pytań złożonych
+
+FD = pojedyncze pytania z fałszywym dodatkiem; pokr. = pokrycie tematów w pytaniach złożonych.
+
+| próg | strojenie r1 / r2: FD, pokr. | nr 2: FD, pokr. | nr 3: FD, pokr. | nr 4: FD, pokr. | nr 5: FD, pokr. | nr 6: FD, pokr. | **razem nr 2–6: FD, pokr., komplet** |
+|---|---|---|---|---|---|---|---|
+| 0,60 (było) | 0/17, 88% / 81% | 2/15, 69% | 0/13, 85% | 1/23, 60% | 4/23, 63% | 15/105, 61% | **22/179, 65,6%, 19/62** |
+| 0,65 | 0/17, 81% / 81% | 2/15, 69% | 0/13, 85% | 1/23, 60% | 3/23, 63% | 14/105, 61% | 20/179, 65,6%, 19/62 |
+| **0,70** | 0/17, 81% / 81% | 1/15, 64% | 0/13, 85% | 1/23, 54% | 3/23, 63% | 7/105, 61% | **12/179, 64,2%, 18/62** |
+| 0,75 | 0/17, 81% / 81% | 1/15, 64% | 0/13, 85% | 1/23, 54% | 3/23, 63% | 7/105, 61% | 12/179, 64,2%, 18/62 |
+| 0,80 | 0/17, 76% / 76% | 1/15, 64% | 0/13, 76% | 1/23, 54% | 3/23, 56% | 3/105, 59% | 8/179, 61,3%, 15/62 |
+| 0,85 | 0/17, 71% / 71% | 1/15, 60% | 0/13, 70% | 1/23, 54% | 2/23, 56% | 2/105, 58% | 6/179, 59,1%, 13/62 |
+| 0,90 | 0/17, 71% / 71% | 0/15, 60% | 0/13, 65% | 1/23, 54% | 2/23, 56% | 1/105, 56% | 4/179, 57,5%, 11/62 |
+
+Warstwa główna na pytaniach pojedynczych prawie stoi w miejscu: 171/179 przy 0,6, 170/179 przy
+0,7, 168/179 przy 0,9. Próg zmienia ją tylko w zapasie, gdy reguły nie dały nic. Pytania spoza
+zakresu z dodatkami (zbiór nr 6): 2 przy 0,6, 1 od 0,65.
+
+**Dlaczego 0,7.** Pojedyncze dodatki z tematów (zbiór do strojenia r2 i nr 2–6, pytania w zakresie):
+
+| noul dodatku | trafne | fałszywe |
+|---|---|---|
+| 0,60–0,69 | 4 | **14** |
+| 0,70–0,79 | 8 | 9 |
+| ≥ 0,80 | 23 (rower, szkoły, sklepy, zdrowie) | 7 |
+
+- Pas 0,6–0,7 to głównie zbędne doklejki. 0,7 usuwa z niego 14 fałszywych za cenę 4 trafnych.
+  Pytań pojedynczych z fałszywym dodatkiem jest 22 → 12 na 179, a pokrycie złożonych spada
+  o 1,4 pp (65,6% → 64,2%, komplet 19 → 18 z 62).
+- Od 0,7 do 0,8 dodatki są już pół na pół. 0,8 ścina 4 kolejne fałszywe, ale traci 3 komplety
+  i 2,9 pp pokrycia, a strata pojawia się na czterech zbiorach (strojenie, nr 3, 5, 6). Tego nie
+  biorę.
+- 0,65 prawie nic nie daje (22 → 20). 0,75 daje to samo co 0,7, więc biorę niższą wartość:
+  mniej tracimy na pytaniach złożonych, gdy JEV oceni temat nieco słabiej.
+- Spadek fałszywych dodatków widać na zbiorach nr 2, 5 i 6, a żaden zbiór nie ma ich więcej.
+  Pokrycie traci tylko na zbiorach nr 2 i 4 (po jednym temacie). W strojeniu r1 to pozycja przy
+  progu: w r2 jest już 81% przy 0,6.
+
+**Próg per temat – nie.** Najmocniejszy sygnał to powietrze (0 trafnych i 6 fałszywych dodatków)
+i zieleń (1 trafny, 7 fałszywych). Te fałszywe dodatki leżą jednak głównie na zbiorze nr 6
+(powietrze: 4 z 6; zieleń: 6 z 7 na zbiorach nr 5 i 6), a część ma noul 0,77–0,93. Wyższy próg dla tych tematów byłby więc
+strojeniem pod zbiór nr 6 przy n = 6–8. Zostaje jeden próg. To kandydat do sprawdzenia na
+zbiorze nr 7.
+
+**Warunek „temat to nie przypadkowa wzmianka” – nie.** Sprawdziłem, czy fałszywe dodatki da się
+odróżnić bez tekstu pytania. 9 fałszywych dodatków (6 z nich ≥ 0,7) pojawia się przy warstwie
+głównej spoza tematów (np. życie nocne → hałas, wybieg dla psów → zieleń, kolejki NFZ
+→ zdrowie). Ten sam układ ma jednak 5 trafnych dodatków (3 z nich ≥ 0,7) (np. obszar rewitalizacji → ceny,
+wybieg dla psów → sklepy). `nie_dla` to wolny tekst, a nie mapa sąsiadów. Tani i poparty danymi
+warunek tu nie istnieje, a drogi wymagałby nowego pytania do JEV. Nie robię.
+
+**Skutek uboczny:** drugie wywołanie (#153) rusza rzadziej. W zapisanych przebiegach 2 z 19
+drugich wywołań miały temat poniżej 0,7 (K4-B24 0,68 – trafne, K6-B072 0,61 – nic nie dodało).
+
+### Sprawdzian na żywo (stare zbiory, nowy próg)
+
+Trzy zwykłe przebiegi `pomiar.ts --na-zywo --zbior kontrolnyN --tylko b` z progiem 0,7
+(`przebiegi/k2-173.json`, `k4-173.json`, `k5-173.json`). Porównanie z zapisanymi przebiegami
+przy 0,6 (#152, #157, #170):
+
+| zbiór | FD przy 0,6 (zapis) | FD przy 0,7 – offline | **FD przy 0,7 – na żywo** | pokrycie: 0,6 zapis → 0,7 na żywo | warstwa główna (pojedyncze) na żywo |
+|---|---|---|---|---|---|
+| nr 2 | 2/15 | 1/15 | **0/15** | 69% → 69% | 15/15 |
+| nr 4 | 1/23 | 1/23 | **1/23** | 60% → 60% | 21/23 |
+| nr 5 | 4/23 | 3/23 | **3/23** | 63% → 62% | 21/23 |
+| razem | 7/61 | 5/61 | **4/61** | – | – |
+
+- Na żywo jest zgodnie z przeliczeniem albo lepiej. Fałszywych dodatków jest 7 → 4. Pokrycie
+  w granicy szumu A/A: strata przewidziana offline na nr 2 i 4 to tematy przy progu, które tym
+  razem przeszły.
+- To nie jest wynik nagłówkowy, bo te zbiory są użyte. Wynik nagłówkowy da zbiór nr 7.
+- Spodziewany skutek na nowym zbiorze, z krzywej wyżej: mniej więcej o połowę mniej pytań
+  pojedynczych ze zbędną warstwą (na zbiorze nr 6 byłoby 15 → 7 ze 105). Pokrycie złożonych
+  spada o 0–2 pp.
+
+**Wywołania na żywo: 106** (nr 5 – 40, nr 4 – 39, nr 2 – 27, w tym 10 drugich wywołań). Jedno
+ponowienie (timeout pośrednika), żadnej utraconej odpowiedzi. Przeliczenie progów nic nie
+kosztowało.
+
 ## Na slajd
 
 **Zbiór kontrolny nr 6 (#170).** To 150 opisów i 150 pytań, które napisały na ślepo osobne agenty
@@ -2193,6 +2294,7 @@ bez nowych wywołań:
 | `przebiegi/k5-po-osobno-170.json` | zbiór kontrolny nr 5, kod po #163 (`ba69cfd`), osobny przebieg | #170 |
 | `przebiegi/aa-170-r1.json`, `aa-170-r2.json` | A/A na końcowym zapytaniu, pełne zbiory do strojenia (format własnego skryptu: wszystkie wywołania, czasy, `usage`) | #170 |
 | `przebiegi/latencja-170.json` | opóźnienie końcowego zapytania: wszystkie wywołania z przebiegów A/A i powtórek, podsumowanie | #170 |
+| `przebiegi/k2-173.json`, `k4-173.json`, `k5-173.json` | zbiory nr 2, 4 i 5 (B), próg tematu 0,7 – sprawdzian na żywo na zbiorach użytych | #173 |
 
 Przebiegów zbioru nr 1 (#147, #150) nie zapisywaliśmy pozycja po pozycji – są tylko liczby
 zbiorcze powyżej. Raport z przeglądu projektu JEV (nazwy warstw, prawdopodobieństwa, profil,
