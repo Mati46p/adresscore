@@ -448,14 +448,18 @@ export interface WyborWarstwy {
 /**
  * Odpowiedź JEV → wybór. null (= reguła zapasowa), gdy brak odpowiedzi, wybór spoza listy,
  * brak pewności albo pewność poniżej progu. `nie_wiem` z pewnością to uczciwe „nie wiem”.
+ * #172: pewność od PROG_SLABEGO_WYBORU do PROG_PEWNOSCI – wybór JEV zostaje tylko wtedy, gdy
+ * są dwie propozycje do kliknięcia (`propozycje`); bez nich – reguły, jak dotąd.
  */
 export function przetworz(
   odpowiedzi: Record<string, OdpowiedzJev | null>,
   lista: readonly PozycjaListy[],
+  progi: ProgiWyboru = PROGI_WYBORU,
 ): WyborWarstwy | null {
   const o = odpowiedzi[ID_PYTANIA]
   if (!o || o.typ !== 'choice') return null
-  if (o.pewnosc === null || !(o.pewnosc >= PROG_PEWNOSCI)) return null
+  if (o.pewnosc === null || !(o.pewnosc >= progi.slabyWybor)) return null
+  if (o.pewnosc < progi.wybor && !propozycje(odpowiedzi, lista, progi)) return null
   if (o.wybor === NIE_WIEM) return { warstwa: null }
   return lista.some((p) => p.id === o.wybor) ? { warstwa: o.wybor } : null
 }
@@ -464,7 +468,7 @@ export function przetworz(
 export interface WyborWarstw {
   warstwy: string[]
   /**
-   * #156: dwie propozycje do kliknięcia (pewność wyboru 0,5–0,9). Każda ma własną listę warstw
+   * #156: dwie propozycje do kliknięcia (pewność wyboru 0,25–0,86, #172). Każda ma własną listę warstw
    * (ta warstwa + dodatki z tematów). `warstwy` wyżej zostaje jak bez propozycji – to wynik
    * pomiaru i odpowiedź, gdy propozycji nie da się pokazać.
    */
@@ -478,26 +482,62 @@ export interface Propozycja {
   warstwy: string[]
 }
 
-/** Od tej pewności wyboru odpowiadamy od razu; od PROG_PEWNOSCI do niej – dwie propozycje. */
-export const PROG_BEZ_PROPOZYCJI = 0.9
+/**
+ * Powyżej tej pewności wyboru odpowiadamy od razu; od PROG_SLABEGO_WYBORU do niej – dwie
+ * propozycje. #172: 0,86 zamiast 0,9. Na zbiorach nr 2–6 (270 wyborów) w odległości do 0,02
+ * od 0,9 leży 14 pewności, a od 0,86 – 7. Trafność od razu i po kliknięciu bez zmian: w paśmie
+ * 0,86–0,9 warstwa główna była trafna w 12 z 12 pytań, więc propozycje nic tam nie dawały.
+ */
+export const PROG_BEZ_PROPOZYCJI = 0.86
 /**
  * Najmniejsze prawdopodobieństwo warstwy, żeby była propozycją. Na żywo (#156) druga warstwa
  * z sensem miała 0,06–0,29, a reszta 0,00–0,02 („dług gminy” obok hałasu) – takiej nie pokazujemy.
  */
 export const MIN_PROPOZYCJI = 0.05
+/**
+ * #172: od tej pewności (do PROG_PEWNOSCI) słaby wybór JEV nie przepada na rzecz reguł, jeśli
+ * są dwie propozycje do kliknięcia. Pod 0,5 na zbiorach nr 4–6 (model z rozkładem, #154) surowy
+ * wybór JEV był trafny w 9 z 9 pytań, a pokazane reguły z tematami w 4. Pewność przy 0,5 skacze
+ * między przebiegami (K5-B29: 0,46–0,62), więc odpowiedź przeskakiwała między JEV a regułami.
+ * Na zbiorach nr 2–3 (stary model, bez rozkładu) JEV pod 0,5 trafiał w 3 z 8 – tam propozycji
+ * nie ma, więc zostają reguły, jak dotąd. 0,25 leży w pustym paśmie: na zbiorach nr 2–6 żadnej
+ * pewności między 0,18 a 0,34.
+ * Dowody: WYNIKI.md, „Stabilne progi (#172)”.
+ */
+export const PROG_SLABEGO_WYBORU = 0.25
+
+/** Progi wyboru warstwy głównej i propozycji (#172) – parametr dla testów i przeliczeń. */
+export interface ProgiWyboru {
+  /** Od tej pewności wybór JEV bez warunku (PROG_PEWNOSCI). */
+  wybor: number
+  /** Od tej pewności wybór JEV, ale tylko z propozycjami (PROG_SLABEGO_WYBORU). */
+  slabyWybor: number
+  /** Powyżej tej pewności odpowiedź od razu, bez propozycji (PROG_BEZ_PROPOZYCJI). */
+  bezPropozycji: number
+  /** Najmniejsze p warstwy w propozycji (MIN_PROPOZYCJI). */
+  minPropozycji: number
+}
+export const PROGI_WYBORU: ProgiWyboru = {
+  wybor: PROG_PEWNOSCI,
+  slabyWybor: PROG_SLABEGO_WYBORU,
+  bezPropozycji: PROG_BEZ_PROPOZYCJI,
+  minPropozycji: MIN_PROPOZYCJI,
+}
 
 /**
  * #156 (R4): dwie najlepsze warstwy z listy wg prawdopodobieństwa, gdy pewność wyboru jest
- * w [PROG_PEWNOSCI, PROG_BEZ_PROPOZYCJI]. Bez `nie_wiem` i bez id spoza listy, każda
- * z p ≥ MIN_PROPOZYCJI. null = jak dotąd (pewność poza pasmem, brak rozkładu, mniej niż dwie).
+ * w [PROG_SLABEGO_WYBORU, PROG_BEZ_PROPOZYCJI] (#172: dawniej od PROG_PEWNOSCI). Bez `nie_wiem`
+ * i bez id spoza listy, każda z p ≥ MIN_PROPOZYCJI. null = jak dotąd (pewność poza pasmem, brak
+ * rozkładu, mniej niż dwie).
  */
 export function propozycje(
   odpowiedzi: Record<string, OdpowiedzJev | null>,
   lista: readonly PozycjaListy[],
+  progi: ProgiWyboru = PROGI_WYBORU,
 ): string[] | null {
   const o = odpowiedzi[ID_PYTANIA]
   if (!o || o.typ !== 'choice' || o.pewnosc === null) return null
-  if (!(o.pewnosc >= PROG_PEWNOSCI && o.pewnosc <= PROG_BEZ_PROPOZYCJI)) return null
+  if (!(o.pewnosc >= progi.slabyWybor && o.pewnosc <= progi.bezPropozycji)) return null
   // #154: rozkład po id opcji; pola nie ma, gdy JEV go nie przysłał.
   const p = o.prawdopodobienstwa
   if (!p || typeof p !== 'object') return null
@@ -505,7 +545,7 @@ export function propozycje(
     .map((x, i) => ({ id: x.id, i, p: p[x.id] }))
     .filter(
       (x): x is { id: string; i: number; p: number } =>
-        typeof x.p === 'number' && Number.isFinite(x.p) && x.p >= MIN_PROPOZYCJI && x.p <= 1,
+        typeof x.p === 'number' && Number.isFinite(x.p) && x.p >= progi.minPropozycji && x.p <= 1,
     )
     .sort((a, b) => b.p - a.p || a.i - b.i)
     .slice(0, 2)
@@ -550,7 +590,8 @@ function zTematami(
  * `przetworz`), potem tematy z noul ≥ progu malejąco. Temat, w który trafiła już wybrana
  * warstwa, nic nie dokłada; inaczej dokłada warstwę z grupy, którą wskazują reguły słów
  * kluczowych, a bez nich – domyślną. Pewne `nie_wiem` → „nie wiem” bez dodatków.
- * #156: przy pewności 0,5–0,9 i rozkładzie z JEV dochodzą dwie `propozycje`.
+ * #156: przy pewności 0,5–0,86 i rozkładzie z JEV dochodzą dwie `propozycje`; #172: także 0,25–0,5,
+ * ale tam wybór JEV zostaje tylko z nimi.
  */
 export function przetworzWiele(
   odpowiedzi: Record<string, OdpowiedzJev | null>,
@@ -574,7 +615,7 @@ export function przetworzWiele(
 }
 
 /**
- * #156 (R5): JEV odpowiedział, ale wyboru głównego nie bierzemy (pewność pod progiem, brak
+ * #156 (R5): JEV odpowiedział, ale wyboru głównego nie bierzemy (pewność pod progiem i bez propozycji – #172, brak
  * pewności, wybór spoza listy). Dawniej przepadały wtedy też tematy (B23 w #146). Teraz warstwy
  * reguł (jak dotąd) + tematy JEV z noul ≥ progu: do 3, bez duplikatów, najwyżej jedna na temat,
  * plus druga warstwa z tematu (#147/#150).
@@ -752,7 +793,7 @@ export interface WyborWarstwZJev extends WynikZZapasem<WyborWarstw> {
 /**
  * Wybór 1–3 warstw (#146, #153): jedno wywołanie JEV (choice + tematy), a gdy trzeba – drugie
  * po drugi obiekt z tematu. Każdy kłopot z pierwszym → reguły; z drugim → zostaje wynik
- * pierwszego. #156: słaby wybór główny → reguły + tematy JEV (drugie wywołanie też możliwe).
+ * pierwszego. #156: słaby wybór główny bez propozycji → reguły + tematy JEV (drugie wywołanie też możliwe).
  * Tę samą ścieżkę woła aplikacja i pomiar.
  */
 export async function wybierzWarstwy(
@@ -1247,7 +1288,7 @@ export function nazwaProsta(nazwa: string): string {
 /**
  * Całość (#146, #156): jedno wywołanie JEV wybiera warstwę główną i ocenia tematy, a gdy nie
  * może – reguła z kilkoma tematami (plus tematy JEV, R5). #153: czasem drugie wywołanie po drugi
- * obiekt z tematu. Przy pewności 0,5–0,9 dwie propozycje do kliknięcia; każda z odpowiedziami
+ * obiekt z tematu. Przy pewności 0,25–0,86 (#172) dwie propozycje do kliknięcia; każda z odpowiedziami
  * z danych. Nigdy nie rzuca; liczby zawsze z danych.
  */
 export async function zapytajOAdresZPropozycjami(

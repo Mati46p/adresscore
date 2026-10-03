@@ -19,6 +19,7 @@ import {
   PROG_BEZ_PROPOZYCJI,
   PROG_DRUGIEJ,
   PROG_PEWNOSCI,
+  PROG_SLABEGO_WYBORU,
   PROG_TEMATU,
   propozycje,
   przetworz,
@@ -923,7 +924,7 @@ const zRozkladem = (
   return o
 }
 
-describe('#156 R4 – dwie propozycje przy pewności 0,5–0,9', () => {
+describe('#156 R4 – dwie propozycje przy pewności 0,5–0,86 (#172: także 0,25–0,5)', () => {
   const rozklad = { halas_ldwn: 0.7, przystanek_odleglosc: 0.2, nie_wiem: 0.1 }
 
   it('0,5–0,9 z rozkładem → dwie propozycje, warstwy jak dotąd', () => {
@@ -938,15 +939,99 @@ describe('#156 R4 – dwie propozycje przy pewności 0,5–0,9', () => {
     }
   })
 
-  it('> 0,9 → odpowiedź od razu, bez propozycji', () => {
-    const r = przetworzWiele(zRozkladem('halas_ldwn', 0.91, rozklad), LISTA, 'Jak głośno?')
-    assert.deepEqual(r, { warstwy: ['halas_ldwn'] })
+  it(`> ${PROG_BEZ_PROPOZYCJI} (#172: było 0,9) → odpowiedź od razu, bez propozycji`, () => {
+    assert.equal(PROG_BEZ_PROPOZYCJI, 0.86)
+    for (const p of [0.87, 0.91]) {
+      const r = przetworzWiele(zRozkladem('halas_ldwn', p, rozklad), LISTA, 'Jak głośno?')
+      assert.deepEqual(r, { warstwy: ['halas_ldwn'] }, `pewność ${p}`)
+    }
   })
 
-  it('< 0,5 albo brak pewności → reguły (null), mimo rozkładu', () => {
-    assert.equal(przetworzWiele(zRozkladem('halas_ldwn', 0.49, rozklad), LISTA, 'x'), null)
+  it(`< ${PROG_SLABEGO_WYBORU} albo brak pewności → reguły (null), mimo rozkładu`, () => {
+    assert.equal(PROG_SLABEGO_WYBORU, 0.25)
+    const p = PROG_SLABEGO_WYBORU - 0.01
+    assert.equal(przetworzWiele(zRozkladem('halas_ldwn', p, rozklad), LISTA, 'x'), null)
     assert.equal(przetworzWiele(zRozkladem('halas_ldwn', null, rozklad), LISTA, 'x'), null)
-    assert.equal(propozycje(zRozkladem('halas_ldwn', 0.3, rozklad), LISTA), null)
+    assert.equal(propozycje(zRozkladem('halas_ldwn', 0.2, rozklad), LISTA), null)
+  })
+
+  // #172: pewność przy 0,5 skakała między przebiegami (K5-B29: 0,46–0,62), a odpowiedź – między
+  // wyborem JEV a regułami. Słaby wybór ma zwykle dwie warstwy z sensem.
+  const slaby = {
+    halas_ldwn: 0.46,
+    przystanek_odleglosc: 0.38,
+    nie_wiem: 0.14,
+    cena_m2_mediana: 0.02,
+  }
+
+  it('#172: pod 0,5 z dwiema propozycjami → wybór JEV i te same propozycje co tuż nad 0,5', () => {
+    const nad = przetworzWiele(zRozkladem('halas_ldwn', 0.53, slaby), LISTA, 'Jak tu jest?')
+    for (const p of [0.49, 0.46, 0.3, PROG_SLABEGO_WYBORU]) {
+      const pod = przetworzWiele(zRozkladem('halas_ldwn', p, slaby), LISTA, 'Jak tu jest?')
+      assert.deepEqual(pod, nad, `pewność ${p}`)
+    }
+    assert.deepEqual(nad?.warstwy, ['halas_ldwn'])
+    assert.deepEqual(
+      nad?.propozycje?.map((x) => x.warstwa),
+      ['halas_ldwn', 'przystanek_odleglosc'],
+    )
+  })
+
+  it('#172: pod 0,5 bez dwóch propozycji (brak rozkładu albo jedna warstwa z p ≥ 0,05) → reguły', () => {
+    assert.equal(przetworz(zRozkladem('halas_ldwn', 0.45), LISTA), null)
+    const jedna = { halas_ldwn: 0.45, nie_wiem: 0.53, cena_m2_mediana: 0.02 }
+    assert.equal(przetworz(zRozkladem('halas_ldwn', 0.45, jedna), LISTA), null)
+    // Nad 0,5 ta sama odpowiedź bez propozycji – wybór JEV, jak dotąd.
+    assert.deepEqual(przetworz(zRozkladem('halas_ldwn', 0.53, jedna), LISTA), {
+      warstwa: 'halas_ldwn',
+    })
+  })
+
+  it('#172: słabe nie_wiem z dwiema warstwami → „nie wiem” i propozycje, a nie trzy warstwy reguł', () => {
+    const o = zRozkladem('nie_wiem', 0.49, {
+      nie_wiem: 0.49,
+      cena_m2_mediana: 0.3,
+      halas_ldwn: 0.15,
+      przystanek_odleglosc: 0.04,
+    })
+    const r = przetworzWiele(o, LISTA, 'Jak tu głośno, drogo i daleko do tramwaju?')
+    assert.deepEqual(r?.warstwy, [])
+    assert.deepEqual(
+      r?.propozycje?.map((x) => x.warstwa),
+      ['cena_m2_mediana', 'halas_ldwn'],
+    )
+  })
+
+  it('#172: wyraźne przypadki bez zmian: pewny wybór od razu, pasmo 0,5–0,86 jak w #156', () => {
+    const pewny = { halas_ldwn: 0.97, nie_wiem: 0.02, przystanek_odleglosc: 0.01 }
+    assert.deepEqual(przetworzWiele(zRozkladem('halas_ldwn', 0.97, pewny), LISTA, 'Głośno?'), {
+      warstwy: ['halas_ldwn'],
+    })
+    const sredni = { halas_ldwn: 0.7, przystanek_odleglosc: 0.2, nie_wiem: 0.1 }
+    assert.equal(
+      przetworzWiele(zRozkladem('halas_ldwn', 0.7, sredni), LISTA, 'Jak tu jest?')?.propozycje
+        ?.length,
+      2,
+    )
+  })
+
+  it('#172 całość: słaby wybór → odpowiedź JEV z propozycjami, nie reguły', async () => {
+    const { f, wywolania } = fetchZ({
+      odpowiedzi: zRozkladem('halas_ldwn', 0.46, slaby, { ceny: 0.9 }),
+      powod: null,
+    })
+    const w = await zapytajOAdresZPropozycjami('Jak tu jest?', WSKAZNIKI, 2, { fetch: f })
+    assert.equal(wywolania.length, 1)
+    assert.deepEqual(
+      w.propozycje?.map((p) => p.warstwa),
+      ['halas_ldwn', 'przystanek_odleglosc'],
+    )
+    assert.deepEqual(
+      w.odpowiedzi.map((x) =>
+        x.rodzaj === 'warstwa' ? `${x.warstwa}/${x.zrodloOdpowiedzi}` : x.rodzaj,
+      ),
+      ['halas_ldwn/jev', 'cena_m2_mediana/jev'],
+    )
   })
 
   it('nie_wiem i id spoza listy (także atrapa) nie są propozycjami', () => {

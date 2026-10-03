@@ -20,8 +20,10 @@ import {
   PROG_BRAMKI,
   PROG_MOCNEJ_POTRZEBY,
   PROG_NIKT_NIE_SZUKA,
-  PROG_PEWNOSCI,
+  PROG_POTRZEBY,
   PROG_PROFILU,
+  PROGI_KATEGORII,
+  poziomKategorii,
   profilZMocnychPotrzeb,
   przetworzOdpowiedzi,
   wagiZeZrozumienia,
@@ -222,7 +224,13 @@ describe('przetworzOdpowiedzi (JEV → zrozumienie)', () => {
   it('niska pewność wszędzie → null (wołający spada do reguł)', () => {
     const z = przetworzOdpowiedzi({
       profil: { typ: 'choice', wybor: 'senior', pewnosc: 0.35 },
-      kat_spokoj: { typ: 'score', ocena: 4, pewnosc: 0.2 },
+      // #172: rozkład rozlany wokół środka – oczekiwany poziom 2,3, czyli bez zmian.
+      kat_spokoj: {
+        typ: 'score',
+        ocena: 2.3,
+        pewnosc: 0.35,
+        prawdopodobienstwa: { '0': 0.1, '1': 0.15, '2': 0.3, '3': 0.25, '4': 0.2 },
+      },
       p_dzieci: { typ: 'noul', noul: 0.55 },
     })
     assert.equal(z, null)
@@ -442,6 +450,74 @@ describe('przetworzOdpowiedzi (JEV → zrozumienie)', () => {
   })
 })
 
+// #172: odpowiedzi z testu A/A w #170 (zbiór do strojenia, dwa identyczne przebiegi). Dawniej
+// pewność przy progu 0,6 dawała raz poziom, raz nic – teraz poziom idzie z oczekiwanego poziomu.
+describe('#172: poziom kategorii z rozkładu, stabilny przy progu', () => {
+  const kat = (
+    p: [number, number, number, number, number],
+    pewnosc: number,
+  ): Extract<OdpowiedzJev, { typ: 'score' }> => ({
+    typ: 'score',
+    ocena: p.reduce((s, x, i) => s + i * x, 0),
+    pewnosc,
+    prawdopodobienstwa: Object.fromEntries(p.map((x, i) => [String(i), x])),
+  })
+
+  it('para A/A po obu stronach dawnego progu pewności daje ten sam poziom', () => {
+    const pary: [
+      Extract<OdpowiedzJev, { typ: 'score' }>,
+      Extract<OdpowiedzJev, { typ: 'score' }>,
+      number,
+    ][] = [
+      // A07 transport: pewność 0,59 / 0,64, oczekiwany 3,38 / 3,26 → „Ważne”.
+      [kat([0, 0, 0.05, 0.52, 0.43], 0.59), kat([0, 0.01, 0.07, 0.57, 0.35], 0.64), 3],
+      // A12 transport: pewność 0,60 / 0,58.
+      [kat([0, 0, 0.08, 0.54, 0.38], 0.6), kat([0, 0.01, 0.06, 0.5, 0.43], 0.58), 3],
+      // A10 transport: pewność 0,60 / 0,55, oczekiwany 0,48 / 0,53 → „Bez znaczenia”.
+      [kat([0.64, 0.25, 0.1, 0.01, 0], 0.6), kat([0.61, 0.27, 0.1, 0.02, 0], 0.55), 0],
+    ]
+    for (const [a, b, poziom] of pary) {
+      assert.equal(poziomKategorii(a), poziom)
+      assert.equal(poziomKategorii(b), poziom)
+      const za = przetworzOdpowiedzi({ kat_transport: a })
+      const zb = przetworzOdpowiedzi({ kat_transport: b })
+      assert.deepEqual(za?.kategorie, zb?.kategorie)
+      assert.equal(za?.kategorie.transport, poziom)
+    }
+  })
+
+  it('niepewność między sąsiednimi poziomami → poziom bliższy środka', () => {
+    // Pół na pół „Ważne” i „Bardzo ważne” → „Ważne”.
+    assert.equal(poziomKategorii(kat([0, 0, 0, 0.5, 0.5], 0.5)), 3)
+    // Pół na pół środek i „Ważne” → bez zmian (środek).
+    assert.equal(poziomKategorii(kat([0, 0, 0.5, 0.5, 0], 0.5)), null)
+    // Pół na pół „Mało ważne” i środek → bez zmian.
+    assert.equal(poziomKategorii(kat([0, 0.5, 0.5, 0, 0], 0.5)), null)
+    // Małe przesunięcie rozkładu (szum A/A ≤ ok. 0,1 poziomu) nie zmienia wyniku.
+    for (const d of [-0.05, 0, 0.05]) {
+      assert.equal(poziomKategorii(kat([0, 0, 0.05, 0.5 - d, 0.45 + d], 0.5)), 3, String(d))
+    }
+  })
+
+  it('wyraźne przypadki bez zmian: pewny poziom zostaje, środek nic nie zmienia', () => {
+    assert.equal(poziomKategorii(kat([0, 0, 0.02, 0.1, 0.88], 0.9)), 4)
+    assert.equal(poziomKategorii(kat([0, 0, 0.05, 0.9, 0.05], 0.9)), 3)
+    assert.equal(poziomKategorii(kat([0.02, 0.9, 0.08, 0, 0], 0.9)), 1)
+    assert.equal(poziomKategorii(kat([0.95, 0.05, 0, 0, 0], 0.95)), 0)
+    assert.equal(poziomKategorii(kat([0.03, 0.02, 0.93, 0.02, 0], 0.93)), null)
+    // Bez rozkładu – z `ocena` (ten sam oczekiwany poziom).
+    assert.equal(poziomKategorii({ typ: 'score', ocena: 3.7, pewnosc: 0.95 }), 4)
+    assert.equal(poziomKategorii({ typ: 'score', ocena: 2.1, pewnosc: 0.9 }), null)
+    assert.equal(poziomKategorii({ typ: 'score', ocena: Number.NaN, pewnosc: 0.9 }), null)
+  })
+
+  it('progi leżą w rzadkich miejscach rozkładu i są ostrożne', () => {
+    const { bardzoWazne, wazne, maloWazne, bezZnaczenia } = PROGI_KATEGORII
+    assert.ok(bardzoWazne > 3.5 && wazne > 2.5 && maloWazne < 1.5 && bezZnaczenia > 0.5)
+    assert.ok(bezZnaczenia < maloWazne && maloWazne < 2 && 2 < wazne && wazne < bardzoWazne)
+  })
+})
+
 describe('#155: próg profilu i profil z mocnych potrzeb', () => {
   const profil = (wybor: string, pewnosc: number): OdpowiedzJev => ({
     typ: 'choice',
@@ -449,9 +525,9 @@ describe('#155: próg profilu i profil z mocnych potrzeb', () => {
     pewnosc,
   })
 
-  it('próg profilu 0,85 – osobny od progu kategorii (0,6)', () => {
+  it('próg profilu 0,85 – osobny od progu potrzeby (0,6)', () => {
     assert.equal(PROG_PROFILU, 0.85)
-    assert.equal(PROG_PEWNOSCI, 0.6)
+    assert.equal(PROG_POTRZEBY, 0.6)
     assert.equal(PROG_MOCNEJ_POTRZEBY, 0.9)
     const baza = { p_zielen: noul(0.7) }
     // Na progu – profil od JEV, z procentem.

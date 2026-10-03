@@ -2240,6 +2240,137 @@ przy 0,6 (#152, #157, #170):
 ponowienie (timeout pośrednika), żadnej utraconej odpowiedzi. Przeliczenie progów nic nie
 kosztowało.
 
+## Stabilne progi (#172)
+
+Pomiar z 2026-10-03, model `jev-1.13.0`. Test A/A z #170 pokazał, że surowy wybór JEV powtarza
+się 58/58, a odpowiedź końcowa różni się w 4–5 z 58 pozycji. Powód: wartości leżą tuż przy
+progach. Zmiany dotyczą tylko tego, jak kod czyta odpowiedź – zapytanie do JEV jest takie samo.
+
+### Co się zmieniło
+
+- **Poziom kategorii (`opiszSiebie.ts`, `poziomKategorii`).** Poziom liczymy z oczekiwanego
+  poziomu Σ poziom·p z rozkładu `prawdopodobienstwa`. To ta sama liczba co `ocena` (na 270
+  ocenach z A/A różnica ≤ 0,02). Progu pewności 0,6 już nie ma.
+  - Progi: ≥ 3,55 → „Bardzo ważne”, ≥ 2,65 → „Ważne”, ≤ 1,2 → „Mało ważne”, ≤ 0,7 → „Bez
+    znaczenia”, a pomiędzy – środek, czyli bez zmian.
+  - Każdy próg leży tam, gdzie ocen jest najmniej. Liczyłem oceny w odległości do ±0,08 od progu
+    w zbiorach nr 2–6 (900 ocen) i w siedmiu przebiegach zbiorów do strojenia (540):
+    - 3,55 – 29 ocen; 3,7 – 40;
+    - 2,65 – 22; dawne 2,5 – 39;
+    - 1,2 – 10; dawne 1,5 – 48;
+    - 0,7 – 0.
+  - Progi są ostrożne. Pół na pół „Ważne” i „Bardzo ważne” daje „Ważne”, a pół na pół środek
+    i „Ważne” – środek.
+- **Słaby wybór warstwy (`zapytajOAdres.ts`, `PROG_SLABEGO_WYBORU` = 0,25).** Przy pewności
+  0,25–0,5 wybór JEV zostaje, jeśli da się pokazać dwie propozycje (#156). Bez nich odpowiadają
+  reguły, jak dotąd.
+  - Na zbiorach nr 4–6 (model z rozkładem) surowy JEV pod 0,5 trafiał w 9 z 9 pytań, a pokazane
+    reguły z tematami – w 4.
+  - Na zbiorach nr 2–3 (stary model) JEV pod 0,5 trafiał w 3 z 8. Tam nie ma rozkładu, więc
+    nic się nie zmienia.
+  - Na zbiorach nr 2–6 żadna pewność nie wypadła między 0,18 a 0,34.
+- **Górna granica propozycji: 0,9 → 0,86 (`PROG_BEZ_PROPOZYCJI`).** Pewności w odległości do
+  ±0,03 od progu jest 53 przy 0,9 i 30 przy 0,86 (zbiory nr 2–6 i A/A). W paśmie 0,86–0,9
+  warstwa główna była trafna w 12 z 12 pytań, więc tam propozycje nic nie dawały.
+- **Bez zmian:**
+  - `PROG_POTRZEBY` 0,6. Przy 0,6 nie ma pustego pasma. Żaden próg między 0,62 a 0,7 nie dał
+    mniej przeskoków w A/A (16–23 wobec 14 przy 0,6). Przy wyższym progu „dokładnie” rośnie na
+    zbiorach nr 5–6 (123 → 127–129 ze 190), a spada na zbiorze do strojenia (23 → 18–20 z 30).
+    To pytanie o trafność, a nie o stabilność.
+  - Tematy (`PROG_TEMATU`, #173), bramka i profil.
+
+### Przed i po – stabilność
+
+**A/A bez sieci i na żywo.** Każdą parę przebiegów liczyłem starym kodem (`origin/main`) i nowym
+na tych samych odpowiedziach JEV. Przebiegi:
+
+- `aa-157` (29 pozycji) i `aa-170` (58) – zapisane wcześniej;
+- trzy nowe przebiegi na żywo na pełnych zbiorach do strojenia (30 opisów i 28 pytań), czyli
+  trzy pary.
+
+Kod to stan po rebase na `main` z #173, #164 i #171.
+
+| Para | n | stary kod: odpowiedź końcowa inna | **nowy kod** |
+|---|---|---|---|
+| aa-157 | 29 | 0 | **0** |
+| aa-170 | 58 | 4 (A07, A10, A12 – kategorie; A16 – potrzeba) | **1** (A16) |
+| na żywo r1/r2 | 58 | 6 (A04, A10, A13, A19 – kategorie; A07, A16 – potrzeba) | **6** (A03, A04, A15 – kategorie; A07, A16 – potrzeba; B28 – propozycje) |
+| na żywo r1/r3 | 58 | 5 | **2** (A07, A16 – potrzeba) |
+| na żywo r2/r3 | 58 | 2 | **4** (A03, A04, A15 – kategorie; B28 – propozycje) |
+| **Razem** | **261** | **17 (3,8 na 58)** | **13 (2,9 na 58)** |
+
+- **Przeskoki z kategorii spadły z 12 do 6.** Te, które zostały, to trzy pozycje, które dziś
+  leżą tuż przy nowych progach:
+  - `kat_transport` 3,43–3,57 w A03 i A04 przy 3,55;
+  - `kat_spokoj` 1,16–1,23 w A15 przy 1,2.
+
+  W zapisanych przebiegach (A03 3,49) tego nie było widać. Każdy próg ma jakąś pozycję obok
+  siebie. Progi wybrałem po gęstości ocen na wszystkich danych, a nie pod te trzy pozycje.
+- **Potrzeba przy 0,6 (A07, A16) daje teraz 5 z 13 przeskoków.** Ten próg zostaje (patrz wyżej).
+- **B28** to pewność 0,86–0,89 przy nowej granicy propozycji 0,86. Przy starej (0,9)
+  przeskakiwałyby inne pozycje: na zbiorach nr 5–6 jest ich wyraźnie więcej (niżej).
+- **Wynik nie jest „wyraźnie poniżej 4 na 58”**: na tych zbiorach to 2,9 zamiast 3,8. Reszta
+  szumu leży w potrzebach (0,6), w tematach (#173) i w pojedynczych pozycjach przy progach
+  kategorii.
+
+**Zaburzenie Monte Carlo.** Do każdej odpowiedzi dodałem różnice zmierzone w parach A/A (r1 − r2)
+i sprawdziłem, ile odpowiedzi końcowych się zmienia. 100 powtórzeń, wspólne liczby losowe.
+
+| | stary kod | **nowy kod** |
+|---|---|---|
+| Zbiory do strojenia, A (30 opisów) | 3,49 | **0,35** |
+| Zbiory do strojenia, B (28 pytań) | 0,24 | 0,28 |
+| Zbiory nr 5–6, B (185 pytań): zmiana warstwy głównej | 0,26 | **0,06** |
+| Zbiory nr 5–6, B: propozycje są / ich nie ma | 2,24 | **1,73** |
+| Zbiory nr 5–6, B: inna druga propozycja | 0,57 | 1,76 |
+| Zbiory nr 5–6, B razem (na 58 pytań) | 1,12 | 1,25 |
+
+- Pod 0,5 JEV często daje rozkład rozlany na trzy warstwy, więc druga propozycja potrafi się
+  zamienić z trzecią. Warstwa główna (to, co karta pokazuje po kliknięciu pierwszej propozycji
+  i co liczy pomiar) przeskakuje ok. 4 razy rzadziej.
+- Dla A na zbiorach nr 5–6 starego kodu nie da się zaburzyć – zapis nie ma pewności kategorii.
+  Nowy kod: 3,3% opisów na powtórzenie, z tego kategorie 1,2%.
+
+### Przed i po – trafność
+
+**B – zbiory nr 2–6 (270 pytań, UŻYTE, tylko liczby zbiorcze).** Stary i nowy kod przeliczone
+na tych samych zapisanych odpowiedziach, na danych z `main` po #171 i #173.
+
+| | stary kod | **nowy kod** |
+|---|---|---|
+| Warstwa główna trafna od razu | 252/270 | **256/270** |
+| Po kliknięciu propozycji | 252/270 | **255/270** |
+| Precyzja warstw | 90,4% (245/271) | **91,2% (250/274)** |
+| Pojedyncze z fałszywym dodatkiem | 11 | 12 |
+| Pytania z propozycjami | 25 | 29 |
+
+Zyski są na zbiorach nr 5 (+2) i nr 6 (+2). Na zbiorach nr 2–4 wynik się nie zmienił.
+
+**A – zbiory nr 5–6 (190 opisów).** Stary kod to zapisane wyniki z pewnością kategorii, a nowy to
+przeliczenie tych samych odpowiedzi. Liczone przed rebase, bo #171 zmienił kategorie z „Przyszłość
+okolicy” na „Społeczność i koszty”, a zapis ma stare id. Pytań do JEV (transport, spokój,
+bezpieczeństwo) #171 nie zmienił.
+
+| | stary kod | **nowy kod** |
+|---|---|---|
+| Profil | 166/190 | 166/190 |
+| Cały opis dokładnie | 122/190 | **123/190** |
+| Kategorie ważne – P / R / F1 | 92,5 / 76,2 / 83,6% | 91,5 / **79,3 / 85,0%** |
+
+**Na żywo, zbiory do strojenia (trzy przebiegi).** Stary i nowy kod dały to samo:
+
+- A „dokładnie”: 22, 23 i 23 z 30;
+- B warstwa główna: 28/28 w każdym przebiegu.
+
+### Wywołania na żywo
+
+**177** – trzy przebiegi po 59 (30 opisów, 28 pytań i jedno drugie wywołanie). Stary kod dostawał
+odpowiedzi nowego z pamięci, bo zapytanie jest to samo. 0 nieudanych prób, 0 ponowień.
+Przeliczenia bez sieci nic nie kosztowały. Skrypty i surowe przebiegi są poza repo (scratchpad).
+
+Zmiana persony z #164 (wagi profili) nie wpływa na te liczby. Pomiar porównuje profil,
+potrzeby i poziomy kategorii, a nie wagi.
+
 ## Na slajd
 
 **Zbiór kontrolny nr 6 (#170).** To 150 opisów i 150 pytań, które napisały na ślepo osobne agenty
