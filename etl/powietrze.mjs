@@ -13,6 +13,9 @@
 // Stacje pomiarowe nie wchodzą do wartości. Porównanie ze stacjami: node etl/powietrze-kontrola.mjs.
 // Uruchom: node etl/powietrze.mjs (surowe pobrania trafiają do etl/.cache, drugi bieg ich używa).
 
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { cecha, doprecyzuj } from './lib/doprecyzowanie.mjs'
 import {
   bboxAdresow,
   doPuwg,
@@ -21,15 +24,26 @@ import {
   WSKAZNIKI,
   znajdzRok,
 } from './lib/powietrze.mjs'
-import { dzis, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
+import { DANE, dzis, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
 import { odczytyCzujnikow } from './powietrze-inpost.mjs'
 
-const { adresy } = wczytajAdresy()
+const { adresy, wersja: wersjaPliku } = wczytajAdresy()
 const { rok, warstwy } = await znajdzRok()
 const bbox = bboxAdresow(adresy)
 console.log(`Rok modelu: ${rok}, obszar EPSG:2180: ${bbox.join(', ')}`)
 
 const czujniki = await odczytyCzujnikow(adresy)
+// Doprecyzowanie w skali adresu (#131): amplituda rozkładu wartości oczka między jego adresy.
+const AMPLITUDY = { 'PM2.5': 0.1, PM10: 0.15, NO2: 0.35 }
+function wczytajCeche(id) {
+  const plik = JSON.parse(readFileSync(join(DANE, 'wskazniki', `${id}.json`), 'utf8'))
+  if (plik.wersjaAdresow !== wersjaPliku)
+    throw new Error(`${id}: nieaktualny względem adresów – przelicz najpierw tę warstwę`)
+  return plik.wartosci
+}
+const halas = wczytajCeche('halas_ldwn')
+const zielen = wczytajCeche('zielen_udzial')
+const cechy = adresy.map((a, i) => cecha(halas[i], zielen[i], a.gmina === 'Kraków'))
 const punkty = adresy.map((a) => doPuwg(a.lon, a.lat))
 
 const METADANE = {
@@ -108,19 +122,24 @@ for (const [wskaznik, idWarstwy] of Object.entries(warstwy)) {
   const m = METADANE[wskaznik]
   const oczka = await pobierzOczka(rok, wskaznik, idWarstwy, bbox)
   const znajdz = indeksOczek(oczka)
-  const wartosci = []
+  let wartosci = []
+  const oczkoAdresu = []
   const uzyte = new Map()
   const liczba = new Map()
   for (const [x, y] of punkty) {
     const o = znajdz(x, y)
     if (!o || o.v === null) {
       wartosci.push(null)
+      oczkoAdresu.push(null)
       continue
     }
     wartosci.push(o.v)
+    oczkoAdresu.push(o.fid)
     uzyte.set(o.fid, o)
     liczba.set(o.fid, (liczba.get(o.fid) ?? 0) + 1)
   }
+  const amplituda = AMPLITUDY[wskaznik]
+  if (amplituda) wartosci = doprecyzuj(wartosci, oczkoAdresu, cechy, amplituda)
   const rozmiar = opisRozmiaru([...uzyte.values()], liczba)
   console.log(
     `${wskaznik}: oczek w obszarze ${oczka.length}, użytych ${uzyte.size}, rozmiar ${rozmiar}`,
@@ -131,11 +150,13 @@ for (const [wskaznik, idWarstwy] of Object.entries(warstwy)) {
       id: WSKAZNIKI[wskaznik].id,
       kategoria: 'spokoj',
       nazwa: m.nazwa,
-      opis: m.opis(rok),
+      opis: amplituda
+        ? `${m.opis(rok)} W Krakowie wartość oczka rozłożona między adresy według hałasu drogowego (przybliżenie ruchu) i udziału zieleni w oczku 100 m, maks. ±${Math.round(amplituda * 100)}%; średnia adresów w oczku równa wartości GIOŚ. To szacunek, nie pomiar.`
+        : m.opis(rok),
       jednostka: m.jednostka,
       kierunek: 'mniej-lepiej',
       rozdzielczosc: 'siatka',
-      rozmiar,
+      rozmiar: amplituda ? `${rozmiar}; w Krakowie doprecyzowane do adresu` : rozmiar,
       zakres: m.zakres,
       zadanie: 7,
       norma: m.norma,
