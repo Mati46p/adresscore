@@ -4,9 +4,10 @@
   right: 16px;
   bottom: 14px;
   left: 16px;
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 12px;
+  gap: 8px 12px;
   min-height: 58px;
   padding: 9px 12px;
   border: 1px solid var(--ramka);
@@ -23,6 +24,7 @@
   flex: none;
   color: var(--tekst);
   white-space: nowrap;
+  min-width: 0;
 }
 
 .heksy-pasek__naglowek span {
@@ -30,22 +32,25 @@
   font-size: 0.85rem;
 }
 
+.heksy-pasek__naglowek strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .heksy-pasek__lista {
-  display: flex;
-  align-items: center;
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 6px;
   min-width: 0;
-  overflow-x: auto;
-  padding: 3px;
-  scrollbar-width: thin;
 }
 
 .heksy-pasek__chip {
   display: inline-flex;
   align-items: center;
-  flex: none;
+  width: 100%;
+  min-width: 0;
   gap: 6px;
-  max-width: 220px;
   padding: 3px 4px 3px 10px;
   border: 1px solid #a4c6b4;
   border-radius: 999px;
@@ -61,6 +66,7 @@
 }
 
 .heksy-pasek__chip > span {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -88,7 +94,8 @@
 }
 
 .heksy-pasek__akcja {
-  flex: none;
+  grid-column: 2;
+  grid-row: 1;
   min-height: 38px;
   padding: 6px 12px;
   border: 0;
@@ -106,6 +113,7 @@
 }
 
 .heksy-pasek__wskazowka {
+  grid-column: 1 / -1;
   color: var(--tekst-2);
   font-size: 0.9rem;
 }
@@ -113,22 +121,32 @@
 /* Pasek zajmuje dół mapy; legenda i przyciski mapy pozostają nad nim. */
 .slot-mapy:has(.heksy-pasek) .maplibregl-ctrl-bottom-left,
 .slot-mapy:has(.heksy-pasek) .maplibregl-ctrl-bottom-right {
-  bottom: 90px;
+  bottom: 124px;
 }
 
-@media (max-width: 700px) {
-  .heksy-pasek {
-    flex-wrap: wrap;
-    gap: 4px 8px;
-    padding: 8px;
-  }
-
+@media (max-width: 1100px) {
   .heksy-pasek__lista {
-    width: 100%;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .slot-mapy:has(.heksy-pasek) .maplibregl-ctrl-bottom-left,
   .slot-mapy:has(.heksy-pasek) .maplibregl-ctrl-bottom-right {
-    bottom: 110px;
+    bottom: 166px;
+  }
+}
+
+@media (max-width: 700px) {
+  .heksy-pasek {
+    gap: 6px;
+    padding: 8px;
+  }
+
+  .heksy-pasek__lista {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .slot-mapy:has(.heksy-pasek) .maplibregl-ctrl-bottom-left,
+  .slot-mapy:has(.heksy-pasek) .maplibregl-ctrl-bottom-right {
+    bottom: 208px;
   }
 }

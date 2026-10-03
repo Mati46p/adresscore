@@ -122,6 +122,15 @@ export function EkranSzukaj() {
                   {wybraneAdresy.length}/{MAKS_POROWNANIE}
                 </span>
               </div>
+              {wybraneAdresy.length > 0 && (
+                <button
+                  type="button"
+                  className="heksy-pasek__akcja"
+                  onClick={() => przejdz('porownanie')}
+                >
+                  Porównaj ({wybraneAdresy.length})
+                </button>
+              )}
               {wybraneAdresy.length ? (
                 <div className="heksy-pasek__lista">
                   {wybraneAdresy.map((a) => (
@@ -130,7 +139,7 @@ export function EkranSzukaj() {
                       data-aktywny={a.i === wybrany || undefined}
                       key={a.i}
                     >
-                      <span title={a.h3}>{opisAdresu(a)}</span>
+                      <span title={`${opisAdresu(a)} · heks ${a.h3}`}>{opisAdresu(a)}</span>
                       <button
                         type="button"
                         aria-label={`Usuń heks ${opisAdresu(a)} z porównania`}
@@ -140,13 +149,6 @@ export function EkranSzukaj() {
                       </button>
                     </span>
                   ))}
-                  <button
-                    type="button"
-                    className="heksy-pasek__akcja"
-                    onClick={() => przejdz('porownanie')}
-                  >
-                    Porównaj adresy ({wybraneAdresy.length})
-                  </button>
                 </div>
               ) : (
                 <span className="heksy-pasek__wskazowka">
