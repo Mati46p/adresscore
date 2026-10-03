@@ -61,6 +61,51 @@ export const PROGI_LUK: Readonly<Record<string, ProgLuki>> = {
     zrodlo:
       'Próg roboczy z zadania #89 – przepisy nie podają dopuszczalnej odległości do punktu schronienia. Punkty to kategoria informacyjna KG PSP, nie potwierdzone schrony.',
   },
+  przedszkole_odleglosc: {
+    id: 'przedszkole_odleglosc',
+    prog: 3000,
+    jednostka: 'm',
+    opis: 'dalej niż 3 km (w linii prostej) do przedszkola',
+    naglowek: 'adresy bez przedszkola w 3 km',
+    zrodlo:
+      'Ustawa Prawo oświatowe (t.j. Dz.U. 2024 poz. 737), art. 32 ust. 3: gdy droga 5-latka do przedszkola przekracza 3 km, gmina zapewnia dowóz. Linia prosta jest krótsza niż droga, więc luka raczej niedoszacowana.',
+  },
+  zlobek_odleglosc: {
+    id: 'zlobek_odleglosc',
+    prog: 1500,
+    jednostka: 'm',
+    opis: 'dalej niż 1,5 km (w linii prostej) do żłobka lub klubu dziecięcego',
+    naglowek: 'adresy bez żłobka w 1,5 km',
+    zrodlo:
+      'Próg roboczy – ustawa o opiece nad dziećmi do lat 3 nie podaje odległości. Ok. 20 minut pieszo z wózkiem.',
+  },
+  szkola_podst_odleglosc: {
+    id: 'szkola_podst_odleglosc',
+    prog: 3000,
+    jednostka: 'm',
+    opis: 'dalej niż 3 km (w linii prostej) do publicznej szkoły podstawowej',
+    naglowek: 'adresy bez szkoły podstawowej w 3 km',
+    zrodlo:
+      'Ustawa Prawo oświatowe (t.j. Dz.U. 2024 poz. 737), art. 39 ust. 2: droga ucznia klas I–IV do szkoły nie może przekraczać 3 km, powyżej gmina zapewnia dowóz.',
+  },
+  plac_zabaw_odleglosc: {
+    id: 'plac_zabaw_odleglosc',
+    prog: 500,
+    jednostka: 'm',
+    opis: 'dalej niż 500 m (w linii prostej) do publicznego placu zabaw',
+    naglowek: 'adresy bez placu zabaw w 500 m',
+    zrodlo:
+      'Próg roboczy: ok. 6 minut pieszo z małym dzieckiem. Rząd wielkości jak w zaleceniu WHO Europa (2016) – teren rekreacyjny w 300 m od domu.',
+  },
+  defibrylator_odleglosc: {
+    id: 'defibrylator_odleglosc',
+    prog: 500,
+    jednostka: 'm',
+    opis: 'dalej niż 500 m (w linii prostej) do ogólnodostępnego defibrylatora AED',
+    naglowek: 'adresy bez defibrylatora AED w 500 m',
+    zrodlo:
+      'Próg roboczy: przy zatrzymaniu krążenia każda minuta bez defibrylacji obniża szansę przeżycia (wytyczne ERC 2021); 500 m to ok. 3 minuty marszu w jedną stronę, czyli ok. 6 minut po AED i z powrotem.',
+  },
   halas_ldwn: {
     id: 'halas_ldwn',
     prog: 64,

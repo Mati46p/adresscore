@@ -1,13 +1,14 @@
 // Obiekty symulatora w linku (#98). Uruchom: node --test src/wynik/
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import type { Obiekt } from './symulacja.ts'
+import { type Obiekt, TYPY_OBIEKTOW } from './symulacja.ts'
 import { MAKS_OBIEKTOW, obiektyDoTekstu, obiektyZTekstu } from './symulacjaUrl.ts'
 import { czytajHash, zapiszHash } from './url.ts'
 
 const obiekty: Obiekt[] = [
   { typ: 'przystanek', lon: 19.9372, lat: 50.0614 },
-  { typ: 'sklep', lon: 19.90001, lat: 50.05 },
+  { typ: 'przedszkole', lon: 19.90001, lat: 50.05 },
+  { typ: 'aed', lon: 19.95, lat: 50.07 },
   { typ: 'zdrowie', lon: 20.01234, lat: 50.08765 },
   { typ: 'schron', lon: 19.8, lat: 50.1 },
 ]
@@ -37,5 +38,14 @@ describe('obiekty w URL', () => {
   it('parametry symulacji poza ekranem symulatora nie trafiają do stanu', () => {
     assert.equal(czytajHash('#/?a=p:19.9,50.0').symulacja, undefined)
     assert.equal(czytajHash('#/symulator').symulacja?.a, '')
+  })
+})
+
+describe('typy obiektów w linku', () => {
+  it('znaki są unikalne, a sklep (dział biznesu) nie wraca jako inny typ', () => {
+    const znaki = TYPY_OBIEKTOW.map((d) => d.znak.toLowerCase())
+    assert.equal(new Set(znaki).size, znaki.length)
+    assert.ok(!TYPY_OBIEKTOW.some((d) => d.warstwa === 'sklep_odleglosc'))
+    assert.deepEqual(obiektyZTekstu('s:19.90000,50.05000'), [])
   })
 })

@@ -1,5 +1,5 @@
-// Symulator inwestycji, tryb „Miasto” (#96–#98): urzędnik stawia przystanek, sklep, punkt
-// zdrowia albo schron i widzi, ile adresów awansuje o literę i ile wychodzi z luki.
+// Symulator inwestycji, tryb „Miasto” (#96–#98): urzędnik stawia obiekt publiczny (przystanek,
+// szkołę, przedszkole, POZ, AED, plac zabaw…) i widzi, ile adresów awansuje o literę i ile wychodzi z luki.
 // Liczy worker (`useSymulacja`), obiekty żyją w URL (`a=`, `b=`) – link idzie do radnego
 // albo do wniosku w budżecie obywatelskim.
 import { type JSX, useState } from 'react'
@@ -15,6 +15,7 @@ import type { WskaznikPrzygotowany } from '@/wynik/silnik'
 import { useStan, ustawSymulacje } from '@/wynik/stan'
 import {
   definicjaObiektu,
+  GRUPY_OBIEKTOW,
   type Obiekt,
   pustyWynik,
   TYPY_OBIEKTOW,
@@ -136,33 +137,42 @@ export function EkranSymulatora(): JSX.Element {
         <div className="symulator-wstep">
           <h1>Symulator inwestycji dla miasta</h1>
           <p>
-            Postaw na mapie przystanek, sklep, punkt zdrowia albo punkt schronienia i zobacz, ile
-            adresów awansuje o literę i ile wychodzi z luki w usługach.
+            Postaw na mapie obiekt publiczny – przystanek, szkołę, przedszkole, punkt zdrowia, AED
+            czy plac zabaw – i zobacz, ile adresów awansuje o literę i ile wychodzi z luki w
+            usługach. Lokalizację sklepu sprawdzisz w trybie „Biznes”.
           </p>
         </div>
 
         <fieldset className="symulator-grupa">
           <legend>Co stawiasz</legend>
-          <div className="symulator-typy">
-            {TYPY_OBIEKTOW.map((d) => (
-              <button
-                key={d.typ}
-                type="button"
-                className="seg symulator-typ"
-                aria-pressed={typ === d.typ}
-                disabled={Boolean(wylaczone[d.typ])}
-                title={wylaczone[d.typ]}
-                onClick={() => setTyp(d.typ)}
-              >
-                <span className="symulator-typ__znak" aria-hidden="true">
-                  {d.znak}
-                </span>
-                {d.nazwa}
-              </button>
-            ))}
-          </div>
+          {GRUPY_OBIEKTOW.map((g) => (
+            <div key={g.id} className="symulator-typy-grupa">
+              <p className="symulator-typy-tytul" id={`typy-${g.id}`}>
+                {g.nazwa}
+              </p>
+              <div className="symulator-typy" role="group" aria-labelledby={`typy-${g.id}`}>
+                {TYPY_OBIEKTOW.filter((d) => d.grupa === g.id).map((d) => (
+                  <button
+                    key={d.typ}
+                    type="button"
+                    className="seg symulator-typ"
+                    aria-pressed={typ === d.typ}
+                    disabled={Boolean(wylaczone[d.typ])}
+                    title={wylaczone[d.typ]}
+                    onClick={() => setTyp(d.typ)}
+                  >
+                    <span className="symulator-typ__znak" aria-hidden="true">
+                      {d.znak}
+                    </span>
+                    {d.nazwa}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
           <p className="symulator-podpowiedz">
-            Kliknij mapę, żeby postawić. Znacznik przeciągnij albo przesuń strzałkami, Delete usuwa.
+            Kliknij mapę, żeby postawić: {definicja.nazwa.toLowerCase()}. Znacznik przeciągnij albo
+            przesuń strzałkami, Delete usuwa.
           </p>
           <button
             type="button"

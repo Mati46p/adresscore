@@ -1,4 +1,4 @@
-// Obiekty symulatora na mapie (#97): hipotetyczny przystanek, sklep, punkt zdrowia, schron.
+// Obiekty symulatora na mapie (#97): hipotetyczny przystanek, szkoła, punkt zdrowia, AED itd.
 // Romb, nie koło jak znaczniki z rejestrów – od razu widać, że obiektu nie ma naprawdę.
 //
 // - Mysz i dotyk: przeciągnięcie przesuwa (`onPrzesun` po puszczeniu).

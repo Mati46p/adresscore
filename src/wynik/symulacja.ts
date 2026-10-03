@@ -1,5 +1,5 @@
 // Symulator inwestycji, tryb „Miasto” (#96, #98): urzędnik stawia hipotetyczny obiekt
-// (przystanek, sklep, punkt zdrowia, punkt schronienia) i widzi, ile adresów awansuje o literę
+// (przystanek, punkt zdrowia, szkoła, przedszkole, plac zabaw, AED…) i widzi, ile adresów awansuje o literę
 // i ile wychodzi z luki (progi z #89). Czyste funkcje bez DOM i Reacta – liczone w workerze
 // (`symulacja.worker.ts`), testy na gołym `node --test`. Z kontraktu tylko typy.
 //
@@ -14,6 +14,8 @@
 //   Adres poza zasięgiem jest nietknięty bit w bit.
 // - Każde liczenie idzie od stanu bazowego dla pełnej listy obiektów – przesunięcie czy usunięcie
 //   obiektu to po prostu nowe liczenie, bez stanu pośredniego.
+// - Tylko obiekty, które stawia miasto. Sklep spożywczy to decyzja biznesu – ma swój tryb
+//   „Biznes” (`persony.ts`), nie symulator inwestycji publicznych.
 // - Park i zieleń poza v1: warstwa zieleni to siatka 100 m, potrzebny inny model niż odległość.
 import type { Adres, WskaznikMeta } from '../kontrakty/index.ts'
 import {
@@ -43,36 +45,115 @@ import {
 
 // ── Typy obiektów ────────────────────────────────────────────────────────────────────────
 
-export type TypObiektu = 'przystanek' | 'sklep' | 'zdrowie' | 'schron'
+export type TypObiektu =
+  | 'przystanek'
+  | 'zdrowie'
+  | 'schron'
+  | 'przedszkole'
+  | 'zlobek'
+  | 'szkola'
+  | 'plac_zabaw'
+  | 'aed'
+  | 'kultura'
+  | 'silownia'
+  | 'toaleta'
+
+export type GrupaObiektu = 'transport' | 'edukacja' | 'zdrowie' | 'rekreacja'
+
+export const GRUPY_OBIEKTOW: readonly { id: GrupaObiektu; nazwa: string }[] = [
+  { id: 'transport', nazwa: 'Transport' },
+  { id: 'edukacja', nazwa: 'Edukacja i opieka' },
+  { id: 'zdrowie', nazwa: 'Zdrowie i bezpieczeństwo' },
+  { id: 'rekreacja', nazwa: 'Rekreacja i przestrzeń wspólna' },
+]
 
 export interface DefinicjaObiektu {
   typ: TypObiektu
   nazwa: string
+  grupa: GrupaObiektu
   /** Id warstwy odległościowej, którą obiekt zmienia. */
   warstwa: string
   /** Id branży z katalogu usług (#104, `public/dane/uslugi/katalog.json`), gdy obiekt jest usługą. */
   branza?: string
-  /** Jedna litera na znaczniku mapy. */
+  /** Jedna litera na znaczniku mapy i w linku (`a=k:…`) – unikalna, bez polskich znaków. */
   znak: string
 }
 
+// Znak „S” (dawny sklep) celowo wolny: stary link ze sklepem gubi tylko ten obiekt, nie
+// podstawia pod niego innego typu.
 export const TYPY_OBIEKTOW: readonly DefinicjaObiektu[] = [
-  { typ: 'przystanek', nazwa: 'Przystanek', warstwa: 'przystanek_odleglosc', znak: 'P' },
   {
-    typ: 'sklep',
-    nazwa: 'Sklep spożywczy',
-    warstwa: 'sklep_odleglosc',
-    branza: 'sklep_spozywczy',
-    znak: 'S',
+    typ: 'przystanek',
+    nazwa: 'Przystanek',
+    grupa: 'transport',
+    warstwa: 'przystanek_odleglosc',
+    znak: 'P',
+  },
+  {
+    typ: 'przedszkole',
+    nazwa: 'Przedszkole',
+    grupa: 'edukacja',
+    warstwa: 'przedszkole_odleglosc',
+    znak: 'K',
+  },
+  { typ: 'zlobek', nazwa: 'Żłobek', grupa: 'edukacja', warstwa: 'zlobek_odleglosc', znak: 'J' },
+  {
+    typ: 'szkola',
+    nazwa: 'Szkoła podstawowa',
+    grupa: 'edukacja',
+    warstwa: 'szkola_podst_odleglosc',
+    znak: 'E',
   },
   {
     typ: 'zdrowie',
     nazwa: 'Punkt zdrowia (POZ)',
+    grupa: 'zdrowie',
     warstwa: 'przychodnia_odleglosc',
     branza: 'poz',
     znak: 'Z',
   },
-  { typ: 'schron', nazwa: 'Punkt schronienia', warstwa: 'punkt_schronienia_odleglosc', znak: 'U' },
+  {
+    typ: 'aed',
+    nazwa: 'Defibrylator AED',
+    grupa: 'zdrowie',
+    warstwa: 'defibrylator_odleglosc',
+    znak: 'A',
+  },
+  {
+    typ: 'schron',
+    nazwa: 'Punkt schronienia',
+    grupa: 'zdrowie',
+    warstwa: 'punkt_schronienia_odleglosc',
+    znak: 'U',
+  },
+  {
+    typ: 'plac_zabaw',
+    nazwa: 'Plac zabaw',
+    grupa: 'rekreacja',
+    warstwa: 'plac_zabaw_odleglosc',
+    znak: 'L',
+  },
+  {
+    typ: 'silownia',
+    nazwa: 'Siłownia plenerowa',
+    grupa: 'rekreacja',
+    warstwa: 'silownia_plenerowa_odleglosc',
+    znak: 'G',
+  },
+  {
+    typ: 'kultura',
+    nazwa: 'Biblioteka lub dom kultury',
+    grupa: 'rekreacja',
+    warstwa: 'kultura_odleglosc',
+    znak: 'B',
+  },
+  {
+    typ: 'toaleta',
+    nazwa: 'Toaleta publiczna lub pitnik',
+    grupa: 'rekreacja',
+    warstwa: 'toaleta_woda_odleglosc',
+    znak: 'T',
+  },
 ]
 
 export function definicjaObiektu(typ: TypObiektu): DefinicjaObiektu {

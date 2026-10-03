@@ -53,6 +53,14 @@
   flex-wrap: wrap;
   gap: 6px;
 }
+.symulator-typy-grupa {
+  display: grid;
+  gap: 4px;
+}
+.symulator-typy-tytul {
+  font-size: 13px;
+  color: var(--tekst-2);
+}
 .symulator-typ {
   display: inline-flex;
   align-items: center;
