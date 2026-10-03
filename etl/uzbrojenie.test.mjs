@@ -8,13 +8,18 @@ import {
   jestWPromieniu,
   KAFEL_M,
   kafleAdresow,
+  liczbaPikseli,
+  MAKS_PRZEBIEGOW_KIUT,
   MIN_KRYCIE,
   MSIP_GESUT,
   maskaPng,
   PROFIL_KIUT,
   PROFIL_MSIP,
+  PRZEBIEGI_KIUT,
   pikselWKaflu,
+  plikKafla,
   podzielAdresy,
+  polaczPrzebiegi,
   SIECI,
   sprawdzMaske,
   sprawdzRozmiar,
@@ -220,6 +225,63 @@ test('sprawdzMaske: obraz, w którym „sieć” jest większością, to nie map
   assert.doesNotThrow(() => sprawdzMaske(sieci(10, 100)))
   assert.doesNotThrow(() => sprawdzMaske(sieci(50, 100)))
   assert.throws(() => sprawdzMaske(sieci(51, 100)), /podejrzany/)
+})
+
+test('polaczPrzebiegi: suma masek naprawia przebieg, w którym KIUT oddał pusty obraz', () => {
+  const maska = (piksele, bok = 8) => {
+    const m = new Uint8Array(bok * bok)
+    for (const i of piksele) m[i] = 1
+    return { szer: bok, wys: bok, maska: m }
+  }
+  // przebieg 1: kafel pusty (usługa powiatu zawiodła), przebieg 2: pełna sieć
+  const pelna = Array.from({ length: 40 }, (_, i) => i)
+  const wynik = polaczPrzebiegi([maska([]), maska(pelna)])
+  assert.deepEqual([...wynik.maska.maska], [...maska(pelna).maska])
+  assert.equal(wynik.piksele, 40)
+  assert.equal(wynik.rozbiezne, false, 'różnica poniżej 200 pikseli to rozrzut, nie awaria')
+  // przy większym obrazie ta sama sytuacja jest już awarią
+  const duza = (n) =>
+    maska(
+      Array.from({ length: n }, (_, i) => i),
+      100,
+    )
+  assert.equal(polaczPrzebiegi([duza(0), duza(3000)]).rozbiezne, true)
+  assert.equal(polaczPrzebiegi([duza(3000), duza(0)]).rozbiezne, true)
+  assert.equal(polaczPrzebiegi([duza(1400), duza(3000)]).rozbiezne, true)
+  // dobry przebieg ma co najmniej 90% pikseli najlepszego: 2600 z 3000 to już przebieg częściowy
+  assert.equal(polaczPrzebiegi([duza(2600), duza(3000)]).rozbiezne, true)
+  // rozrzut renderu (kilka procent pikseli) i dwa puste przebiegi nie są awarią
+  assert.equal(polaczPrzebiegi([duza(2900), duza(3000)]).rozbiezne, false)
+  assert.equal(polaczPrzebiegi([duza(2700), duza(3000)]).rozbiezne, false)
+  assert.equal(polaczPrzebiegi([duza(0), duza(0)]).rozbiezne, false)
+  assert.equal(polaczPrzebiegi([duza(0), duza(0)]).piksele, 0)
+  // „dobre” liczy przebiegi, które potwierdzają najlepszy: wynik pewny dopiero przy co najmniej dwóch
+  assert.equal(polaczPrzebiegi([duza(0), duza(3000)]).dobre, 1)
+  assert.equal(polaczPrzebiegi([duza(0), duza(3000), duza(3000)]).dobre, 2)
+  assert.equal(polaczPrzebiegi([duza(2950), duza(3000)]).dobre, 2)
+  assert.equal(polaczPrzebiegi([duza(0), duza(0)]).dobre, 2)
+  assert.equal(polaczPrzebiegi([duza(1200), duza(1500), duza(3000)]).dobre, 1)
+  // suma to OR, nie wybór lepszego: obie części sieci zostają
+  const lewa = maska([0, 1, 2, 3])
+  const prawa = maska([60, 61])
+  assert.equal(polaczPrzebiegi([lewa, prawa]).piksele, 6)
+  assert.throws(() => polaczPrzebiegi([]), /Brak masek/)
+  assert.throws(() => polaczPrzebiegi([maska([], 4), maska([], 8)]), /różny rozmiar/)
+})
+
+test('liczbaPikseli i plikKafla: przebieg 1 zachowuje nazwę z cache sprzed przebiegów', () => {
+  assert.equal(liczbaPikseli({ maska: Uint8Array.from([1, 0, 1, 1, 0]) }), 3)
+  const nazwa = (p) => plikKafla(PROFIL_KIUT, { klucz: 'gaz' }, '281_122', p).split(/[\\/]/).at(-1)
+  assert.equal(nazwa(), 'gaz_281_122.png')
+  assert.equal(nazwa(1), 'gaz_281_122.png')
+  assert.equal(nazwa(2), 'gaz_281_122.p2.png')
+  assert.equal(nazwa(3), 'gaz_281_122.p3.png')
+  assert.equal(nazwa(MAKS_PRZEBIEGOW_KIUT), 'gaz_281_122.p5.png')
+  // cache KIUT i MSIP w osobnych katalogach, z geometrią w nazwie
+  assert.match(plikKafla(PROFIL_KIUT, { klucz: 'gaz' }, '1_2'), /kiut_2000_250_2000/)
+  assert.match(plikKafla(PROFIL_MSIP, { klucz: 'gaz' }, '1_2'), /msip_2000_250_625/)
+  assert.ok(PRZEBIEGI_KIUT >= 2, 'jeden przebieg nie wychwyci pustego obrazu')
+  assert.ok(MAKS_PRZEBIEGOW_KIUT > PRZEBIEGI_KIUT, 'musi zostać miejsce na dokładki')
 })
 
 test('sprawdzRozmiar: obraz inny niż zapytany przesunąłby współrzędne, więc jest odrzucany', () => {

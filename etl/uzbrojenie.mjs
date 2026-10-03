@@ -44,10 +44,20 @@
 // tuż za granicą miasta nie jest widoczna w GESUT Krakowa, więc dla adresów przy granicy flaga
 // może być niższa niż stan faktyczny (po stronie sąsiedniej gminy liczy się tylko jej ewidencja).
 //
-// Uwaga sieciowa: KIUT odpowiada przekierowaniem 302 na jeden z serwerów (integracja01/02), a dla
-// kafla leżącego w całości w jednym powiecie – wprost na usługę powiatu. Dostępność powiatów bywa
-// zmienna: kafel, którego nie udało się pobrać po trzech próbach, dostaje null, a kolejny bieg
-// dopełnia cache (pobrane kafle zostają).
+// Uwaga sieciowa: KIUT odpowiada przekierowaniem 302 na jeden z serwerów (integracja01/02), który
+// kaskaduje usługi powiatów. Kaskada potrafi po cichu oddać PUSTY obraz (HTTP 200, PNG bez piksela
+// sieci) zamiast błędu, gdy usługa powiatu chwilowo zawodzi. Sprawdzone ponownym pobraniem: z 28
+// obrazów o mniej niż 500 pikselach sieci 15 miało za drugim razem od 0,5 do 60 tys. pikseli (w tym
+// wszystkie 12 pustych PNG 1-bitowych), prawie wszystkie w okolicy Koniuszy i Kocmyrzowa. Taki obraz
+// daje adresom fałszywe 0 (jeden kafel: 177 adresów bez prądu, który tam jest). Dlatego każdy obraz
+// KIUT pobieramy dwa razy – drugi przebieg dopiero po całym pierwszym, żeby awarie nie nakładały
+// się w czasie – i sumujemy maski: zły obraz ma zawsze mniej pikseli, nigdy więcej. Wynik jest
+// pewny dopiero przy dwóch DOBRYCH przebiegach (co najmniej 90% pikseli najlepszego), więc obraz
+// z przebiegiem, który zawiódł, dostaje kolejne (do pięciu); tak samo suma rzadsza niż
+// PROG_RZADKIEJ_SIECI pikseli. MSIP tego nie wymaga: te same obrazy pobrane drugi raz są
+// identyczne co do piksela (próba 8 obrazów, od najmniejszego po największy).
+// Kafel, którego nie udało się pobrać po trzech próbach, dostaje null, a kolejny bieg dopełnia
+// cache (pobrane obrazy zostają).
 //
 // GESUT pokazuje sieć w ulicy, a nie przyłącze budynku: 1 oznacza „sieć w zasięgu przyłącza”,
 // nie „budynek podłączony”.
@@ -87,6 +97,12 @@ export const ZAPAS_M = ZASIEG_DANYCH_M
 export const MIN_KRYCIE = 16
 /** Obraz, w którym „sieć” zajmuje więcej pikseli, nie jest mapą sieci (np. brak przezroczystego tła). */
 export const MAX_UDZIAL_PIKSELI = 0.5
+/** Tyle razy pobieramy każdy obraz KIUT (przebiegi idą kolejno po wszystkich obrazach); maski sumujemy. */
+export const PRZEBIEGI_KIUT = 2
+/** Ostatni numer przebiegu: dokładki dla obrazów, których wynik jest niepewny (patrz maskaKiut). */
+export const MAKS_PRZEBIEGOW_KIUT = 5
+/** Suma masek KIUT o mniejszej liczbie pikseli sieci dostaje jeszcze jeden, dodatkowy przebieg. */
+export const PROG_RZADKIEJ_SIECI = 500
 
 /**
  * Geometria kafli źródła: kafel `kafel` × `kafel` m w siatce EPSG:2180 od zera układu, obraz
@@ -224,15 +240,47 @@ export function maskaPng(bufor, minKrycie = MIN_KRYCIE) {
   return { szer, wys, maska }
 }
 
+/** Liczba pikseli „sieci” w masce. */
+export function liczbaPikseli(m) {
+  let n = 0
+  for (let i = 0; i < m.maska.length; i++) n += m.maska[i]
+  return n
+}
+
 /** Odrzuca maskę, w której „sieć” zajmuje większość obrazu – to nie mapa przewodów. */
 export function sprawdzMaske(m) {
-  let zajete = 0
-  for (let i = 0; i < m.maska.length; i++) zajete += m.maska[i]
+  const zajete = liczbaPikseli(m)
   if (zajete > MAX_UDZIAL_PIKSELI * m.maska.length)
     throw new Error(
       `Obraz podejrzany: ${Math.round((100 * zajete) / m.maska.length)}% pikseli to „sieć” (brak przezroczystego tła?)`,
     )
   return m
+}
+
+/**
+ * Suma (OR) masek tego samego rozmiaru: przebiegi pobrania jednego obrazu. KIUT bywa po cichu pusty,
+ * ale nigdy nie dorysowuje sieci, której nie ma, więc suma jest bliżej prawdy niż każdy przebieg.
+ * Przebieg jest DOBRY, gdy ma co najmniej 90% pikseli najlepszego przebiegu albo różni się od niego
+ * o najwyżej 200 pikseli (rozrzut renderu, rzadka sieć). `dobre` to liczba dobrych przebiegów,
+ * `rozbiezne` – czy któryś przebieg dobry nie jest (czyli prawdopodobnie zawiódł).
+ */
+export function polaczPrzebiegi(maski) {
+  const [pierwsza] = maski
+  if (!pierwsza) throw new Error('Brak masek do połączenia')
+  const { szer, wys } = pierwsza
+  if (maski.some((m) => m.szer !== szer || m.wys !== wys))
+    throw new Error('Maski przebiegów mają różny rozmiar')
+  const maska = new Uint8Array(szer * wys)
+  for (const m of maski) for (let i = 0; i < maska.length; i++) maska[i] |= m.maska[i]
+  const piksele = maski.map(liczbaPikseli)
+  const najlepszy = Math.max(...piksele)
+  const dobre = piksele.filter((p) => p >= 0.9 * najlepszy || najlepszy - p <= 200).length
+  return {
+    maska: { szer, wys, maska },
+    piksele: liczbaPikseli({ maska }),
+    dobre,
+    rozbiezne: dobre < piksele.length,
+  }
 }
 
 /**
@@ -446,10 +494,10 @@ async function zapewnijPng(profil, pobierz, url, plik, { prob = 3, pauzaMs = 250
   }
 }
 
-/** Maska z sumami wierszy z pliku cache albo null (uszkodzony plik usuwamy: następny bieg pobierze go od nowa). */
+/** Maska z pliku cache albo null (uszkodzony plik usuwamy: następny bieg pobierze go od nowa). */
 function wczytajMaske(profil, plik) {
   try {
-    return zIndeksem(sprawdzRozmiar(maskaPng(readFileSync(plik)), profil))
+    return sprawdzRozmiar(maskaPng(readFileSync(plik)), profil)
   } catch (e) {
     console.warn(`  uszkodzony plik cache ${plik}: ${e.message}`)
     rmSync(plik, { force: true })
@@ -473,37 +521,91 @@ function dataPobrania(pliki) {
   return Number.isFinite(najstarszy) ? new Date(najstarszy).toISOString().slice(0, 10) : dzis()
 }
 
-const plikKafla = (profil, s, k) => join(katalogCache(profil), `${s.klucz}_${k}.png`)
+/**
+ * Plik obrazu w cache. Przebieg 1 ma nazwę bez przyrostka, więc cache sprzed przebiegów zostaje
+ * ważny; kolejne to `.p2` … `.p5`.
+ */
+export const plikKafla = (profil, s, k, przebieg = 1) =>
+  join(katalogCache(profil), `${s.klucz}_${k}${przebieg > 1 ? `.p${przebieg}` : ''}.png`)
 const rozbierzKlucz = (k) => k.split('_').map(Number)
 
 // ---------- Źródło 1: KIUT (obwarzanek) ----------
+
+/**
+ * Maska obrazu KIUT: suma masek przebiegów (null, gdy żaden nie jest czytelny). Wynik jest
+ * NIEPEWNY, dopóki nie ma dwóch dobrych przebiegów (jeden dobry może być tylko częścią sieci, a drugi
+ * zawiódł) albo gdy suma jest rzadka (PROG_RZADKIEJ_SIECI) i przebiegów jest tylko tyle co
+ * PRZEBIEGI_KIUT: pusty obraz bywa fałszywy, a prawdziwie rzadka sieć wyjdzie rzadka za każdym razem.
+ * Niepewny wynik dostaje kolejne przebiegi, najwyżej do MAKS_PRZEBIEGOW_KIUT. `stat` zlicza obrazy
+ * z przebiegiem, który zawiódł, z dokładkami i z mniejszą niż zaplanowana liczbą przebiegów.
+ */
+async function maskaKiut(s, k, stat) {
+  const [tx, ty] = rozbierzKlucz(k)
+  const maski = []
+  const wczytaj = (przebieg) => {
+    const plik = plikKafla(PROFIL_KIUT, s, k, przebieg)
+    const m = existsSync(plik) ? wczytajMaske(PROFIL_KIUT, plik) : null
+    if (m) maski.push(m)
+  }
+  for (let p = 1; p <= PRZEBIEGI_KIUT; p++) wczytaj(p)
+  let wynik = maski.length ? polaczPrzebiegi(maski) : null
+  const niepewny = () =>
+    !wynik ||
+    wynik.dobre < 2 ||
+    (wynik.piksele < PROG_RZADKIEJ_SIECI && maski.length <= PRZEBIEGI_KIUT)
+  let dokladki = 0
+  for (let p = PRZEBIEGI_KIUT + 1; p <= MAKS_PRZEBIEGOW_KIUT && niepewny(); p++) {
+    const plik = plikKafla(PROFIL_KIUT, s, k, p)
+    if (!(await zapewnijPng(PROFIL_KIUT, pobierzKiut, urlGetMap(s.warstwa, tx, ty), plik))) continue
+    const przed = maski.length
+    wczytaj(p)
+    if (maski.length > przed) {
+      wynik = polaczPrzebiegi(maski)
+      dokladki++
+    }
+  }
+  if (!wynik) return null
+  if (dokladki) stat.dodatkowe++
+  if (maski.length < PRZEBIEGI_KIUT) stat.jedenPrzebieg++
+  if (wynik.rozbiezne) stat.rozbiezne++
+  if (wynik.dobre < 2 && wynik.piksele >= PROG_RZADKIEJ_SIECI) stat.niepewne++
+  return wynik.maska
+}
 
 async function fazaKiut(indeksy, xy, wartosci, limit) {
   mkdirSync(katalogCache(PROFIL_KIUT), { recursive: true })
   let lista = [...kafleAdresow(indeksy, xy).entries()]
   if (limit > 0) lista = lista.slice(0, limit)
-  console.log(`KIUT: ${lista.length} kafli × ${SIECI.length} warstwy`)
-  let gotowe = 0
+  const obrazy = lista.flatMap(([k]) => SIECI.map((s) => ({ k, s })))
+  console.log(
+    `KIUT: ${lista.length} kafli × ${SIECI.length} warstwy, ${PRZEBIEGI_KIUT} przebiegi pobrania`,
+  )
+  // 1. Pobranie: przebieg 1 wszystkich obrazów, potem przebieg 2 (patrz „Uwaga sieciowa”).
+  for (let przebieg = 1; przebieg <= PRZEBIEGI_KIUT; przebieg++) {
+    let gotowe = 0
+    await pula(obrazy, 2, async ({ k, s }) => {
+      const [tx, ty] = rozbierzKlucz(k)
+      const plik = plikKafla(PROFIL_KIUT, s, k, przebieg)
+      await zapewnijPng(PROFIL_KIUT, pobierzKiut, urlGetMap(s.warstwa, tx, ty), plik)
+      if (++gotowe % 200 === 0)
+        console.log(`  KIUT, przebieg ${przebieg}: ${gotowe}/${obrazy.length}`)
+    })
+  }
+  // 2. Liczenie po jednym kaflu: maska każdej warstwy to suma przebiegów.
+  const stat = { rozbiezne: 0, dodatkowe: 0, jedenPrzebieg: 0, niepewne: 0 }
   let pusteKafle = 0
   let nieudane = 0
-  await pula(lista, 2, async ([k, idx]) => {
+  for (const [k, idx] of lista) {
     const [tx, ty] = rozbierzKlucz(k)
     const maski = {}
     for (const s of SIECI) {
-      const plik = plikKafla(PROFIL_KIUT, s, k)
-      const maska = (await zapewnijPng(
-        PROFIL_KIUT,
-        pobierzKiut,
-        urlGetMap(s.warstwa, tx, ty),
-        plik,
-      ))
-        ? wczytajMaske(PROFIL_KIUT, plik)
-        : null
-      if (!maska) {
-        nieudane++
-        return // brak choć jednej warstwy → cały kafel null (pustego kafla nie odróżnimy od braku)
-      }
-      maski[s.klucz] = maska
+      const maska = await maskaKiut(s, k, stat)
+      if (!maska) break
+      maski[s.klucz] = zIndeksem(maska)
+    }
+    if (Object.keys(maski).length < SIECI.length) {
+      nieudane++ // brak choć jednej warstwy → cały kafel null (pustego kafla nie odróżnimy od braku)
+      continue
     }
     if (Object.values(maski).every(pustaMaska)) pusteKafle++
     const f = flagiKafla(
@@ -514,11 +616,21 @@ async function fazaKiut(indeksy, xy, wartosci, limit) {
       PROFIL_KIUT,
     )
     for (const s of SIECI) idx.forEach((i, j) => (wartosci[s.klucz][i] = f[s.klucz][j]))
-    if (++gotowe % 25 === 0) console.log(`  kafle KIUT: ${gotowe}/${lista.length}`)
-  })
+  }
   console.log(`KIUT: kafle bez żadnej sieci (null): ${pusteKafle}, niepobrane (null): ${nieudane}`)
+  console.log(
+    `KIUT: obrazy z przebiegiem, który zawiódł (ubogi o ponad 10%): ${stat.rozbiezne}; ` +
+      `z dokładkami (do ${MAKS_PRZEBIEGOW_KIUT} przebiegów): ${stat.dodatkowe}; ` +
+      `tylko z jednym przebiegiem: ${stat.jedenPrzebieg}; ` +
+      `bez dwóch dobrych przebiegów mimo dokładek: ${stat.niepewne}`,
+  )
+  const przebiegi = Array.from({ length: MAKS_PRZEBIEGOW_KIUT }, (_, i) => i + 1)
   return {
-    pobrano: dataPobrania(lista.flatMap(([k]) => SIECI.map((s) => plikKafla(PROFIL_KIUT, s, k)))),
+    pobrano: dataPobrania(
+      lista.flatMap(([k]) =>
+        SIECI.flatMap((s) => przebiegi.map((p) => plikKafla(PROFIL_KIUT, s, k, p))),
+      ),
+    ),
   }
 }
 
@@ -556,7 +668,7 @@ async function fazaMsip(indeksy, xy, wartosci, limit) {
       const plik = pliki[j]
       const maska = existsSync(plik) ? wczytajMaske(PROFIL_MSIP, plik) : null
       if (!maska) break
-      maski[s.klucz] = maska
+      maski[s.klucz] = zIndeksem(maska)
     }
     if (Object.keys(maski).length < SIECI.length) {
       nieudane++
@@ -594,9 +706,9 @@ export function zrodlaWskaznika(s, pobranoMsip, pobranoKiut) {
       nazwa: `${ATRYBUCJA_MSIP} – Geodezyjna Sieć Uzbrojenia Terenu miasta Krakowa (WMS, warstwa ${s.warstwaMsip})`,
       url: MSIP_GESUT,
       licencja:
-        `${LICENCJA_MSIP}; usługa przeglądania WMS jest powszechna i nieodpłatna (pkt 10), a GESUT ` +
-        'nie jest OPEN DATA, więc tylko do przeglądania (pkt 22): z obrazów liczymy jednorazowo ' +
-        'flagę „sieć w 50 m”, wektorów nie pobieramy ani nie udostępniamy',
+        `${LICENCJA_MSIP}; usługa przeglądania WMS jest nieodpłatna (pkt 10), GESUT nie jest ` +
+        'OPEN DATA (pkt 22): z obrazów liczymy jednorazowo tylko flagę „sieć w 50 m”, wektorów ' +
+        'nie pobieramy ani nie udostępniamy',
       dataDanych: pobranoMsip,
       pobrano: pobranoMsip,
     },
