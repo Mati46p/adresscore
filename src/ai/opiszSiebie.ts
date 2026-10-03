@@ -85,8 +85,20 @@ export const KATEGORIE_JEV = [
 /** Środek skali = „tekst o tym nie mówi” – nie zmienia wag. */
 const POZIOM_NEUTRALNY = 2
 
-/** Poniżej tej pewności JEV nie wierzymy wyborowi profilu ani poziomowi kategorii. */
+/** Poniżej tej pewności JEV nie wierzymy poziomowi kategorii. */
 export const PROG_PEWNOSCI = 0.6
+/**
+ * #155: poniżej tej pewności JEV nie wierzymy wyborowi profilu (było 0,6 jak dla kategorii).
+ * Zły profil przestawia wszystkie wagi, a „bez zmian” zostawia te, które użytkownik już ma.
+ * Wtedy profil daje tylko mocna potrzeba (`profilZMocnychPotrzeb`). Dowody: WYNIKI.md, „Profil (#155)”.
+ */
+export const PROG_PROFILU = 0.85
+/**
+ * #155: od tej oceny twierdzenia (noul) potrzeba jest mocna i pod progiem profilu go wyznacza.
+ * Ten sam poziom co „pewna potrzeba” przy zamkniętej bramce (PROG_POTRZEBY_PEWNEJ). Przy 0,8
+ * zapas oddawał Rodzinę za dzieci kumpla (stary A06: dzieci 0,81 przy profilu 0,66).
+ */
+export const PROG_MOCNEJ_POTRZEBY = 0.9
 /** Od tej oceny twierdzenia (noul) uznajemy potrzebę. */
 export const PROG_POTRZEBY = 0.6
 
@@ -317,12 +329,39 @@ export const POTRZEBY: readonly Potrzeba[] = [
   },
 ]
 
-/** Gdy kilka potrzeb sugeruje profil, wygrywa pierwszy z tej listy. */
-const PIERWSZENSTWO_PERSON: readonly PersonaId[] = ['inwestor', 'senior', 'rodzina', 'singiel']
+/**
+ * Gdy kilka potrzeb sugeruje profil, wygrywa pierwszy z tej listy (reguły i #155 – profil
+ * z mocnych potrzeb). Uzasadnienie kolejności:
+ * - Inwestor pierwszy: kupujący pod wynajem sam nie zamieszka, więc jego dzieci czy wiek nie
+ *   ustawiają wag mieszkania („pod wynajem dla studentów” to też nie Singiel).
+ * - Senior przed Rodziną: starsza osoba często pisze o wnukach albo dorosłych dzieciach,
+ *   a senior z małymi dziećmi w domu to rzadkość. Gdy do rodziny z dziećmi wprowadza się
+ *   starszy rodzic, potrzeby seniora (przychodnia, apteka, krawężniki) i tak zostają.
+ * - Singiel ostatni: najsłabszy sygnał, wyklucza się z dziećmi i seniorem.
+ */
+export const PIERWSZENSTWO_PERSON: readonly PersonaId[] = [
+  'inwestor',
+  'senior',
+  'rodzina',
+  'singiel',
+]
 
 /** Profile do wyboru przez JEV – bez „Od zera”, plus jawne „nie wiadomo”. */
 const PROFILE_JEV = PERSONY.filter((p) => p.id !== 'od-zera')
 const PROFIL_NIEZNANY = 'nieznany'
+
+/**
+ * #155: opisy opcji profilu dla JEV mówią, KIM jest osoba, a nie, co ceni. Opisy z UI
+ * („Komunikacja i sklepy pod ręką”) pasowały do każdego, kto chce mieć blisko tramwaj, więc
+ * JEV wybierał Singla dla par i rodzin. Nazwy i opisy w UI (`persony.ts`) się nie zmieniają.
+ */
+export const OPISY_PROFILI_JEV: Readonly<Record<Exclude<PersonaId, 'od-zera'>, string>> = {
+  rodzina: 'Rodzic z dziećmi w domu (także gdy dziecko jest w drodze)',
+  singiel: 'Osoba mieszkająca sama, zwykle młoda, pracująca albo studiująca',
+  senior: 'Osoba na emeryturze albo w starszym wieku',
+  inwestor: 'Kupujący pod wynajem albo jako lokatę, sam tam nie zamieszka',
+}
+export const OPIS_PROFILU_NIEZNANEGO = 'Nie da się tego określić z tekstu'
 
 export interface PozycjaZrozumienia {
   rodzaj: 'profil' | 'potrzeba' | 'kategoria'
@@ -370,8 +409,10 @@ export const idPotrzeby = (p: Potrzeba) => `p_${p.id}`
 export function zapytanieOpiszSiebie(tekst: string): ZapytanieJev {
   const pytania: ZapytanieJev['pytania'] = {}
   pytania[ID_PROFILU] = wybor('Który profil najlepiej pasuje do osoby szukającej mieszkania?', {
-    ...Object.fromEntries(PROFILE_JEV.map((p) => [p.id, `${p.nazwa} – ${p.opis}`])),
-    [PROFIL_NIEZNANY]: 'Nie da się tego określić z tekstu',
+    ...Object.fromEntries(
+      PROFILE_JEV.map((p) => [p.id, OPISY_PROFILI_JEV[p.id as keyof typeof OPISY_PROFILI_JEV]]),
+    ),
+    [PROFIL_NIEZNANY]: OPIS_PROFILU_NIEZNANEGO,
   })
   for (const k of KATEGORIE_JEV) {
     pytania[idKategorii(k)] = ocena(
@@ -437,6 +478,46 @@ function zloz(
 const procent = (x: number) => Math.round(Math.min(Math.max(x, 0), 1) * 100)
 const pewny = (pewnosc: number | null) => pewnosc === null || pewnosc >= PROG_PEWNOSCI
 
+/** Progi profilu – parametr tylko dla testów i przeliczeń zapisanych przebiegów (WYNIKI.md). */
+export interface ProgiProfilu {
+  profil: number
+  mocnaPotrzeba: number
+}
+export const PROGI_PROFILU: ProgiProfilu = {
+  profil: PROG_PROFILU,
+  mocnaPotrzeba: PROG_MOCNEJ_POTRZEBY,
+}
+
+/**
+ * #155: profil pod progiem pewności – deterministycznie, tylko z MOCNYCH potrzeb:
+ * - `senior` z noul ≥ PROG_MOCNEJ_POTRZEBY → Senior, `dzieci` z noul ≥ PROG_MOCNEJ_POTRZEBY → Rodzina;
+ * - `inwestycja` i `singiel` nie mają twierdzenia dla JEV (pokrywa je wybór profilu), więc mocny
+ *   sygnał to jawne słowa z reguł („pod wynajem”, „inwestycja”, „mieszkam sama”, „studiuję”),
+ *   z tą samą obsługą przeczeń co w `zRegul` – i to tylko wtedy, gdy JEV (pod progiem) wskazał
+ *   ten sam profil. Same słowa to słabość reguł (przeczenia, cudza sytuacja, #18).
+ * Przy kilku naraz rozstrzyga PIERWSZENSTWO_PERSON. Bez mocnej potrzeby – null (profil bez
+ * zmian). Słabsze potrzeby (0,6–0,9) już profilu nie ustawiają – przed #155 ustawiały od 0,6.
+ */
+export function profilZMocnychPotrzeb(
+  odpowiedzi: Record<string, OdpowiedzJev | null>,
+  tekst: string,
+  progi: ProgiProfilu = PROGI_PROFILU,
+): PersonaId | null {
+  const t = normalizuj(tekst)
+  const profil = odpowiedzi[ID_PROFILU]
+  const wyborJev = profil?.typ === 'choice' ? profil.wybor : null
+  const mocne: string[] = []
+  for (const p of POTRZEBY) {
+    if (!p.persona) continue
+    if (p.twierdzenie) {
+      const o = odpowiedzi[idPotrzeby(p)]
+      if (o?.typ === 'noul' && o.noul >= progi.mocnaPotrzeba) mocne.push(p.id)
+    } else if (t && wyborJev === p.persona && p.wzorce.some((w) => wystepuje(t, w)))
+      mocne.push(p.id)
+  }
+  return personaZPotrzeb(mocne)
+}
+
 /** #153: bramka zamknięta = któreś twierdzenie BRAMKA ma noul ≥ PROG_BRAMKI. */
 export function bramkaZamknieta(odpowiedzi: Record<string, OdpowiedzJev | null>): boolean {
   return BRAMKA.some((b) => {
@@ -457,6 +538,9 @@ export function bramkaZamknieta(odpowiedzi: Record<string, OdpowiedzJev | null>)
  */
 export function przetworzOdpowiedzi(
   odpowiedzi: Record<string, OdpowiedzJev | null>,
+  /** Tekst użytkownika – #155: słowa „pod wynajem”, „mieszkam sama” dla profilu pod progiem. */
+  tekst = '',
+  progi: ProgiProfilu = PROGI_PROFILU,
 ): Zrozumienie | null {
   if (bramkaZamknieta(odpowiedzi)) {
     const potrzeby: { id: string; procent: number }[] = []
@@ -471,7 +555,7 @@ export function przetworzOdpowiedzi(
   let persona: PersonaId | null = null
   let pewnoscPersony: number | null = null
   const profil = odpowiedzi[ID_PROFILU]
-  if (profil?.typ === 'choice' && pewny(profil.pewnosc)) {
+  if (profil?.typ === 'choice' && (profil.pewnosc === null || profil.pewnosc >= progi.profil)) {
     const p = PROFILE_JEV.find((x) => x.id === profil.wybor)
     if (p) {
       persona = p.id
@@ -494,17 +578,14 @@ export function przetworzOdpowiedzi(
     if (o?.typ === 'noul' && o.noul >= PROG_POTRZEBY)
       potrzeby.push({ id: p.id, procent: procent(o.noul) })
   }
+  // Nic pewnego od JEV → reguły (one i tak czytają te same słowa, co zapas profilu niżej).
+  if (persona === null && potrzeby.length === 0 && Object.keys(poziomy).length === 0) return null
+  // #155: pod progiem (albo „nieznany”) profil tylko z mocnych potrzeb; bez nich – bez zmian.
+  if (persona === null) persona = profilZMocnychPotrzeb(odpowiedzi, tekst, progi)
   // Przyszłość okolicy nie ma już pytania o poziom – niesie ją profil Inwestor przez potrzebę
   // `inwestycja` (jej kategorie i wskaźniki z tabeli POTRZEBY, bez liczby od JEV).
   if (persona === 'inwestor') potrzeby.push({ id: 'inwestycja', procent: null })
-
-  if (persona === null && potrzeby.length === 0 && Object.keys(poziomy).length === 0) return null
-  return zloz(
-    persona ?? personaZPotrzeb(potrzeby.map((x) => x.id)),
-    persona ? pewnoscPersony : null,
-    potrzeby,
-    poziomy,
-  )
+  return zloz(persona, pewnoscPersony, potrzeby, poziomy)
 }
 
 // ── Reguły zapasowe ───────────────────────────────────────────────────────────────────────
@@ -551,7 +632,12 @@ export async function opiszSiebie(
   opcje: OpcjeKlienta = {},
 ): Promise<WynikZZapasem<Zrozumienie>> {
   if (!tekst.trim()) return { wynik: PUSTE_ZROZUMIENIE, zrodlo: 'zapas', powod: null }
-  return zJevem(zapytanieOpiszSiebie(tekst), przetworzOdpowiedzi, () => zRegul(tekst), opcje)
+  return zJevem(
+    zapytanieOpiszSiebie(tekst),
+    (odpowiedzi) => przetworzOdpowiedzi(odpowiedzi, tekst),
+    () => zRegul(tekst),
+    opcje,
+  )
 }
 
 // ── Zrozumienie → wagi wskaźników ─────────────────────────────────────────────────────────

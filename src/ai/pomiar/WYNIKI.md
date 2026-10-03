@@ -3,7 +3,8 @@
 > Najnowszy wynik jest w sekcji „Trzy błędy (#153)”: wersja po poprawkach zmierzona raz na
 > **zbiorze kontrolnym nr 3**, pisanym na ślepo. Zbiór nr 2 mierzyliśmy w „Wersja końcowa (#152)”,
 > a zbiór nr 1 w „Poprawki trafności (#147)” i „Druga runda (#150)”. Liczby z #18 niżej dotyczą
-> zbioru, na którym potem stroiliśmy.
+> zbioru, na którym potem stroiliśmy. Zmiana profilu z #155 („Profil (#155)”) jest przeliczona
+> na zbiorach już użytych; na świeżym zbiorze nr 4 jeszcze jej nie mierzyliśmy.
 
 Pomiar z 2026-10-03: JEV (TypeSafe, `jev-latest`) kontra reguły słów kluczowych na złożonych,
 potocznych opisach i pytaniach. Zbiory: `zbior-opisz.json` (30 opisów), `zbior-zapytaj.json`
@@ -1025,6 +1026,110 @@ Mówiąc wprost:
 Przeliczenia bez sieci nic nie kosztowały: bramka, kategorie, częstość drugiego wywołania
 i wariant bez drugiego wywołania. `zgodnosc147.ts` pokazuje teraz zapytanie inne niż w #147.
 Tak ma być, bo zmieniło się to, co widzi JEV.
+
+## Profil (#155)
+
+Pomiar z 2026-10-03. Trzy zmiany w wyborze profilu w „opisz siebie”. Bramka z #153, twierdzenia
+potrzeb, kategorie i limit 16 pytań są bez zmian.
+
+1. **Próg profilu 0,85** (`PROG_PROFILU`). Wcześniej było 0,6, tak samo jak dla kategorii, które
+   zostają przy 0,6. Pod progiem profil zostaje bez zmian, a potrzeby i kategorie liczą się jak
+   dotąd.
+2. **Opisy opcji profilu mówią, kim jest osoba** (`OPISY_PROFILI_JEV`), a nie, co ceni. Opisy
+   w UI (`persony.ts`) się nie zmieniają.
+   - rodzina: „Rodzic z dziećmi w domu (także gdy dziecko jest w drodze)”;
+   - singiel: „Osoba mieszkająca sama, zwykle młoda, pracująca albo studiująca”;
+   - senior: „Osoba na emeryturze albo w starszym wieku”;
+   - inwestor: „Kupujący pod wynajem albo jako lokatę, sam tam nie zamieszka”.
+3. **Pod progiem profil wynika tylko z mocnych potrzeb** (`profilZMocnychPotrzeb`):
+   - `senior` z noul ≥ 0,9 daje Seniora, a `dzieci` z noul ≥ 0,9 – Rodzinę;
+   - `inwestycja` i `singiel` nie mają twierdzenia, więc liczą się słowa z reguł („pod
+     wynajem”, „mieszkam sama”, z przeczeniami jak w `zRegul`), ale tylko wtedy, gdy JEV pod
+     progiem wskazał ten sam profil;
+   - bez mocnej potrzeby profil zostaje bez zmian. Przed #155 profil ustawiała każda potrzeba
+     z noul ≥ 0,6.
+
+   Przy konflikcie obowiązuje kolejność **Inwestor → Senior → Rodzina → Singiel**, ta sama co
+   w regułach:
+   - Inwestor sam nie zamieszka, więc jego dzieci i wiek nie ustawiają wag.
+   - Senior wygrywa z Rodziną, bo starsza osoba pisze o wnukach i dorosłych dzieciach.
+     Gdy do rodziny wprowadza się starszy rodzic, potrzeby seniora i tak zostają.
+   - Singiel to najsłabszy sygnał.
+
+   **Mocna potrzeba to 0,9, a nie 0,8.** To ten sam poziom co „pewna potrzeba” przy zamkniętej
+   bramce. Przy 0,8 zapas dawał Rodzinę stare A06 („Kumpel ma trójkę dzieci… szukamy
+   z partnerką”, gdzie dzieci mają 0,81, a profil 0,66). We wszystkich zapisanych przebiegach
+   0,8 i 0,9 dają poza tym ten sam wynik.
+
+### Skąd 0,85 – zapisane przebiegi, bez nowych wywołań
+
+Pewność wyboru profilu (przed progiem), trafne vs błędne:
+
+| Przebieg | trafne: średnio / ≥ 0,85 | błędne: średnio / ≥ 0,85 |
+|---|---|---|
+| Wzorcowy, #18 (stare opisy) | 0,97 / 27 z 27 | 0,71 / 1 z 3 |
+| Wzorcowy, #155 (nowe opisy, na żywo) | 0,98 / 26 z 27 („nieznany” 0,48 przy wzorcu „–”) | 0,67 / 1 z 3 |
+| Kontrolny nr 1 | 0,95 / 12 z 13 | 0,68 / 4 z 17 |
+| Kontrolny nr 2 | 0,95 / 17 z 18 | 0,73 / 5 z 12 |
+| Kontrolny nr 3 | 0,90 / 15 z 18 | 0,73 / 5 z 12 |
+
+Próg przeliczyłem z zapisanych odpowiedzi JEV z nowym zapasem. Komórka podaje profil trafiony
+i liczbę złych profili w nawiasie:
+
+| Próg | Wzorcowy #18 | Wzorcowy #155 | Kontrolny 1 | Kontrolny 2 | Kontrolny 3 |
+|---|---|---|---|---|---|
+| 0,6 | 93% (2) | 93% (2) | 63% (10) | 67% (8) | 80% (6) |
+| 0,7 | 93% (2) | 97% (1) | 70% (8) | 67% (7) | 80% (6) |
+| 0,8 | 93% (2) | 97% (1) | 83% (4) | 73% (5) | 80% (6) |
+| **0,85** | **97% (1)** | **97% (1)** | **83% (4)** | **73% (5)** | **83% (5)** |
+| 0,9 | 97% (1) | 97% (1) | 83% (4) | 80% (3) | 83% (5) |
+| 0,95 | 93% (1) | 97% (1) | 87% (3) | 80% (3) | 83% (3) |
+
+- Od 0,85 do 0,9 różnica to dwa opisy, oba na zbiorze nr 2. To poniżej reguły „≥ 3 pozycje”,
+  więc zostaje 0,85, czyli wartość z decyzji.
+- Przy 0,95 profil od JEV prawie nie działa, a na wzorcowym #18 przepada trafna Rodzina (A10).
+- Przy nowych opisach trafne profile na wzorcowym mają pewność ≥ 0,95 w 26 z 27 opisów, więc
+  próg 0,85 nic tam nie kosztuje.
+
+### Przed i po – zbiory użyte (bez zbioru nr 4)
+
+„Przed” to przetwarzanie sprzed #155 (próg 0,6, profil z potrzeb ≥ 0,6), a „po” – #155. Wiersze
+kontrolne to przeliczenie zapisanych przebiegów: odtworzenie „przed” zgadza się z wynikami
+w #147, #152 i #153. Odpowiedzi w tych przebiegach pochodzą jeszcze ze starych opisów profilu.
+Zły profil oznacza błąd szkodliwy (przestawia wagi). Wstrzymanie oznacza profil bez zmian
+tam, gdzie wzorzec ma profil.
+
+| Zbiór | Profil | Zły profil | Wstrzymanie | Potrzeby F1 (10) | Dokładnie |
+|---|---|---|---|---|---|
+| Wzorcowy, przebieg #18 | 93% → **97%** | 2 → 1 | 0 → 0 | 91% → 91% | 67% → 67% |
+| Wzorcowy, nowe opisy (na żywo) | 93% → **97%** | 2 → 1 | 0 → 0 | 92% → 92% | 70% → 70% |
+| Kontrolny nr 1 | 63% → **83%** | 11 → 4 | 0 → 1 | 77% → 77% | 37% → 40% |
+| Kontrolny nr 2 | 67% → **73%** | 8 → 5 | 2 → 3 | 81% → 81% | 47% → 47% |
+| Kontrolny nr 3 | 80% → **83%** | 6 → 5 | 0 → 0 | 77% → 79% | 50% → 50% |
+
+Jak to czytać:
+
+- **Złych profili jest mniej:** na zbiorach kontrolnych spadło ich z 25 do 14, a wstrzymań
+  przybyło 2. Większość zysku daje sam próg.
+- **Zapas z potrzeb w tych przebiegach nic nie poprawił.** Pod progiem nie było trafnego profilu
+  do uratowania: trafne profile mają pewność ≥ 0,85. Słowa „inwestor/singiel” kosztują 1 opis
+  na zbiorze nr 1 (bez nich 87%, zły profil 3). Zostawiłem je zgodnie z decyzją, w ostrożnej
+  wersji: działają tylko wtedy, gdy JEV wskazał ten sam profil.
+- **Nowe opisy profilu** zmierzyłem raz, na żywo, na całym zbiorze wzorcowym (30 opisów). Na tych
+  samych opisach to porównanie z przebiegiem #18:
+  - trafne z pewnością ≥ 0,95: 21 → 26 z 27 (A13 „mieszkam sama” 0,85 → 1,00);
+  - A06 (cudza rodzina): Rodzina 0,80 → 0,66, więc pod progiem;
+  - A07 („Gdybyśmy kiedyś mieli dzieci…”) to dalej Singiel 0,98 przy wzorcu „–”. To jedyny zły
+    profil i ani próg, ani bramka go nie łapią.
+
+  „Dokładnie” wzrosło z 67% do 70%. Zapytanie zmieniło się jednak od #18 także w potrzebach,
+  bramce i kategoriach, więc to nie jest czysty efekt opisów.
+- Opóźnienie (wzorcowy, 30 wywołań): p50 257 / p95 383 / max 393 ms – bez zmian.
+- To 30 opisów na zbiór: 1 opis = 3 pp.
+
+**Wywołania na żywo: 30** (budżet 30). Wszystkie poszły na zbiór wzorcowy A z nowymi opisami,
+najpierw 10, potem pozostałe 20. Próg, zapas i kolejność liczyłem bez sieci. Zbiorów
+kontrolnych nie wołałem, a z nich czytałem tylko liczby zbiorcze. Zbioru nr 4 nie otwierałem.
 
 ## Na slajd
 

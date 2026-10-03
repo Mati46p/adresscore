@@ -1,6 +1,7 @@
 // Uruchom: node --test src/ai/
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
+import { PERSONY } from '../wynik/persony.ts'
 import type { OdpowiedzJev } from './jev.ts'
 import {
   BRAMKA,
@@ -10,10 +11,17 @@ import {
   KATEGORIE_JEV,
   nicNieZrozumiano,
   normalizuj,
+  OPIS_PROFILU_NIEZNANEGO,
+  OPISY_PROFILI_JEV,
   opiszSiebie,
+  PIERWSZENSTWO_PERSON,
   POTRZEBY,
   POZIOMY_WAZNOSCI,
   PROG_BRAMKI,
+  PROG_MOCNEJ_POTRZEBY,
+  PROG_PEWNOSCI,
+  PROG_PROFILU,
+  profilZMocnychPotrzeb,
   przetworzOdpowiedzi,
   wagiZeZrozumienia,
   type Zrozumienie,
@@ -113,6 +121,22 @@ describe('zapytanieOpiszSiebie', () => {
       'inwestor',
       'nieznany',
     ])
+  })
+
+  it('#155: opcje profilu mówią, kim jest osoba, a nie, co ceni (≤ 16 pytań bez zmian)', () => {
+    const profil = z.pytania[ID_PROFILU]
+    assert.equal(profil?.typ, 'choice')
+    const kryteria: Record<string, string> = profil?.typ === 'choice' ? profil.kryteria : {}
+    assert.deepEqual(kryteria, { ...OPISY_PROFILI_JEV, nieznany: OPIS_PROFILU_NIEZNANEGO })
+    assert.match(kryteria.senior ?? '', /emerytur/)
+    assert.match(kryteria.rodzina ?? '', /dziećmi w domu/)
+    assert.match(kryteria.singiel ?? '', /mieszkająca sama/)
+    assert.match(kryteria.inwestor ?? '', /pod wynajem/)
+    // Opisy z UI („Komunikacja i sklepy pod ręką”) nie trafiają do JEV.
+    const opisy = Object.values(kryteria)
+    for (const p of PERSONY) for (const o of opisy) assert.ok(!o.includes(p.opis), p.id)
+    assert.ok(ids.length <= 16)
+    for (const o of opisy) assert.ok(o.length <= 120)
   })
 
   it('kategorie to score na 5 poziomach 0–4, potrzeby to noul', () => {
@@ -260,13 +284,170 @@ describe('przetworzOdpowiedzi (JEV → zrozumienie)', () => {
     assert.equal(z?.kategorie.przyszlosc, 4)
   })
 
-  it('bez pewnego profilu persona wynika z potrzeb (bez procentu)', () => {
+  it('bez pewnego profilu persona wynika z mocnych potrzeb (bez procentu)', () => {
     const z = przetworzOdpowiedzi({
       profil: { typ: 'choice', wybor: 'singiel', pewnosc: 0.4 },
       p_senior: { typ: 'noul', noul: 0.9 },
     })
     assert.equal(z?.persona, 'senior')
     assert.deepEqual(z?.zrozumialem[0], { rodzaj: 'profil', etykieta: 'Senior', procent: null })
+  })
+})
+
+describe('#155: próg profilu i profil z mocnych potrzeb', () => {
+  const profil = (wybor: string, pewnosc: number): OdpowiedzJev => ({
+    typ: 'choice',
+    wybor,
+    pewnosc,
+  })
+
+  it('próg profilu 0,85 – osobny od progu kategorii (0,6)', () => {
+    assert.equal(PROG_PROFILU, 0.85)
+    assert.equal(PROG_PEWNOSCI, 0.6)
+    assert.equal(PROG_MOCNEJ_POTRZEBY, 0.9)
+    const baza = { p_zielen: noul(0.7) }
+    // Na progu – profil od JEV, z procentem.
+    const na = przetworzOdpowiedzi({ ...baza, profil: profil('singiel', PROG_PROFILU) })
+    assert.equal(na?.persona, 'singiel')
+    assert.deepEqual(na?.zrozumialem[0], {
+      rodzaj: 'profil',
+      etykieta: 'Singiel w centrum',
+      procent: 85,
+    })
+    // Tuż pod progiem (dawniej wystarczało 0,6) – profil bez zmian, potrzeby zostają.
+    for (const p of [PROG_PROFILU - 0.01, 0.7, 0.6]) {
+      const pod = przetworzOdpowiedzi({ ...baza, profil: profil('singiel', p) })
+      assert.equal(pod?.persona, null, String(p))
+      assert.deepEqual(pod?.potrzeby, ['zielen'])
+    }
+  })
+
+  it('pod progiem: senior ≥ 0,9 → Senior, dzieci ≥ 0,9 → Rodzina', () => {
+    const s = przetworzOdpowiedzi({ profil: profil('singiel', 0.5), p_senior: noul(0.9) })
+    assert.equal(s?.persona, 'senior')
+    const r = przetworzOdpowiedzi({ profil: profil('nieznany', 0.99), p_dzieci: noul(0.95) })
+    assert.equal(r?.persona, 'rodzina')
+    // Bez odpowiedzi o profil też.
+    assert.equal(przetworzOdpowiedzi({ p_dzieci: noul(0.92) })?.persona, 'rodzina')
+    // Wysoka pewność wygrywa z potrzebą: JEV pewny Inwestora, a w tekście dzieci.
+    const i = przetworzOdpowiedzi({ profil: profil('inwestor', 0.95), p_dzieci: noul(0.95) })
+    assert.equal(i?.persona, 'inwestor')
+    assert.deepEqual(i?.potrzeby, ['dzieci', 'inwestycja'])
+  })
+
+  it('pod progiem: inwestor i singiel ze słów, ale tylko gdy JEV wskazał ten sam profil', () => {
+    const inw = przetworzOdpowiedzi(
+      { profil: profil('inwestor', 0.7), p_zielen: noul(0.7) },
+      'Kupuję kawalerkę pod wynajem',
+    )
+    assert.equal(inw?.persona, 'inwestor')
+    // Inwestor niesie przyszłość okolicy także z zapasu.
+    assert.deepEqual(inw?.potrzeby, ['zielen', 'inwestycja'])
+    assert.equal(inw?.kategorie.przyszlosc, 4)
+
+    const sam = przetworzOdpowiedzi(
+      { profil: profil('singiel', 0.6), p_rower: noul(0.8) },
+      'Mieszkam sama, jeżdżę rowerem',
+    )
+    assert.equal(sam?.persona, 'singiel')
+    assert.equal(sam?.zrozumialem[0]?.procent, null)
+
+    // Te same słowa, ale JEV wskazał inny profil albo „nieznany” – bez zmian.
+    for (const wybor of ['rodzina', 'nieznany']) {
+      const z = przetworzOdpowiedzi(
+        { profil: profil(wybor, 0.7), p_rower: noul(0.8) },
+        'Mieszkam sama, jeżdżę rowerem',
+      )
+      assert.equal(z?.persona, null, wybor)
+    }
+    // Przeczenie gasi słowo jak w regułach.
+    const nie = przetworzOdpowiedzi(
+      { profil: profil('singiel', 0.6), p_rower: noul(0.8) },
+      'Nie mieszkam sama, jeżdżę rowerem',
+    )
+    assert.equal(nie?.persona, null)
+  })
+
+  it('kolejność przy kilku mocnych potrzebach: inwestor, senior, rodzina, singiel', () => {
+    assert.deepEqual(PIERWSZENSTWO_PERSON, ['inwestor', 'senior', 'rodzina', 'singiel'])
+    const odp = { p_dzieci: noul(0.95), p_senior: noul(0.95) }
+    // Senior przed Rodziną (wnuki, dorosłe dzieci).
+    assert.equal(profilZMocnychPotrzeb(odp, ''), 'senior')
+    assert.equal(przetworzOdpowiedzi({ ...odp, profil: profil('rodzina', 0.6) })?.persona, 'senior')
+    // Inwestor przed wszystkimi: sam nie zamieszka, więc dzieci i wiek nie ustawiają wag.
+    assert.equal(
+      profilZMocnychPotrzeb(
+        { ...odp, profil: profil('inwestor', 0.7) },
+        'Kupuję pod wynajem, mam dzieci i jestem na emeryturze',
+      ),
+      'inwestor',
+    )
+    // Singiel ostatni.
+    assert.equal(
+      profilZMocnychPotrzeb(
+        { p_dzieci: noul(0.95), profil: profil('singiel', 0.7) },
+        'Mieszkam sam',
+      ),
+      'rodzina',
+    )
+  })
+
+  it('bez mocnej potrzeby profil zostaje bez zmian (dawniej wystarczało 0,6)', () => {
+    // Stary A06: „Kumpel ma trójkę dzieci… szukamy z partnerką” – Rodzina 0,66, dzieci 0,81.
+    const odp: Record<string, OdpowiedzJev | null> = {
+      profil: profil('rodzina', 0.66),
+      p_dzieci: noul(0.81),
+      p_zielen: noul(0.9),
+      kat_spokoj: { typ: 'score', ocena: 4, pewnosc: 0.9 },
+      [CUDZA]: noul(0.18),
+    }
+    assert.equal(profilZMocnychPotrzeb(odp, 'Kumpel ma trójkę dzieci'), null)
+    const z = przetworzOdpowiedzi(odp, 'Kumpel ma trójkę dzieci')
+    assert.ok(z)
+    assert.equal(z.persona, null)
+    // Potrzeby nad progiem 0,6 dalej się liczą – zmienia się tylko profil.
+    assert.deepEqual(z.potrzeby, ['dzieci', 'zielen'])
+    assert.equal(
+      z.zrozumialem.some((p) => p.rodzaj === 'profil'),
+      false,
+    )
+    // Bazą wag są bieżące wagi użytkownika, a nie wagi Rodziny.
+    const u = wagiZeZrozumienia(z, 'kupuje', WSKAZNIKI, BIEZACE)
+    assert.equal(u.persona, 'wlasna')
+    assert.equal(u.wagi.przystanek_odleglosc, BIEZACE.wagi.przystanek_odleglosc)
+    // Mocna potrzeba tuż pod progiem też nic nie zmienia.
+    assert.equal(
+      profilZMocnychPotrzeb({ p_senior: noul(PROG_MOCNEJ_POTRZEBY - 0.01) }, 'jestem emerytką'),
+      null,
+    )
+  })
+
+  it('profil pod progiem i nic innego pewnego → null, czyli reguły (jak dotąd)', () => {
+    assert.equal(
+      przetworzOdpowiedzi({ profil: profil('inwestor', 0.7) }, 'Kupuję pod wynajem'),
+      null,
+    )
+  })
+
+  it('bramka zamknięta wygrywa z zapasem z potrzeb – profil bez zmian', () => {
+    const z = przetworzOdpowiedzi(
+      { profil: profil('rodzina', 0.6), p_dzieci: noul(0.95), [CUDZA]: noul(0.9) },
+      'Pytam dla koleżanki, ona ma dzieci',
+    )
+    assert.equal(z?.persona, null)
+    assert.deepEqual(z?.potrzeby, ['dzieci'])
+  })
+
+  it('opiszSiebie podaje tekst do zapasu profilu', async () => {
+    const { fetchImpl } = zbudujFetch(200, {
+      odpowiedzi: { profil: profil('inwestor', 0.7), p_zielen: noul(0.7) },
+      powod: null,
+    })
+    const w = await opiszSiebie('Kupuję mieszkanie pod wynajem, blisko parku', {
+      fetch: fetchImpl,
+    })
+    assert.equal(w.zrodlo, 'jev')
+    assert.equal(w.wynik.persona, 'inwestor')
   })
 })
 
