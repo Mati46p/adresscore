@@ -135,3 +135,16 @@ const a = dane.stan === 'gotowe' && wybrany !== null ? dane.adresy[wybrany] : nu
 Tokeny CSS są w `src/styles.css` (`--akcent`, `--tekst-2`, `--ramka`, `--ostrzezenie-tlo` i inne).
 Klasy wspólne: `.seg` z `aria-pressed`, `.przycisk-glowny`, `.etykieta-sekcji`, `.karta`, `.atrapa`.
 Przy każdej warstwie z `meta.atrapa` pokaż etykietę „dane przykładowe”.
+
+## Luki w usługach – `luki.ts` (tryb „Dla miasta”, #89)
+
+Czyste funkcje. Luka nie zależy od wag, persony ani kierunku – liczy się z surowego pomiaru i progu.
+
+- `PROGI_LUK` – jedyne miejsce progów, każdy ze źródłem: sklep > 800 m, przystanek > 500 m,
+  punkt schronienia > 1 km, hałas > 64 dB LDWN (albo `meta.norma`, gdy warstwa ją ma).
+- `progLuki(meta)` daje próg albo `null` (atrapa, warstwa bez progu). Wybór warstwy w #90 pokazuje tylko te z progiem.
+- `okolicaAdresu(adres)` – dzielnica Krakowa, poza Krakowem cała gmina. Jednostki SIM przyjdą z #75.
+- `policzLuki(wskaznik, adresy, grupy?)` daje `{ prog, razem, okolice[], heksy: Map<h3, …>, jednostka: 'adresy' }`
+  albo `null` dla atrapy. Każda jednostka: `wszystkie = wLuce + bezLuki + brakDanych`,
+  `udzial = wLuce / wszystkie`; `udzial: null`, gdy jednostka nie ma żadnego adresu z danymi (szara).
+- Podpis „adresy”, nie „mieszkańcy”, dopóki nie wejdzie #74 albo #40.
