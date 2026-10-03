@@ -28,6 +28,8 @@ import {
 } from './laczenie'
 import './miasto3d.css'
 import { PanelCienia, type Swiatlo, useSwiatlo } from './PanelCienia'
+import { dymekPozwolenia, PanelPozwolen, usePozwolenia, warstwaPozwolen } from './Pozwolenia3D'
+import type { Pozwolenie } from './pozwolenia'
 
 const AKCENT = naRgba('#1F5C46')
 const NAPISY = {
@@ -124,6 +126,12 @@ export default function Okolica3D() {
       : []
   const wybranyBudynek = adres ? budynekAdresu(budynki, adres) : null
   const swiatlo = useSwiatlo(lon ?? 0, lat ?? 0)
+  const pozwolenia = usePozwolenia(lon, lat)
+  const [pokazPozwolenia, setPokazPozwolenia] = useState(true)
+  const zrodlaPozwolen =
+    dane.stan === 'gotowe'
+      ? (dane.manifest.wskazniki.find((w) => w.id === 'inwestycje_500m')?.zrodla ?? [])
+      : []
 
   if (!adres || lon === null || lat === null) return null
 
@@ -138,8 +146,15 @@ export default function Okolica3D() {
         budynki={budynki}
         wybrany={wybranyBudynek}
         swiatlo={swiatlo.swiatlo}
+        pozwolenia={pokazPozwolenia && pozwolenia.stan === 'gotowe' ? pozwolenia.lista : []}
       />
       {budynki.length > 0 && <PanelCienia {...swiatlo} />}
+      <PanelPozwolen
+        stan={pozwolenia}
+        widoczne={pokazPozwolenia}
+        onPrzelacz={setPokazPozwolenia}
+        zrodla={zrodlaPozwolen}
+      />
       {budynkiStan.stan === 'ladowanie' && <p className="m3d-komunikat">Wczytuję budynki…</p>}
       {budynkiStan.stan === 'blad' && (
         <p className="m3d-komunikat">Nie udało się wczytać budynków. Spróbuj odświeżyć stronę.</p>
@@ -167,6 +182,7 @@ function Scena({
   budynki,
   wybrany,
   swiatlo,
+  pozwolenia,
 }: {
   lon: number
   lat: number
@@ -174,6 +190,7 @@ function Scena({
   wybrany: BudynekOkolicy | null
   /** null = tryb lekki: stałe światło, bez cienia. */
   swiatlo: Swiatlo | null
+  pozwolenia: Pozwolenie[]
 }) {
   const kontener = useRef<HTMLDivElement>(null)
   const mapaRef = useRef<MapaLibre | null>(null)
@@ -228,10 +245,11 @@ function Scena({
             ]
           : []),
         ...warstwy(budynki, wybrany),
+        ...(pozwolenia.length > 0 ? [warstwaPozwolen(pozwolenia)] : []),
       ],
       getTooltip: dymek,
     })
-  }, [budynki, wybrany, cien, lon, lat])
+  }, [budynki, wybrany, cien, lon, lat, pozwolenia])
 
   // Efekt odtwarzany przy każdej zmianie czasu: deck nie przerysowuje sceny, gdy zmienia się
   // tylko znacznik wewnątrz istniejącego światła.
@@ -296,8 +314,15 @@ function warstwy(budynki: BudynekOkolicy[], wybrany: BudynekOkolicy | null) {
   ]
 }
 
-function dymek({ object }: PickingInfo<BudynekOkolicy>) {
+function dymek({ object, layer }: PickingInfo<BudynekOkolicy | Pozwolenie>) {
   if (!object) return null
+  if (layer?.id === 'pozwolenia') {
+    return { text: dymekPozwolenia(object as Pozwolenie), className: 'm3d-dymek' }
+  }
+  return dymekBudynku(object as BudynekOkolicy)
+}
+
+function dymekBudynku(object: BudynekOkolicy) {
   const wynik =
     object.wynik === null
       ? object.adresy.length === 0

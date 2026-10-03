@@ -78,3 +78,47 @@
   margin: 0;
   color: var(--tekst-2);
 }
+.m3d-pozw {
+  display: grid;
+  gap: 8px;
+}
+.m3d-pozw-przelacznik {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--cel-dotyku);
+  color: var(--tekst);
+  cursor: pointer;
+}
+.m3d-pozw-przelacznik input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--akcent);
+}
+.m3d-pozw-legenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--tekst-2);
+}
+.m3d-pozw-legenda li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.m3d-kropka {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.m3d-pozw-uwaga {
+  margin: 0;
+  font-size: 13px;
+  color: var(--tekst-3);
+}
+.m3d-dymek {
+  max-width: 320px;
+}
