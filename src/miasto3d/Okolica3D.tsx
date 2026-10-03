@@ -17,6 +17,7 @@ import {
   budynkiOkolicy,
   kolorBudynku,
   naRgba,
+  odmiana,
   wysokoscBryly,
 } from './laczenie'
 import './miasto3d.css'
@@ -29,6 +30,7 @@ const NAPISY = {
   'CooperativeGesturesHandler.MobileHelpText': 'Przesuwaj mapę dwoma palcami',
 }
 const BIEL = naRgba('#FFFFFF')
+const ADRESY = ['adres', 'adresy', 'adresów'] as const
 
 // Stałe światło do czasu #21: rozproszone + kierunkowe z południowego zachodu, żeby ściany
 // różniły się jasnością i bryły czytały się jako bryły, a nie płaskie plamy.
@@ -224,7 +226,7 @@ function dymek({ object }: PickingInfo<BudynekOkolicy>) {
         ? 'budynek bez adresu'
         : 'brak danych o wyniku'
       : `klasa ${object.litera}, wynik ${Math.round(object.wynik)}`
-  const adresy = object.adresy.length > 1 ? ` · ${object.adresy.length} adresy` : ''
+  const adresy = object.adresy.length > 1 ? ` · ${odmiana(object.adresy.length, ADRESY)}` : ''
   return { text: `${wynik}${adresy}\n${opisWysokosci(object)}`, className: 'm3d-dymek' }
 }
 
@@ -250,9 +252,9 @@ function Opis({
   return (
     <div className="m3d-opis">
       <p>
-        {budynki} budynków w promieniu 500 m, {zWynikiem} z wynikiem adresu. Kolor bryły to klasa
-        A–G średniej z adresów w budynku. Szare bryły nie mają adresu albo danych – to nie zła
-        ocena.
+        {odmiana(budynki, ['budynek', 'budynki', 'budynków'])} w promieniu 500 m, {zWynikiem} z
+        wynikiem adresu. Kolor bryły to klasa A–G średniej z adresów w budynku. Szare bryły nie mają
+        adresu albo danych – to nie zła ocena.
         {wybrany && ` Twój budynek: ${opisWysokosci(wybrany)}.`}
       </p>
       {zrodla.length > 0 && (

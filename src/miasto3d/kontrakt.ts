@@ -2,7 +2,7 @@
 // Dlaczego kafle H3 r7, a nie jeden plik: karta pokazuje tylko 500 m wokół adresu, a cały
 // Kraków to ok. 90 tys. obrysów (kilkanaście MB). Komórka r7 ma ok. 5 km², więc komórka
 // adresu z sąsiadami zawsze pokrywa promień 500 m, a pobieramy ok. 1 MB.
-// Uzgodnienie formatu: komentarz w issue #9.
+// Kafle tnie etl/budynki-kafle.mjs z public/dane/budynki-3d.geojson (wynik #9).
 import { cellToLatLng, gridDisk, latLngToCell } from 'h3-js'
 import type { Zrodlo } from '@/kontrakty'
 

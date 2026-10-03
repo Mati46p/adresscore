@@ -7,6 +7,7 @@ import {
   budynkiOkolicy,
   kolorBudynku,
   odlegloscM,
+  odmiana,
   punktWObrysie,
   SZARY_BUDYNKU,
   wysokoscBryly,
@@ -106,5 +107,16 @@ describe('kolor i wysokość', () => {
   it('brak wysokości = niska płyta, nie zero', () => {
     assert.equal(wysokoscBryly(budynek('x', LON, LAT, null)), 3)
     assert.equal(wysokoscBryly(budynek('x', LON, LAT, 24.5)), 24.5)
+  })
+})
+
+describe('odmiana', () => {
+  it('liczebniki po polsku', () => {
+    const b = ['budynek', 'budynki', 'budynków'] as const
+    assert.equal(odmiana(1, b), '1 budynek')
+    assert.equal(odmiana(792, b), '792 budynki')
+    assert.equal(odmiana(12, b), '12 budynków')
+    assert.equal(odmiana(25, b), '25 budynków')
+    assert.equal(odmiana(0, b), '0 budynków')
   })
 })

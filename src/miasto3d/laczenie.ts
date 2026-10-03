@@ -190,3 +190,11 @@ function rozjasnij([r, g, b, a]: Rgba, t: number): Rgba {
 export function wysokoscBryly(b: Budynek): number {
   return b.wysokosc !== null && b.wysokosc > 0 ? b.wysokosc : 3
 }
+
+/** „1 budynek”, „2 budynki”, „5 budynków”, „22 budynki”, „12 budynków”. */
+export function odmiana(n: number, [jeden, kilka, wiele]: readonly [string, string, string]) {
+  if (n === 1) return `${n} ${jeden}`
+  const d = n % 10
+  const s = n % 100
+  return `${n} ${d >= 2 && d <= 4 && (s < 12 || s > 14) ? kilka : wiele}`
+}
