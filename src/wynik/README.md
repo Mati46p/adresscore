@@ -168,3 +168,14 @@ Czyste funkcje. Luka nie zależy od wag, persony ani kierunku – liczy się z s
   albo `null` dla atrapy. Każda jednostka: `wszystkie = wLuce + bezLuki + brakDanych`,
   `udzial = wLuce / wszystkie`; `udzial: null`, gdy jednostka nie ma żadnego adresu z danymi (szara).
 - Podpis „adresy”, nie „mieszkańcy”, dopóki nie wejdzie #74 albo #40.
+
+## Ranking luk – `rankingLuk.ts` (panel „Gdzie miasto ma luki”, #91)
+
+Czyste funkcje dla `src/karta/luki/PanelLuk.tsx`. Dane z `policzLuki`, tu tylko kolejność i teksty.
+
+- `rankingLuk(wynik, 'liczba' | 'udzial')` daje `{ naglowek, kierunek, wiersze[] }`. Suma `wiersze[].wLuce`
+  = `naglowek.wLuce` (`sumaWLuce`, pilnuje test). Jednostki szare (`udzial: null`) zawsze na końcu.
+- `kierunek` – kierunek słowami („Od góry: najwięcej adresów bez przystanku w 500 m”) zamiast numerów miejsc.
+- `pasekLuki(okolica)` – szerokości w % adresów jednostki (w luce + szary brak danych), nie % największej pozycji.
+- `procentUdzialu` nie zaokrągla do kłamstwa: „<1%” zamiast „0%”, „>99%” zamiast „100%”.
+- `rozdzielczoscWarstwy(meta)`, `zrodlaWarstwy(meta)` – podpis pod rankingiem.
