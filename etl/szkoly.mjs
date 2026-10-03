@@ -113,6 +113,8 @@ if (wyniki.size < 1000) throw new Error('Eksport E8 ma za mało szkół; sprawd�
 const indeksAdresow = new Map()
 for (const a of adresy) {
   const k = klucz(a.miejscowosc, a.ulica, a.nr)
+  // Raz wykryta niejednoznaczność adresu musi pozostać niejednoznacznością.
+  if (indeksAdresow.has(k) && indeksAdresow.get(k) === null) continue
   const old = indeksAdresow.get(k)
   if (!old) indeksAdresow.set(k, a)
   else if (Math.abs(old.lon - a.lon) + Math.abs(old.lat - a.lat) > 0.002) indeksAdresow.set(k, null)
@@ -203,12 +205,12 @@ console.log(
 zapiszWskaznik(
   {
     id: 'szkola_podst_wynik_e8',
-    nazwa: 'Wynik egzaminu ósmoklasisty najbliższej szkoły',
-    opis: 'Średnia arytmetyczna szkolnych średnich z języka polskiego, matematyki i języka angielskiego w 2026 r. dla najbliższej szkoły podstawowej w promieniu 1,5 km w linii prostej. Uwzględniono tylko szkoły z opublikowanymi trzema wynikami (co najmniej 5 zdających w każdym przedmiocie), których adres RSPO dał się jednoznacznie połączyć z oficjalnym punktem adresowym. Szkoły bez wyników, także niepubliczne, pominięto. Wynik egzaminu zależy m.in. od składu uczniów i nie jest bezpośrednią miarą jakości nauczania; EWD byłby lepszą miarą, lecz nie ma go w tym eksporcie.',
+    nazwa: 'Wynik E8 najbliższej szkoły z danymi',
+    opis: 'Średnia arytmetyczna szkolnych średnich z języka polskiego, matematyki i języka angielskiego w 2026 r. dla najbliższej szkoły z opublikowanymi trzema wynikami w promieniu 1,5 km w linii prostej. Średnie są publikowane przy co najmniej 5 zdających z danego przedmiotu. Uwzględniono szkoły publiczne i niepubliczne, których RSPO i adres połączono z oficjalnym punktem adresowym. To nie musi być najbliższa szkoła w ogóle ani szkoła obwodowa; adres nie potwierdza możliwości zapisania dziecka. Brak wyniku oznacza brak danych w tym promieniu, nie słaby wynik szkoły. Wynik zależy m.in. od składu uczniów i nie jest bezpośrednią miarą jakości nauczania.',
     jednostka: '%',
-    kategoria: 'codziennosc',
+    kategoria: 'kontekst',
     rozdzielczosc: 'adres',
-    kierunek: 'wiecej-lepiej',
+    kierunek: 'neutralny',
     zakres: [0, 100],
     zadanie: 39,
     zrodla: [

@@ -8,6 +8,7 @@ import { dodajDoPorownania, hrefDla, przejdz, useStan } from '@/wynik/stan'
 import { useWynikAdresu } from '@/wynik/useWyniki'
 import { Etykieta } from './Etykieta'
 import type { LiteraEtykiety } from './kolory'
+import { SzczegolySzkoly } from './SzczegolySzkoly'
 import {
   liczbaPL,
   liczbyWarstw,
@@ -40,7 +41,7 @@ export function EkranOkolica() {
       </main>
     )
   }
-  if (!adres || !wynik) {
+  if (dane.stan !== 'gotowe' || stan.wybrany === null || !adres || !wynik) {
     return (
       <main className="tresc okol">
         <section className="karta okol-pusta">
@@ -112,7 +113,9 @@ export function EkranOkolica() {
 
       <Rozbicie warstwy={warstwyWyniku} wynik={wynik.wynik} />
 
-      {kontekst.length > 0 && <NaCoDzien warstwy={kontekst} />}
+      {kontekst.length > 0 && (
+        <NaCoDzien warstwy={kontekst} indeks={stan.wybrany} wersja={dane.plikAdresow.wersja} />
+      )}
 
       <p className="okol-przypis">
         Źródło, licencję, rozdzielczość i datę danych podajemy przy każdej warstwie w tabeli.
@@ -394,7 +397,15 @@ function KomorkaOceny({ w }: { w: RozbicieWarstwy }) {
   )
 }
 
-function NaCoDzien({ warstwy }: { warstwy: RozbicieWarstwy[] }) {
+function NaCoDzien({
+  warstwy,
+  indeks,
+  wersja,
+}: {
+  warstwy: RozbicieWarstwy[]
+  indeks: number
+  wersja: string
+}) {
   return (
     <section aria-labelledby="h-codzien" className="karta okol-codzien">
       <h2 id="h-codzien" className="okol-h2">
@@ -408,7 +419,12 @@ function NaCoDzien({ warstwy }: { warstwy: RozbicieWarstwy[] }) {
               {w.meta.nazwa}
               <Zrodla w={w} />
             </dt>
-            <dd>{opisWartosci(w)}</dd>
+            <dd>
+              {opisWartosci(w)}
+              {w.id === 'szkola_podst_wynik_e8' && w.wartosc !== null && (
+                <SzczegolySzkoly indeks={indeks} wersja={wersja} />
+              )}
+            </dd>
           </div>
         ))}
       </dl>
