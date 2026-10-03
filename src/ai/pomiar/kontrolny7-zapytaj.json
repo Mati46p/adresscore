@@ -1,0 +1,2075 @@
+{
+ "opis": "Kontrolny zestaw nr 7 (pytania) - 150 pytan „zapytaj o adres” (Krakow i gminy obwarzanka), pisanych jak wpisywane z klawiatury (literowki, bez polskich znakow, potoczny jezyk). Napisany na slepo przez agenta AI bez dostepu do kodu aplikacji, promptow ani wczesniejszych zestawow, wylacznie na podstawie listy warstw i etykiet; wejscie wpisywane (typed input); data 2026-10-03; zestaw kontrolny nr 7 (pytania). Glowny cel: wykrywanie zbednych dodatkowych warstw przy prostych pytaniach z przypadkowym slowem z innej dziedziny.",
+ "zasady": "Kazda grupa w 'tematy' to jedna rzecz, o ktora pytajacy faktycznie pyta; grupa zawiera akceptowalne id warstw (trafienie dowolnej zalicza grupe). Slowa przypadkowe (np. szkola, pies, auto, park wspomniane mimochodem) NIE generuja grup - warstwy z ich dziedzin sa zbedne. Pytania spoza zakresu maja [[\"nie_wiem\"]] i nie powinny zwracac warstw. Pytania niejednoznaczne maja jedna szeroka grupe. Bliskie pomylki: np. 'slychac tramwaje' to halas, nie komunikacja. Warstwy wyborcze tylko gdy pytanie wprost dotyczy wyborow.",
+ "pozycje": [
+  {
+   "id": "K7-B001",
+   "pytanie": "wracam z dzieckiem ze szkoly, czy przy tym domu na Grochowskiej 12 jest glosno?",
+   "tematy": [
+    [
+     "halas_ldwn",
+     "halas_obwarzanek_lden"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B002",
+   "pytanie": "mam auto, ale pytam tylko: daleko do przystanku z Wielickiej 40?",
+   "tematy": [
+    [
+     "przystanek_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B003",
+   "pytanie": "czy przy Bobrzynskiego 12 jest zielono? pies juz stary i nie biega, wiec pytam dla siebie",
+   "tematy": [
+    [
+     "zielen_worldcover_100m",
+     "zielen_udzial",
+     "drzewa_100m"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B004",
+   "pytanie": "pracuje w centrum ale teraz o co innego: jaki jest smog zima na os. Albertynskim?",
+   "tematy": [
+    [
+     "pm25_srednia",
+     "pm10_srednia",
+     "no2_srednia",
+     "bap_srednia"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B005",
+   "pytanie": "jezdze rowerem do pracy, a ile kosztuje m2 przy Opolskiej 20?",
+   "tematy": [
+    [
+     "cena_m2_mediana"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B006",
+   "pytanie": "babcia mieszka z nami, czy w poblizu os. Kolorowego 5 jest paczkomat?",
+   "tematy": [
+    [
+     "paczkomat_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B007",
+   "pytanie": "mamy kota i psa, ale pytanie: czy Biezanowska 100 jest w strefie zalewowej?",
+   "tematy": [
+    [
+     "powodz_1proc",
+     "powodz_10proc",
+     "powodz_02proc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B008",
+   "pytanie": "lekarz kazal mi duzo chodzic, sa jakies laweczki kolo Krowoderskich Zuchow 3?",
+   "tematy": [
+    [
+     "lawki_300m"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B009",
+   "pytanie": "dzieci jezdza do szkoly autobusem, a ja potrzebuje ladowarki do auta elektrycznego - jak daleko od Kamienskiego 11?",
+   "tematy": [
+    [
+     "ladowarka_ev_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B010",
+   "pytanie": "syn ma w szkole zajecia sportowe, ale pytam o weterynarza kolo Kurczaba 8",
+   "tematy": [
+    [
+     "weterynarz_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B011",
+   "pytanie": "czy na Lipowej 4 jest duzo barow i pubow? park obok mnie nie interesuje",
+   "tematy": [
+    [
+     "zycie_nocne_300m"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B012",
+   "pytanie": "nie mam dzieci, interesuje mnie tylko apteka - daleko od Jozefinskiej 20?",
+   "tematy": [
+    [
+     "apteka_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B013",
+   "pytanie": "sasiad pali w piecu ale nie o to chodzi: czy na Mogilskiej 60 ulica jest dobrze oswietlona?",
+   "tematy": [
+    [
+     "oswietlenie_100m"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B014",
+   "pytanie": "chodze z psem na spacery, czy na os. Piastow duzo jest przestepstw?",
+   "tematy": [
+    [
+     "przestepstwa_1000_powiat_2025",
+     "wykrywalnosc_powiat_2025"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B015",
+   "pytanie": "kupuje dzialke jako inwestycje, chce tylko wiedziec czy jest kanalizacja przy Krakowskiej 50 w Zielonkach",
+   "tematy": [
+    [
+     "uzbrojenie_kanalizacja_50m"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B016",
+   "pytanie": "czesto lece z Balic ale teraz pytam o pociag: daleko stacja od Slowackiego 10 w Wieliczce?",
+   "tematy": [
+    [
+     "kolej_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B017",
+   "pytanie": "mam rower ale pytam o autobusy - ile kursow rano jest z przystanku przy Rondzie Mogilskim?",
+   "tematy": [
+    [
+     "kursy_szczyt_h"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B018",
+   "pytanie": "jestem emerytem, ale nie o seniorow pytam - jest plac zabaw dla wnuka blisko os. Dabie?",
+   "tematy": [
+    [
+     "plac_zabaw_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B019",
+   "pytanie": "dzieciaki juz dorosle, sama chce dzialke - najblizszy ogrodek dzialkowy od Bronowickiej 70?",
+   "tematy": [
+    [
+     "rod_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B020",
+   "pytanie": "caly dzien siedze w biurze, czy jest silownia na swiezym powietrzu kolo Czyzyn?",
+   "tematy": [
+    [
+     "silownia_plenerowa_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B021",
+   "pytanie": "dzwonilam do urzedu i nikt nie wie: czy Kalwaryjska 30 jest w obszarze rewitalizacji?",
+   "tematy": [
+    [
+     "obszar_rewitalizacji"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B022",
+   "pytanie": "szukam mieszkania dla syna studenta, czy przy Czarnowiejskiej sa sklepy spozywcze?",
+   "tematy": [
+    [
+     "sklep_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B023",
+   "pytanie": "na uczelnie jade tramwajem, ale czy przy os. Kawiory sa stojaki na rowery?",
+   "tematy": [
+    [
+     "stojaki_300m"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B024",
+   "pytanie": "dziecko zle spi, czy na Bora-Komorowskiego jest duzy halas od ulicy?",
+   "tematy": [
+    [
+     "halas_ldwn",
+     "halas_obwarzanek_lden"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B025",
+   "pytanie": "pracuje zdalnie wiec dojazdy mnie nie obchodza - jaka cena za metr w Bronowicach?",
+   "tematy": [
+    [
+     "cena_m2_mediana"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B026",
+   "pytanie": "z wozkiem dzieciecym kazdy kraweznik to koszmar - sa obnizone krawezniki kolo sw. Wawrzynca 15?",
+   "tematy": [
+    [
+     "obnizone_krawezniki_300m"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B027",
+   "pytanie": "chodze na basen ale latem wole kapac sie na dworze - najblizsze kapielisko od os. Teatralnego?",
+   "tematy": [
+    [
+     "kapielisko_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B028",
+   "pytanie": "w Mogilanach sa piekne lasy, ale czy przy domu jest wodociag?",
+   "tematy": [
+    [
+     "uzbrojenie_woda_50m"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B029",
+   "pytanie": "wracam w nocy z imprez, jest jakis komisariat policji kolo Dietla 50?",
+   "tematy": [
+    [
+     "policja_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B030",
+   "pytanie": "mam astme, ale teraz pytam tylko o przychodnie - daleko do POZ z Kurdwanowa?",
+   "tematy": [
+    [
+     "przychodnia_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B031",
+   "pytanie": "kolo bloku jest duzo drzew, a czy jest gaz w ulicy Na Polach w Batowicach?",
+   "tematy": [
+    [
+     "uzbrojenie_gaz_50m"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B032",
+   "pytanie": "mieszkamy przy torach, pociagi nam nie przeszkadzaja, czy jest kino albo teatr blisko Plaszowa?",
+   "tematy": [
+    [
+     "kultura_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B033",
+   "pytanie": "parkuje pod blokiem bez problemu, ale czy jest blisko poczta albo bankomat na Kozlowku?",
+   "tematy": [
+    [
+     "bankomat_poczta_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B034",
+   "pytanie": "pies szczeka jak jedzie pociag lol, gdzie najblizszy wybieg dla psow z Prokocimia?",
+   "tematy": [
+    [
+     "wybieg_psy_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B035",
+   "pytanie": "zona w ciazy, ile sie czeka do specjalisty na nfz w okolicy Rynku w Skawinie?",
+   "tematy": [
+    [
+     "nfz_kolejki_dni"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B036",
+   "pytanie": "corka konczy liceum, ile stad do najblizszego akademika z Azorow?",
+   "tematy": [
+    [
+     "akademik_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B037",
+   "pytanie": "rano chodze do parku, ale pytam o slonce zima - ile godzin w najkrotszy dzien na Lipinskiego 5?",
+   "tematy": [
+    [
+     "slonce_grudzien_h"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B038",
+   "pytanie": "dojezdzam autem do Krakowa codziennie, czy w Liszkach dookola sa drogi gruntowe?",
+   "tematy": [
+    [
+     "drogi_gruntowe_300m"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B039",
+   "pytanie": "zima wszyscy tu pala weglem, ale pytam czy dojazd do domu w Michalowicach jest utwardzony",
+   "tematy": [
+    [
+     "dojazd_utwardzony"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B040",
+   "pytanie": "czy sa jakies zabytki przy Szerokiej? turysci i halas mi nie przeszkadzaja",
+   "tematy": [
+    [
+     "zabytki_300m",
+     "zabytki_rejestr_500m"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B041",
+   "pytanie": "dla dziecka cos znajde, a dla mnie - gdzie najblizszy obiekt sportowy od os. Zlotego Wieku?",
+   "tematy": [
+    [
+     "sport_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B042",
+   "pytanie": "prowadze sklep internetowy, jak gesto zaludniona jest okolica Lea 100?",
+   "tematy": [
+    [
+     "ludnosc_1km",
+     "gestosc_zaludnienia_100m"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B043",
+   "pytanie": "drzewo spadlo nam na auto w burzy, ale pytam: duzo bylo pozarow w gminie Zabierzow w 2025?",
+   "tematy": [
+    [
+     "pozary_gmina_2025"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B044",
+   "pytanie": "nie mam samochodu, ale nie o dojazd chodzi - jest jakis targ albo bazar blisko Grzegorzeckiej 10?",
+   "tematy": [
+    [
+     "targowisko_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B045",
+   "pytanie": "studiuje budownictwo i ciekawi mnie czy grunt pod blokiem na Zakrzowku sie obniza z roku na rok",
+   "tematy": [
+    [
+     "osiadanie_mm_rok"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B046",
+   "pytanie": "kot ma alergie, ale pytam o eternit: sa budynki z azbestem kolo Swoszowic?",
+   "tematy": [
+    [
+     "azbest_budynki_100m"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B047",
+   "pytanie": "corka chodzi do szkoly niedaleko, ale czy przy Kapielowej w Wieliczce sa osuwiska?",
+   "tematy": [
+    [
+     "teren_osuwiskowy",
+     "osuwisko_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B048",
+   "pytanie": "pracuje na nocki, cisza mnie nie obchodzi - gdzie najblizszy punkt schronienia z os. Bohaterow Wrzesnia?",
+   "tematy": [
+    [
+     "punkt_schronienia_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B049",
+   "pytanie": "kupujemy dom dla rodziny z trojka dzieci, daleko do sieci cieplowniczej z Zawilej?",
+   "tematy": [
+    [
+     "siec_cieplownicza_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B050",
+   "pytanie": "biegam w parku Jordana, gdzie tam najblizszy pitnik zeby sie napic?",
+   "tematy": [
+    [
+     "pitnik_odleglosc",
+     "toaleta_woda_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B051",
+   "pytanie": "rower to moj glowny transport, ale goscie przyjezdzaja autem: czy Smolensk 20 to strefa platnego parkowania?",
+   "tematy": [
+    [
+     "spp_podstrefa"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B052",
+   "pytanie": "podobno obok ma byc nowa szkola, ale ogolnie pytam - ile pozwolen na budowe wydali kolo Plaszowskiej 7?",
+   "tematy": [
+    [
+     "inwestycje_500m",
+     "inwestycje_500m_obwarzanek"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B053",
+   "pytanie": "jako emeryt chce wiedziec czy dla mojej dzialki przy Polnej 3 w Wieliczce jest plan miejscowy",
+   "tematy": [
+    [
+     "mpzp_status"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B054",
+   "pytanie": "lecimy z dzieckiem i walizkami, ile sie jedzie na lotnisko z Bronowic?",
+   "tematy": [
+    [
+     "lotnisko_czas_min"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B055",
+   "pytanie": "syn chodzi do przedszkola na Pawiej, czy duzo tam masztow telefonii komorkowej?",
+   "tematy": [
+    [
+     "stacje_bazowe_300m"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B056",
+   "pytanie": "fotografuje niebo, bezpieczenstwo mnie nie interesuje - jak jasno jest w nocy nad Ruczajem, widac gwiazdy?",
+   "tematy": [
+    [
+     "swiatlo_nocne_viirs"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B057",
+   "pytanie": "remont bo dziecko w drodze - gdzie najblizszy punkt recyklingu gratow z Mistrzejowic?",
+   "tematy": [
+    [
+     "recykling_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B058",
+   "pytanie": "jezdzimy rowerami po Krzeszowicach, sa tam toalety publiczne?",
+   "tematy": [
+    [
+     "toaleta_woda_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B059",
+   "pytanie": "szukam dla mamy seniorki, ale chodzi o urzad - jak daleko do urzedu dzielnicy ze Wzgorz Krzeslawickich?",
+   "tematy": [
+    [
+     "urzad_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B060",
+   "pytanie": "przyjezdzamy na koncert do Tauron Areny, ile jest miejsc noclegowych kolo Lema?",
+   "tematy": [
+    [
+     "noclegi_lozka_300m"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "przypadkowe_slowo"
+   ]
+  },
+  {
+   "id": "K7-B061",
+   "pytanie": "jakie jest powietrze na os. Centrum A w Nowej Hucie?",
+   "tematy": [
+    [
+     "pm25_srednia",
+     "pm10_srednia",
+     "no2_srednia",
+     "bap_srednia"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K7-B062",
+   "pytanie": "czy os. Podwawelskie zalewa Wisla?",
+   "tematy": [
+    [
+     "powodz_1proc",
+     "powodz_10proc",
+     "powodz_02proc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K7-B063",
+   "pytanie": "ile kosztuje metr mieszkania na Kazimierzu, Jozefa 10?",
+   "tematy": [
+    [
+     "cena_m2_mediana"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K7-B064",
+   "pytanie": "jak dlugo jade do rynku z Biezanowa Nowego?",
+   "tematy": [
+    [
+     "rynek_czas_min"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K7-B065",
+   "pytanie": "najblizsze przedszkole od Wadowickiej 6?",
+   "tematy": [
+    [
+     "przedszkole_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K7-B066",
+   "pytanie": "ile procent gminy Zielonki ma uchwalone plany miejscowe?",
+   "tematy": [
+    [
+     "gmina_mpzp_pokrycie_pct"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K7-B067",
+   "pytanie": "jak wypada podstawowka przy Ruczaju na egzaminie osmoklasisty?",
+   "tematy": [
+    [
+     "szkola_podst_wynik_e8"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K7-B068",
+   "pytanie": "gdzie najblizszy defibrylator od Starowislnej 30",
+   "tematy": [
+    [
+     "defibrylator_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K7-B069",
+   "pytanie": "czy Myslenicka 50 jest w strefie czystego transportu?",
+   "tematy": [
+    [
+     "sct_w_strefie"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K7-B070",
+   "pytanie": "jest gdzies parking parkuj i jedz blisko Czerwonych Makow?",
+   "tematy": [
+    [
+     "pr_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K7-B071",
+   "pytanie": "duzo ludzi po 65 roku zycia mieszka kolo Azorow?",
+   "tematy": [
+    [
+     "udzial_65plus"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K7-B072",
+   "pytanie": "duzo malych dzieci jest w okolicy Bronowic Nowych?",
+   "tematy": [
+    [
+     "udzial_0_14"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K7-B073",
+   "pytanie": "czy blisko Pilsudskiego w Skawinie jest zaklad chemiczny ktory grozi powazna awaria?",
+   "tematy": [
+    [
+     "seveso_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K7-B074",
+   "pytanie": "jest blisko Ujastka jakas fabryka co truje okolice?",
+   "tematy": [
+    [
+     "emitent_odleglosc",
+     "seveso_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K7-B075",
+   "pytanie": "ile pociagow rano jedzie z Zabierzowa do Krakowa?",
+   "tematy": [
+    [
+     "kolej_kursy_szczyt_h"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K7-B076",
+   "pytanie": "czy pociagi z Batowic sie spozniaja?",
+   "tematy": [
+    [
+     "kolej_punktualnosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K7-B077",
+   "pytanie": "przystanek busa do Krakowa w Mogilanach - daleko od Ogrodowej?",
+   "tematy": [
+    [
+     "bus_mld_odleglosc",
+     "przystanek_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K7-B078",
+   "pytanie": "jak czesto jezdza busy rano z Grabowki w Wieliczce?",
+   "tematy": [
+    [
+     "bus_mld_kursy_szczyt_h"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K7-B079",
+   "pytanie": "czy okolica Prokocimia jest dobrze przewietrzana?",
+   "tematy": [
+    [
+     "przewietrzanie_klasa"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K7-B080",
+   "pytanie": "czy sasiedzi pala weglem w piecach na Swoszowicach?",
+   "tematy": [
+    [
+     "paleniska_200m"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K7-B081",
+   "pytanie": "najblizszy rezerwat albo park krajobrazowy od Tynca?",
+   "tematy": [
+    [
+     "przyroda_chroniona_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K7-B082",
+   "pytanie": "jaka czesc gminy Liszki lezy na terenach zalewowych?",
+   "tematy": [
+    [
+     "gmina_powodz_powierzchnia_pct"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K7-B083",
+   "pytanie": "najblizsze liceum ogolniak od Krolewskiej 50?",
+   "tematy": [
+    [
+     "liceum_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K7-B084",
+   "pytanie": "czy jest droga dla rowerow przy Zakopianskiej 100?",
+   "tematy": [
+    [
+     "rower_infrastruktura_odleglosc",
+     "droga_rowerowa_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K7-B085",
+   "pytanie": "ile rowerow dziennie jezdzi przy Alejach Trzech Wieszczow?",
+   "tematy": [
+    [
+     "rower_ruch_dobowy"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K7-B086",
+   "pytanie": "jakie jest zadluzenie gminy Wieliczka na glowe mieszkanca?",
+   "tematy": [
+    [
+     "gmina_dlug_pc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K7-B087",
+   "pytanie": "ile sie przecietnie zarabia w powiecie krakowskim?",
+   "tematy": [
+    [
+     "powiat_wynagrodzenie_brutto"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K7-B088",
+   "pytanie": "ile rocznie kosztuje utrzymanie mieszkania w Niepolomicach, podatki smieci itd?",
+   "tematy": [
+    [
+     "gmina_koszty_stale_rok"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K7-B089",
+   "pytanie": "co zrobiono z budzetu obywatelskiego kolo os. Oswiecenia?",
+   "tematy": [
+    [
+     "bo_projekty_1km"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K7-B090",
+   "pytanie": "jaka byla frekwencja w wyborach samorzadowych w Zielonkach?",
+   "tematy": [
+    [
+     "frekwencja_samorzad_2024"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K7-B091",
+   "pytanie": "glosno i smogowo przy Alejach Trzech Wieszczow?",
+   "tematy": [
+    [
+     "halas_ldwn",
+     "halas_obwarzanek_lden"
+    ],
+    [
+     "pm25_srednia",
+     "pm10_srednia",
+     "no2_srednia",
+     "bap_srednia"
+    ]
+   ],
+   "cechy": [
+    "zlozone"
+   ]
+  },
+  {
+   "id": "K7-B092",
+   "pytanie": "przedszkole i przychodnia blisko Ruczaju?",
+   "tematy": [
+    [
+     "przedszkole_odleglosc"
+    ],
+    [
+     "przychodnia_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "zlozone"
+   ]
+  },
+  {
+   "id": "K7-B093",
+   "pytanie": "cena za m2 i czy jest plan miejscowy na Rybitwach?",
+   "tematy": [
+    [
+     "cena_m2_mediana"
+    ],
+    [
+     "mpzp_status"
+    ]
+   ],
+   "cechy": [
+    "zlozone"
+   ]
+  },
+  {
+   "id": "K7-B094",
+   "pytanie": "czy Bulwarowa jest zagrozona powodzia i czy blisko jest zaklad co zanieczyszcza?",
+   "tematy": [
+    [
+     "powodz_1proc",
+     "powodz_10proc",
+     "powodz_02proc"
+    ],
+    [
+     "emitent_odleglosc",
+     "seveso_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "zlozone"
+   ]
+  },
+  {
+   "id": "K7-B095",
+   "pytanie": "sklep, apteka i przystanek - wszystko blisko os. Kurdwanow?",
+   "tematy": [
+    [
+     "sklep_odleglosc"
+    ],
+    [
+     "apteka_odleglosc"
+    ],
+    [
+     "przystanek_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "zlozone"
+   ]
+  },
+  {
+   "id": "K7-B096",
+   "pytanie": "jest sciezka rowerowa i stojaki pod Lubicz 5?",
+   "tematy": [
+    [
+     "rower_infrastruktura_odleglosc",
+     "droga_rowerowa_odleglosc"
+    ],
+    [
+     "stojaki_300m"
+    ]
+   ],
+   "cechy": [
+    "zlozone",
+    "dwa_z_tematu"
+   ]
+  },
+  {
+   "id": "K7-B097",
+   "pytanie": "przystanek blisko i ile kursow rano z os. Na Lotnisku?",
+   "tematy": [
+    [
+     "przystanek_odleglosc"
+    ],
+    [
+     "kursy_szczyt_h"
+    ]
+   ],
+   "cechy": [
+    "zlozone",
+    "dwa_z_tematu"
+   ]
+  },
+  {
+   "id": "K7-B098",
+   "pytanie": "daleko podstawowka w Zielonkach i jak jej poszlo na egzaminie osmoklasisty?",
+   "tematy": [
+    [
+     "szkola_podst_odleglosc"
+    ],
+    [
+     "szkola_podst_wynik_e8"
+    ]
+   ],
+   "cechy": [
+    "zlozone",
+    "dwa_z_tematu"
+   ]
+  },
+  {
+   "id": "K7-B099",
+   "pytanie": "pm2.5 jakie i czy ludzie pala w piecach w Batowicach",
+   "tematy": [
+    [
+     "pm25_srednia",
+     "pm10_srednia",
+     "no2_srednia",
+     "bap_srednia"
+    ],
+    [
+     "paleniska_200m"
+    ]
+   ],
+   "cechy": [
+    "zlozone",
+    "dwa_z_tematu"
+   ]
+  },
+  {
+   "id": "K7-B100",
+   "pytanie": "duzo zieleni i blisko do ogrodkow dzialkowych przy os. Widok?",
+   "tematy": [
+    [
+     "zielen_worldcover_100m",
+     "zielen_udzial",
+     "drzewa_100m"
+    ],
+    [
+     "rod_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "zlozone",
+    "dwa_z_tematu"
+   ]
+  },
+  {
+   "id": "K7-B101",
+   "pytanie": "stacja kolejowa daleko i czy pociagi punktualne, Podleze",
+   "tematy": [
+    [
+     "kolej_odleglosc"
+    ],
+    [
+     "kolej_punktualnosc"
+    ]
+   ],
+   "cechy": [
+    "zlozone",
+    "dwa_z_tematu"
+   ]
+  },
+  {
+   "id": "K7-B102",
+   "pytanie": "przychodnia i apteka w Bibicach blisko?",
+   "tematy": [
+    [
+     "przychodnia_odleglosc"
+    ],
+    [
+     "apteka_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "zlozone",
+    "dwa_z_tematu"
+   ]
+  },
+  {
+   "id": "K7-B103",
+   "pytanie": "platne parkowanie i parking P+R kolo os. Dabie?",
+   "tematy": [
+    [
+     "spp_podstrefa"
+    ],
+    [
+     "pr_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "zlozone",
+    "dwa_z_tematu"
+   ]
+  },
+  {
+   "id": "K7-B104",
+   "pytanie": "czy jest gaz i kanalizacja przy dzialce w Wegrzcach?",
+   "tematy": [
+    [
+     "uzbrojenie_gaz_50m"
+    ],
+    [
+     "uzbrojenie_kanalizacja_50m"
+    ]
+   ],
+   "cechy": [
+    "zlozone"
+   ]
+  },
+  {
+   "id": "K7-B105",
+   "pytanie": "lotnisko daleko i jaka cena metra w Modlnicy?",
+   "tematy": [
+    [
+     "lotnisko_czas_min"
+    ],
+    [
+     "cena_m2_mediana"
+    ]
+   ],
+   "cechy": [
+    "zlozone"
+   ]
+  },
+  {
+   "id": "K7-B106",
+   "pytanie": "wybieg dla psa i weterynarz kolo os. Ruczaj?",
+   "tematy": [
+    [
+     "wybieg_psy_odleglosc"
+    ],
+    [
+     "weterynarz_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "zlozone"
+   ]
+  },
+  {
+   "id": "K7-B107",
+   "pytanie": "czy Kosocice to teren osuwiskowy i czy grozi tam powodz?",
+   "tematy": [
+    [
+     "teren_osuwiskowy",
+     "osuwisko_odleglosc"
+    ],
+    [
+     "powodz_1proc",
+     "powodz_10proc",
+     "powodz_02proc"
+    ]
+   ],
+   "cechy": [
+    "zlozone"
+   ]
+  },
+  {
+   "id": "K7-B108",
+   "pytanie": "bary w okolicy i jak glosno w nocy przy Florianskiej?",
+   "tematy": [
+    [
+     "zycie_nocne_300m"
+    ],
+    [
+     "halas_ldwn",
+     "halas_obwarzanek_lden"
+    ]
+   ],
+   "cechy": [
+    "zlozone"
+   ]
+  },
+  {
+   "id": "K7-B109",
+   "pytanie": "przestepczosc i oswietlenie ulic na os. Kalinowym?",
+   "tematy": [
+    [
+     "przestepstwa_1000_powiat_2025",
+     "wykrywalnosc_powiat_2025"
+    ],
+    [
+     "oswietlenie_100m"
+    ]
+   ],
+   "cechy": [
+    "zlozone"
+   ]
+  },
+  {
+   "id": "K7-B110",
+   "pytanie": "ile dzieci w okolicy i czy jest plac zabaw, os. Avia",
+   "tematy": [
+    [
+     "udzial_0_14"
+    ],
+    [
+     "plac_zabaw_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "zlozone"
+   ]
+  },
+  {
+   "id": "K7-B111",
+   "pytanie": "zabytki i dom kultury blisko Kanoniczej?",
+   "tematy": [
+    [
+     "zabytki_300m",
+     "zabytki_rejestr_500m"
+    ],
+    [
+     "kultura_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "zlozone"
+   ]
+  },
+  {
+   "id": "K7-B112",
+   "pytanie": "slonce zima, zielen dookola i cena - os. Kliny",
+   "tematy": [
+    [
+     "slonce_grudzien_h"
+    ],
+    [
+     "zielen_worldcover_100m",
+     "zielen_udzial",
+     "drzewa_100m"
+    ],
+    [
+     "cena_m2_mediana"
+    ]
+   ],
+   "cechy": [
+    "zlozone"
+   ]
+  },
+  {
+   "id": "K7-B113",
+   "pytanie": "czy blisko jest klub seniora i laweczki przy os. Willowym?",
+   "tematy": [
+    [
+     "cas_odleglosc"
+    ],
+    [
+     "lawki_300m"
+    ]
+   ],
+   "cechy": [
+    "zlozone"
+   ]
+  },
+  {
+   "id": "K7-B114",
+   "pytanie": "co sie buduje obok i ile wnioskow o Czyste Powietrze bylo w gminie Michalowice?",
+   "tematy": [
+    [
+     "inwestycje_500m",
+     "inwestycje_500m_obwarzanek"
+    ],
+    [
+     "gmina_czyste_powietrze_wnioski_100_domow"
+    ]
+   ],
+   "cechy": [
+    "zlozone"
+   ]
+  },
+  {
+   "id": "K7-B115",
+   "pytanie": "dochody gminy z pit i wydatki na inwestycje na mieszkanca - Zabierzow",
+   "tematy": [
+    [
+     "gmina_pit_na_mieszkanca"
+    ],
+    [
+     "gmina_inwestycje_pc"
+    ]
+   ],
+   "cechy": [
+    "zlozone"
+   ]
+  },
+  {
+   "id": "K7-B116",
+   "pytanie": "jaka bedzie jutro pogoda na Ruczaju?",
+   "tematy": [
+    [
+     "nie_wiem"
+    ]
+   ],
+   "cechy": [
+    "spoza"
+   ]
+  },
+  {
+   "id": "K7-B117",
+   "pytanie": "kto jest wlascicielem mieszkania na Dlugiej 5?",
+   "tematy": [
+    [
+     "nie_wiem"
+    ]
+   ],
+   "cechy": [
+    "spoza"
+   ]
+  },
+  {
+   "id": "K7-B118",
+   "pytanie": "ile kosztuje wynajem garazu na Krowodrzy miesiecznie?",
+   "tematy": [
+    [
+     "nie_wiem"
+    ]
+   ],
+   "cechy": [
+    "spoza"
+   ]
+  },
+  {
+   "id": "K7-B119",
+   "pytanie": "czy sasiad z 3 pietra na Wroclawskiej 20 jest mily?",
+   "tematy": [
+    [
+     "nie_wiem"
+    ]
+   ],
+   "cechy": [
+    "spoza"
+   ]
+  },
+  {
+   "id": "K7-B120",
+   "pytanie": "jaki dostawca swiatlowodu dziala na Bonarce?",
+   "tematy": [
+    [
+     "nie_wiem"
+    ]
+   ],
+   "cechy": [
+    "spoza"
+   ]
+  },
+  {
+   "id": "K7-B121",
+   "pytanie": "godziny otwarcia Biedronki na Kalwaryjskiej?",
+   "tematy": [
+    [
+     "nie_wiem"
+    ]
+   ],
+   "cechy": [
+    "spoza"
+   ]
+  },
+  {
+   "id": "K7-B122",
+   "pytanie": "czy w bloku na Wroclawskiej 20 jest winda?",
+   "tematy": [
+    [
+     "nie_wiem"
+    ]
+   ],
+   "cechy": [
+    "spoza"
+   ]
+  },
+  {
+   "id": "K7-B123",
+   "pytanie": "jaki numer ksiegi wieczystej ma dzialka w Mogilanach przy Lesnej?",
+   "tematy": [
+    [
+     "nie_wiem"
+    ]
+   ],
+   "cechy": [
+    "spoza"
+   ]
+  },
+  {
+   "id": "K7-B124",
+   "pytanie": "w jakie dni wywoza smieci na Biezanowie?",
+   "tematy": [
+    [
+     "nie_wiem"
+    ]
+   ],
+   "cechy": [
+    "spoza"
+   ]
+  },
+  {
+   "id": "K7-B125",
+   "pytanie": "jaki czynsz placi sie w spoldzielni na os. Tysiaclecia?",
+   "tematy": [
+    [
+     "nie_wiem"
+    ]
+   ],
+   "cechy": [
+    "spoza"
+   ]
+  },
+  {
+   "id": "K7-B126",
+   "pytanie": "ile kosztuje taksowka z Kurdwanowa na dworzec?",
+   "tematy": [
+    [
+     "nie_wiem"
+    ]
+   ],
+   "cechy": [
+    "spoza"
+   ]
+  },
+  {
+   "id": "K7-B127",
+   "pytanie": "czy mieszkanie na Pradniku Czerwonym ma ladny widok z okna?",
+   "tematy": [
+    [
+     "nie_wiem"
+    ]
+   ],
+   "cechy": [
+    "spoza"
+   ]
+  },
+  {
+   "id": "K7-B128",
+   "pytanie": "czy tu sie dobrze mieszka z dziecmi? os. Ruczaj",
+   "tematy": [
+    [
+     "szkola_podst_odleglosc",
+     "przedszkole_odleglosc",
+     "zlobek_odleglosc",
+     "plac_zabaw_odleglosc",
+     "udzial_0_14",
+     "szkola_podst_wynik_e8"
+    ]
+   ],
+   "cechy": [
+    "niejednoznaczne"
+   ]
+  },
+  {
+   "id": "K7-B129",
+   "pytanie": "czy jest bezpiecznie na os. Na Kozlowce?",
+   "tematy": [
+    [
+     "oswietlenie_100m",
+     "policja_odleglosc",
+     "przestepstwa_1000_powiat_2025",
+     "wykrywalnosc_powiat_2025",
+     "miejscowe_zagrozenia_gmina_2025",
+     "pozary_gmina_2025"
+    ]
+   ],
+   "cechy": [
+    "niejednoznaczne"
+   ]
+  },
+  {
+   "id": "K7-B130",
+   "pytanie": "dobry dojazd z Wieliczki do Krakowa?",
+   "tematy": [
+    [
+     "przystanek_odleglosc",
+     "kursy_szczyt_h",
+     "rynek_czas_min",
+     "kolej_odleglosc",
+     "kolej_kursy_szczyt_h",
+     "bus_mld_odleglosc",
+     "bus_mld_kursy_szczyt_h"
+    ]
+   ],
+   "cechy": [
+    "niejednoznaczne"
+   ]
+  },
+  {
+   "id": "K7-B131",
+   "pytanie": "jak tu z ekologia na os. Piastow?",
+   "tematy": [
+    [
+     "pm25_srednia",
+     "pm10_srednia",
+     "no2_srednia",
+     "bap_srednia",
+     "zielen_worldcover_100m",
+     "zielen_udzial",
+     "drzewa_100m"
+    ]
+   ],
+   "cechy": [
+    "niejednoznaczne"
+   ]
+  },
+  {
+   "id": "K7-B132",
+   "pytanie": "czy tu jest spokojnie, os. Kolorowe?",
+   "tematy": [
+    [
+     "halas_ldwn",
+     "halas_obwarzanek_lden",
+     "zycie_nocne_300m",
+     "imprezy_obiekty_dni_500m_2025_26",
+     "imprezy_stale_wpisy_500m_2026"
+    ]
+   ],
+   "cechy": [
+    "niejednoznaczne"
+   ]
+  },
+  {
+   "id": "K7-B133",
+   "pytanie": "czy blisko jest jakis lekarz? Bronowice",
+   "tematy": [
+    [
+     "przychodnia_odleglosc",
+     "przychodnia_bez_barier_odleglosc",
+     "nfz_kolejki_dni"
+    ]
+   ],
+   "cechy": [
+    "niejednoznaczne"
+   ]
+  },
+  {
+   "id": "K7-B134",
+   "pytanie": "da sie tu zyc bez auta? os. Podwawelskie",
+   "tematy": [
+    [
+     "przystanek_odleglosc",
+     "kursy_szczyt_h",
+     "rynek_czas_min",
+     "uslugi_15min",
+     "sklep_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "niejednoznaczne"
+   ]
+  },
+  {
+   "id": "K7-B135",
+   "pytanie": "co z mediami przy dzialce w Swiatnikach Gornych?",
+   "tematy": [
+    [
+     "uzbrojenie_woda_50m",
+     "uzbrojenie_kanalizacja_50m",
+     "uzbrojenie_gaz_50m",
+     "uzbrojenie_prad_50m",
+     "siec_cieplownicza_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "niejednoznaczne"
+   ]
+  },
+  {
+   "id": "K7-B136",
+   "pytanie": "czy grunt w Mogilanach jest bezpieczny pod budowe domu?",
+   "tematy": [
+    [
+     "teren_osuwiskowy",
+     "osuwisko_odleglosc",
+     "osiadanie_mm_rok",
+     "powodz_1proc",
+     "powodz_10proc",
+     "powodz_02proc"
+    ]
+   ],
+   "cechy": [
+    "niejednoznaczne"
+   ]
+  },
+  {
+   "id": "K7-B137",
+   "pytanie": "czy jest woda blisko Tynca?",
+   "tematy": [
+    [
+     "woda_odleglosc",
+     "kapielisko_odleglosc",
+     "pitnik_odleglosc",
+     "toaleta_woda_odleglosc",
+     "uzbrojenie_woda_50m"
+    ]
+   ],
+   "cechy": [
+    "niejednoznaczne"
+   ]
+  },
+  {
+   "id": "K7-B138",
+   "pytanie": "jak tu ze sportem na os. Dywizjonu 303?",
+   "tematy": [
+    [
+     "sport_odleglosc",
+     "silownia_plenerowa_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "niejednoznaczne"
+   ]
+  },
+  {
+   "id": "K7-B139",
+   "pytanie": "duzo sie tu buduje i zmienia? Zablocie",
+   "tematy": [
+    [
+     "inwestycje_500m",
+     "przetargi_dzielnica",
+     "bo_projekty_1km",
+     "obszar_rewitalizacji"
+    ]
+   ],
+   "cechy": [
+    "niejednoznaczne"
+   ]
+  },
+  {
+   "id": "K7-B140",
+   "pytanie": "czy os. Zlotej Jesieni to dobre miejsce dla seniora?",
+   "tematy": [
+    [
+     "cas_odleglosc",
+     "przychodnia_odleglosc",
+     "przychodnia_bez_barier_odleglosc",
+     "lawki_300m",
+     "obnizone_krawezniki_300m",
+     "udzial_65plus",
+     "apteka_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "niejednoznaczne"
+   ]
+  },
+  {
+   "id": "K7-B141",
+   "pytanie": "slychac tramwaje w nocy na Krakowskiej 20?",
+   "tematy": [
+    [
+     "halas_ldwn",
+     "halas_obwarzanek_lden"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K7-B142",
+   "pytanie": "czuc dym z kominow na Biezanowie?",
+   "tematy": [
+    [
+     "paleniska_200m",
+     "bap_srednia",
+     "pm10_srednia",
+     "pm25_srednia"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K7-B143",
+   "pytanie": "czy samoloty nad Bronowicami bardzo slychac?",
+   "tematy": [
+    [
+     "halas_ldwn",
+     "halas_obwarzanek_lden"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K7-B144",
+   "pytanie": "czy po ulewie woda zalewa piwnice w Toniach?",
+   "tematy": [
+    [
+     "powodz_1proc",
+     "powodz_10proc",
+     "powodz_02proc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K7-B145",
+   "pytanie": "czy pociagi na Grzegorzkach halasuja za oknem?",
+   "tematy": [
+    [
+     "halas_ldwn",
+     "halas_obwarzanek_lden"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K7-B146",
+   "pytanie": "czy po zmroku nie strach isc przez park na os. Wandy, sa tam latarnie?",
+   "tematy": [
+    [
+     "oswietlenie_100m"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K7-B147",
+   "pytanie": "czy do domu w Ochmanowie dojade autem po asfalcie czy po polnej?",
+   "tematy": [
+    [
+     "dojazd_utwardzony"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K7-B148",
+   "pytanie": "czy przy os. Kosmonautow co chwile sa duze imprezy na stadionie?",
+   "tematy": [
+    [
+     "imprezy_obiekty_dni_500m_2025_26",
+     "imprezy_stale_wpisy_500m_2026"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K7-B149",
+   "pytanie": "czy okolica Bronowic jest zielona politycznie, ile glosow dostala KO w sejmie 2023?",
+   "tematy": [
+    [
+     "sejm2023_lista_6"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K7-B150",
+   "pytanie": "czy rower mi tu ukradna? os. Ruczaj",
+   "tematy": [
+    [
+     "przestepstwa_1000_powiat_2025",
+     "wykrywalnosc_powiat_2025"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat",
+    "bliska_pomylka"
+   ]
+  }
+ ]
+}

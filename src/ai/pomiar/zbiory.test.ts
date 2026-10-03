@@ -160,6 +160,15 @@ const ZBIORY_KONTROLNE = [
     nA: 150,
     nB: 150,
   },
+  // #174: siódmy zbiór na ślepo (120 opisów, 150 pytań), cechy `lagodne` (cel #172)
+  // i `przypadkowe_slowo` (cel #173) – mierzy obie zmiany w osobnych przebiegach.
+  {
+    nazwa: 'kontrolny nr 7',
+    opisz: 'kontrolny7-opisz.json',
+    zapytaj: 'kontrolny7-zapytaj.json',
+    nA: 120,
+    nB: 150,
+  },
 ] as const
 const kontrolne = ZBIORY_KONTROLNE.map((z) => ({
   nazwa: z.nazwa,

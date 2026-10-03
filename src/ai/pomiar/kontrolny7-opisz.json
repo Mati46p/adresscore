@@ -1,0 +1,1322 @@
+{
+ "opis": "Zestaw kontrolny nr 7 (opisy) – 120 pozycji „opisz siebie”, Kraków i gminy obwarzanka. Napisany na ślepo przez agenta AI bez dostępu do kodu aplikacji, promptów ani wcześniejszych zestawów (wejście: tylko lista etykiet i warstw). Tekst pisany (literówki, bez polskich znaków, skróty), nie mowa. Konwencja „w imieniu”: etykiety dotyczą przyszłego mieszkańca. Data: 2026-10-03.",
+ "zasady": "Etykietujemy tylko potrzeby wyraźnie chciane; wzmianki łagodne/mieszane („przydałoby się, ale bez przesady”) bez etykiety. W imieniu kogoś: persona i potrzeby przyszłego mieszkańca. persona null i brak potrzeb: gdy nikt nie szuka (opinia, ciekawość, hipoteza bez planu, przeszłość) lub gdy szukający nie podaje żadnego sygnału (bez_sygnalu). Senior → persona senior (+potrzeba senior); osoba wyraźnie mieszkająca sama → singiel (+potrzeba singiel); zakup pod wynajem/zysk bez zamieszkania → inwestor; dzieci w gospodarstwie → rodzina. Domownik (np. starszy rodzic) nie zmienia persony szukającego. Nie nadinterpretujemy. Tagi: w_imieniu, nikt_nie_szuka, domownik, profil_glowny, bez_sygnalu, bliska_pomylka, lagodne; pozycje zwykłe mają pustą listę cech.",
+ "pozycje": [
+  {
+   "id": "K7-A001",
+   "tekst": "mieszkam sam, pracuje na Starym Miescie, wracam pozno",
+   "persona": "singiel",
+   "potrzeby": [
+    "singiel",
+    "praca_centrum"
+   ],
+   "cechy": [
+    "profil_glowny"
+   ]
+  },
+  {
+   "id": "K7-A002",
+   "tekst": "troche zalezy mi zeby szybko dojechac do Balic, ale tylko troche, latam moze 4 razy w roku. przede wszystkim zyje sam i chce spokoju",
+   "persona": "singiel",
+   "potrzeby": [
+    "singiel",
+    "cisza"
+   ],
+   "cechy": [
+    "lagodne"
+   ]
+  },
+  {
+   "id": "K7-A003",
+   "tekst": "przeprowadzam sie w marcu, jeszcze nie wiem gdzie dokladnie",
+   "persona": null,
+   "potrzeby": [],
+   "cechy": [
+    "bez_sygnalu"
+   ]
+  },
+  {
+   "id": "K7-A004",
+   "tekst": "lubie pojezdzic rowerem, choc nie codziennie. kupujemy z zona dom w Michalowicach, mamy dwa psy i chcemy zeby mialy gdzie biegac",
+   "persona": null,
+   "potrzeby": [
+    "pies"
+   ],
+   "cechy": [
+    "lagodne"
+   ]
+  },
+  {
+   "id": "K7-A005",
+   "tekst": "pracuje na lotnisku jako mechanik ale od stycznia firma przenosi mnie do Pyrzowic, wiec Balice juz nie maja znaczenia. szukamy z zona domu z miejscem dla trojki dzieci",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci"
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K7-A006",
+   "tekst": "samotny tata z 6-latkiem, praca na zmiany",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci"
+   ],
+   "cechy": [
+    "profil_glowny"
+   ]
+  },
+  {
+   "id": "K7-A007",
+   "tekst": "nie przepadam za halasem, ale bez przesady, sasiadow lubie. szukamy w Niepolomicach, mam dwoch synow w podstawowce",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci"
+   ],
+   "cechy": [
+    "lagodne"
+   ]
+  },
+  {
+   "id": "K7-A008",
+   "tekst": "spokoj by sie przydal ale imprezy mi nie przeszkadzaja, sam czasem wyjde. mieszkam sam, 34 lata, robota w Bronowicach, auta nie mam",
+   "persona": "singiel",
+   "potrzeby": [
+    "singiel",
+    "bez_samochodu"
+   ],
+   "cechy": [
+    "lagodne"
+   ]
+  },
+  {
+   "id": "K7-A009",
+   "tekst": "mam 75 lat, chodze o lasce, sklep i przychodnia musza byc na wyciagniecie reki",
+   "persona": "senior",
+   "potrzeby": [
+    "senior",
+    "sklepy",
+    "zdrowie"
+   ],
+   "cechy": []
+  },
+  {
+   "id": "K7-A010",
+   "tekst": "szkoly sprawdze pozniej, dzieci na razie nie mamy, moze kiedys. teraz najwazniejsze dla nas oboje zeby las byl blisko na rowery gorskie",
+   "persona": null,
+   "potrzeby": [
+    "rower",
+    "zielen"
+   ],
+   "cechy": [
+    "lagodne"
+   ]
+  },
+  {
+   "id": "K7-A011",
+   "tekst": "szukamy w Zielonkach, troje dzieci, duzy pies, zona pracuje w szpitalu na Pradniku",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci",
+    "pies"
+   ],
+   "cechy": []
+  },
+  {
+   "id": "K7-A012",
+   "tekst": "auto mamy jedno na dwoje, wiec jakis autobus by pomogl, choc da sie bez. synek idzie do pierwszej klasy",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci"
+   ],
+   "cechy": [
+    "lagodne"
+   ]
+  },
+  {
+   "id": "K7-A013",
+   "tekst": "mam psa ale malego, wystarczy mu chodnik i kawalek trawnika. na pewno chce zeby wieczorem bylo bezpiecznie",
+   "persona": null,
+   "potrzeby": [
+    "bezpieczenstwo"
+   ],
+   "cechy": [
+    "lagodne"
+   ]
+  },
+  {
+   "id": "K7-A014",
+   "tekst": "jestem singlem jeszcze przez dwa miesiace, w grudniu wprowadzamy sie razem z dziewczyna. ona trzyma konia w stajni w Liszkach wiec gdzies tam, i zeby bylo cicho",
+   "persona": null,
+   "potrzeby": [
+    "cisza"
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K7-A015",
+   "tekst": "czyste powietrze to slogan dewelopera z ktorego sie smieje, mnie interesuje zeby zabka i paczkomat byly pod blokiem",
+   "persona": null,
+   "potrzeby": [
+    "sklepy"
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K7-A016",
+   "tekst": "sklepy moglyby byc blizej niz teraz, ale nie dramatyzuje. corka ma astme i to jest nasz glowny powod wyprowadzki z Nowej Huty",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci",
+    "powietrze"
+   ],
+   "cechy": [
+    "lagodne"
+   ]
+  },
+  {
+   "id": "K7-A017",
+   "tekst": "lece z Balic kilka razy w miesiacu sluzbowo, chce byc max 20 min od lotniska. reszta bez znaczenia",
+   "persona": null,
+   "potrzeby": [
+    "lotnisko"
+   ],
+   "cechy": []
+  },
+  {
+   "id": "K7-A018",
+   "tekst": "do centrum jezdze raz, dwa razy w tygodniu, wiec dobry dojazd to plus ale nie musi. tlumacze z domu i potrzebuje ciszy jak w bibliotece",
+   "persona": null,
+   "potrzeby": [
+    "cisza"
+   ],
+   "cechy": [
+    "lagodne"
+   ]
+  },
+  {
+   "id": "K7-A019",
+   "tekst": "bezpieczenstwo finansowe jest dla mnie wazne wiec szukam czegos taniego, ale dla siebie, nie pod wynajem. koniecznie blisko parku",
+   "persona": null,
+   "potrzeby": [
+    "zielen"
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K7-A020",
+   "tekst": "mam odlozony kapital i chce go ulokowac w nieruchomosci zamiast trzymac na lokacie, sam mieszkam gdzie indziej i tak zostanie",
+   "persona": "inwestor",
+   "potrzeby": [
+    "inwestycja"
+   ],
+   "cechy": [
+    "profil_glowny"
+   ]
+  },
+  {
+   "id": "K7-A021",
+   "tekst": "rower mam stacjonarny w domu wiec sciezki rowerowe mnie nie obchodza, za to chce zielono za oknem",
+   "persona": null,
+   "potrzeby": [
+    "zielen"
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K7-A022",
+   "tekst": "mieszkam z partnerem, on ma migreny i kazdy tramwaj pod oknem to dla niego koszmar. ja dojezdzam autem do Skawiny wiec mi wszystko jedno",
+   "persona": null,
+   "potrzeby": [
+    "cisza"
+   ],
+   "cechy": [
+    "domownik"
+   ]
+  },
+  {
+   "id": "K7-A023",
+   "tekst": "to inwestycja na cale zycie, kupujemy z mezem pierwsze mieszkanie dla siebie i zostajemy w nim na lata. zalezy mi zeby bylo bezpiecznie bo wracam pozno z dyzurow",
+   "persona": null,
+   "potrzeby": [
+    "bezpieczenstwo"
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K7-A024",
+   "tekst": "jestem wdowcem po 80tce, auto sprzedalem, corka wpada raz w tygodniu",
+   "persona": "senior",
+   "potrzeby": [
+    "senior",
+    "singiel",
+    "bez_samochodu"
+   ],
+   "cechy": [
+    "profil_glowny"
+   ]
+  },
+  {
+   "id": "K7-A025",
+   "tekst": "fajnie gdyby bylo w miare zielono, ale to nie jest dla mnie kluczowe. jestem po 70 i chce miec przychodnie i apteke na piechote",
+   "persona": "senior",
+   "potrzeby": [
+    "senior",
+    "zdrowie"
+   ],
+   "cechy": [
+    "lagodne"
+   ]
+  },
+  {
+   "id": "K7-A026",
+   "tekst": "jakies 3 pokoje moze byc, zobaczymy co sie trafi",
+   "persona": null,
+   "potrzeby": [],
+   "cechy": [
+    "bez_sygnalu"
+   ]
+  },
+  {
+   "id": "K7-A027",
+   "tekst": "corka idzie od pazdziernika na AGH, chcemy jej kupic kawalerke. bedzie mieszkac sama, samochodu nie ma i miec nie bedzie",
+   "persona": "singiel",
+   "potrzeby": [
+    "singiel",
+    "bez_samochodu"
+   ],
+   "cechy": [
+    "w_imieniu"
+   ]
+  },
+  {
+   "id": "K7-A028",
+   "tekst": "emeryt, 74 lata, jeszcze sprawny ale wiadomo jak to jest",
+   "persona": "senior",
+   "potrzeby": [
+    "senior"
+   ],
+   "cechy": [
+    "profil_glowny"
+   ]
+  },
+  {
+   "id": "K7-A029",
+   "tekst": "jestesmy rodzina 2+3, najmlodsze ma pol roku",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci"
+   ],
+   "cechy": [
+    "profil_glowny"
+   ]
+  },
+  {
+   "id": "K7-A030",
+   "tekst": "jestem lekarzem wiec przychodnia obok mnie nie interesuje haha. szukam spokojnej okolicy niedaleko szpitala w Prokocimiu",
+   "persona": null,
+   "potrzeby": [
+    "cisza"
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K7-A031",
+   "tekst": "bezpieczenstwo jak wszedzie, nie jestem paranoikiem. z dwojka nastolatkow szukamy czegos z dobrym liceum w okolicy",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci"
+   ],
+   "cechy": [
+    "lagodne"
+   ]
+  },
+  {
+   "id": "K7-A032",
+   "tekst": "pracuje zdalnie, musze miec cisze, a do tego park albo las zeby wyjsc z psem w przerwie",
+   "persona": null,
+   "potrzeby": [
+    "cisza",
+    "zielen",
+    "pies"
+   ],
+   "cechy": []
+  },
+  {
+   "id": "K7-A033",
+   "tekst": "mamy kota, nie psa, wychodzi tylko na balkon. zalezy nam za to zeby nie bylo smogu bo maz ma astme",
+   "persona": null,
+   "potrzeby": [
+    "powietrze"
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K7-A034",
+   "tekst": "astma u mnie i u syna, smog w Krakowie nas wykancza. szukamy w jakiejs gminie gdzie nikt nie pali smieciami w piecach",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci",
+    "powietrze"
+   ],
+   "cechy": []
+  },
+  {
+   "id": "K7-A035",
+   "tekst": "testuje ta apke na zlecenie firmy, nic nie szukam, sprawdzam tylko jak odpowiada",
+   "persona": null,
+   "potrzeby": [],
+   "cechy": [
+    "nikt_nie_szuka"
+   ]
+  },
+  {
+   "id": "K7-A036",
+   "tekst": "dzieci juz dorosle i sie wyprowadzily, zostalismy z zona we dwoje w 4 pokojach. chcemy cos mniejszego, blisko sklepow",
+   "persona": null,
+   "potrzeby": [
+    "sklepy"
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K7-A037",
+   "tekst": "cisza nocna by sie przydala, no ale wiadomo ze kolo uczelni nie bedzie idealnie. kupuje pod wynajem dla studentow, sama mieszkam w Zielonkach",
+   "persona": "inwestor",
+   "potrzeby": [
+    "inwestycja"
+   ],
+   "cechy": [
+    "lagodne"
+   ]
+  },
+  {
+   "id": "K7-A038",
+   "tekst": "lotnisko? nie, latam raz na dwa lata. wazne zeby bylo blisko lasu bo biegam codziennie",
+   "persona": null,
+   "potrzeby": [
+    "zielen"
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K7-A039",
+   "tekst": "szukam mieszkania dla mamy, ma 78 lat i sama juz nie da rady po schodach w kamienicy na Grzegorzkach. musi miec przychodnie blisko i jakis sklep zeby sama mogla wyjsc po chleb",
+   "persona": "senior",
+   "potrzeby": [
+    "senior",
+    "zdrowie",
+    "sklepy"
+   ],
+   "cechy": [
+    "w_imieniu"
+   ]
+  },
+  {
+   "id": "K7-A040",
+   "tekst": "lotnisko troche mnie interesuje bo latam pare razy w roku na wakacje, ale to drobiazg. pracuje na trzy zmiany w Skawinie wiec w nocy musi byc cicho",
+   "persona": null,
+   "potrzeby": [
+    "cisza"
+   ],
+   "cechy": [
+    "lagodne"
+   ]
+  },
+  {
+   "id": "K7-A041",
+   "tekst": "szukam dla nas 2+2 w Wieliczce, zona dojezdza pociagiem do pracy w centrum Krakowa",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci",
+    "praca_centrum"
+   ],
+   "cechy": []
+  },
+  {
+   "id": "K7-A042",
+   "tekst": "pomagam przyjaciolce ktora odeszla od meza z dwojka dzieci. musi byc bezpiecznie, szkola niedaleko, ona nie ma prawa jazdy",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci",
+    "bezpieczenstwo",
+    "bez_samochodu"
+   ],
+   "cechy": [
+    "w_imieniu"
+   ]
+  },
+  {
+   "id": "K7-A043",
+   "tekst": "cisza raczej tak, choc nie jestem przewrazliwiony, przezylem kiedys przy Alejach. mieszkam sam i szukam czegos w Podgorzu",
+   "persona": "singiel",
+   "potrzeby": [
+    "singiel"
+   ],
+   "cechy": [
+    "lagodne"
+   ]
+  },
+  {
+   "id": "K7-A044",
+   "tekst": "syn (8 lat) jest w spektrum i bardzo zle znosi halas i tlumy. potrzebujemy spokojnej uliczki i dobrej podstawowki niedaleko",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci",
+    "cisza"
+   ],
+   "cechy": [
+    "domownik"
+   ]
+  },
+  {
+   "id": "K7-A045",
+   "tekst": "czy to prawda ze lotnisko w Balicach bedzie rozbudowywane? czytalem cos w gazecie i mnie zaciekawilo",
+   "persona": null,
+   "potrzeby": [],
+   "cechy": [
+    "nikt_nie_szuka"
+   ]
+  },
+  {
+   "id": "K7-A046",
+   "tekst": "moj chlopak pracuje na zmiany na lotnisku w Balicach, ja zdalnie, wiec w strone Zabierzowa albo Bronowic by pasowalo",
+   "persona": null,
+   "potrzeby": [
+    "lotnisko"
+   ],
+   "cechy": [
+    "domownik"
+   ]
+  },
+  {
+   "id": "K7-A047",
+   "tekst": "jak mieszkalem na Kurdwanowie 10 lat temu to tramwaj byl co 20 min a sasiedzi glosni jak cholera. dzis siedze w Lublinie i sie z tego smieje",
+   "persona": null,
+   "potrzeby": [],
+   "cechy": [
+    "nikt_nie_szuka"
+   ]
+  },
+  {
+   "id": "K7-A048",
+   "tekst": "hej, co polecacie?",
+   "persona": null,
+   "potrzeby": [],
+   "cechy": [
+    "bez_sygnalu"
+   ]
+  },
+  {
+   "id": "K7-A049",
+   "tekst": "nie mam psa i nie chce miec, ale sasiad z gory ma takiego co wyje calymi dniami. nastepne mieszkanie musi byc ciche",
+   "persona": null,
+   "potrzeby": [
+    "cisza"
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K7-A050",
+   "tekst": "z dziecmi pracuje na co dzien (ucze w podstawowce), wiec po pracy chce swietego spokoju. mieszkam sama",
+   "persona": "singiel",
+   "potrzeby": [
+    "singiel",
+    "cisza"
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K7-A051",
+   "tekst": "szukam mieszkania w krakowie",
+   "persona": null,
+   "potrzeby": [],
+   "cechy": [
+    "bez_sygnalu"
+   ]
+  },
+  {
+   "id": "K7-A052",
+   "tekst": "zielen tak, ale nie las, boje sie kleszczy hehe. szukamy z mezem i trzylatkiem, przedszkole najlepiej na piechote",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci"
+   ],
+   "cechy": [
+    "lagodne"
+   ]
+  },
+  {
+   "id": "K7-A053",
+   "tekst": "ciekawe czy w Krakowie da sie w ogole oddychac w styczniu? pytam z ciekawosci, mieszkam w Gdyni i nigdzie sie nie wybieram",
+   "persona": null,
+   "potrzeby": [],
+   "cechy": [
+    "nikt_nie_szuka"
+   ]
+  },
+  {
+   "id": "K7-A054",
+   "tekst": "wolalbym nie mieszkac przy torach, ale jak bedzie dobra cena to przezyje. glownie patrze ile to mieszkanie zyska na wartosci przez 10 lat",
+   "persona": null,
+   "potrzeby": [
+    "inwestycja"
+   ],
+   "cechy": [
+    "lagodne"
+   ]
+  },
+  {
+   "id": "K7-A055",
+   "tekst": "szukam dla siostry ktora ma ciezka astme, pulmonolog kazal jej uciekac od smogu. pracuje zdalnie wiec lokalizacja w sumie obojetna",
+   "persona": null,
+   "potrzeby": [
+    "powietrze"
+   ],
+   "cechy": [
+    "w_imieniu"
+   ]
+  },
+  {
+   "id": "K7-A056",
+   "tekst": "robie w korpo w centrum, auta nie chce, rower i tramwaj mi wystarcza",
+   "persona": null,
+   "potrzeby": [
+    "praca_centrum",
+    "bez_samochodu",
+    "rower"
+   ],
+   "cechy": []
+  },
+  {
+   "id": "K7-A057",
+   "tekst": "kiedys z zona mieszkalismy przy Alejach, dzieci byly male i ciagle chorowaly od spalin. dawne dzieje, teraz jestesmy na swoim w Tarnowie i nigdzie sie nie ruszamy",
+   "persona": null,
+   "potrzeby": [],
+   "cechy": [
+    "nikt_nie_szuka"
+   ]
+  },
+  {
+   "id": "K7-A058",
+   "tekst": "z narzeczona szukamy pierwszego mieszkania. ona pracuje w szpitalu na Kopernika, ja wszedzie jezdze rowerem, auta nie mamy",
+   "persona": null,
+   "potrzeby": [
+    "praca_centrum",
+    "rower",
+    "bez_samochodu"
+   ],
+   "cechy": [
+    "domownik"
+   ]
+  },
+  {
+   "id": "K7-A059",
+   "tekst": "zielen mile widziana, bez szalu. jestem singielka, pracuje na Kazimierzu i chce tam dochodzic pieszo",
+   "persona": "singiel",
+   "potrzeby": [
+    "singiel",
+    "praca_centrum"
+   ],
+   "cechy": [
+    "lagodne"
+   ]
+  },
+  {
+   "id": "K7-A060",
+   "tekst": "mam dosc Ruczaju, wieczne korki i halas z budow. chce ciszy i drzew, synek chodzi do przedszkola",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci",
+    "cisza",
+    "zielen"
+   ],
+   "cechy": []
+  },
+  {
+   "id": "K7-A061",
+   "tekst": "kolega z pracy przenosi sie z Gdanska i prosil zebym mu cos podpowiedzial. jezdzi rowerem do biura przy Rondzie Mogilskim caly rok, auta nie ma",
+   "persona": null,
+   "potrzeby": [
+    "rower",
+    "bez_samochodu",
+    "praca_centrum"
+   ],
+   "cechy": [
+    "w_imieniu"
+   ]
+  },
+  {
+   "id": "K7-A062",
+   "tekst": "powietrze w sumie wszedzie w Krakowie podobne, nie bede sie tym zameczal. szukam 2 pokoi dla siebie i kota, mieszkam sam",
+   "persona": "singiel",
+   "potrzeby": [
+    "singiel"
+   ],
+   "cechy": [
+    "lagodne"
+   ]
+  },
+  {
+   "id": "K7-A063",
+   "tekst": "rodzice dwojki przedszkolakow z Bronowic, chcemy zostac w tej okolicy",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci"
+   ],
+   "cechy": [
+    "profil_glowny"
+   ]
+  },
+  {
+   "id": "K7-A064",
+   "tekst": "maz ma labradora, ja mam alergie na pylki wiec nie musi byc las za oknem, ale pies musi miec gdzie sie wybiegac",
+   "persona": null,
+   "potrzeby": [
+    "pies"
+   ],
+   "cechy": [
+    "domownik"
+   ]
+  },
+  {
+   "id": "K7-A065",
+   "tekst": "kupujemy lokal pod najem krotkoterminowy dla turystow, wiec im blizej Rynku tym lepiej",
+   "persona": "inwestor",
+   "potrzeby": [
+    "inwestycja"
+   ],
+   "cechy": [
+    "profil_glowny"
+   ]
+  },
+  {
+   "id": "K7-A066",
+   "tekst": "chce sprawdzic adres przy Wielickiej zanim podpisze umowe najmu",
+   "persona": null,
+   "potrzeby": [],
+   "cechy": [
+    "bez_sygnalu"
+   ]
+  },
+  {
+   "id": "K7-A067",
+   "tekst": "jakis tramwaj czy autobus niech bedzie, ale przystanek nie musi byc pod blokiem, mamy samochod. szukamy z mezem czegos z ogrodkiem dla naszego beagla",
+   "persona": null,
+   "potrzeby": [
+    "pies"
+   ],
+   "cechy": [
+    "lagodne"
+   ]
+  },
+  {
+   "id": "K7-A068",
+   "tekst": "boje sie wracac w nocy, mieszkam sama od rozwodu a pracuje do 22 w galerii",
+   "persona": "singiel",
+   "potrzeby": [
+    "singiel",
+    "bezpieczenstwo"
+   ],
+   "cechy": []
+  },
+  {
+   "id": "K7-A069",
+   "tekst": "moja mama jest seniorka ale zostaje w Tarnowie, szukam tylko dla siebie i zony. chcemy na wsi, cisza i las",
+   "persona": null,
+   "potrzeby": [
+    "cisza",
+    "zielen"
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K7-A070",
+   "tekst": "mama zamieszka z nami bo juz sama nie daje rady, ma 83 lata i cukrzyce, co tydzien chodzi do lekarza. my z mezem oboje pracujemy w centrum",
+   "persona": null,
+   "potrzeby": [
+    "senior",
+    "zdrowie",
+    "praca_centrum"
+   ],
+   "cechy": [
+    "domownik"
+   ]
+  },
+  {
+   "id": "K7-A071",
+   "tekst": "kupuje trzecie mieszkanie pod wynajem, interesuje mnie tylko stopa zwrotu i czy metr bedzie drozal",
+   "persona": "inwestor",
+   "potrzeby": [
+    "inwestycja"
+   ],
+   "cechy": [
+    "profil_glowny"
+   ]
+  },
+  {
+   "id": "K7-A072",
+   "tekst": "oswietlone ulice to plus, choc chodze wszedzie z psem wiec sie nie boje. pies to husky, musi sie wybiegac",
+   "persona": null,
+   "potrzeby": [
+    "pies"
+   ],
+   "cechy": [
+    "lagodne"
+   ]
+  },
+  {
+   "id": "K7-A073",
+   "tekst": "flipy to moja robota, szukam okazji w obwarzanku gdzie jeszcze tanio a cos sie buduje",
+   "persona": "inwestor",
+   "potrzeby": [
+    "inwestycja"
+   ],
+   "cechy": [
+    "profil_glowny"
+   ]
+  },
+  {
+   "id": "K7-A074",
+   "tekst": "znajomy twierdzi ze w Niepolomicach jest najczystsze powietrze w malopolsce, to prawda czy sciema?",
+   "persona": null,
+   "potrzeby": [],
+   "cechy": [
+    "nikt_nie_szuka"
+   ]
+  },
+  {
+   "id": "K7-A075",
+   "tekst": "freelancer, 27 lat, sam jak palec, potrzebuje tylko dobrego netu i paru knajp w okolicy",
+   "persona": "singiel",
+   "potrzeby": [
+    "singiel"
+   ],
+   "cechy": [
+    "profil_glowny"
+   ]
+  },
+  {
+   "id": "K7-A076",
+   "tekst": "zlobek przedszkole szkola, to nas nie dotyczy, jestesmy z mezem bezdzietni z wyboru. chcemy za to blisko Wisly zeby jezdzic rowerami",
+   "persona": null,
+   "potrzeby": [
+    "rower"
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K7-A077",
+   "tekst": "mieszkamy we troje z tesciem ktory jest na tlenie (POChP). zadnych kopciuchow w okolicy, zadnego smogu, przychodnia najlepiej na miejscu",
+   "persona": null,
+   "potrzeby": [
+    "powietrze",
+    "zdrowie"
+   ],
+   "cechy": [
+    "domownik"
+   ]
+  },
+  {
+   "id": "K7-A078",
+   "tekst": "pies? tylko na zdjeciach u siostry. ja potrzebuje blisko tramwaju bo nie mam prawa jazdy",
+   "persona": null,
+   "potrzeby": [
+    "bez_samochodu"
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K7-A079",
+   "tekst": "trenuje kolarstwo szosowe codziennie, potrzebuje szybkiego wyjazdu na trasy w strone Tynca",
+   "persona": null,
+   "potrzeby": [
+    "rower"
+   ],
+   "cechy": []
+  },
+  {
+   "id": "K7-A080",
+   "tekst": "30 lat, singiel, programista, kawa i rower. chce miec wszystko pod nosem a nie dojezdzac po bulki",
+   "persona": "singiel",
+   "potrzeby": [
+    "singiel",
+    "rower",
+    "sklepy"
+   ],
+   "cechy": [
+    "profil_glowny"
+   ]
+  },
+  {
+   "id": "K7-A081",
+   "tekst": "biuro mam w centrum ale bywam tam raz w miesiacu, reszta zdalnie, wiec dojazd malo mnie obchodzi. potrzebuje ciszy do pracy",
+   "persona": null,
+   "potrzeby": [
+    "cisza"
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K7-A082",
+   "tekst": "gdybym kiedys wygral w lotto to bym kupil dom w Mogilanach z widokiem na Tatry, ale to tylko takie gadanie",
+   "persona": null,
+   "potrzeby": [],
+   "cechy": [
+    "nikt_nie_szuka"
+   ]
+  },
+  {
+   "id": "K7-A083",
+   "tekst": "jestem emerytowana nauczycielka, 69 lat, mieszkam sama od smierci meza. szukam czegos mniejszego",
+   "persona": "senior",
+   "potrzeby": [
+    "senior",
+    "singiel"
+   ],
+   "cechy": [
+    "profil_glowny"
+   ]
+  },
+  {
+   "id": "K7-A084",
+   "tekst": "mieszkanie dla nas dwojga, oboje pracujemy na Starym Miescie, chcemy wszedzie chodzic pieszo i miec sklepy pod reka",
+   "persona": null,
+   "potrzeby": [
+    "praca_centrum",
+    "sklepy"
+   ],
+   "cechy": []
+  },
+  {
+   "id": "K7-A085",
+   "tekst": "studiuje i pracuje w centrum, mieszkam z dwoma kumplami, budzet ciasny ale tramwaj musi byc bo nikt z nas nie ma auta",
+   "persona": null,
+   "potrzeby": [
+    "praca_centrum",
+    "bez_samochodu"
+   ],
+   "cechy": []
+  },
+  {
+   "id": "K7-A086",
+   "tekst": "przydalby sie jakis lekarz w okolicy, wiadomo, ale rzadko choruje. mamy owczarka niemieckiego, potrzebuje duzo ruchu i lasu",
+   "persona": null,
+   "potrzeby": [
+    "pies",
+    "zielen"
+   ],
+   "cechy": [
+    "lagodne"
+   ]
+  },
+  {
+   "id": "K7-A087",
+   "tekst": "jestem stewardessa, do Balic jezdze kilka razy w tygodniu, a w wolnym czasie rower",
+   "persona": null,
+   "potrzeby": [
+    "lotnisko",
+    "rower"
+   ],
+   "cechy": []
+  },
+  {
+   "id": "K7-A088",
+   "tekst": "sklep blisko spoko, ale i tak robie zakupy raz w tygodniu autem. chce zeby bylo zielono i cicho",
+   "persona": null,
+   "potrzeby": [
+    "zielen",
+    "cisza"
+   ],
+   "cechy": [
+    "lagodne"
+   ]
+  },
+  {
+   "id": "K7-A089",
+   "tekst": "gram na perkusji, wiec szukam domu wolnostojacego z dala od sasiadow, nie chodzi o cisze dla mnie tylko dla nich. auta nie mam wiec jakis bus do Krakowa musi jezdzic",
+   "persona": null,
+   "potrzeby": [
+    "bez_samochodu"
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K7-A090",
+   "tekst": "kiedys kupilem mieszkanie pod wynajem i wiecej nie chce, mialem dosc najemcow. teraz szukam dla siebie i swojego psa, gdzies pod Krakowem",
+   "persona": null,
+   "potrzeby": [
+    "pies"
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K7-A091",
+   "tekst": "brat wraca z Norwegii z zona i dwojka maluchow, szukam im czegos na wynajem w okolicach Wieliczki. zeby przedszkole bylo i jakis park dla dzieciakow",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci",
+    "zielen"
+   ],
+   "cechy": [
+    "w_imieniu"
+   ]
+  },
+  {
+   "id": "K7-A092",
+   "tekst": "uwazam ze ta cala strefa czystego transportu to bzdura i miasto po prostu doi kierowcow",
+   "persona": null,
+   "potrzeby": [],
+   "cechy": [
+    "nikt_nie_szuka"
+   ]
+  },
+  {
+   "id": "K7-A093",
+   "tekst": "mieszkam sama, auta nie mam, chce wszystko w zasiegu spaceru: sklep, apteke, tramwaj",
+   "persona": "singiel",
+   "potrzeby": [
+    "singiel",
+    "bez_samochodu",
+    "sklepy"
+   ],
+   "cechy": []
+  },
+  {
+   "id": "K7-A094",
+   "tekst": "bezpiecznie i w miare cicho, tak ogolnie, nic specjalnego. ale apteka i lekarz musza byc blisko bo mam stwardnienie rozsiane i ciagle chodze na wizyty",
+   "persona": null,
+   "potrzeby": [
+    "zdrowie"
+   ],
+   "cechy": [
+    "lagodne"
+   ]
+  },
+  {
+   "id": "K7-A095",
+   "tekst": "czasem jade do pracy rowerem jak jest ladnie, ale glownie tramwajem. dla mnie liczy sie zeby bylo blisko biura przy Wawelu",
+   "persona": null,
+   "potrzeby": [
+    "praca_centrum"
+   ],
+   "cechy": [
+    "lagodne"
+   ]
+  },
+  {
+   "id": "K7-A096",
+   "tekst": "szukamy z zona czegos wiekszego, synek ma 3 lata, corka w drodze. zlobek i plac zabaw w zasiegu spaceru z wozkiem",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci"
+   ],
+   "cechy": [
+    "domownik"
+   ]
+  },
+  {
+   "id": "K7-A097",
+   "tekst": "niewazne gdzie byle szybko, umowa mi sie konczy za miesiac",
+   "persona": null,
+   "potrzeby": [],
+   "cechy": [
+    "bez_sygnalu"
+   ]
+  },
+  {
+   "id": "K7-A098",
+   "tekst": "oboje z mezem jestesmy po 70, maz po udarze, potrzebujemy przychodni blisko i spokojnej okolicy",
+   "persona": "senior",
+   "potrzeby": [
+    "senior",
+    "zdrowie",
+    "cisza"
+   ],
+   "cechy": []
+  },
+  {
+   "id": "K7-A099",
+   "tekst": "dom pod Krakowem z ogrodem, cisza, zielono, auta mamy dwa wiec dojazd nie problem",
+   "persona": null,
+   "potrzeby": [
+    "cisza",
+    "zielen"
+   ],
+   "cechy": []
+  },
+  {
+   "id": "K7-A100",
+   "tekst": "rower mam, jezdze czasem w weekend, sciezka by sie przydala ale nie musi byc pod domem. wazniejsze ze zona jest w ciazy i za rok bedzie potrzebny zlobek",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci"
+   ],
+   "cechy": [
+    "lagodne"
+   ]
+  },
+  {
+   "id": "K7-A101",
+   "tekst": "smog troche mnie martwi, ale nie na tyle zeby uciekac z miasta. mieszkam sama i lubie miec biedronke za rogiem",
+   "persona": "singiel",
+   "potrzeby": [
+    "singiel",
+    "sklepy"
+   ],
+   "cechy": [
+    "lagodne"
+   ]
+  },
+  {
+   "id": "K7-A102",
+   "tekst": "powietrze chcialabym lepsze niz na Pradniku, ale nie bede przez to szukac w gorach. glownie chodzi o to zeby bez auta dojechac do pracy na Rynku, prawka nie mam",
+   "persona": null,
+   "potrzeby": [
+    "bez_samochodu",
+    "praca_centrum"
+   ],
+   "cechy": [
+    "lagodne"
+   ]
+  },
+  {
+   "id": "K7-A103",
+   "tekst": "komunikacja przydalaby sie, ale bez przesady, mam auto. najwazniejsze zeby dzieciaki mialy szkole blisko",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci"
+   ],
+   "cechy": [
+    "lagodne"
+   ]
+  },
+  {
+   "id": "K7-A104",
+   "tekst": "szukam mieszkania dla syna, dostal prace w firmie na Kazimierzu i chce wreszcie mieszkac sam. imprezowanie mu juz przeszlo wiec niech bedzie spokojna uliczka",
+   "persona": "singiel",
+   "potrzeby": [
+    "singiel",
+    "praca_centrum",
+    "cisza"
+   ],
+   "cechy": [
+    "w_imieniu"
+   ]
+  },
+  {
+   "id": "K7-A105",
+   "tekst": "pytam w imieniu taty, wdowiec, 81 lat, ma owczarka i codziennie z nim chodzi. zalezy mu zeby bylo spokojnie i bez tego wiecznego trąbienia co ma teraz na Dietla",
+   "persona": "senior",
+   "potrzeby": [
+    "senior",
+    "pies",
+    "cisza"
+   ],
+   "cechy": [
+    "w_imieniu"
+   ]
+  },
+  {
+   "id": "K7-A106",
+   "tekst": "para emerytow, oboje po 70, chcemy cos na parterze",
+   "persona": "senior",
+   "potrzeby": [
+    "senior"
+   ],
+   "cechy": [
+    "profil_glowny"
+   ]
+  },
+  {
+   "id": "K7-A107",
+   "tekst": "dziadkowie sprzedaja dom pod Myslenicami i chca blizej nas. dziadek po zawale wiec lekarz musi byc pod reka, babcia boi sie chodzic wieczorem po ciemnych ulicach",
+   "persona": "senior",
+   "potrzeby": [
+    "senior",
+    "zdrowie",
+    "bezpieczenstwo"
+   ],
+   "cechy": [
+    "w_imieniu"
+   ]
+  },
+  {
+   "id": "K7-A108",
+   "tekst": "kupuje kawalerke pod wynajem blisko uczelni, ma zyskiwac na wartosci",
+   "persona": "inwestor",
+   "potrzeby": [
+    "inwestycja"
+   ],
+   "cechy": []
+  },
+  {
+   "id": "K7-A109",
+   "tekst": "mieszkam z siostra, ona biega codziennie rano a ja nie znosze halasu. chcialybysmy blisko jakiegos parku albo bulwarow nad Wisla, i cicho",
+   "persona": null,
+   "potrzeby": [
+    "cisza",
+    "zielen"
+   ],
+   "cechy": [
+    "domownik"
+   ]
+  },
+  {
+   "id": "K7-A110",
+   "tekst": "mam corke 14 lat ktora sama jezdzi do szkoly autobusem i nie chce zeby wracala po ciemku przez jakies pustkowia",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci",
+    "bezpieczenstwo"
+   ],
+   "cechy": [
+    "domownik"
+   ]
+  },
+  {
+   "id": "K7-A111",
+   "tekst": "z narzeczonym szukamy mieszkania z mysla o dzieciach w ciagu 2 lat, wiec zlobki i szkoly maja byc, i powietrze przyzwoite",
+   "persona": null,
+   "potrzeby": [
+    "dzieci",
+    "powietrze"
+   ],
+   "cechy": []
+  },
+  {
+   "id": "K7-A112",
+   "tekst": "ciocia ma 72 lata i jest na wozku, szukamy jej parteru albo bloku z winda w Nowej Hucie. przychodnia bez barier i apteka obok to podstawa",
+   "persona": "senior",
+   "potrzeby": [
+    "senior",
+    "zdrowie"
+   ],
+   "cechy": [
+    "w_imieniu"
+   ]
+  },
+  {
+   "id": "K7-A113",
+   "tekst": "szukam cichego mieszkania na Woli Justowskiej blisko lasu, mam dwa jamniki",
+   "persona": null,
+   "potrzeby": [
+    "cisza",
+    "zielen",
+    "pies"
+   ],
+   "cechy": []
+  },
+  {
+   "id": "K7-A114",
+   "tekst": "szukam domu w Mogilanach albo Swiatnikach, mamy z mezem trojke dzieci i dwa psy, dzieciaki maja same chodzic do szkoly",
+   "persona": "rodzina",
+   "potrzeby": [
+    "dzieci",
+    "pies"
+   ],
+   "cechy": []
+  },
+  {
+   "id": "K7-A115",
+   "tekst": "nie jestem jeszcze emerytem, mam 58 lat i pracuje pelna para w biurze przy Rondzie Grunwaldzkim",
+   "persona": null,
+   "potrzeby": [
+    "praca_centrum"
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K7-A116",
+   "tekst": "przychodnia moglaby byc w miare blisko, choc na razie zdrowy jestem jak kon. 66 lat, emeryt, z zona",
+   "persona": "senior",
+   "potrzeby": [
+    "senior"
+   ],
+   "cechy": [
+    "lagodne"
+   ]
+  },
+  {
+   "id": "K7-A117",
+   "tekst": "chce kupic mieszkanie ktore za 5 lat sprzedam z zyskiem, a do tego czasu bede w nim mieszkal sam",
+   "persona": "singiel",
+   "potrzeby": [
+    "singiel",
+    "inwestycja"
+   ],
+   "cechy": []
+  },
+  {
+   "id": "K7-A118",
+   "tekst": "szukam dla siebie, nie dla rodzicow (oni sa po 80, siedza w domu na Woli Justowskiej i nigdzie sie nie ruszaja). potrzebuje szybkiego dojazdu do Balic, latam co tydzien sluzbowo",
+   "persona": null,
+   "potrzeby": [
+    "lotnisko"
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K7-A119",
+   "tekst": "studentka UJ, mieszkam sama, budzet maly",
+   "persona": "singiel",
+   "potrzeby": [
+    "singiel"
+   ],
+   "cechy": [
+    "profil_glowny"
+   ]
+  },
+  {
+   "id": "K7-A120",
+   "tekst": "fajnie by bylo miec jakis park w poblizu, ale to nie warunek. wazne zeby bylo blisko do roboty w centrum bo nienawidze korkow",
+   "persona": null,
+   "potrzeby": [
+    "praca_centrum"
+   ],
+   "cechy": [
+    "lagodne"
+   ]
+  }
+ ]
+}

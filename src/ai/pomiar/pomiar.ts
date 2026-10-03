@@ -10,6 +10,7 @@
 //   … --zbior kontrolny4    # czwarty zbiór na ślepo (#157, 40 + 35), mierzony raz; + propozycje #156
 //   … --zbior kontrolny5    # piąty zbiór na ślepo (#163), mierzony raz: przed i po w jednym wywołaniu
 //   … --zbior kontrolny6    # szósty zbiór na ślepo (#170, 150 + 150), mierzony raz; + przedziały Wilsona
+//   … --zbior kontrolny7    # siódmy zbiór na ślepo (#174, 120 + 150): pomiar #172 i #173 osobno
 //   … --zbior-wlasny a.json b.json  # własne zbiory do strojenia (#163), z błędami pozycja po pozycji
 //   … --przed-po <commit> --wyjscie-przed p.json --wyjscie po.json [--wyjscie-proste s.json]
 //                           # #163: JEDNO wywołanie na pozycję z pytaniami trzech wersji naraz:
@@ -105,6 +106,9 @@ const PLIKI_KONTROLNE: Record<string, { opisz: string; zapytaj: string }> = {
   kontrolny5: { opisz: 'kontrolny5-opisz.json', zapytaj: 'kontrolny5-zapytaj.json' },
   // #170: szósty zbiór na ślepo, duży (150 opisów, 150 pytań) – wynik z przedziałami Wilsona.
   kontrolny6: { opisz: 'kontrolny6-opisz.json', zapytaj: 'kontrolny6-zapytaj.json' },
+  // #174: siódmy zbiór na ślepo (120 opisów, 150 pytań), cechy `lagodne` (#172) i
+  // `przypadkowe_slowo` (#173) – cztery osobne przebiegi: bez zmian, każda osobno, obie.
+  kontrolny7: { opisz: 'kontrolny7-opisz.json', zapytaj: 'kontrolny7-zapytaj.json' },
 }
 if (NAZWA_ZBIORU !== undefined && !PLIKI_KONTROLNE[NAZWA_ZBIORU]) {
   console.error(
