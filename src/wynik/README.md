@@ -164,6 +164,34 @@ Uszkodzony hash (np. `#/adres/%`) daje ekran Szukaj.
 Parametry: `p` (persona), `t` (tryb), `cmp` (id adresów do porównania, po przecinku).
 Stan i hash synchronizują się w obie strony. Zmiana ekranu albo adresu dodaje krok w historii przeglądarki.
 
+## Tryb „Biznes” – `biznes.ts`, `biznesOpis.ts` (E10, #105–#107)
+
+Czyste funkcje. Worker `biznes.worker.ts` trzyma indeks, ekran `src/karta/biznes/EkranBiznes.tsx`
+tylko wyświetla. Testy: `biznes.test.ts` (dane syntetyczne i wyrocznia `biznesOdniesienie.ts`
+liczona „na brute force”), `biznesWydajnosc.test.ts` (prawdziwe pliki z `public/dane/biznes`,
+pomijany bez nich).
+
+| Funkcja | Co robi |
+|---|---|
+| `przygotujKomorki(dane)` | Heksy popytu jako tablice i siatka wyszukiwania. Raz na worker, nie zależy od branży. |
+| `zbudujIndeks(komorki, punkty, promien)` | Przydziały Huffa istniejących punktów, rozkład porównawczy, najbliższy punkt w heksie. Raz na branżę (ok. 25 ms). |
+| `ocenMiejsceWIndeksie(indeks, miejsce)` | Ocena stawianego miejsca: liczy tylko heksy w jego promieniu (poniżej 1 ms). Wynik jest taki sam jak po przeliczeniu całego miasta – pilnuje tego test. |
+| `bialePlamyZIndeksu(indeks)` | Per heks: adresy w zasięgu, punkty w zasięgu, najbliższy konkurent, skala 0–100 (ok. 150 ms). |
+| `ocenMiejsce`, `obliczBialePlamy` | To samo „od zera” (indeks budowany przy każdym wywołaniu): do testów i jednorazowych obliczeń. |
+| `czynnikiOceny`, `PROGI_POZYCJI`, `PROGI_CZYNNIKOW` | 2–3 czynniki za i przeciw słowami; progi w jednym miejscu, z uzasadnieniem. |
+| `rozbicieZasiegu` | Udziały na karcie: miejsce + konkurenci = adresy w zasięgu (liczby całkowite, procenty dają 100). |
+| `zdaniePozycji`, `opisHeksuBiznesu`, `wpisyZrodel` (`biznesOpis.ts`) | Zdanie główne karty, dymki heksów i atrybucja źródeł. |
+
+Zasady:
+
+- `percentyl` to pozycja wśród ISTNIEJĄCYCH punktów branży, które mają popyt w zasięgu; `null` =
+  nie ma z czym porównać (miejsce bez adresów w zasięgu albo brak punktów odniesienia). Karta
+  podaje go słowami („więcej klientów w zasięgu niż 7 na 10 istniejących aptek”), bez znaku %.
+- Heks bez żadnego punktu w zasięgu to osobna kategoria: `adresyNaPunkt: null`, `bezPunktu(plama)`.
+  Próg nasycenia skali liczy się tylko z heksów, które mają punkt (`progSkaliPlam`).
+- Link: `#/biznes?b=<branża>&a=<lon,lat>&c=<lon,lat>`; dozwolony obszar punktu to `GRANICE_PUNKTU`
+  w `url.ts` (formularz, przeciąganie i parser linku używają tej samej definicji).
+
 ## Sloty i kto je wypełnia
 
 | Slot | Plik | Zadanie | Stan |

@@ -1,0 +1,45 @@
+/* Miejsca A i B trybu „Biznes” (#106). Przycisk 44 px (cel dotyku z src/styles.css), a kółko
+   z literą 34 px rysuje ::before. Wypełnienie to ciemny tekst (--tekst) z białą obwódką: widać je
+   na każdym stopniu skali heksów, a kolorów palety danych nie używamy jako koloru znaku. */
+.mapa-punkt-biznesu {
+  box-sizing: border-box;
+  width: var(--cel-dotyku);
+  height: var(--cel-dotyku);
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: var(--powierzchnia);
+  cursor: grab;
+  z-index: 3;
+  touch-action: none;
+}
+
+.mapa-punkt-biznesu::before {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  border: 3px solid var(--powierzchnia);
+  border-radius: 50%;
+  background: var(--tekst);
+  box-shadow: 0 2px 9px rgb(24 32 43 / 0.55);
+}
+
+.mapa-punkt-biznesu__znak {
+  position: relative;
+  font: 800 15px / 1 var(--font);
+}
+
+.mapa-punkt-biznesu:active {
+  cursor: grabbing;
+}
+
+/* Dwa kontrastujące pierścienie (biały + ciemny): wskaźnik fokusu czytelny i na jasnej,
+   i na ciemnozielonej mapie. */
+.mapa-punkt-biznesu:focus-visible {
+  outline: 3px solid var(--powierzchnia);
+  outline-offset: -2px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 5px var(--tekst);
+}

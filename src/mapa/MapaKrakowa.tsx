@@ -17,6 +17,7 @@ import adresWorkera from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import { Protocol } from 'pmtiles'
 import { type JSX, lazy, type ReactNode, Suspense, useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useZnacznikiBiznesu } from '@/mapa/biznes/ZnacznikiBiznesu'
 import {
   type Geometria,
   POZIOMY,
@@ -81,6 +82,8 @@ export interface MapaKrakowaProps {
   punktyUslug?: readonly { lon: number; lat: number; nazwa: string }[]
   postawionePunkty?: readonly { id: 'a' | 'b'; lon: number; lat: number }[]
   onPrzesunPunkt?: (id: 'a' | 'b', lon: number, lat: number) => void
+  /** Delete albo Backspace na fokusowanym znaczniku miejsca A/B (tryb „Biznes”). */
+  onUsunPunkt?: (id: 'a' | 'b') => void
   etykietySkali?: readonly [string, string, string]
   /** Własna treść legendy (tryb „Dla miasta”, #90). Bez niej: skala wyniku 0–100. */
   legenda?: ReactNode
@@ -223,6 +226,7 @@ export function MapaKrakowa({
   punktyUslug = BRAK_PUNKTOW,
   postawionePunkty = BRAK_POSTAWIONYCH,
   onPrzesunPunkt,
+  onUsunPunkt,
   etykietySkali = ['0', '50', '100'],
   legenda: wlasnaLegenda,
   opisHeksu,
@@ -240,8 +244,6 @@ export function MapaKrakowa({
   const znacznikRef = useRef<Marker | null>(null)
   const podpisMglyRef = useRef<Marker | null>(null)
   const dymekRef = useRef<Popup | null>(null)
-  const biznesMarkeryRef = useRef<Marker[]>([])
-  const onPrzesunPunktRef = useRef(onPrzesunPunkt)
   const onKlikRef = useRef(onKlik)
   const wybranyRef = useRef(wybrany)
   const opisHeksuRef = useRef(opisHeksu)
@@ -271,7 +273,6 @@ export function MapaKrakowa({
 
   useEffect(() => {
     onKlikRef.current = onKlik
-    onPrzesunPunktRef.current = onPrzesunPunkt
     wybranyRef.current = wybrany
     etapRef.current = etap
     opisHeksuRef.current = opisHeksu
@@ -456,9 +457,10 @@ export function MapaKrakowa({
     })
 
     mapa.on('click', (e) => {
-      // Klik (albo koniec przeciągania) znacznika obiektu symulatora nie stawia nowego obiektu.
+      // Klik (albo koniec przeciągania) znacznika obiektu symulatora albo miejsca A/B z trybu
+      // „Biznes” nie stawia nowego obiektu, a Enter na przycisku nie wysyła kliku w róg mapy.
       const cel = e.originalEvent.target
-      if (cel instanceof Element && cel.closest('.mapa-obiekt')) return
+      if (cel instanceof Element && cel.closest('.mapa-obiekt, .mapa-punkt-biznesu')) return
       // Klik w widoku Polski znaczy „pokaż mi dane", nie „najbliższy adres w Krakowie".
       if (etapRef.current === 'polska') return startujLot(mapa)
       onKlikRef.current?.(e.lngLat.lng, e.lngLat.lat)
@@ -482,7 +484,6 @@ export function MapaKrakowa({
       if (mapaRef.current === mapa) mapaRef.current = null
       geometriaRef.current = null
       znacznikRef.current = null
-      biznesMarkeryRef.current = []
       podpisMglyRef.current = null
       if (pauzaRef.current !== null) clearTimeout(pauzaRef.current)
       pauzaRef.current = null
@@ -671,31 +672,8 @@ export function MapaKrakowa({
     })
   }, [gotowa, punktyUslug])
 
-  useEffect(() => {
-    for (const marker of biznesMarkeryRef.current) marker.remove()
-    biznesMarkeryRef.current = []
-    const mapa = mapaRef.current
-    if (!gotowa || !mapa) return
-    for (const punkt of postawionePunkty) {
-      const el = document.createElement('div')
-      el.className = 'mapa-punkt-biznesu'
-      el.textContent = punkt.id.toUpperCase()
-      el.setAttribute('role', 'img')
-      el.setAttribute('aria-label', 'Postawione miejsce ' + punkt.id.toUpperCase())
-      const marker = new Marker({ element: el, draggable: true })
-        .setLngLat([punkt.lon, punkt.lat])
-        .addTo(mapa)
-      marker.on('dragend', () => {
-        const ll = marker.getLngLat()
-        onPrzesunPunktRef.current?.(punkt.id, ll.lng, ll.lat)
-      })
-      biznesMarkeryRef.current.push(marker)
-    }
-    return () => {
-      for (const marker of biznesMarkeryRef.current) marker.remove()
-      biznesMarkeryRef.current = []
-    }
-  }, [gotowa, postawionePunkty])
+  // Miejsca A i B trybu „Biznes”: przyciski z klawiaturą i opisem dla czytnika (#106).
+  useZnacznikiBiznesu(mapaRef, gotowa, postawionePunkty, onPrzesunPunkt, onUsunPunkt)
   // Przelot do ramki (okolica z rankingu). Klucz z liczb, bo nowa tablica przy tych samych
   // granicach nie może ruszać kamery.
   const kluczGranic = granice ? granice.flat().join(',') : null
