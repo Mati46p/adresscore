@@ -364,6 +364,10 @@
 .okol-zrodlo .okol-rozdz {
   display: block;
 }
+.okol-zrodlo .okol-zrodlo-pozycja,
+.okol-zrodlo .okol-metoda {
+  display: block;
+}
 .okol-zrodlo .atrapa {
   display: inline-block;
   margin-top: 2px;

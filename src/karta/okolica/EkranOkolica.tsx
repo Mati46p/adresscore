@@ -275,17 +275,30 @@ function Zrodla({ w }: { w: RozbicieWarstwy }) {
   const m = w.meta
   return (
     <span className="okol-zrodlo">
-      {m.zrodla.map((z, i) => (
-        <span key={z.url}>
-          {i > 0 && ', '}
-          <a href={z.url} target="_blank" rel="noreferrer">
-            {z.nazwa}
-          </a>{' '}
-          ({z.licencja && z.licencja !== '-' ? `licencja: ${z.licencja}; ` : ''}dane z{' '}
-          {z.dataDanych})
-        </span>
-      ))}
+      {m.zrodla.map((z) => {
+        const warunkiUrl = z.licencja.match(/https:\/\/[^\s)]+/)?.[0]
+        const warunkiOpis = warunkiUrl ? z.licencja.replace(warunkiUrl, '').trim() : z.licencja
+        return (
+          <span className="okol-zrodlo-pozycja" key={z.url}>
+            źródło:{' '}
+            <a href={z.url} target="_blank" rel="noreferrer">
+              {z.nazwa}
+            </a>
+            ; stan danych: {z.dataDanych}; pobrano: {z.pobrano}
+            {warunkiOpis && warunkiOpis !== '-' && <>; warunki: {warunkiOpis}</>}
+            {warunkiUrl && (
+              <>
+                {' '}
+                <a href={warunkiUrl} target="_blank" rel="noreferrer">
+                  pełne warunki ponownego wykorzystania
+                </a>
+              </>
+            )}
+          </span>
+        )
+      })}
       <span className="okol-rozdz">rozdzielczość: {opisRozdzielczosci(m)}</span>
+      <span className="okol-metoda">przetworzenie przez adresscore: {m.opis}</span>
       {m.atrapa && <span className="atrapa">dane przykładowe</span>}
     </span>
   )
