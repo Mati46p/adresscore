@@ -172,11 +172,7 @@ export function EkranPorownanie() {
       await navigator.clipboard.writeText(
         new URL(hrefDla(stan, { ekran: 'porownanie' }), location.href).href,
       )
-      ustawStatus(
-        stan.persona === 'wlasna'
-          ? 'Skopiowano link do adresów. Ręczne wagi nie są zapisywane w linku.'
-          : 'Skopiowano link do porównania.',
-      )
+      ustawStatus('Skopiowano link do porównania z aktualnymi wagami.')
     } catch {
       ustawStatus('Nie udało się skopiować. Skopiuj adres strony z przeglądarki.')
     }
@@ -194,11 +190,6 @@ export function EkranPorownanie() {
           </button>
         )}
       </div>
-      {stan.persona === 'wlasna' && okolice.length > 0 && (
-        <p className="porownanie-uwaga">
-          Link udostępnia wybrane adresy. Ręcznie ustawione wagi nie są zapisywane w linku.
-        </p>
-      )}
       {status && <p role="status">{status}</p>}
       {atrapa && (
         <p className="porownanie-uwaga">Dane przykładowe: część wyników pochodzi z atrapy.</p>
