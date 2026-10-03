@@ -162,13 +162,13 @@ const wartosci = policz(adresy, wynik.elements)
 zapiszWskaznik(
   {
     id: 'oswietlenie_100m',
-    kategoria: 'bezpieczenstwo',
-    nazwa: 'Latarnie uliczne w promieniu 100 m',
-    opis: 'Liczba latarni oznaczonych w OpenStreetMap jako highway=street_lamp w promieniu 100 m w linii prostej od adresu. Kompletność OSM bywa nierówna; zero oznacza brak oznaczonych latarni, nie dowód braku oświetlenia.',
+    kategoria: 'kontekst',
+    nazwa: 'Latarnie oznaczone w OSM w 100 m',
+    opis: 'Liczba latarni oznaczonych w OpenStreetMap jako highway=street_lamp w promieniu 100 m w linii prostej od adresu. Warstwa informacyjna, bez wpływu na ocenę bezpieczeństwa: kompletność OSM jest nierówna, a zero oznacza tylko brak oznaczonych latarni, nie dowód braku oświetlenia.',
     jednostka: 'szt.',
-    kierunek: 'wiecej-lepiej',
+    kierunek: 'neutralny',
     rozdzielczosc: 'adres',
-    zakres: [0, 30],
+    zakres: [0, wartosci.reduce((maksimum, liczba) => Math.max(maksimum, liczba), 0)],
     zadanie: 45,
     zrodla: [
       {
