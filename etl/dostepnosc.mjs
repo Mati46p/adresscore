@@ -9,7 +9,7 @@ import { DuckDBInstance } from '@duckdb/node-api'
 import { unzipSync } from 'fflate'
 import KDBush from 'kdbush'
 import proj4 from 'proj4'
-import { CACHE, DANE, dzis, pobierzDoCache, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
+import { CACHE, DANE, pobierzDoCache, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
 
 const OSM = 'https://overpass-api.de/api/interpreter'
 const GSL = 'https://wspub.nfz.gov.pl/'
@@ -207,6 +207,8 @@ function pozZGeokodowaniem(miejsca) {
   const punkty = new Map()
   let kwalifikowane = 0
   let geokodowane = 0
+  let wspolrzedneNfz = 0
+  let adresMsipPrg = 0
   for (const m of miejsca) {
     const udogodnienia = [
       m['fl-podjazd'] === '1' && 'podjazd',
@@ -216,42 +218,41 @@ function pozZGeokodowaniem(miejsca) {
     if (!udogodnienia.length) continue
     kwalifikowane++
     const klucz = [
-      lokalnosc(m['adr-lok-miejsc']),
-      ulica(m['adr-lok-ulica']),
+      lokalnosc(dekodujXml(m['adr-lok-miejsc'] ?? '')),
+      ulica(dekodujXml(m['adr-lok-ulica'] ?? '')),
       normalizuj(m['adr-lok-nr-domu']),
     ].join('|')
     const kandydaci = poAdresie.get(klucz) ?? []
     // Kod gminy GSL bywa kodem dawnej dzielnicy Krakowa; nazwa miejscowości i pełny adres są rozstrzygające.
-    const dopasowane = kandydaci.filter((a) => lokalnosc(a.gmina) === lokalnosc(m['adr-lok-gmina']))
-    const grupa = dopasowane.length ? dopasowane : kandydaci
+    const gminaNfz = lokalnosc(dekodujXml(m['adr-lok-gmina'] ?? ''))
+    // Ta sama nazwa miejscowości i numer mogą wystąpić w różnych gminach (np. Janowice).
+    // Gdy NFZ podał gminę, nie wolno zastępować jej przypadkowym adresem z innej gminy.
+    const grupa = gminaNfz ? kandydaci.filter((a) => lokalnosc(a.gmina) === gminaNfz) : kandydaci
     let punkt = null
+    // Współrzędne z oficjalnego GSL mają pierwszeństwo przed geokodem adresowym.
+    if (Number.isFinite(Number(m['wsp-geog-v'])) && Number.isFinite(Number(m['wsp-geog-h']))) {
+      const lon = Number(m['wsp-geog-v'])
+      const lat = Number(m['wsp-geog-h'])
+      if (lon > 14 && lon < 25 && lat > 49 && lat < 55) {
+        punkt = xy(lon, lat)
+        wspolrzedneNfz++
+      }
+    }
     if (
+      !punkt &&
       grupa.length &&
       grupa.every((a) => dystans(punktyAdresow[a.i], punktyAdresow[grupa[0].i]) < 100)
     ) {
       punkt = punktyAdresow[grupa[0].i]
-    } else if (
-      Number.isFinite(Number(m['wsp-geog-v'])) &&
-      Number.isFinite(Number(m['wsp-geog-h']))
-    ) {
-      const lon = Number(m['wsp-geog-v'])
-      const lat = Number(m['wsp-geog-h'])
-      if (lon > 14 && lon < 25 && lat > 49 && lat < 55) punkt = xy(lon, lat)
+      adresMsipPrg++
     }
     if (!punkt) continue
     geokodowane++
-    const opis = `${dekodujXml(m['nazwa-swd-skrocona'] || m['nazwa-swd'] || m['nazwa-miejsca'] || 'POZ')}, ${dekodujXml(m['adr-lok-ulica'] || m['adr-lok-miejsc'] || '')} ${m['adr-lok-nr-domu'] || ''} – ${udogodnienia.join(', ')}`
     const id = `${punkt[0].toFixed(0)}|${punkt[1].toFixed(0)}`
-    const poprzedni = punkty.get(id)
-    if (
-      !poprzedni ||
-      poprzedni.liczbaUdogodnien < udogodnienia.length ||
-      (poprzedni.liczbaUdogodnien === udogodnienia.length && poprzedni.opis.length > opis.length)
-    )
-      punkty.set(id, { xy: punkt, opis, liczbaUdogodnien: udogodnienia.length })
+    if (!punkty.has(id)) punkty.set(id, { xy: punkt })
   }
   if (!punkty.size) throw new Error('Nie udało się ustalić położenia żadnego POZ z udogodnieniami')
-  return { punkty: [...punkty.values()], kwalifikowane, geokodowane }
+  return { punkty: [...punkty.values()], kwalifikowane, geokodowane, wspolrzedneNfz, adresMsipPrg }
 }
 
 const [osm, gslXml] = await Promise.all([pobierzOsm(), pobierzGsl()])
@@ -270,7 +271,7 @@ const gslDane = miejscaPoz(gslXml)
 const poz = pozZGeokodowaniem(gslDane.miejsca)
 const dataNfz = gslDane.data
 console.log(
-  `OSM: ${krawezniki.length} obniżonych krawężników, ${lawki.length} ławek. NFZ: ${poz.geokodowane}/${poz.kwalifikowane} miejsc POZ z udogodnieniami ma położenie, ${poz.punkty.length} różnych punktów.`,
+  `OSM: ${krawezniki.length} obniżonych krawężników, ${lawki.length} ławek. NFZ: ${poz.geokodowane}/${poz.kwalifikowane} miejsc POZ z udogodnieniami ma położenie (${poz.wspolrzedneNfz} współrzędnych GSL, ${poz.adresMsipPrg} geokodów MSIP/PRG), ${poz.punkty.length} różnych punktów.`,
 )
 
 const baza = { kategoria: 'codziennosc', rozdzielczosc: 'adres', zadanie: 46 }
@@ -279,7 +280,7 @@ const zrodloOsm = {
   url: osm.zrodlo ?? OSM,
   licencja: 'ODbL 1.0: https://www.openstreetmap.org/copyright',
   dataDanych: osm.osm3s.timestamp_osm_base,
-  pobrano: dzis(),
+  pobrano: statSync(join(katalog, 'osm.json')).mtime.toISOString().slice(0, 10),
 }
 const zrodloNfz = {
   nazwa: 'NFZ, Gdzie się Leczyć – GSL_PUB, oddział małopolski',
@@ -287,7 +288,7 @@ const zrodloNfz = {
   licencja:
     'Publiczna usługa NFZ; dokumentacja GSL nie wskazuje odrębnej licencji. Źródło: https://www.nfz.gov.pl/',
   dataDanych: dataNfz,
-  pobrano: dzis(),
+  pobrano: statSync(join(katalog, 'gsl-06.mime')).mtime.toISOString().slice(0, 10),
 }
 const zrodlaAdresow = JSON.parse(readFileSync(join(DANE, 'adresy.json'), 'utf8')).zrodla
 
@@ -314,9 +315,7 @@ for (const [id, nazwa, punkty] of [
 
 const pozBush = indeks(poz.punkty)
 const odleglosci = []
-const etykiety = []
 for (const p of punktyAdresow) {
-  let najlepszy = null
   let minimum = Infinity
   // Typowa liczba geokodowanych placówek to kilkaset. Siatka KDBush ogranicza kandydatów.
   let promien = 1000
@@ -327,26 +326,21 @@ for (const p of punktyAdresow) {
   }
   for (const i of ids) {
     const d = dystans(p, poz.punkty[i].xy)
-    if (d < minimum) {
-      minimum = d
-      najlepszy = poz.punkty[i]
-    }
+    if (d < minimum) minimum = d
   }
-  odleglosci.push(najlepszy ? minimum : null)
-  etykiety.push(najlepszy?.opis ?? null)
+  odleglosci.push(Number.isFinite(minimum) ? minimum : null)
 }
 zapiszWskaznik(
   {
     ...baza,
     id: 'przychodnia_bez_barier_odleglosc',
-    nazwa: 'Najbliższa przychodnia POZ z udogodnieniami',
-    opis: `Odległość w linii prostej do najbliższego miejsca POZ z potwierdzonym podjazdem, windą dostosowaną lub toaletą dostosowaną. Położenie ze współrzędnych NFZ lub dopasowania adresu do MSIP/PRG. Geokodowanie objęło ${poz.geokodowane} z ${poz.kwalifikowane} miejsc z udogodnieniami w oddziale małopolskim; odległość może być zawyżona przy pominiętych placówkach.`,
+    nazwa: 'Najbliższa przychodnia POZ ze zgłoszonym udogodnieniem',
+    opis: `Odległość w linii prostej do najbliższego miejsca POZ, które w GSL NFZ ma zgłoszony co najmniej jeden z elementów: podjazd, windę dostosowaną lub toaletę dostosowaną. To nie potwierdza pełnej dostępności placówki; szczegóły należy sprawdzić w NFZ przed wizytą. Położenie ze współrzędnych NFZ lub dopasowania adresu do MSIP/PRG. GSL obejmuje całe województwo, katalog adresów tylko Kraków i sąsiednie gminy; geokodowanie objęło ${poz.geokodowane} z ${poz.kwalifikowane} miejsc z udogodnieniami w Małopolsce. Pominięte placówki mogą zawyżać odległość.`,
     jednostka: 'm',
     kierunek: 'mniej-lepiej',
     zakres: [0, 5000],
     zrodla: [zrodloNfz, ...zrodlaAdresow],
   },
   odleglosci,
-  etykiety,
 )
 console.log(`Czas: ${((performance.now() - start) / 1000).toFixed(1)} s`)
