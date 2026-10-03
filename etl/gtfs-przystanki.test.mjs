@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { strToU8, zipSync } from 'fflate'
 import {
+  aktywneStopIds,
   csv,
   indeksPrzystankow,
   najblizszyPrzystanek,
@@ -41,4 +42,19 @@ test('najbliższy peron: prawidłowa geodezja i brak pokrycia poza miastem', () 
   assert.ok(Math.abs(wynik.metry - 111.19) < 0.1)
   assert.equal(odlegloscMetry(50, 20, 50, 20), 0)
   assert.equal(najblizszyPrzystanek({ lat: 52, lon: 21 }, punkty, indeks), null)
+})
+
+test('GTFS: wyjątek kalendarza aktywuje kurs, bez wsiadania nie liczy peronu', () => {
+  const pliki = {
+    'calendar.txt': strToU8(
+      'service_id,monday,tuesday,wednesday,thursday,friday,saturday,sunday,start_date,end_date\ns,0,0,0,0,0,0,0,20261001,20261031\n',
+    ),
+    'calendar_dates.txt': strToU8('service_id,date,exception_type\ns,20261003,1\n'),
+    'trips.txt': strToU8('trip_id,service_id\nt,s\n'),
+    'stop_times.txt': strToU8(
+      'trip_id,arrival_time,departure_time,stop_id,stop_sequence,stop_headsign,pickup_type,drop_off_type\nt,07:00:00,07:00:00,bez_wsiadania,1,,1,0\nt,07:05:00,07:05:00,z_wsiadaniem,2,,0,0\n',
+    ),
+  }
+  assert.deepEqual([...aktywneStopIds(pliki, '2026-10-03')], ['z_wsiadaniem'])
+  assert.throws(() => aktywneStopIds(pliki, '2026-10-04'), /brak aktywnych usług/)
 })

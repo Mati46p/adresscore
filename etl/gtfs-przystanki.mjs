@@ -13,6 +13,18 @@ const GRUPY = ['A', 'M', 'T']
 const RAD = Math.PI / 180
 const PROMIEN_ZIEMI = 6_371_000
 const MAX_PROMIEN = 16_000
+const DNI = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+
+function dataLokalna(data = new Date()) {
+  const czesci = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Europe/Warsaw',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(data)
+  const pole = (nazwa) => czesci.find((czesc) => czesc.type === nazwa).value
+  return `${pole('year')}-${pole('month')}-${pole('day')}`
+}
 
 export function odlegloscMetry(aLat, aLon, bLat, bLon) {
   const dLat = (bLat - aLat) * RAD
@@ -58,11 +70,78 @@ export function csv(tekst) {
   return dane.map((pola) => Object.fromEntries(naglowek.map((n, i) => [n, pola[i] ?? ''])))
 }
 
-export function odczytajGtfs(bufor, grupa) {
+/** Wybiera tylko przystanki, na których w danym dniu można wsiąść do kursu. */
+export function aktywneStopIds(pliki, data) {
+  for (const nazwa of ['calendar.txt', 'calendar_dates.txt', 'trips.txt', 'stop_times.txt'])
+    if (!pliki[nazwa]) throw new Error(`GTFS: brak ${nazwa}`)
+  const dzien = data.replaceAll('-', '')
+  const dzienTygodnia = DNI[new Date(`${data}T12:00:00Z`).getUTCDay()]
+  if (!dzienTygodnia) throw new Error(`Niepoprawna data: ${data}`)
+  const uslugi = new Set()
+  for (const w of csv(strFromU8(pliki['calendar.txt'])))
+    if (w.start_date <= dzien && w.end_date >= dzien && w[dzienTygodnia] === '1')
+      uslugi.add(w.service_id)
+  for (const w of csv(strFromU8(pliki['calendar_dates.txt']))) {
+    if (w.date !== dzien) continue
+    if (w.exception_type === '1') uslugi.add(w.service_id)
+    if (w.exception_type === '2') uslugi.delete(w.service_id)
+  }
+  if (!uslugi.size) throw new Error(`GTFS: brak aktywnych usług na ${data}`)
+  const kursy = new Set(
+    csv(strFromU8(pliki['trips.txt']))
+      .filter((w) => uslugi.has(w.service_id))
+      .map((w) => w.trip_id),
+  )
+  if (!kursy.size) throw new Error(`GTFS: brak kursów na ${data}`)
+
+  // stop_times.txt w autobusowym A ma ~140 MB. Skanujemy go po kawałku, bez
+  // tworzenia setek tysięcy obiektów JS; w publicznym feedzie ID i czasy nie
+  // zawierają cudzysłowów ani przecinków.
+  const bajty = pliki['stop_times.txt']
+  const dekoder = new TextDecoder()
+  const przystanki = new Set()
+  let reszta = ''
+  let pierwsza = true
+  for (let od = 0; od < bajty.length; od += 1024 * 1024) {
+    const tekst = reszta + dekoder.decode(bajty.subarray(od, od + 1024 * 1024), { stream: true })
+    const linie = tekst.split('\n')
+    reszta = linie.pop()
+    for (const linia of linie) {
+      if (pierwsza) {
+        pierwsza = false
+        if (!linia.startsWith('trip_id,arrival_time,departure_time,stop_id,'))
+          throw new Error('GTFS: nieoczekiwany układ stop_times.txt')
+        continue
+      }
+      const a = linia.indexOf(',')
+      if (a < 0 || !kursy.has(linia.slice(0, a))) continue
+      const b = linia.indexOf(',', a + 1)
+      const c = linia.indexOf(',', b + 1)
+      const d = linia.indexOf(',', c + 1)
+      const e = linia.indexOf(',', d + 1)
+      const f = linia.indexOf(',', e + 1)
+      const g = linia.indexOf(',', f + 1)
+      if (b < 0 || c < 0 || d < 0 || e < 0 || f < 0 || g < 0) continue
+      if (linia.slice(f + 1, g) !== '1') przystanki.add(linia.slice(c + 1, d))
+    }
+  }
+  if (!przystanki.size) throw new Error(`GTFS: brak obsługiwanych przystanków na ${data}`)
+  return przystanki
+}
+
+export function odczytajGtfs(bufor, grupa, dataObslugi) {
   let pliki
   try {
     pliki = unzipSync(bufor, {
-      filter: ({ name }) => name === 'stops.txt' || name === 'feed_info.txt',
+      filter: ({ name }) =>
+        [
+          'stops.txt',
+          'feed_info.txt',
+          'calendar.txt',
+          'calendar_dates.txt',
+          'trips.txt',
+          'stop_times.txt',
+        ].includes(name),
     })
   } catch (blad) {
     throw new Error(`GTFS ${grupa}: niekompletny/uszkodzony ZIP: ${blad.message}`)
@@ -72,7 +151,9 @@ export function odczytajGtfs(bufor, grupa) {
   const informacje = csv(strFromU8(pliki['feed_info.txt']))[0]
   const wiersze = csv(strFromU8(pliki['stops.txt']))
   if (!wiersze.length) throw new Error(`GTFS ${grupa}: puste stops.txt`)
+  const czynne = dataObslugi ? aktywneStopIds(pliki, dataObslugi) : null
   const punkty = wiersze.flatMap((p) => {
+    if (czynne && !czynne.has(p.stop_id)) return []
     if (!p.stop_lat || !p.stop_lon) return []
     const lat = Number(p.stop_lat)
     const lon = Number(p.stop_lon)
@@ -94,7 +175,7 @@ export function odczytajGtfs(bufor, grupa) {
   return { informacje, punkty, odrzucone: wiersze.length - punkty.length }
 }
 
-async function pobierzGrupe(grupa) {
+async function pobierzGrupe(grupa, dataObslugi) {
   mkdirSync(CACHE, { recursive: true })
   const url = `${BAZA}/GTFS_KRK_${grupa}.zip`
   const cel = join(CACHE, `GTFS_KRK_${grupa}_${dzis()}.zip`)
@@ -107,7 +188,7 @@ async function pobierzGrupe(grupa) {
         bufor.length === meta.bajty &&
         createHash('sha256').update(bufor).digest('hex') === meta.sha256
       ) {
-        return { ...odczytajGtfs(bufor, grupa), url, ...meta }
+        return { ...odczytajGtfs(bufor, grupa, dataObslugi), url, ...meta }
       }
     } catch {
       /* uszkodzony cache trzeba pobrać ponownie */
@@ -125,7 +206,7 @@ async function pobierzGrupe(grupa) {
       const oczekiwane = Number(odpowiedz.headers.get('content-length'))
       if (oczekiwane && bufor.length !== oczekiwane)
         throw new Error(`ucięte pobranie: ${bufor.length}/${oczekiwane} bajtów`)
-      const dane = odczytajGtfs(bufor, grupa)
+      const dane = odczytajGtfs(bufor, grupa, dataObslugi)
       const meta = {
         bajty: bufor.length,
         sha256: createHash('sha256').update(bufor).digest('hex'),
@@ -183,23 +264,17 @@ export function najblizszyPrzystanek(adres, punkty, indeks) {
 
 function dataZNaglowka(naglowek, informacje) {
   const data = naglowek && new Date(naglowek)
-  if (data && !Number.isNaN(data.getTime())) {
-    const czesci = new Intl.DateTimeFormat('en-GB', {
-      timeZone: 'Europe/Warsaw',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    }).formatToParts(data)
-    const pole = (nazwa) => czesci.find((czesc) => czesc.type === nazwa).value
-    return `${pole('year')}-${pole('month')}-${pole('day')}`
-  }
+  if (data && !Number.isNaN(data.getTime())) return dataLokalna(data)
   const wersja = informacje.feed_version?.match(/^(\d{4})(\d{2})(\d{2})/)
   if (wersja) return `${wersja[1]}-${wersja[2]}-${wersja[3]}`
   throw new Error('Brak daty stanu GTFS w Last-Modified i feed_version')
 }
 
 export async function generuj() {
-  const feedy = await Promise.all(GRUPY.map(pobierzGrupe))
+  const dataObslugi = dataLokalna()
+  // Kolejno, żeby nie trzymać w pamięci równocześnie trzech dużych stop_times.
+  const feedy = []
+  for (const grupa of GRUPY) feedy.push(await pobierzGrupe(grupa, dataObslugi))
   for (const [i, f] of feedy.entries())
     console.log(
       `GTFS ${GRUPY[i]}: ${f.punkty.length} peronów, ${f.odrzucone} odrzuconych, SHA-256 ${f.sha256}`,
@@ -213,7 +288,7 @@ export async function generuj() {
       id: 'przystanek_odleglosc',
       kategoria: 'transport',
       nazwa: 'Najbliższy przystanek',
-      opis: 'Odległość geodezyjna w linii prostej od punktu adresowego do najbliższego punktu przystankowego w plikach GTFS ZTP. To nie jest długość trasy pieszej ani gwarancja bieżącej obsługi. Poza zasięgiem 16 km: brak danych.',
+      opis: `Odległość geodezyjna w linii prostej do najbliższego przystanku z kursami umożliwiającymi wsiadanie w dniu ${dataObslugi} (rozkład GTFS ZTP). To nie jest długość dojścia pieszo; warstwę należy przeliczać dla nowej daty. Poza zasięgiem 16 km: brak danych.`,
       jednostka: 'm',
       kierunek: 'mniej-lepiej',
       rozdzielczosc: 'adres',
