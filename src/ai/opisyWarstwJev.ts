@@ -6,8 +6,10 @@
 // Bez skrótów (albo skrót z rozwinięciem obok), bez żargonu („oczko siatki”, „H3”), jednostki
 // słowami. `public/dane` się nie zmienia.
 //
-// `nie_dla` i `przyklady` mają TYLKO opcje, które JEV mylił w zapisanych przebiegach (rodzina
-// powodzi, rodzina powietrza, hałas a komunikacja, cena a „nie wiem”). Pozostałe – samo `co`.
+// `nie_dla` i `przyklady` mają TYLKO opcje, które JEV mylił w zapisanych przebiegach (powódź,
+// rodzina powietrza, hałas a komunikacja, cena a „nie wiem”). Pozostałe – samo `co`.
+// #176: po #171 powódź to jedna warstwa (`powodz_10proc`), a hałas i pozwolenia na budowę
+// obejmują Kraków i gminy wokół w jednej warstwie.
 // Dopiski z #147 (park, skwer, smog, „słychać tramwaje”…) są wplecione w zdania.
 //
 // Nowa warstwa bez wpisu tu dostaje w aplikacji opis z danych (`listaWarstw`), ale test
@@ -31,14 +33,14 @@ export const OPISY_WARSTW_DLA_JEV: Readonly<Record<string, OpisStrukturalny>> = 
   azbest_budynki_100m: {
     co: 'Liczba budynków z azbestem (np. stary eternit na dachu) w promieniu 100 metrów, według rządowej Bazy Azbestowej. Odpowiada na pytania, czy w okolicy jest azbest.',
   },
-  bankomat_poczta_odleglosc: {
-    co: `${M}ego bankomatu albo placówki pocztowej. Odpowiada na pytania o bankomat, wypłatę gotówki i pocztę.`,
-  },
   bap_srednia: {
     co: 'Średnie roczne stężenie benzo(a)pirenu – rakotwórczego składnika dymu z pieców, gdzie pali się węglem albo drewnem. Odpowiada na pytania o dym z kominów, palenie w piecach i zapach dymu zimą.',
     nie_dla:
       'Ogólne pytanie o smog i jakość powietrza (to pył zawieszony PM2,5) i pytanie, ile domów w okolicy ma piece (to paleniska).',
     przyklady: ['Czuć tu zimą dym z kominów?'],
+  },
+  biblioteka_1200m: {
+    co: 'Czy w promieniu 1,2 kilometra (w linii prostej) jest biblioteka zaznaczona na otwartej mapie OpenStreetMap – tak albo nie. Odpowiada na pytania, czy blisko jest biblioteka i gdzie wypożyczyć książki.',
   },
   bo_projekty_1km: {
     co: 'Liczba zakończonych projektów budżetu obywatelskiego Krakowa (pomysłów mieszkańców sfinansowanych przez miasto) w promieniu 1 kilometra. Odpowiada na pytania, co mieszkańcy tu zbudowali i ulepszyli.',
@@ -77,6 +79,12 @@ export const OPISY_WARSTW_DLA_JEV: Readonly<Record<string, OpisStrukturalny>> = 
   frekwencja_samorzad_2024: {
     co: 'Jaki procent mieszkańców gminy głosował w wyborach samorządowych w 2024 roku (wynik całej gminy, nie okolicy). Odpowiada na pytania o frekwencję i udział mieszkańców w wyborach.',
   },
+  gastronomia_1200m: {
+    co: 'Czy w promieniu 1,2 kilometra (w linii prostej) jest restauracja, kawiarnia albo bar szybkiej obsługi zaznaczony na otwartej mapie OpenStreetMap – tak albo nie. Odpowiada na pytania, czy pieszo da się wyjść coś zjeść na mieście.',
+  },
+  gastronomia_odleglosc: {
+    co: `${M}ej restauracji, kawiarni albo baru szybkiej obsługi (według otwartej mapy OpenStreetMap). Odpowiada na pytania, gdzie zjeść albo wypić kawę na mieście i ile lokali z jedzeniem jest w pobliżu, np. przy otwieraniu własnego.`,
+  },
   gestosc_zaludnienia_100m: {
     co: 'Ile osób zameldowanych na stałe przypada na hektar w najbliższej okolicy (obszar ok. 200 metrów wokół adresu, tylko Kraków). Odpowiada na pytania, czy jest tłoczno i gęsto zabudowane.',
   },
@@ -98,19 +106,11 @@ export const OPISY_WARSTW_DLA_JEV: Readonly<Record<string, OpisStrukturalny>> = 
   gmina_pit_na_mieszkanca: {
     co: 'Dochody budżetu gminy z podatku dochodowego od osób fizycznych (PIT) na mieszkańca – zamożność budżetu gminy, nie zarobki sąsiadów. Odpowiada na pytania, czy gmina jest bogata.',
   },
-  gmina_powodz_powierzchnia_pct: {
-    co: 'Jaka część powierzchni całej gminy leży w strefie zalewowej (dane Wód Polskich) – miara dla gminy, nie dla adresu. Odpowiada na pytania, jak bardzo cała gmina jest narażona na powódź.',
-    nie_dla:
-      'Pytanie, czy zaleje ten konkretny dom, adres albo piwnicę (to zagrożenie powodzią 1%).',
-  },
   halas_ldwn: {
-    co: 'Hałas pod adresem w Krakowie: najwyższe pasmo wskaźnika hałasu dzienno-wieczorno-nocnego (LDWN, w decybelach) od ulic, tramwajów, kolei i przemysłu. Odpowiada na pytania, czy jest głośno albo cicho, czy słychać ulicę lub tramwaje i czy da się spać przy otwartym oknie.',
+    co: 'Hałas pod adresem w Krakowie i w gminach wokół: najwyższe pasmo wskaźnika hałasu dzienno-wieczorno-nocnego (LDWN, w decybelach) od ulic, tramwajów, kolei, przemysłu i lotniska. Odpowiada na pytania, czy jest głośno albo cicho, czy słychać ulicę lub tramwaje i czy da się spać przy otwartym oknie.',
     nie_dla:
       'Pytanie, jak daleko jest przystanek albo jak często jeździ tramwaj lub autobus (to przystanek i kursy).',
     przyklady: ['Nie hałasują tu tramwaje w nocy?', 'Da się spać przy otwartym oknie?'],
-  },
-  halas_obwarzanek_lden: {
-    co: 'Hałas pod adresem poza Krakowem: najwyższe pasmo wskaźnika hałasu dzienno-wieczorno-nocnego (Lden, w decybelach) z unijnych map hałasu dużych dróg, kolei i lotniska. Odpowiada na pytania, czy jest głośno albo cicho w gminach wokół Krakowa.',
   },
   imprezy_obiekty_dni_500m_2025_26: {
     co: 'Przez ile dni w sezonie 2025/26 było wydarzenie (koncert, mecz, targi) w dużym obiekcie do 500 metrów: TAURON Arena, EXPO, ICE Kraków, stadiony Cracovii i Wisły. Odpowiada na pytania o tłumy, korki i hałas po meczach i koncertach.',
@@ -119,10 +119,7 @@ export const OPISY_WARSTW_DLA_JEV: Readonly<Record<string, OpisStrukturalny>> = 
     co: 'Liczba stałych imprez plenerowych z miejskiego wykazu na 2026 rok (koncerty, festyny, jarmarki) w promieniu 500 metrów, tylko Kraków. Odpowiada na pytania, czy w okolicy często są imprezy, koncerty i tłumy.',
   },
   inwestycje_500m: {
-    co: 'Liczba pozwoleń na budowę wydanych w latach 2025–2026 w promieniu 500 metrów, w Krakowie. Odpowiada na pytania, czy coś tu wybudują, czy będzie budowa za oknem i czy okolica się zabuduje.',
-  },
-  inwestycje_500m_obwarzanek: {
-    co: 'Liczba pozwoleń na budowę wydanych w latach 2025–2026 w promieniu 500 metrów, w gminach wokół Krakowa. Odpowiada na pytania, czy coś tu wybudują i czy będzie budowa – poza Krakowem.',
+    co: 'Liczba pozwoleń na budowę wydanych w latach 2025–2026 w promieniu 500 metrów, w Krakowie i w gminach wokół. Odpowiada na pytania, czy coś tu wybudują, czy będzie budowa za oknem i czy okolica się zabuduje.',
   },
   kapielisko_odleglosc: {
     co: `${M}ego oficjalnego kąpieliska (np. Bagry, Zakrzówek, Kryspinów). Odpowiada na pytania, gdzie można się latem wykąpać i iść na plażę.`,
@@ -217,23 +214,16 @@ export const OPISY_WARSTW_DLA_JEV: Readonly<Record<string, OpisStrukturalny>> = 
   policja_odleglosc: {
     co: `${M}ego komisariatu policji w Krakowie – to dostępność policji, nie poziom przestępczości. Odpowiada na pytania, gdzie jest najbliższy komisariat.`,
   },
+  poczta_1200m: {
+    co: 'Czy w promieniu 1,2 kilometra (w linii prostej) jest poczta albo punkt pocztowy zaznaczony na otwartej mapie OpenStreetMap – tak albo nie. Odpowiada na pytania, czy blisko jest poczta, gdzie nadać list albo odebrać przesyłkę.',
+  },
   powiat_wynagrodzenie_brutto: {
     co: 'Przeciętne miesięczne wynagrodzenie brutto w powiecie (w firmach zatrudniających co najmniej 10 osób), nie zarobki sąsiadów. Odpowiada na pytania, ile się tu zarabia.',
   },
-  powodz_02proc: {
-    co: 'Głębokość wody pod adresem przy skrajnie rzadkiej, katastrofalnej powodzi – raz na 500 lat (prawdopodobieństwo 0,2%), według rządowych map zagrożenia powodziowego. Odpowiedź tylko na pytania o najgorszy możliwy scenariusz.',
-    nie_dla: 'Zwykłe pytanie, czy tu zalewa albo czy grozi powódź (to powódź 1%).',
-    przyklady: ['A przy najgorszej, katastrofalnej powodzi?'],
-  },
   powodz_10proc: {
-    co: 'Głębokość wody pod adresem przy częstej powodzi – raz na 10 lat (prawdopodobieństwo 10%), według rządowych map zagrożenia powodziowego. Odpowiedź tylko na pytania o częste zalewanie, co kilka lat.',
-    nie_dla: 'Zwykłe pytanie, czy tu zalewa albo czy grozi powódź (to powódź 1%).',
-    przyklady: ['Czy zalewa tu co parę lat?'],
-  },
-  powodz_1proc: {
-    co: 'Głębokość wody pod adresem przy dużej powodzi – raz na 100 lat (prawdopodobieństwo 1%), według rządowych map zagrożenia powodziowego. Domyślna odpowiedź na pytania, czy tu zalewa, czy zaleje piwnicę, o powódź, wysoką wodę, wylewy rzeki i podtopienia.',
+    co: 'Głębokość wody pod adresem przy powodzi, która zdarza się raz na 10 lat (prawdopodobieństwo 10%), według rządowych map zagrożenia powodziowego. Jedyna warstwa powodzi: odpowiada na pytania, czy tu zalewa, czy zaleje piwnicę, o powódź, wylewy rzeki i podtopienia.',
     nie_dla:
-      'Pytanie wprost o częste zalewanie co kilka lat (powódź 10%) albo o najgorszy, katastrofalny scenariusz (powódź 0,2%).',
+      'Pytanie, jak blisko jest rzeka, potok albo staw (to odległość do wody) – sama bliskość wody to nie zagrożenie powodzią.',
     przyklady: ['Czy ta okolica jest zagrożona powodzią?', 'Rzeka tu wylewa?'],
   },
   pozary_gmina_2025: {
@@ -332,6 +322,9 @@ export const OPISY_WARSTW_DLA_JEV: Readonly<Record<string, OpisStrukturalny>> = 
   stojaki_300m: {
     co: 'Liczba miejskich stojaków rowerowych w promieniu 300 metrów, tylko Kraków. Odpowiada na pytania, gdzie przypiąć rower.',
   },
+  straz_pozarna_odleglosc: {
+    co: `${M}ej jednostki straży pożarnej, zawodowej albo ochotniczej (według otwartej mapy OpenStreetMap). To położenie remizy, nie czas dojazdu. Odpowiada na pytania, jak daleko jest straż pożarna.`,
+  },
   swiatlo_nocne_viirs: {
     co: 'Jak jasno jest nocą w okolicy, widziane z satelity – ilość sztucznego światła (łuna miasta, zanieczyszczenie światłem). Odpowiada na pytania, czy nocą jest ciemno i widać gwiazdy, czy wszędzie świeci miasto.',
   },
@@ -358,9 +351,6 @@ export const OPISY_WARSTW_DLA_JEV: Readonly<Record<string, OpisStrukturalny>> = 
   },
   urzad_odleglosc: {
     co: `${M}ego urzędu gminy, miasta albo dzielnicy. Odpowiada na pytania, gdzie załatwić sprawę w urzędzie.`,
-  },
-  uslugi_15min: {
-    co: 'Ile z 10 rodzajów codziennych usług (sklep, apteka, szkoła, przedszkole, żłobek, lekarz, jedzenie na mieście, bankomat, poczta lub paczkomat, biblioteka) jest w promieniu 1,2 kilometra. Odpowiada na pytania, czy wszystko jest blisko pieszo.',
   },
   uzbrojenie_gaz_50m: {
     co: 'Czy w promieniu 50 metrów od adresu jest sieć gazowa (według ewidencji uzbrojenia terenu), tylko gminy wokół Krakowa i obrzeża miasta. Odpowiada na pytania, czy działka ma dostęp do gazu.',

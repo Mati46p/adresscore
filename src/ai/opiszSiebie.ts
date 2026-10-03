@@ -69,7 +69,9 @@ export const POZIOMY_WAZNOSCI = [
  * Kategorie, o których poziom pytamy JEV (#147: bez „Przyszłości okolicy”). Zwolnione miejsce
  * zajęło twierdzenie o własnej sytuacji – limit pośrednika to 16 pytań. Przyszłość okolicy
  * wynika z profilu Inwestor (potrzeba `inwestycja` z tabeli POTRZEBY); w #18 JEV odszedł od
- * środka skali tylko w 2 z 30 opisów, a jeden z nich i tak był inwestorem.
+ * środka skali tylko w 2 z 30 opisów, a jeden z nich i tak był inwestorem. #176: po #171
+ * „Przyszłość okolicy” weszła do „Społeczności i kosztów” (`spolecznosc`) – o jej poziom też
+ * nie pytamy, a profil Inwestor podnosi ją przez potrzebę `inwestycja`.
  *
  * #153: bez „Codzienności pieszo” – jej miejsce zajęło drugie twierdzenie bramki. Codzienność
  * podnoszą potrzeby (dzieci, senior, lekarz, sklepy, rower, bez samochodu). Przeliczenie
@@ -728,8 +730,9 @@ export function przetworzOdpowiedzi(
   if (persona === null && potrzeby.length === 0 && Object.keys(poziomy).length === 0) return null
   // #155: pod progiem (albo „nieznany”) profil tylko z mocnych potrzeb; bez nich – bez zmian.
   if (persona === null) persona = profilZMocnychPotrzeb(odpowiedzi, tekst, progi)
-  // Przyszłość okolicy nie ma już pytania o poziom – niesie ją profil Inwestor przez potrzebę
-  // `inwestycja` (jej kategorie i wskaźniki z tabeli POTRZEBY, bez liczby od JEV).
+  // Społeczność i koszty (po #171 także dawna „Przyszłość okolicy”) nie ma pytania o poziom –
+  // niesie ją profil Inwestor przez potrzebę `inwestycja` (jej kategorie i wskaźniki z tabeli
+  // POTRZEBY, bez liczby od JEV).
   if (persona === 'inwestor') potrzeby.push({ id: 'inwestycja', procent: null })
   return zloz(persona, pewnoscPersony, potrzeby, poziomy)
 }
@@ -817,6 +820,7 @@ export function wagiZeZrozumienia(
   for (const { id, kategoria } of wskazniki) {
     const przed = baza.wagi[id] ?? 0
     let w = przed
+    // `przyszlosc` zostaje w kontrakcie tylko dla starych ustawień (#171) – nie ma wagi z JEV.
     if (kategoria !== 'kontekst' && kategoria !== 'przyszlosc') {
       const poziom = z.kategorie[kategoria]
       if (poziom !== undefined) w = poziom <= 1 ? Math.min(w, poziom) : Math.max(w, poziom)

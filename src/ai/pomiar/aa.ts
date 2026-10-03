@@ -20,6 +20,7 @@ import {
   PROG_POTRZEBY,
 } from '../opiszSiebie.ts'
 import { listaWarstw, PROG_TEMATU, wybierzWarstwy } from '../zapytajOAdres.ts'
+import { tematyPoWycofaniu } from './wycofane.ts'
 
 const KATALOG = new URL('./', import.meta.url)
 const KORZEN = new URL('../../../', import.meta.url)
@@ -43,7 +44,14 @@ const coDruga = <T>(xs: readonly T[]) => xs.filter((_, i) => i % 2 === 0)
 export const ZESTAW_A: PozycjaOpisz[] = coDruga(
   (czytaj('zbior-opisz.json').pozycje as PozycjaOpisz[]).filter((p) => p.tekst.trim()),
 )
-export const ZESTAW_B: PozycjaZapytaj[] = coDruga(czytaj('zbior-zapytaj.json').pozycje)
+// #176: stare id warstw (#171) liczą się jak ich następcy; pozycja bez żadnej grupy po zamianie
+// wypadłaby z liczenia (w zbiorze do strojenia takiej nie ma).
+export const ZESTAW_B: PozycjaZapytaj[] = coDruga(
+  czytaj('zbior-zapytaj.json').pozycje as PozycjaZapytaj[],
+).flatMap((p) => {
+  const w = tematyPoWycofaniu(p.tematy)
+  return w.tematy.length === 0 && w.pominiete > 0 ? [] : [{ ...p, tematy: w.tematy }]
+})
 
 const katalogWskaznikow = new URL('public/dane/wskazniki/', KORZEN)
 const LISTA = listaWarstw(

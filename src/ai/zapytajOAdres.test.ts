@@ -1226,4 +1226,31 @@ describe('scalone warstwy Krakowa i obwarzanka', () => {
       )
     }
   })
+
+  // #176: mechanizm bliźniaków (#161) usunięty, bo po #171 nie ma żadnej pary. Gdyby w danych
+  // znów pojawiły się dwie warstwy tej samej jednostki – jedna tylko w Krakowie, druga tylko
+  // poza nim – ten test się wywróci: trzeba je scalić w ETL albo przywrócić zamianę.
+  it('żadna para „tylko Kraków / tylko poza Krakowem” z tą samą jednostką', () => {
+    const adresy = JSON.parse(readFileSync('public/dane/adresy.json', 'utf8')) as {
+      kolumny: { gmina: string[] }
+    }
+    const wKrakowie = adresy.kolumny.gmina.map((g) => g === 'Kraków')
+    const katalog = 'public/dane/wskazniki'
+    const tylkoK = new Map<string, string[]>()
+    const tylkoPoza = new Map<string, string[]>()
+    for (const f of readdirSync(katalog).filter((x) => x.endsWith('.json'))) {
+      const p = JSON.parse(readFileSync(`${katalog}/${f}`, 'utf8')) as PlikWskaznika
+      let k = 0
+      let o = 0
+      p.wartosci.forEach((v, i) => {
+        if (typeof v === 'number' && Number.isFinite(v)) wKrakowie[i] ? k++ : o++
+      })
+      const gdzie = o === 0 && k > 0 ? tylkoK : k === 0 && o > 0 ? tylkoPoza : null
+      gdzie?.set(p.meta.jednostka, [...(gdzie.get(p.meta.jednostka) ?? []), p.meta.id])
+    }
+    const pary = [...tylkoK.keys()]
+      .filter((j) => tylkoPoza.has(j))
+      .map((j) => `${tylkoK.get(j)?.join('/')} ↔ ${tylkoPoza.get(j)?.join('/')} (${j})`)
+    assert.deepEqual(pary, [])
+  })
 })

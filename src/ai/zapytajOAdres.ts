@@ -1047,62 +1047,19 @@ export function regulaWiele(pytanie: string, lista: readonly PozycjaListy[]): Wy
   }
 }
 
-// --- Warstwy bliźniacze: Kraków / obwarzanek (#161) --------------------------------------
+// --- Warstwy bliźniacze (#161) – wycofane w #176 ------------------------------------------
 
-/**
- * #161: para warstw tej samej miary, z których jedna ma dane tylko w Krakowie, a druga tylko
- * w gminach obwarzanka. JEV i reguły dalej wybierają jedną z nich (zwykle krakowską, np. temat
- * hałasu → `halas_ldwn`); dopiero `odpowiedz` pod konkretnym adresem bierze tę, która ma tam
- * wartość. Pokrycie = odsetek adresów z liczbą (nie null) w Krakowie (70 217 adresów) i poza
- * nim (106 467), policzone na public/dane z 2026-10-03 (wersja adresów a7d233814059).
- * Test „pary naprawdę się uzupełniają” sprawdza te liczby na prawdziwych danych.
- */
-export interface ParaBlizniacza {
-  /** Warstwa z danymi w Krakowie. */
-  krakow: string
-  /** Warstwa z danymi w gminach obwarzanka. */
-  obwarzanek: string
-  /** Notka, gdy zamiast krakowskiej pokazujemy warstwę z obwarzanka. */
-  notkaObwarzanek: string
-  /** Notka, gdy zamiast warstwy z obwarzanka pokazujemy krakowską. */
-  notkaKrakow: string
-  /**
-   * Pokrycie z danych (ułamek 0–1), dolne granice dla testu: warstwa krakowska ma w Krakowie
-   * co najmniej `krakowWKrakowie`, a warstwa z obwarzanka poza Krakowem co najmniej
-   * `obwarzanekPoza`. Poza swoim obszarem każda ma 0, a obie naraz nie mają żadnego adresu.
-   */
-  pokrycie: { krakowWKrakowie: number; obwarzanekPoza: number }
-}
-
-/**
- * Wszystkie pary z public/dane/wskazniki (102 warstwy z 2026-10-03 przejrzane pod kątem pokrycia
- * Kraków / poza Krakowem):
- *
- * - `halas_ldwn` (dB, LDWN, mapa MSIP 2022): Kraków 100%, poza 0%.
- *   `halas_obwarzanek_lden` (dB, Lden, mapy END EEA runda 4): Kraków 0%, poza 11,9%.
- *   Oba naraz: 0 adresów. Lden to ten sam wskaźnik co polskie LDWN (dzień–wieczór–noc), ale
- *   z innej mapy: END obejmuje tylko duże drogi i koleje, a pasma zaczynają się od 55 dB, więc
- *   88% adresów obwarzanka i tak zostaje bez liczby („brak danych”, nie cisza). Odpowiedź
- *   zawsze pokazuje nazwę, jednostkę i źródło warstwy faktycznie użytej („(Lden)”, EEA).
- * - `inwestycje_500m` (szt., MSIP – Decyzje PNB): Kraków 100%, poza 0%.
- *   `inwestycje_500m_obwarzanek` (szt., GUNB RWDZ + ULDK): Kraków 0%, poza 100%.
- *   Oba naraz: 0 adresów. Ta sama miara (pozwolenia na budowę w 500 m, 2025–2026); w Krakowie
- *   metoda GUNB daje 93% liczby z MSIP (opis warstwy).
- *
- * Odrzucone: `miejscowe_zagrozenia_gmina_2025` (Kraków 0%, poza 100%) nie ma krakowskiego
- * odpowiednika – `pozary_gmina_2025` to inna kategoria zdarzeń i ma dane wszędzie. Pozostałe
- * warstwy tylko krakowskie (np. `drzewa_100m`, `cena_m2_mediana`) nie mają bliźniaka.
- */
-export const BLIZNIACZE_WARSTWY: readonly ParaBlizniacza[] = []
-
-/** Bliźniak warstwy i notka na wypadek zamiany; null = warstwa bez pary. */
-export function blizniak(warstwa: string): { warstwa: string; notka: string } | null {
-  for (const p of BLIZNIACZE_WARSTWY) {
-    if (p.krakow === warstwa) return { warstwa: p.obwarzanek, notka: p.notkaObwarzanek }
-    if (p.obwarzanek === warstwa) return { warstwa: p.krakow, notka: p.notkaKrakow }
-  }
-  return null
-}
+// #161 dobierał pod adresem warstwę bliźniaczą: dwie warstwy tej samej miary, jedna z danymi
+// tylko w Krakowie, druga tylko w gminach wokół (`halas_ldwn` / `halas_obwarzanek_lden`,
+// `inwestycje_500m` / `inwestycje_500m_obwarzanek`). #171 (etl/uprosc-kryteria.mjs) scalił obie
+// pary w jedną warstwę. Pokrycie po scaleniu (public/dane z 2026-10-03, wersja adresów
+// a7d233814059; 70 217 adresów w Krakowie, 106 467 poza nim): `halas_ldwn` – Kraków 100%,
+// poza 11,9% (mapy hałasu EEA obejmują tylko duże drogi, kolej i lotnisko; reszta to „brak
+// danych”, nie cisza); `inwestycje_500m` – Kraków 100%, poza 100%. Wśród 118 warstw nie ma już
+// żadnej pary „tylko Kraków / tylko poza Krakowem” z tą samą jednostką (jedyna warstwa tylko
+// poza Krakowem, `miejscowe_zagrozenia_gmina_2025`, nie ma krakowskiego odpowiednika), więc
+// mechanizm zamiany usunęliśmy. Test „scalone warstwy Krakowa i obwarzanka” pilnuje, żeby para
+// nie wróciła po cichu.
 
 // --- Odpowiedź z danych ------------------------------------------------------------------
 
@@ -1133,16 +1090,6 @@ export interface OdpowiedzWarstwy {
   /** Plik warstwy się nie wczytał – brak danych z powodu warstwy, nie adresu. */
   niedostepny: boolean
   zrodloOdpowiedzi: ZrodloOdpowiedzi
-  /**
-   * #161: wybrana warstwa nie miała wartości pod adresem, więc pokazujemy jej bliźniaka
-   * (`warstwa` i reszta pól są już z bliźniaka). Brak pola = pokazana warstwa to wybrana.
-   */
-  zamiana?: {
-    /** Id warstwy, którą wybrał JEV albo reguła. */
-    wybrana: string
-    /** Krótka notka po polsku, np. „dla tego adresu: mapa hałasu poza Krakowem (Lden, EEA)”. */
-    notka: string
-  }
 }
 
 export interface OdpowiedzNieWiem {
@@ -1186,10 +1133,8 @@ function wartoscPod(w: WarstwaDanych, i: number): number | null {
 
 /**
  * Buduje odpowiedź z danych dla adresu `i`. Jedyne wejście z JEV albo reguły to `wybor.warstwa`
- * (id) – wartość, jednostkę, źródło i rozdzielczość czytamy z warstwy w `wskazniki`.
- * #161: gdy wybrana warstwa nie ma wartości pod `i`, a jej bliźniak (BLIZNIACZE_WARSTWY) ma,
- * odpowiedź budujemy z bliźniaka – z jego nazwą, jednostką, źródłem i rozdzielczością – i
- * dokładamy `zamiana` z notką. Oba bez wartości → wybrana warstwa z „brak danych”.
+ * (id) – wartość, jednostkę, źródło i rozdzielczość czytamy z warstwy w `wskazniki`. Brak
+ * wartości pod `i` → „brak danych”, nigdy zero.
  */
 export function odpowiedz(
   wybor: WyborWarstwy,
@@ -1205,16 +1150,7 @@ export function odpowiedz(
       zrodloOdpowiedzi,
     }
   }
-  let w = wybrana
-  let zamiana: OdpowiedzWarstwy['zamiana']
-  if (wartoscPod(wybrana, i) === null) {
-    const b = blizniak(wybrana.meta.id)
-    const druga = b ? wskazniki.find((x) => x.meta.id === b.warstwa) : undefined
-    if (b && druga && !druga.meta.atrapa && wartoscPod(druga, i) !== null) {
-      w = druga
-      zamiana = { wybrana: wybrana.meta.id, notka: b.notka }
-    }
-  }
+  const w = wybrana
   const wartosc = wartoscPod(w, i)
   const etykieta = wartosc === null ? null : (w.etykiety?.[i] ?? null)
   const m = w.meta
@@ -1235,14 +1171,12 @@ export function odpowiedz(
     atrapa: Boolean(m.atrapa),
     niedostepny: Boolean(w.niedostepny),
     zrodloOdpowiedzi,
-    ...(zamiana && { zamiana }),
   }
 }
 
 /**
  * Kilka warstw → kilka odpowiedzi z danych, w tej samej kolejności. Warstwa, której nie da się
  * pokazać (nie ma jej w danych albo to atrapa), przepada; gdy nie zostanie żadna – „nie wiem”.
- * #161: dwie pozycje, które po zamianie na bliźniaka pokazują tę samą warstwę, liczą się raz.
  */
 export function odpowiedzi(
   wybor: WyborWarstw,
@@ -1306,12 +1240,7 @@ export async function zapytajOAdresZPropozycjami(
     const odp = odpowiedzi({ warstwy: p.warstwy }, wskazniki, i, kto)
     const [pierwsza] = odp
     // Propozycja, której warstwy nie da się pokazać z danych, przepada.
-    // #161: po zamianie na bliźniaka liczy się warstwa wybrana, nie pokazana.
-    if (
-      pierwsza?.rodzaj !== 'warstwa' ||
-      (pierwsza.zamiana?.wybrana ?? pierwsza.warstwa) !== p.warstwa
-    )
-      return []
+    if (pierwsza?.rodzaj !== 'warstwa' || pierwsza.warstwa !== p.warstwa) return []
     return [{ warstwa: p.warstwa, nazwa: nazwaProsta(pierwsza.etykieta), odpowiedzi: odp }]
   })
   return { odpowiedzi: gotowe, propozycje: prop.length === 2 ? prop : null }

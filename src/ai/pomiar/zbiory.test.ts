@@ -6,6 +6,14 @@ import type { PlikWskaznika } from '../../kontrakty/index.ts'
 import { PERSONY } from '../../wynik/persony.ts'
 import { KATEGORIE_OCENIANE, POTRZEBY } from '../opiszSiebie.ts'
 import { listaWarstw, NIE_WIEM } from '../zapytajOAdres.ts'
+import {
+  KATEGORIE_WYCOFANE,
+  kategoriaPoWycofaniu,
+  nastepcyWarstwy,
+  tematyPoWycofaniu,
+  WARSTWY_WYCOFANE,
+  WYCOFANA_BEZ_NASTEPCY,
+} from './wycofane.ts'
 
 const URL_ZBIOROW = new URL('./', import.meta.url)
 const czytaj = (plik: string) => JSON.parse(readFileSync(new URL(plik, URL_ZBIOROW), 'utf8'))
@@ -32,6 +40,14 @@ const zapytaj: PozycjaZapytaj[] = czytaj('zbior-zapytaj.json').pozycje
 const bezPowtorzen = (xs: readonly string[], co: string) =>
   assert.equal(new Set(xs).size, xs.length, `powtórzenie: ${co}`)
 
+/**
+ * #176: zbiory są zamrożone sprzed #171. Id jest znane, gdy warstwa jest na liście dla JEV
+ * albo gdy to warstwa wycofana w #171 (wycofane.ts), której wszyscy następcy są na liście
+ * (albo która jest „wycofana bez następcy” – pomiar pomija wtedy jej grupę).
+ */
+const znanaWarstwa = (warstwy: ReadonlySet<string>, id: string) =>
+  warstwy.has(id) || (id in WARSTWY_WYCOFANE && nastepcyWarstwy(id).every((n) => warstwy.has(n)))
+
 describe('zbiór wzorcowy „opisz siebie”', () => {
   const potrzeby = new Set(POTRZEBY.map((p) => p.id))
   const persony = new Set(PERSONY.map((p) => p.id as string))
@@ -56,7 +72,7 @@ describe('zbiór wzorcowy „opisz siebie”', () => {
       for (const id of [p.persona, ...(p.persona_tez ?? [])])
         if (id !== null) assert.ok(persony.has(id), `${p.id}: nieznany profil ${id}`)
       for (const k of [...(p.kategorie_wazne ?? []), ...(p.kategorie_niewazne ?? [])])
-        assert.ok(kategorie.has(k), `${p.id}: nieznana kategoria ${k}`)
+        assert.ok(kategorie.has(kategoriaPoWycofaniu(k)), `${p.id}: nieznana kategoria ${k}`)
     }
   })
 
@@ -91,7 +107,8 @@ describe('zbiór wzorcowy „zapytaj o adres”', () => {
       for (const t of p.tematy) {
         assert.ok(t.length > 0, `${p.id}: pusty temat`)
         bezPowtorzen(t, `${p.id} temat`)
-        for (const id of t) assert.ok(warstwy.has(id), `${p.id}: warstwy ${id} nie ma na liście`)
+        for (const id of t)
+          assert.ok(znanaWarstwa(warstwy, id), `${p.id}: warstwy ${id} nie ma na liście`)
       }
     }
   })
@@ -245,9 +262,59 @@ for (const k of kontrolne) {
         for (const t of spoza ? [] : p.tematy) {
           assert.ok(t.length > 0, `${p.id}: pusty temat`)
           bezPowtorzen(t, `${p.id} temat`)
-          for (const id of t) assert.ok(warstwy.has(id), `${p.id}: warstwy ${id} nie ma na liście`)
+          for (const id of t)
+            assert.ok(znanaWarstwa(warstwy, id), `${p.id}: warstwy ${id} nie ma na liście`)
         }
       }
     })
   })
 }
+
+describe('#176: mapa warstw wycofanych w #171 (wycofane.ts)', () => {
+  const warstwy = warstwyJev()
+
+  it('stare id nie ma już w danych, a każdy następca jest na liście dla JEV', () => {
+    for (const [id, n] of Object.entries(WARSTWY_WYCOFANE)) {
+      assert.ok(!warstwy.has(id), `${id} wciąż jest w danych – nie jest wycofana`)
+      if (n !== WYCOFANA_BEZ_NASTEPCY)
+        for (const x of n) assert.ok(warstwy.has(x), `${id} → ${x}: następcy nie ma na liście`)
+    }
+  })
+
+  it('stara kategoria nie jest oceniana, a następca jest', () => {
+    const kategorie = new Set<string>(KATEGORIE_OCENIANE)
+    for (const [k, n] of Object.entries(KATEGORIE_WYCOFANE)) {
+      assert.ok(!kategorie.has(k), k)
+      assert.ok(kategorie.has(n), n)
+    }
+  })
+
+  it('każde id ze zbiorów, którego nie ma na liście, jest w mapie (nic nie przepada po cichu)', () => {
+    const ids = [...zapytaj, ...kontrolne.flatMap((k) => k.zapytaj)].flatMap((p) => p.tematy.flat())
+    const nieznane = [...new Set(ids)].filter((id) => id !== NIE_WIEM && !warstwy.has(id))
+    assert.deepEqual(nieznane.filter((id) => !(id in WARSTWY_WYCOFANE)).sort(), [])
+  })
+
+  it('zamiana grup: następcy, sklejone powtórzenia, pominięte grupy bez następcy', () => {
+    assert.deepEqual(tematyPoWycofaniu([['halas_ldwn', 'halas_obwarzanek_lden']]), {
+      tematy: [['halas_ldwn']],
+      zmienione: 1,
+      pominiete: 0,
+    })
+    // Powódź 1% i 10% to po #171 ten sam temat – jedna grupa, nie dwie.
+    assert.deepEqual(tematyPoWycofaniu([['powodz_1proc'], ['powodz_10proc']]).tematy, [
+      ['powodz_10proc'],
+    ])
+    assert.deepEqual(tematyPoWycofaniu([['sklep_odleglosc', 'uslugi_15min']]).tematy, [
+      ['sklep_odleglosc', 'gastronomia_1200m', 'poczta_1200m', 'biblioteka_1200m'],
+    ])
+    assert.deepEqual(tematyPoWycofaniu([['kursy_szczyt_h'], ['bankomat_poczta_odleglosc']]), {
+      tematy: [['kursy_szczyt_h']],
+      zmienione: 1,
+      pominiete: 1,
+    })
+    // Sama grupa bez następcy → pozycja bez grup; pomiar ją pomija (to nie „spoza zakresu”).
+    assert.deepEqual(tematyPoWycofaniu([['gmina_powodz_powierzchnia_pct']]).tematy, [])
+    assert.deepEqual(tematyPoWycofaniu([[NIE_WIEM]]).tematy, [[NIE_WIEM]])
+  })
+})

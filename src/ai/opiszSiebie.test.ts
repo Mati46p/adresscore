@@ -51,8 +51,8 @@ const WSKAZNIKI = [
   { id: 'halas_ldwn', kategoria: 'spokoj' },
   { id: 'pm25_srednia', kategoria: 'spokoj' },
   { id: 'zielen_udzial', kategoria: 'spokoj' },
-  { id: 'inwestycje_500m', kategoria: 'przyszlosc' },
-  { id: 'powodz_1proc', kategoria: 'bezpieczenstwo' },
+  { id: 'inwestycje_500m', kategoria: 'spolecznosc' },
+  { id: 'powodz_10proc', kategoria: 'bezpieczenstwo' },
   { id: 'udzial_0_14', kategoria: 'kontekst' },
 ] as const
 

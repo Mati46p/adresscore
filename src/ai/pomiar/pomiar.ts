@@ -59,6 +59,7 @@ import {
   TEMATY,
   type WyborWarstw,
 } from '../zapytajOAdres.ts'
+import { kategoriaPoWycofaniu, tematyPoWycofaniu, warstwaPoWycofaniu } from './wycofane.ts'
 
 // ── Zbiory ────────────────────────────────────────────────────────────────────────────────
 
@@ -130,7 +131,7 @@ const czytajWlasny = (plik: string | undefined) =>
  * Zbiór kontrolny ma ten sam schemat z dwiema różnicami: „spoza zakresu” to `[["nie_wiem"]]`
  * (u nas `[]`), a „nic” nie jest jawne – to profil null i brak potrzeb.
  */
-const ZBIOR_A_PELNY: PozycjaOpisz[] = KONTROLNY
+const ZBIOR_A_SUROWY: PozycjaOpisz[] = KONTROLNY
   ? (czytaj(PLIKI.opisz).pozycje as PozycjaOpisz[]).map((p) => ({
       ...p,
       nic: p.nic ?? (p.persona === null && p.potrzeby.length === 0),
@@ -138,7 +139,7 @@ const ZBIOR_A_PELNY: PozycjaOpisz[] = KONTROLNY
   : WLASNY
     ? czytajWlasny(WLASNY.opisz)
     : czytaj('zbior-opisz.json').pozycje
-const ZBIOR_B_PELNY: PozycjaZapytaj[] = KONTROLNY
+const ZBIOR_B_SUROWY: PozycjaZapytaj[] = KONTROLNY
   ? (czytaj(PLIKI.zapytaj).pozycje as PozycjaZapytaj[]).map((p) => ({
       ...p,
       tematy: p.tematy.filter((t) => !(t.length === 1 && t[0] === NIE_WIEM)),
@@ -146,6 +147,32 @@ const ZBIOR_B_PELNY: PozycjaZapytaj[] = KONTROLNY
   : WLASNY
     ? czytajWlasny(WLASNY.zapytaj)
     : czytaj('zbior-zapytaj.json').pozycje
+
+/**
+ * #176: zbiory są zamrożone, a #171 wycofał część warstw i kategorię `przyszlosc`. Stare id
+ * liczymy jak ich następców (wycofane.ts). Grupa z samymi warstwami wycofanymi bez następcy
+ * przepada; pozycja bez żadnej grupy po tej zamianie wypada z liczenia (to nie „spoza zakresu”).
+ */
+const ZBIOR_A_PELNY: PozycjaOpisz[] = ZBIOR_A_SUROWY.map((p) => ({
+  ...p,
+  ...(p.kategorie_wazne && { kategorie_wazne: p.kategorie_wazne.map(kategoriaPoWycofaniu) }),
+  ...(p.kategorie_niewazne && {
+    kategorie_niewazne: p.kategorie_niewazne.map(kategoriaPoWycofaniu),
+  }),
+}))
+const PO_WYCOFANIU = ZBIOR_B_SUROWY.map((p) => ({ p, w: tematyPoWycofaniu(p.tematy) }))
+/** Ile pozycji B dotyka #171: ze starym id, z pominiętą grupą, wyłączone z liczenia. */
+export const WYCOFANIE_B = {
+  zmienione: PO_WYCOFANIU.filter((x) => x.w.zmienione > 0).length,
+  zPominietaGrupa: PO_WYCOFANIU.filter((x) => x.w.pominiete > 0).length,
+  pominieteGrupy: PO_WYCOFANIU.reduce((acc, x) => acc + x.w.pominiete, 0),
+  wylaczone: PO_WYCOFANIU.filter((x) => x.w.tematy.length === 0 && x.w.pominiete > 0).map(
+    (x) => x.p.id,
+  ),
+}
+const ZBIOR_B_PELNY: PozycjaZapytaj[] = PO_WYCOFANIU.filter(
+  (x) => !(x.w.tematy.length === 0 && x.w.pominiete > 0),
+).map(({ p, w }) => ({ ...p, tematy: w.tematy }))
 
 /**
  * #152: pole w aplikacji jest PISANE, nie dyktowane. Pozycje, których pułapka to zjawisko
@@ -960,6 +987,11 @@ function raport(a: WynikA[], b: WynikB[], naZywo: boolean) {
     )
   }
   out.push('', `## B – zapytaj o adres (${b.length} pytań)`, '')
+  if (WYCOFANIE_B.zmienione > 0)
+    out.push(
+      `Warstwy wycofane w #171 (mapa: wycofane.ts) – pytania ze starym id liczonym jak następca: ${WYCOFANIE_B.zmienione}; z pominiętą grupą „wycofana bez następcy”: ${WYCOFANIE_B.zPominietaGrupa} (grup: ${WYCOFANIE_B.pominieteGrupy}); wyłączone z liczenia: ${WYCOFANIE_B.wylaczone.length}${KONTROLNY ? '' : WYCOFANIE_B.wylaczone.length ? ` (${WYCOFANIE_B.wylaczone.join(', ')})` : ''}.`,
+      '',
+    )
   out.push(
     '| system | trafność | pojedyncze | złożone (trafiony 1 temat) | spoza zakresu | pokrycie złożonych |',
     '|---|---|---|---|---|---|',
@@ -1369,6 +1401,48 @@ const zapisany = zPliku
 const idsA = new Set(ZBIOR_A.map((p) => p.id))
 const idsB = new Set(ZBIOR_B.map((p) => p.id))
 
+/**
+ * #176: zapisany przebieg sprzed #171 ma stare id po obu stronach. Wzorzec bierzemy z bieżącego
+ * zbioru (już po wycofaniu), a odpowiedzi systemów zamieniamy na następców (wycofane.ts) –
+ * inaczej stara odpowiedź `powodz_1proc` nie trafiłaby w grupę `powodz_10proc`.
+ */
+const TEMATY_ZBIORU = new Map(ZBIOR_B.map((p) => [p.id, p.tematy]))
+const bezPowtorzen = (xs: readonly string[]) => [...new Set(xs)]
+function zapisanyBPoWycofaniu(w: WynikB): WynikB {
+  return {
+    ...w,
+    tematy: TEMATY_ZBIORU.get(w.id) ?? w.tematy,
+    systemy: Object.fromEntries(
+      Object.entries(w.systemy).map(([s, x]) => [s, warstwaPoWycofaniu(x)]),
+    ),
+    wiele: Object.fromEntries(
+      Object.entries(w.wiele).map(([s, xs]) => [
+        s,
+        bezPowtorzen(xs.map((x) => warstwaPoWycofaniu(x))),
+      ]),
+    ),
+    ...(w.jev && {
+      jev: {
+        ...w.jev,
+        wybor: warstwaPoWycofaniu(w.jev.wybor),
+        propozycje: w.jev.propozycje?.map((x) => warstwaPoWycofaniu(x)) ?? null,
+      },
+    }),
+  }
+}
+function zapisanyAPoWycofaniu(w: WynikA): WynikA {
+  const systemy: WynikA['systemy'] = {}
+  for (const [s, x] of Object.entries(w.systemy)) {
+    const kategorie: Record<string, number> = {}
+    for (const [k, poziom] of Object.entries(x.kategorie)) {
+      const nowa = kategoriaPoWycofaniu(k)
+      kategorie[nowa] = Math.max(kategorie[nowa] ?? 0, poziom ?? 0)
+    }
+    systemy[s] = { ...x, kategorie }
+  }
+  return { ...w, systemy }
+}
+
 const zapisz = (plik: string | undefined, a: WynikA[], b: WynikB[], podsumowanie: unknown) => {
   if (!plik) return
   writeFileSync(
@@ -1411,10 +1485,10 @@ if (commitPrzed && naZywo) {
   const klient = naZywo ? await klientNaZywo() : null
   // --tylko a|b: drugi zbiór liczy się bez sieci (same reguły) – oszczędza wywołania JEV.
   const a = zapisany
-    ? zapisany.a.filter((w) => idsA.has(w.id))
+    ? zapisany.a.filter((w) => idsA.has(w.id)).map(zapisanyAPoWycofaniu)
     : await biegA(tylko === 'b' ? null : klient)
   const b = zapisany
-    ? zapisany.b.filter((w) => idsB.has(w.id))
+    ? zapisany.b.filter((w) => idsB.has(w.id)).map(zapisanyBPoWycofaniu)
     : await biegB(tylko === 'a' ? null : klient)
   const { tekst, podsumowanie } = raport(
     a,

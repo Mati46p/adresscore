@@ -75,15 +75,12 @@ describe('OPISY_WARSTW_DLA_JEV', () => {
     assert.deepEqual(zeStruktura, [
       'bap_srednia',
       'cena_m2_mediana',
-      'gmina_powodz_powierzchnia_pct',
       'halas_ldwn',
       'no2_srednia',
       'paleniska_200m',
       'pm10_srednia',
       'pm25_srednia',
-      'powodz_02proc',
       'powodz_10proc',
-      'powodz_1proc',
       'przewietrzanie_klasa',
       'przystanek_odleglosc',
     ])
@@ -134,6 +131,6 @@ describe('lista warstw dla JEV z opisami #163', () => {
     assert.equal(api.blad, undefined)
     assert.ok(JSON.stringify(z).length < 64_000)
     const opcje = (api.pytania[ID_PYTANIA] as { criteria: Record<string, unknown> }).criteria
-    assert.deepEqual(Object.keys(opcje.powodz_1proc as object), ['what', 'not_for', 'examples'])
+    assert.deepEqual(Object.keys(opcje.powodz_10proc as object), ['what', 'not_for', 'examples'])
   })
 })
