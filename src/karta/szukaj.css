@@ -1,0 +1,134 @@
+.heksy-pasek {
+  position: absolute;
+  z-index: 5;
+  right: 16px;
+  bottom: 14px;
+  left: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 58px;
+  padding: 9px 12px;
+  border: 1px solid var(--ramka);
+  border-radius: 14px;
+  background: rgb(255 255 255 / 94%);
+  box-shadow: 0 4px 20px rgb(20 41 31 / 15%);
+  backdrop-filter: blur(8px);
+}
+
+.heksy-pasek__naglowek {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex: none;
+  color: var(--tekst);
+  white-space: nowrap;
+}
+
+.heksy-pasek__naglowek span {
+  color: var(--tekst-2);
+  font-size: 0.85rem;
+}
+
+.heksy-pasek__lista {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow-x: auto;
+  padding: 3px;
+  scrollbar-width: thin;
+}
+
+.heksy-pasek__chip {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  gap: 6px;
+  max-width: 220px;
+  padding: 3px 4px 3px 10px;
+  border: 1px solid #a4c6b4;
+  border-radius: 999px;
+  background: #edf5ef;
+  color: #194d3c;
+  font-size: 0.84rem;
+}
+
+.heksy-pasek__chip[data-aktywny] {
+  border-color: #1f5c46;
+  background: #d6e9dc;
+  box-shadow: 0 0 0 2px rgb(31 92 70 / 18%);
+}
+
+.heksy-pasek__chip > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.heksy-pasek__chip button {
+  display: grid;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 1.3rem;
+  cursor: pointer;
+}
+
+.heksy-pasek__chip button:hover,
+.heksy-pasek__chip button:focus-visible {
+  background: #d6e9dc;
+}
+
+.heksy-pasek__akcja {
+  flex: none;
+  min-height: 38px;
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: #1f5c46;
+  color: white;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.heksy-pasek__akcja:hover,
+.heksy-pasek__akcja:focus-visible {
+  background: #174936;
+}
+
+.heksy-pasek__wskazowka {
+  color: var(--tekst-2);
+  font-size: 0.9rem;
+}
+
+/* Pasek zajmuje dół mapy; legenda i przyciski mapy pozostają nad nim. */
+.slot-mapy:has(.heksy-pasek) .maplibregl-ctrl-bottom-left,
+.slot-mapy:has(.heksy-pasek) .maplibregl-ctrl-bottom-right {
+  bottom: 90px;
+}
+
+@media (max-width: 700px) {
+  .heksy-pasek {
+    flex-wrap: wrap;
+    gap: 4px 8px;
+    padding: 8px;
+  }
+
+  .heksy-pasek__lista {
+    width: 100%;
+  }
+
+  .slot-mapy:has(.heksy-pasek) .maplibregl-ctrl-bottom-left,
+  .slot-mapy:has(.heksy-pasek) .maplibregl-ctrl-bottom-right {
+    bottom: 110px;
+  }
+}

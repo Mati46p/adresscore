@@ -1,11 +1,23 @@
+import { useState } from 'react'
 import { MapaKrakowa } from '@/mapa/MapaKrakowa'
 import { useDane } from '@/wynik/dane'
 import { kierunekEfektywny } from '@/wynik/silnik'
-import { pokazOkolice, useStan, ustawWarstwe, wybierzAdres } from '@/wynik/stan'
+import {
+  dodajDoPorownania,
+  pokazOkolice,
+  przejdz,
+  useStan,
+  ustawWarstwe,
+  usunZPorownania,
+  wybierzAdres,
+} from '@/wynik/stan'
+import { MAKS_POROWNANIE } from '@/wynik/url'
 import { useWyniki } from '@/wynik/useWyniki'
+import { opisAdresu } from './adres'
 import { PanelFiltrow } from './panel/PanelFiltrow'
 import { Ranking } from './Ranking'
-import { najblizszyAdres } from './wyszukiwarka/najblizszy'
+import { adresWKliknietymHeksie } from './wyszukiwarka/heks'
+import './szukaj.css'
 
 // Stała, bo nowa pusta mapa przy każdym renderze wymuszałaby przemalowanie warstwy heksów.
 const BRAK_HEKSOW: ReadonlyMap<string, number | null> = new Map()
@@ -15,9 +27,18 @@ export function EkranSzukaj() {
   const dane = useDane()
   const warstwa = useStan((s) => s.warstwa)
   const wybrany = useStan((s) => s.wybrany)
+  const porownanie = useStan((s) => s.porownanie)
   const kierunki = useStan((s) => s.kierunki)
+  const [komunikatHeksow, setKomunikatHeksow] = useState('')
   const wyniki = useWyniki()
   const adres = dane.stan === 'gotowe' && wybrany !== null ? dane.adresy[wybrany] : undefined
+  const wybraneAdresy =
+    dane.stan === 'gotowe'
+      ? porownanie.flatMap((i) => {
+          const wybranyAdres = dane.adresy[i]
+          return wybranyAdres ? [wybranyAdres] : []
+        })
+      : []
   const wynikWybranego = adres && wyniki ? wyniki.naAdres[adres.i] : undefined
   // Przełącznik pokazuje tylko warstwy, które coś oceniają. Liczy się kierunek efektywny:
   // warstwa neutralna z kierunkiem nadanym przez personę wchodzi do wyniku, więc ma przycisk.
@@ -34,7 +55,7 @@ export function EkranSzukaj() {
             <h1 tabIndex={-1}>Znajdź okolicę w Krakowie</h1>
             <p>
               Profil i wagi poniżej od razu przeliczają kolory na mapie. Kliknij mapę, żeby zobaczyć
-              okolicę.
+              okolicę i dodać jej heks do porównania.
             </p>
           </div>
         </div>
@@ -74,9 +95,68 @@ export function EkranSzukaj() {
               wybrany={adres ? { lon: adres.lon, lat: adres.lat } : null}
               onKlik={(lon, lat) => {
                 if (dane.stan !== 'gotowe') return
-                wybierzAdres(najblizszyAdres(dane.adresy, lon, lat))
+                const kandydat = adresWKliknietymHeksie(dane.adresy, lon, lat)
+                if (!kandydat.adres) {
+                  setKomunikatHeksow('W tym heksie nie ma adresu. Wybierz inny heks.')
+                  return
+                }
+                const juzWybrany = wybraneAdresy.find((a) => a.h3 === kandydat.h3)
+                wybierzAdres(juzWybrany?.i ?? kandydat.adres.i)
+                if (juzWybrany) {
+                  usunZPorownania(juzWybrany.i)
+                  setKomunikatHeksow('Usunięto heks z porównania.')
+                  return
+                }
+                if (porownanie.length >= MAKS_POROWNANIE) {
+                  setKomunikatHeksow('Możesz porównać maksymalnie 5 heksów. Usuń jeden z listy.')
+                  return
+                }
+                dodajDoPorownania(kandydat.adres.i)
+                setKomunikatHeksow('Dodano heks do porównania.')
               }}
             />
+            <div className="heksy-pasek" aria-label="Heksy do porównania">
+              <div className="heksy-pasek__naglowek">
+                <strong>Heksy do porównania</strong>
+                <span>
+                  {wybraneAdresy.length}/{MAKS_POROWNANIE}
+                </span>
+              </div>
+              {wybraneAdresy.length ? (
+                <div className="heksy-pasek__lista">
+                  {wybraneAdresy.map((a) => (
+                    <span
+                      className="heksy-pasek__chip"
+                      data-aktywny={a.i === wybrany || undefined}
+                      key={a.i}
+                    >
+                      <span title={a.h3}>{opisAdresu(a)}</span>
+                      <button
+                        type="button"
+                        aria-label={`Usuń heks ${opisAdresu(a)} z porównania`}
+                        onClick={() => usunZPorownania(a.i)}
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                  <button
+                    type="button"
+                    className="heksy-pasek__akcja"
+                    onClick={() => przejdz('porownanie')}
+                  >
+                    Porównaj adresy ({wybraneAdresy.length})
+                  </button>
+                </div>
+              ) : (
+                <span className="heksy-pasek__wskazowka">
+                  Kliknij heks. Adres w nim reprezentuje okolicę.
+                </span>
+              )}
+              <span className="sr-only" role="status">
+                {komunikatHeksow}
+              </span>
+            </div>
           </div>
           {adres && (
             <div className="wybrany-adres">
