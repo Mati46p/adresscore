@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { liczba, opisAdresu } from '@/karta/adres'
 import { KATEGORIE, type KategoriaId } from '@/kontrakty'
 import { Sekcja3D } from '@/miasto3d/Sekcja3D'
@@ -6,7 +6,6 @@ import { useDane } from '@/wynik/dane'
 import type { RozbicieWarstwy, WynikAdresu } from '@/wynik/silnik'
 import { dodajDoPorownania, hrefDla, przejdz, useStan } from '@/wynik/stan'
 import { useWynikAdresu } from '@/wynik/useWyniki'
-import { CoByToZmienilo } from '../CoByToZmienilo'
 import { Etykieta } from './Etykieta'
 import type { LiteraEtykiety } from './kolory'
 import {
@@ -22,6 +21,9 @@ import {
 import './okolica.css'
 
 const KATEGORIE_WYNIKU = (Object.keys(KATEGORIE) as KategoriaId[]).filter((k) => k !== 'kontekst')
+const CoByToZmienilo = lazy(async () => ({
+  default: (await import('../CoByToZmienilo')).CoByToZmienilo,
+}))
 
 /** Slot #12 – karta okolicy wg docs/makieta/Okolica.dc.html (bez sekcji „Mieszkania"). */
 export function EkranOkolica() {
@@ -95,7 +97,15 @@ export function EkranOkolica() {
           <Strony tytul="Najmocniejsze strony" pozycje={mocne} wariant="plus" />
           <Strony tytul="Co obniża wynik" pozycje={slabe} wariant="minus" />
         </div>
-        <CoByToZmienilo warstwy={wynik.warstwy} />
+        <Suspense
+          fallback={
+            <p className="komunikat" role="status">
+              Wczytuję scenariusze…
+            </p>
+          }
+        >
+          <CoByToZmienilo warstwy={wynik.warstwy} />
+        </Suspense>
       </section>
 
       <Sekcja3D />

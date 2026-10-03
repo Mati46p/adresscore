@@ -59,6 +59,7 @@ import {
   W_WYKLUCZONY,
   wszystkieWykluczone,
 } from '@/mapa/wykluczenie'
+import 'maplibre-gl/dist/maplibre-gl.css'
 import './mapa.css'
 
 export interface MapaKrakowaProps {

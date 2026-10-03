@@ -1,15 +1,17 @@
-import { useEffect, useRef } from 'react'
+import { lazy, Suspense, useEffect, useRef } from 'react'
 import { Pokaz3D, parametrPokazu } from '@/miasto3d/Pokaz3D'
-import { Metoda } from '@/strony/Metoda'
 import { useDane } from '@/wynik/dane'
 import { hrefAdresu } from '@/wynik/slug'
 import { useStan } from '@/wynik/stan'
 import { opisAdresu } from './adres'
 import { EkranSzukaj } from './EkranSzukaj'
 import { KatalogAdresow } from './KatalogAdresow'
+import { ladujMetode, ladujOkolice, ladujPorownanie, przygotujEkran } from './ladowanieEkranow'
 import { Naglowek } from './Naglowek'
-import { EkranOkolica } from './okolica/EkranOkolica'
-import { EkranPorownanie } from './porownanie/EkranPorownanie'
+
+const EkranOkolica = lazy(async () => ({ default: (await ladujOkolice()).EkranOkolica }))
+const EkranPorownanie = lazy(async () => ({ default: (await ladujPorownanie()).EkranPorownanie }))
+const Metoda = lazy(async () => ({ default: (await ladujMetode()).Metoda }))
 
 /** Powłoka: nagłówek z krokami i ekran wybrany przez hash (#/, #/adres/<id>, #/porownanie). */
 export function Aplikacja() {
@@ -69,6 +71,23 @@ function Powloka() {
   }, [ekran, adres])
 
   useEffect(() => {
+    const nastepny = ekran === 'szukaj' ? 'okolica' : ekran === 'okolica' ? 'porownanie' : 'metoda'
+    let bezczynnosc: number | undefined
+    // Import po bezczynności nie konkuruje z pierwszym renderem i pobraniem mapy.
+    const timer = window.setTimeout(() => {
+      if ('requestIdleCallback' in window) {
+        bezczynnosc = window.requestIdleCallback(() => przygotujEkran(nastepny))
+      } else {
+        przygotujEkran(nastepny)
+      }
+    }, 2000)
+    return () => {
+      window.clearTimeout(timer)
+      if (bezczynnosc !== undefined) window.cancelIdleCallback(bezczynnosc)
+    }
+  }, [ekran])
+
+  useEffect(() => {
     // Pierwsze wejście: ani przewijania, ani przenoszenia fokusu.
     if (poprzedniKlucz.current !== klucz) {
       poprzedniKlucz.current = klucz
@@ -93,10 +112,20 @@ function Powloka() {
         </p>
       )}
       {ekran === 'szukaj' && <EkranSzukaj />}
-      {ekran === 'okolica' && <EkranOkolica />}
-      {ekran === 'porownanie' && <EkranPorownanie />}
-      {ekran === 'metoda' && <Metoda />}
       {ekran === 'katalog' && <KatalogAdresow />}
+      <Suspense
+        fallback={
+          <main className="tresc">
+            <p className="komunikat" role="status">
+              Wczytuję ekran…
+            </p>
+          </main>
+        }
+      >
+        {ekran === 'okolica' && <EkranOkolica />}
+        {ekran === 'porownanie' && <EkranPorownanie />}
+        {ekran === 'metoda' && <Metoda />}
+      </Suspense>
     </>
   )
 }

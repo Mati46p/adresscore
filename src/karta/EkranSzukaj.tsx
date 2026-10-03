@@ -1,5 +1,4 @@
-import { useState } from 'react'
-import { MapaKrakowa } from '@/mapa/MapaKrakowa'
+import { lazy, Suspense, useState } from 'react'
 import { useDane } from '@/wynik/dane'
 import { kierunekEfektywny } from '@/wynik/silnik'
 import {
@@ -18,6 +17,10 @@ import { PanelFiltrow } from './panel/PanelFiltrow'
 import { Ranking } from './Ranking'
 import { adresWKliknietymHeksie } from './wyszukiwarka/heks'
 import './szukaj.css'
+
+const MapaKrakowa = lazy(async () => ({
+  default: (await import('@/mapa/MapaKrakowa')).MapaKrakowa,
+}))
 
 // Stała, bo nowa pusta mapa przy każdym renderze wymuszałaby przemalowanie warstwy heksów.
 const BRAK_HEKSOW: ReadonlyMap<string, number | null> = new Map()
@@ -88,33 +91,41 @@ export function EkranSzukaj() {
             ))}
           </div>
           <div className="slot-mapy" data-slot="mapa">
-            <MapaKrakowa
-              heksy={wyniki?.heksy ?? BRAK_HEKSOW}
-              podpisWarstwy={wyniki?.podpis ?? 'Wynik tej okolicy'}
-              wykluczone={wyniki?.wykluczoneHeksy}
-              wybrany={adres ? { lon: adres.lon, lat: adres.lat } : null}
-              onKlik={(lon, lat) => {
-                if (dane.stan !== 'gotowe') return
-                const kandydat = adresWKliknietymHeksie(dane.adresy, lon, lat)
-                if (!kandydat.adres) {
-                  setKomunikatHeksow('W tym heksie nie ma adresu. Wybierz inny heks.')
-                  return
-                }
-                const juzWybrany = wybraneAdresy.find((a) => a.h3 === kandydat.h3)
-                wybierzAdres(juzWybrany?.i ?? kandydat.adres.i)
-                if (juzWybrany) {
-                  usunZPorownania(juzWybrany.i)
-                  setKomunikatHeksow('Usunięto heks z porównania.')
-                  return
-                }
-                if (porownanie.length >= MAKS_POROWNANIE) {
-                  setKomunikatHeksow('Możesz porównać maksymalnie 5 heksów. Usuń jeden z listy.')
-                  return
-                }
-                dodajDoPorownania(kandydat.adres.i)
-                setKomunikatHeksow('Dodano heks do porównania.')
-              }}
-            />
+            <Suspense
+              fallback={
+                <p className="komunikat" role="status">
+                  Wczytuję mapę…
+                </p>
+              }
+            >
+              <MapaKrakowa
+                heksy={wyniki?.heksy ?? BRAK_HEKSOW}
+                podpisWarstwy={wyniki?.podpis ?? 'Wynik tej okolicy'}
+                wykluczone={wyniki?.wykluczoneHeksy}
+                wybrany={adres ? { lon: adres.lon, lat: adres.lat } : null}
+                onKlik={(lon, lat) => {
+                  if (dane.stan !== 'gotowe') return
+                  const kandydat = adresWKliknietymHeksie(dane.adresy, lon, lat)
+                  if (!kandydat.adres) {
+                    setKomunikatHeksow('W tym heksie nie ma adresu. Wybierz inny heks.')
+                    return
+                  }
+                  const juzWybrany = wybraneAdresy.find((a) => a.h3 === kandydat.h3)
+                  wybierzAdres(juzWybrany?.i ?? kandydat.adres.i)
+                  if (juzWybrany) {
+                    usunZPorownania(juzWybrany.i)
+                    setKomunikatHeksow('Usunięto heks z porównania.')
+                    return
+                  }
+                  if (porownanie.length >= MAKS_POROWNANIE) {
+                    setKomunikatHeksow('Możesz porównać maksymalnie 5 heksów. Usuń jeden z listy.')
+                    return
+                  }
+                  dodajDoPorownania(kandydat.adres.i)
+                  setKomunikatHeksow('Dodano heks do porównania.')
+                }}
+              />
+            </Suspense>
             {wybraneAdresy.length > 0 ? (
               <div
                 className="heksy-pasek"
