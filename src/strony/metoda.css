@@ -1,0 +1,257 @@
+/* Strona metody i źródeł (#32). Prefiks met-, tokeny z src/styles.css. */
+.met {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 32px 24px 64px;
+  color: var(--tekst);
+  line-height: 1.55;
+}
+.met h1 {
+  margin: 4px 0 12px;
+  font-size: 34px;
+  line-height: 1.15;
+}
+.met h2 {
+  margin: 0 0 12px;
+  font-size: 24px;
+  line-height: 1.25;
+}
+.met h3 {
+  margin: 0 0 6px;
+  font-size: 17px;
+}
+.met-h3 {
+  margin: 24px 0 8px;
+}
+.met-lead {
+  max-width: 68ch;
+  margin: 0 0 16px;
+  color: var(--tekst-2);
+}
+.met-wstep {
+  margin-bottom: 24px;
+}
+.met-spis {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.met-spis a,
+.met-stopka a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--cel-dotyku);
+  padding: 0 16px;
+  border: 1px solid var(--ramka);
+  border-radius: 999px;
+  background: var(--powierzchnia);
+  color: var(--tekst-2);
+  text-decoration: none;
+  font-size: 14px;
+}
+.met-spis a:hover,
+.met-stopka a:hover {
+  border-color: var(--akcent-obrys);
+  color: var(--tekst);
+}
+.met-sekcja {
+  margin-top: 32px;
+  padding: 24px;
+  background: var(--powierzchnia);
+  border: 1px solid var(--ramka);
+  border-radius: 16px;
+  scroll-margin-top: 16px;
+}
+
+/* Kroki metody */
+.met-kroki {
+  display: grid;
+  gap: 16px;
+  margin: 0 0 20px;
+  padding: 0;
+  list-style: none;
+}
+.met-kroki li {
+  max-width: 72ch;
+  padding-left: 16px;
+  border-left: 3px solid var(--akcent-obrys);
+}
+.met-kroki p {
+  margin: 0 0 8px;
+  color: var(--tekst-2);
+}
+.met-ramka {
+  max-width: 72ch;
+  margin-bottom: 16px;
+  padding: 4px 20px 12px;
+  background: var(--akcent-jasny);
+  border-radius: var(--promien);
+}
+.met-punkty {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding-left: 20px;
+  max-width: 72ch;
+  color: var(--tekst-2);
+}
+.met-progi {
+  border-collapse: collapse;
+  margin-top: 8px;
+  font-size: 14px;
+}
+.met-progi th,
+.met-progi td {
+  padding: 6px 16px 6px 0;
+  text-align: left;
+  border-bottom: 1px solid var(--linia);
+  font-weight: 400;
+}
+.met-progi th {
+  font-weight: 700;
+}
+
+/* Tabela źródeł */
+.met-tabela-ramka {
+  overflow-x: auto;
+  border: 1px solid var(--ramka);
+  border-radius: var(--promien);
+}
+.met-tabela {
+  width: 100%;
+  min-width: 900px;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.met-tabela th,
+.met-tabela td {
+  padding: 10px 12px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--linia);
+}
+.met-tabela thead th {
+  position: sticky;
+  top: 0;
+  background: var(--powierzchnia-2);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--tekst-3);
+  white-space: nowrap;
+}
+.met-tabela tbody th {
+  min-width: 170px;
+  font-weight: 600;
+}
+.met-tabela tbody tr:last-child > * {
+  border-bottom: 0;
+}
+.met-id {
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--tekst-3);
+}
+.met-atrapa {
+  display: inline-block;
+  margin-top: 4px;
+}
+.met-lista-prosta {
+  margin: 0;
+  padding-left: 16px;
+  min-width: 200px;
+}
+.met-komorka-akapit {
+  margin: 0 0 6px;
+}
+.met-atrybucja {
+  margin: 6px 0 0;
+  font-weight: 600;
+  color: var(--tekst);
+}
+.met-liczby strong {
+  display: block;
+  font-size: 16px;
+}
+.met-drobne {
+  display: block;
+  font-size: 12px;
+  color: var(--tekst-3);
+  white-space: nowrap;
+}
+.met-niedostepna {
+  color: var(--ostrzezenie-tekst);
+}
+.met-stan {
+  padding: 16px 0;
+  color: var(--tekst-2);
+}
+.met-atrybucje {
+  margin-top: 8px;
+}
+
+/* Etyka i zastrzeżenia */
+.met-etyka,
+.met-zastrzezenia {
+  display: grid;
+  gap: 4px 24px;
+  margin: 0;
+  grid-template-columns: minmax(180px, 260px) minmax(0, 1fr);
+}
+.met-etyka dt,
+.met-zastrzezenia dt {
+  font-weight: 600;
+  padding-top: 12px;
+  border-top: 1px solid var(--linia);
+}
+.met-etyka dd,
+.met-zastrzezenia dd {
+  margin: 0;
+  padding: 12px 0 12px;
+  border-top: 1px solid var(--linia);
+  max-width: 68ch;
+  color: var(--tekst-2);
+}
+.met-zastrzezenia {
+  font-size: 14px;
+}
+.met-stopka {
+  margin-top: 32px;
+}
+
+/* Link „Metoda i źródła" w nagłówku: wygląd jak aktywny krok. */
+.krok-metoda {
+  margin-left: 8px;
+}
+.krok[aria-current="page"] {
+  background: var(--akcent);
+  border-color: var(--akcent);
+  color: #fff;
+}
+
+@media (max-width: 720px) {
+  .met {
+    padding: 20px 16px 48px;
+  }
+  .met h1 {
+    font-size: 27px;
+  }
+  .met-sekcja {
+    padding: 16px;
+  }
+  .met-etyka,
+  .met-zastrzezenia {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+  .met-etyka dt,
+  .met-zastrzezenia dt {
+    padding-bottom: 0;
+  }
+  .met-etyka dd,
+  .met-zastrzezenia dd {
+    border-top: 0;
+    padding-top: 4px;
+  }
+}

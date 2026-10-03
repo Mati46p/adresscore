@@ -29,6 +29,13 @@ export function Naglowek() {
             {k.etykieta}
           </a>
         ))}
+        <a
+          href={hrefDla(stan, { ekran: 'metoda' })}
+          className="krok krok-metoda"
+          aria-current={stan.ekran === 'metoda' ? 'page' : undefined}
+        >
+          Metoda i źródła
+        </a>
       </nav>
     </header>
   )

@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { Metoda } from '@/strony/Metoda'
 import { useDane } from '@/wynik/dane'
 import { useStan } from '@/wynik/stan'
 import { opisAdresu } from './adres'
@@ -17,7 +18,13 @@ export function Aplikacja() {
   const nazwaAdresu = adres ? opisAdresu(adres) : 'Karta okolicy'
 
   const tytul =
-    ekran === 'okolica' ? nazwaAdresu : ekran === 'porownanie' ? 'Porównanie' : 'Szukaj okolicy'
+    ekran === 'okolica'
+      ? nazwaAdresu
+      : ekran === 'porownanie'
+        ? 'Porównanie'
+        : ekran === 'metoda'
+          ? 'Metoda i źródła'
+          : 'Szukaj okolicy'
 
   // Przejście = inny ekran albo, na karcie, inny adres. Klik w mapę na Szukaj niczego nie resetuje.
   const klucz = ekran === 'okolica' ? `okolica:${wybrany}` : ekran
@@ -55,6 +62,7 @@ export function Aplikacja() {
       {ekran === 'szukaj' && <EkranSzukaj />}
       {ekran === 'okolica' && <EkranOkolica />}
       {ekran === 'porownanie' && <EkranPorownanie />}
+      {ekran === 'metoda' && <Metoda />}
     </>
   )
 }
