@@ -192,7 +192,7 @@ async function main() {
         id: 'halas_ldwn',
         kategoria: 'spokoj',
         nazwa: 'Najwyższe pasmo hałasu (LDWN)',
-        opis: 'Najwyższe pasmo LDWN spośród hałasu drogowego, szynowego i przemysłowego. Mapa imisyjna 2022, 4 m nad terenem. Wartość liczbowa jest reprezentantem pasma dla punktacji, nie dokładnym pomiarem ani sumą hałasu. Na granicy pasm wybieramy wyższe. Brak pasma oznacza brak danych.',
+        opis: 'Najwyższe pasmo LDWN spośród hałasu drogowego, szynowego i przemysłowego. Mapa imisyjna 2022, 4 m nad terenem. Wartość liczbowa jest reprezentantem pasma dla punktacji, nie dokładnym pomiarem ani sumą hałasu. Na granicy pasm wybieramy wyższe. Brak liczby może oznaczać poziom poniżej prezentowanego zakresu albo brak pokrycia mapą; nie pozwala wywnioskować dokładnego poziomu hałasu.',
         jednostka: 'dB',
         kierunek: 'mniej-lepiej',
         rozdzielczosc: 'rejon',

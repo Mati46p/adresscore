@@ -20,6 +20,7 @@ test('pasmo 5 dB ma jawną etykietę, a liczba jest reprezentantem dla silnika',
 test('brak i nieprawidłowe pasmo nie są zamieniane na zero', () => {
   assert.equal(pasmoLdwn(null, null), null)
   assert.equal(pasmoLdwn(49, 50), null)
+  assert.equal(pasmoLdwn(-24, 50), null)
   assert.equal(pasmoLdwn(55, 70), null)
   assert.equal(najwyzszePasmo([]), null)
 })
