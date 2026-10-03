@@ -21,6 +21,7 @@ const MAX_PRZESIADKA = 350
 const PREDKOSC_PIESZO = 1.25 // m/s; przybliżenie po linii prostej
 const BUFOR_PRZESIADKI = 2 // min na zmianę pojazdu na tym samym stanowisku
 const BRAK = 65_535
+export const RYNEK_GLOWNY = { lon: 19.9373, lat: 50.0617 }
 
 function minuty(czas) {
   const [h, m, s] = czas.split(':').map(Number)
@@ -203,13 +204,18 @@ export function profilDoCelu(punkty, zdarzenia, dojscieDoCelu, opcje = {}) {
   return { profil, start, koniec, indeks }
 }
 
-export function czasAdresu(adres, punkty, model) {
+export function czasAdresu(adres, punkty, model, celPieszy = null) {
   if (!Number.isFinite(adres.lat) || !Number.isFinite(adres.lon)) return null
   const kandydaci = sasiedzi(adres, punkty, model.indeks, MAX_DOJSCIE)
   let najlepszy = BRAK
   for (const p of kandydaci) {
     const wejscie = model.start + Math.ceil(p.metry / PREDKOSC_PIESZO / 60)
     if (wejscie <= model.koniec) najlepszy = Math.min(najlepszy, model.profil[wejscie][p.i])
+  }
+  if (celPieszy) {
+    const odleglosc = odlegloscMetry(adres.lat, adres.lon, celPieszy.lat, celPieszy.lon)
+    if (odleglosc <= MAX_DOJSCIE)
+      najlepszy = Math.min(najlepszy, model.start + Math.ceil(odleglosc / PREDKOSC_PIESZO / 60))
   }
   return najlepszy === BRAK ? null : najlepszy - model.start
 }
@@ -293,7 +299,9 @@ function pobierzGrupe(grupa) {
   return { url, bufor, meta }
 }
 
-export async function generuj(data = dataRobocza(), cel = null) {
+export async function generuj(data = dataRobocza(), cel = null, opcje = {}) {
+  const rynek = opcje.rynek === true
+  if (rynek && !cel) throw new Error('Rynek wymaga współrzędnych celu')
   if (
     cel &&
     (!Number.isFinite(cel.lon) ||
@@ -339,7 +347,7 @@ export async function generuj(data = dataRobocza(), cel = null) {
         Math.ceil(p.metry / PREDKOSC_PIESZO / 60),
       ]),
     )
-    nazwaCelu = `punkt ${cel.lat}, ${cel.lon}`
+    nazwaCelu = rynek ? 'Rynek Główny w Krakowie' : `punkt ${cel.lat}, ${cel.lon}`
   } else {
     const lotnisko = punkty.filter((p) => p.nazwa === 'Kraków Airport')
     if (!lotnisko.length) throw new Error('Brak stanowisk Kraków Airport w GTFS')
@@ -349,22 +357,26 @@ export async function generuj(data = dataRobocza(), cel = null) {
   if (!dojscieDoCelu.size) throw new Error('Cel poza zasięgiem GTFS')
   const model = profilDoCelu(punkty, zdarzenia, dojscieDoCelu)
   const { adresy, wersja } = wczytajAdresy()
-  const wartosci = adresy.map((a) => czasAdresu(a, punkty, model))
+  const wartosci = adresy.map((a) => czasAdresu(a, punkty, model, rynek ? cel : null))
   const metaWskaznika = {
-    id: cel ? 'dojazd_cel_test' : 'lotnisko_czas_min',
+    id: rynek ? 'rynek_czas_min' : cel ? 'dojazd_cel_test' : 'lotnisko_czas_min',
     kategoria: 'transport',
-    nazwa: cel ? 'Czas do wskazanego punktu' : 'Czas do lotniska Balice',
-    opis: `Planowy najwcześniejszy przyjazd do celu (${nazwaCelu}) przy wyjściu z punktu adresowego o 07:00 w dniu ${data}, obliczony z GTFS ZTP. Obejmuje oczekiwanie, przejazd, przesiadki (min. 2 min) oraz dojścia do 1,2 km/przesiadki do 350 m, po prostej przy 1,25 m/s. To przybliżenie planowej podróży, nie pomiar rzeczywisty ani routing po chodnikach; nie obejmuje opóźnień ani dostępności pojazdu${cel ? '' : ', ani drogi od stanowiska lotniskowego do terminala'}. Brak możliwej trasy w modelu do 14:00 = brak danych.`,
+    nazwa: rynek
+      ? 'Czas podróży do Rynku Głównego'
+      : cel
+        ? 'Czas do wskazanego punktu'
+        : 'Czas do lotniska Balice',
+    opis: `Planowy najwcześniejszy przyjazd do celu (${nazwaCelu}${rynek ? `; punkt ${cel.lat}, ${cel.lon}` : ''}) przy wyjściu z punktu adresowego o 07:00 w dniu ${data}, obliczony z GTFS ZTP. Obejmuje oczekiwanie, przejazd, przesiadki (min. 2 min) oraz dojścia do 1,2 km/przesiadki do 350 m, po prostej przy 1,25 m/s${rynek ? '; uwzględnia też dojście od przystanku do punktu na Rynku oraz bezpośredni marsz z adresu do 1,2 km' : ''}. To przybliżenie planowej podróży, nie pomiar rzeczywisty ani routing po chodnikach; nie obejmuje opóźnień ani dostępności pojazdu${cel ? '' : ', ani drogi od stanowiska lotniskowego do terminala'}. Brak możliwej trasy w modelu do 14:00 = brak danych.`,
     jednostka: 'min',
     kierunek: 'mniej-lepiej',
     rozdzielczosc: 'adres',
-    zadanie: 38,
+    zadanie: rynek ? 60 : 38,
     zrodla,
   }
-  const etykiety = wartosci.map((v) =>
-    v === null ? null : `${v} min planowo do ${nazwaCelu} od 07:00 (${data})`,
-  )
-  if (cel) {
+  if (cel && !rynek) {
+    const etykiety = wartosci.map((v) =>
+      v === null ? null : `${v} min planowo do ${nazwaCelu} od 07:00 (${data})`,
+    )
     mkdirSync(CACHE, { recursive: true })
     writeFileSync(
       join(CACHE, 'dojazd_cel.json'),
@@ -383,8 +395,10 @@ export async function generuj(data = dataRobocza(), cel = null) {
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   const [data, lon, lat] = process.argv.slice(2)
+  const rynek = lon === '--rynek'
   await generuj(
     data || dataRobocza(),
-    lon === undefined ? null : { lon: Number(lon), lat: Number(lat) },
+    rynek ? RYNEK_GLOWNY : lon === undefined ? null : { lon: Number(lon), lat: Number(lat) },
+    { rynek },
   )
 }

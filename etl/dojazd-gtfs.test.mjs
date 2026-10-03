@@ -79,3 +79,12 @@ test('indeks przestrzenny zachowuje kolejność stanowisk', () => {
   const indeks = indeksPunktow(punkty)
   assert.equal(indeks.range(18.999, 49.999, 19.001, 50.001)[0], 0)
 })
+
+test('cel w rynku: bliski adres może dojść pieszo bez kursu i bez przystanku na placu', () => {
+  const cel = { lat: 50.0617, lon: 19.9373 }
+  const pozaCentrum = [p(0, 50.03, 19.9)]
+  const model = profilDoCelu(pozaCentrum, [], new Map(), { start: 420, koniec: 480 })
+  assert.equal(czasAdresu(cel, pozaCentrum, model, cel), 0)
+  assert.equal(czasAdresu({ lat: 50.062, lon: 19.9373 }, pozaCentrum, model, cel), 1)
+  assert.equal(czasAdresu({ lat: 50.08, lon: 19.9373 }, pozaCentrum, model, cel), null)
+})
