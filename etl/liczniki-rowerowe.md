@@ -22,12 +22,16 @@
   więc łączymy po nazwie. Warstwę 3 pomija `etl/rowery.mjs` (#119), więc nic się nie dubluje.
   Atrybucja: „Gmina Miejska Kraków, Portal MSIP Obserwatorium (https://msip.krakow.pl)”, licencja:
   [Regulamin MSIP](https://msip.krakow.pl/getHtml?dok_id=228972).
-- **Licencja liczb.** Strona ZTP nie podaje odrębnej licencji. Zbiór „Mobilność Aktywna (Rowery)”
-  na portalu Otwarte Dane Krakowa (<https://otwartedane.um.krakow.pl/zbiory-danych/mobilnosc-aktywna-rowery-w-krakowie>)
+- **Licencja liczb (do potwierdzenia przez właściciela).** Strona ZTP nie podaje odrębnej licencji,
+  ale też nie zakazuje pobierania: skrypt tabeli ma włączoną opcję pobierania, czyli przycisk z
+  linkiem do tego samego pliku CSV, a w stopce serwisu są tylko polityka prywatności, ochrona danych
+  osobowych i deklaracja dostępności, bez regulaminu ograniczającego ponowne wykorzystanie. Zbiór
+  „Mobilność Aktywna (Rowery)” na portalu Otwarte Dane Krakowa (<https://otwartedane.um.krakow.pl/zbiory-danych/mobilnosc-aktywna-rowery-w-krakowie>)
   zawiera tylko lokalizacje, bez liczb. Stosujemy więc warunki tego portalu
   ([Warunki wykorzystania Danych](https://otwartedane.um.krakow.pl/warunki-wykorzystania-danych-udostepnianych-w-portalu)):
   swobodne ponowne wykorzystanie, wymagane podanie źródła („Gmina Miejska Kraków”) oraz czasu
-  wytworzenia i pozyskania danych (`dataDanych` i `pobrano` w `zrodla[]`).
+  wytworzenia i pozyskania danych (`dataDanych` i `pobrano` w `zrodla[]`). Gdyby licencja okazała
+  się niewystarczająca, wycofanie to usunięcie jednego pliku: `public/dane/wskazniki/rower_ruch_dobowy.json`.
 - **Czego nie używamy.** API `api.um.krakow.pl` (portal programisty) wymaga klucza, więc je pominięto.
   Widgety Eco-Counter osadzone na stronie ZTP (`data.eco-counter.com/eco-widget`) pokazują tylko dobę
   wczorajszą i sumę od początku roku, bez szeregu czasowego.
