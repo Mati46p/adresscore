@@ -4,6 +4,8 @@
 // JEV NIGDY NIE GENERUJE LICZB ANI MIEJSC. Dostaje tekst użytkownika i wybiera z zamkniętej
 // listy (choice), ocenia twierdzenie (noul 0–1) albo poziom na skali (score). Odpowiedź
 // spoza listy albo liczba spoza zakresu przepada jako null – wołający spada do reguły zapasowej.
+// Rozkład `probabilities` (choice: id opcji, score: numer poziomu) idzie dalej jako
+// `prawdopodobienstwa` – tylko znane klucze i wartości 0–1 (#154).
 //
 // NIGDY NIE RZUCA. Brak klucza, timeout, błąd sieci, 5xx, dziwny kształt odpowiedzi →
 // `odpowiedzi: null`. Wyjątek z rozróżnieniem: 401/402/403 (zły klucz, brak kredytu, brak
@@ -11,7 +13,11 @@
 // umieć odróżnić „brama odmówiła” od „chwilowo nie działa”. Wzorzec: z-dykty, pytania/jev.ts.
 
 export const URL_JEV = 'https://api.typesafe.ai/v1/systemone'
-export const MODEL_JEV = 'jev-latest'
+/**
+ * Model przypięty do wersji (#154). Alias `jev-latest` przesuwa się z każdym wydaniem, a progi
+ * pewności strojone są pod konkretną wersję – zmiana modelu ma być świadomą zmianą w kodzie.
+ */
+export const MODEL_JEV = 'jev-1.13.0'
 /** Budżet ścieżki na żywo: mapa przelicza się po zdaniu użytkownika, dłużej nie czekamy. */
 export const TIMEOUT_MS = 800
 
@@ -95,6 +101,20 @@ function liczba(x, od, do_) {
 }
 
 /**
+ * Rozkład prawdopodobieństw z JEV (#154) przycięty do dozwolonych kluczy: tylko klucze z
+ * żądania, tylko liczby skończone w 0–1. Bez sumowania i normalizacji – przekazujemy, co JEV
+ * dał. `undefined`, gdy JEV nic nie przysłał albo nic nie przeszło filtra (pole wtedy znika).
+ */
+function przytnijPrawdopodobienstwa(p, dozwolone) {
+  if (!p || typeof p !== 'object' || Array.isArray(p)) return undefined
+  const wynik = {}
+  for (const klucz of dozwolone) {
+    if (Object.hasOwn(p, klucz) && liczba(p[klucz], 0, 1)) wynik[klucz] = p[klucz]
+  }
+  return Object.keys(wynik).length > 0 ? wynik : undefined
+}
+
+/**
  * Jedna odpowiedź JEV → kształt kontraktu albo null. Tu pilnujemy zamkniętej listy:
  * choice musi być kluczem z kryteriów, noul w 0–1, score w 0…(poziomy − 1).
  */
@@ -103,13 +123,26 @@ function przelozOdpowiedz(pytanie, a) {
   const pewnosc = liczba(a.confidence, 0, 1) ? a.confidence : null
   if (pytanie.type === 'choice') {
     if (typeof a.choice !== 'string' || !Object.hasOwn(pytanie.criteria, a.choice)) return null
-    return { typ: 'choice', wybor: a.choice, pewnosc }
+    const odp = { typ: 'choice', wybor: a.choice, pewnosc }
+    const prawdopodobienstwa = przytnijPrawdopodobienstwa(
+      a.probabilities,
+      Object.keys(pytanie.criteria),
+    )
+    if (prawdopodobienstwa) odp.prawdopodobienstwa = prawdopodobienstwa
+    return odp
   }
   if (pytanie.type === 'noul') {
     return liczba(a.noul, 0, 1) ? { typ: 'noul', noul: a.noul } : null
   }
   if (!liczba(a.score, 0, pytanie.criteria.length - 1)) return null
-  return { typ: 'score', ocena: a.score, pewnosc }
+  const odp = { typ: 'score', ocena: a.score, pewnosc }
+  // Score: klucze to numery poziomów jako tekst – „0”…„(poziomy − 1)”.
+  const prawdopodobienstwa = przytnijPrawdopodobienstwa(
+    a.probabilities,
+    pytanie.criteria.map((_, i) => String(i)),
+  )
+  if (prawdopodobienstwa) odp.prawdopodobienstwa = prawdopodobienstwa
+  return odp
 }
 
 /**

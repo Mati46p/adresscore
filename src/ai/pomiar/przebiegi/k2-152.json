@@ -1,0 +1,3985 @@
+{
+  "data": "2026-10-03T17:29:13.290Z",
+  "naZywo": true,
+  "podsumowanie": {
+    "oceny": {
+      "a": {
+        "reguly": {
+          "n": 30,
+          "persona": 0.6666666666666666,
+          "potrzeby10": {
+            "p": 0.7714285714285715,
+            "r": 0.574468085106383,
+            "f1": 0.6585365853658536
+          },
+          "potrzeby10Licznik": {
+            "tp": 27,
+            "fp": 8,
+            "fn": 20
+          },
+          "potrzebyWszystkie": {
+            "p": 0.8,
+            "r": 0.5373134328358209,
+            "f1": 0.6428571428571428
+          },
+          "kategorie": {
+            "p": 0.8333333333333334,
+            "r": 0.6779661016949152,
+            "f1": 0.7476635514018691
+          },
+          "dokladnie": 0.26666666666666666,
+          "nic": {
+            "ok": 2,
+            "n": 2
+          },
+          "niewazne": {
+            "ok": 0,
+            "n": 0
+          },
+          "bledy": [
+            {
+              "id": "K2-A01",
+              "opis": "pominięte: praca_centrum"
+            },
+            {
+              "id": "K2-A02",
+              "opis": "profil rodzina zamiast senior; pominięte: senior; nadmiar: dzieci"
+            },
+            {
+              "id": "K2-A03",
+              "opis": "profil – zamiast singiel; pominięte: pies, rower; nic nie zrozumiał"
+            },
+            {
+              "id": "K2-A05",
+              "opis": "profil – zamiast rodzina; pominięte: dzieci"
+            },
+            {
+              "id": "K2-A06",
+              "opis": "pominięte: bez_samochodu"
+            },
+            {
+              "id": "K2-A07",
+              "opis": "profil – zamiast senior; pominięte: senior, bez_samochodu"
+            },
+            {
+              "id": "K2-A08",
+              "opis": "profil rodzina zamiast –; nadmiar: dzieci"
+            },
+            {
+              "id": "K2-A09",
+              "opis": "nadmiar: praca_centrum"
+            },
+            {
+              "id": "K2-A10",
+              "opis": "pominięte: praca_centrum"
+            },
+            {
+              "id": "K2-A15",
+              "opis": "pominięte: praca_centrum; nadmiar: bez_samochodu"
+            },
+            {
+              "id": "K2-A18",
+              "opis": "nadmiar: dzieci"
+            },
+            {
+              "id": "K2-A19",
+              "opis": "pominięte: senior"
+            },
+            {
+              "id": "K2-A20",
+              "opis": "pominięte: lotnisko, bez_samochodu"
+            },
+            {
+              "id": "K2-A21",
+              "opis": "pominięte: pies"
+            },
+            {
+              "id": "K2-A22",
+              "opis": "profil rodzina zamiast singiel; pominięte: praca_centrum"
+            },
+            {
+              "id": "K2-A23",
+              "opis": "pominięte: praca_centrum; nic nie zrozumiał"
+            },
+            {
+              "id": "K2-A24",
+              "opis": "pominięte: praca_centrum; nic nie zrozumiał"
+            },
+            {
+              "id": "K2-A25",
+              "opis": "profil rodzina zamiast senior; pominięte: senior; nadmiar: dzieci"
+            },
+            {
+              "id": "K2-A26",
+              "opis": "profil rodzina zamiast –; pominięte: pies"
+            },
+            {
+              "id": "K2-A28",
+              "opis": "profil – zamiast inwestor"
+            },
+            {
+              "id": "K2-A29",
+              "opis": "profil – zamiast rodzina; pominięte: dzieci; nadmiar: zielen"
+            },
+            {
+              "id": "K2-A30",
+              "opis": "nadmiar: zielen"
+            }
+          ]
+        },
+        "jev_surowy": {
+          "n": 30,
+          "persona": 0.6666666666666666,
+          "potrzeby10": {
+            "p": 0.8409090909090909,
+            "r": 0.7872340425531915,
+            "f1": 0.8131868131868133
+          },
+          "potrzeby10Licznik": {
+            "tp": 37,
+            "fp": 7,
+            "fn": 10
+          },
+          "potrzebyWszystkie": {
+            "p": 0.8541666666666666,
+            "r": 0.6119402985074627,
+            "f1": 0.7130434782608694
+          },
+          "kategorie": {
+            "p": 0.8979591836734694,
+            "r": 0.7457627118644068,
+            "f1": 0.8148148148148148
+          },
+          "dokladnie": 0.4666666666666667,
+          "nic": {
+            "ok": 2,
+            "n": 2
+          },
+          "niewazne": {
+            "ok": 0,
+            "n": 0
+          },
+          "bledy": [
+            {
+              "id": "K2-A02",
+              "opis": "nadmiar: bez_samochodu"
+            },
+            {
+              "id": "K2-A03",
+              "opis": "profil – zamiast singiel; pominięte: rower"
+            },
+            {
+              "id": "K2-A06",
+              "opis": "profil singiel zamiast –; pominięte: praca_centrum"
+            },
+            {
+              "id": "K2-A07",
+              "opis": "profil – zamiast senior; pominięte: bez_samochodu"
+            },
+            {
+              "id": "K2-A08",
+              "opis": "profil singiel zamiast –; nadmiar: dzieci, bez_samochodu"
+            },
+            {
+              "id": "K2-A15",
+              "opis": "pominięte: praca_centrum"
+            },
+            {
+              "id": "K2-A18",
+              "opis": "nadmiar: dzieci"
+            },
+            {
+              "id": "K2-A20",
+              "opis": "pominięte: lotnisko"
+            },
+            {
+              "id": "K2-A21",
+              "opis": "profil rodzina zamiast –; pominięte: lotnisko"
+            },
+            {
+              "id": "K2-A22",
+              "opis": "profil rodzina zamiast singiel; pominięte: dzieci"
+            },
+            {
+              "id": "K2-A23",
+              "opis": "profil inwestor zamiast –; pominięte: praca_centrum"
+            },
+            {
+              "id": "K2-A24",
+              "opis": "profil singiel zamiast –; pominięte: praca_centrum; nadmiar: bez_samochodu"
+            },
+            {
+              "id": "K2-A26",
+              "opis": "profil rodzina zamiast –; nadmiar: zdrowie"
+            },
+            {
+              "id": "K2-A28",
+              "opis": "pominięte: lotnisko"
+            },
+            {
+              "id": "K2-A29",
+              "opis": "nadmiar: zielen"
+            },
+            {
+              "id": "K2-A30",
+              "opis": "profil singiel zamiast –"
+            }
+          ]
+        },
+        "jev_z_zapasem": {
+          "n": 30,
+          "persona": 0.6666666666666666,
+          "potrzeby10": {
+            "p": 0.8409090909090909,
+            "r": 0.7872340425531915,
+            "f1": 0.8131868131868133
+          },
+          "potrzeby10Licznik": {
+            "tp": 37,
+            "fp": 7,
+            "fn": 10
+          },
+          "potrzebyWszystkie": {
+            "p": 0.8541666666666666,
+            "r": 0.6119402985074627,
+            "f1": 0.7130434782608694
+          },
+          "kategorie": {
+            "p": 0.8979591836734694,
+            "r": 0.7457627118644068,
+            "f1": 0.8148148148148148
+          },
+          "dokladnie": 0.4666666666666667,
+          "nic": {
+            "ok": 2,
+            "n": 2
+          },
+          "niewazne": {
+            "ok": 0,
+            "n": 0
+          },
+          "bledy": [
+            {
+              "id": "K2-A02",
+              "opis": "nadmiar: bez_samochodu"
+            },
+            {
+              "id": "K2-A03",
+              "opis": "profil – zamiast singiel; pominięte: rower"
+            },
+            {
+              "id": "K2-A06",
+              "opis": "profil singiel zamiast –; pominięte: praca_centrum"
+            },
+            {
+              "id": "K2-A07",
+              "opis": "profil – zamiast senior; pominięte: bez_samochodu"
+            },
+            {
+              "id": "K2-A08",
+              "opis": "profil singiel zamiast –; nadmiar: dzieci, bez_samochodu"
+            },
+            {
+              "id": "K2-A15",
+              "opis": "pominięte: praca_centrum"
+            },
+            {
+              "id": "K2-A18",
+              "opis": "nadmiar: dzieci"
+            },
+            {
+              "id": "K2-A20",
+              "opis": "pominięte: lotnisko"
+            },
+            {
+              "id": "K2-A21",
+              "opis": "profil rodzina zamiast –; pominięte: lotnisko"
+            },
+            {
+              "id": "K2-A22",
+              "opis": "profil rodzina zamiast singiel; pominięte: dzieci"
+            },
+            {
+              "id": "K2-A23",
+              "opis": "profil inwestor zamiast –; pominięte: praca_centrum"
+            },
+            {
+              "id": "K2-A24",
+              "opis": "profil singiel zamiast –; pominięte: praca_centrum; nadmiar: bez_samochodu"
+            },
+            {
+              "id": "K2-A26",
+              "opis": "profil rodzina zamiast –; nadmiar: zdrowie"
+            },
+            {
+              "id": "K2-A28",
+              "opis": "pominięte: lotnisko"
+            },
+            {
+              "id": "K2-A29",
+              "opis": "nadmiar: zielen"
+            },
+            {
+              "id": "K2-A30",
+              "opis": "profil singiel zamiast –"
+            }
+          ]
+        }
+      },
+      "b": {
+        "reguly": {
+          "n": 25,
+          "trafnosc": 0.6,
+          "grupy": {
+            "pojedyncze": [
+              5,
+              15
+            ],
+            "zlozone": [
+              7,
+              7
+            ],
+            "spoza": [
+              3,
+              3
+            ]
+          },
+          "pokrycie": 0.4523809523809524,
+          "bledy": [
+            {
+              "id": "K2-B01",
+              "opis": "nie_wiem zamiast halas_ldwn|halas_obwarzanek_lden"
+            },
+            {
+              "id": "K2-B02",
+              "opis": "nie_wiem zamiast paleniska_200m|pm10_srednia|pm25_srednia|bap_srednia|przewietrzanie_klasa"
+            },
+            {
+              "id": "K2-B03",
+              "opis": "nie_wiem zamiast przedszkole_odleglosc|szkola_podst_odleglosc"
+            },
+            {
+              "id": "K2-B06",
+              "opis": "nie_wiem zamiast weterynarz_odleglosc"
+            },
+            {
+              "id": "K2-B07",
+              "opis": "nie_wiem zamiast defibrylator_odleglosc"
+            },
+            {
+              "id": "K2-B08",
+              "opis": "nie_wiem zamiast inwestycje_500m|mpzp_status"
+            },
+            {
+              "id": "K2-B10",
+              "opis": "nie_wiem zamiast osuwisko_odleglosc|teren_osuwiskowy|osiadanie_mm_rok"
+            },
+            {
+              "id": "K2-B12",
+              "opis": "nie_wiem zamiast slonce_grudzien_h"
+            },
+            {
+              "id": "K2-B13",
+              "opis": "rynek_czas_min zamiast kolej_kursy_szczyt_h|kolej_odleglosc"
+            },
+            {
+              "id": "K2-B24",
+              "opis": "nie_wiem zamiast pm25_srednia|pm10_srednia|no2_srednia|bap_srednia|paleniska_200m|przewietrzanie_klasa|emitent_odleglosc|seveso_odleglosc|halas_ldwn|halas_obwarzanek_lden|azbest_budynki_100m"
+            }
+          ]
+        },
+        "jev_surowy": {
+          "n": 25,
+          "trafnosc": 0.92,
+          "grupy": {
+            "pojedyncze": [
+              13,
+              15
+            ],
+            "zlozone": [
+              7,
+              7
+            ],
+            "spoza": [
+              3,
+              3
+            ]
+          },
+          "pokrycie": 0.4523809523809524,
+          "bledy": [
+            {
+              "id": "K2-B09",
+              "opis": "nie_wiem zamiast cena_m2_mediana"
+            },
+            {
+              "id": "K2-B24",
+              "opis": "nie_wiem zamiast pm25_srednia|pm10_srednia|no2_srednia|bap_srednia|paleniska_200m|przewietrzanie_klasa|emitent_odleglosc|seveso_odleglosc|halas_ldwn|halas_obwarzanek_lden|azbest_budynki_100m"
+            }
+          ]
+        },
+        "jev_z_zapasem": {
+          "n": 25,
+          "trafnosc": 0.96,
+          "grupy": {
+            "pojedyncze": [
+              14,
+              15
+            ],
+            "zlozone": [
+              7,
+              7
+            ],
+            "spoza": [
+              3,
+              3
+            ]
+          },
+          "pokrycie": 0.4523809523809524,
+          "bledy": [
+            {
+              "id": "K2-B24",
+              "opis": "nie_wiem zamiast pm25_srednia|pm10_srednia|no2_srednia|bap_srednia|paleniska_200m|przewietrzanie_klasa|emitent_odleglosc|seveso_odleglosc|halas_ldwn|halas_obwarzanek_lden|azbest_budynki_100m"
+            }
+          ]
+        }
+      },
+      "wiele": {
+        "reguly": {
+          "pojedyncze": [
+            5,
+            15
+          ],
+          "pokrycie": 0.6904761904761905,
+          "zlozoneKomplet": [
+            2,
+            7
+          ],
+          "spoza": [
+            3,
+            3
+          ],
+          "precyzja": 0.9411764705882353,
+          "falszyweDodatkiPojedyncze": 0,
+          "pojedynczeZFalszywymDodatkiem": 0,
+          "srednioWarstw": 0.7727272727272727
+        },
+        "jev_z_zapasem": {
+          "pojedyncze": [
+            14,
+            15
+          ],
+          "pokrycie": 0.6904761904761905,
+          "zlozoneKomplet": [
+            2,
+            7
+          ],
+          "spoza": [
+            3,
+            3
+          ],
+          "precyzja": 0.9285714285714286,
+          "falszyweDodatkiPojedyncze": 1,
+          "pojedynczeZFalszywymDodatkiem": 1,
+          "srednioWarstw": 1.2727272727272727
+        }
+      }
+    },
+    "wywolan": 55,
+    "zapas": {
+      "a": 1,
+      "b": 2
+    },
+    "opoznienie": {
+      "a": {
+        "p50": 285,
+        "p95": 416,
+        "max": 468
+      },
+      "b": {
+        "p50": 352,
+        "p95": 424,
+        "max": 484
+      },
+      "razem": {
+        "p50": 307,
+        "p95": 424,
+        "max": 484
+      }
+    },
+    "kalibracja": {
+      "profil": {
+        "trafny": 0.9494444444444444,
+        "bledny": 0.735
+      },
+      "noul": {
+        "wzorzec": 0.7995744680851063,
+        "poza": 0.2501581027667984
+      },
+      "warstwa": {
+        "trafna": 0.8752173913043476,
+        "bledna": 0.46499999999999997
+      }
+    }
+  },
+  "a": [
+    {
+      "id": "K2-A01",
+      "tekst": "hej szukam czegos dla nas, mala ma 3 latka i od wrzesnia idzie do przedszkola a ja robie na kazimierzu wiec nie chce stac godziny w korku na zakopiance",
+      "wzorzec": {
+        "persona": "rodzina",
+        "potrzeby": [
+          "dzieci",
+          "praca_centrum"
+        ],
+        "nic": false
+      },
+      "systemy": {
+        "reguly": {
+          "persona": "rodzina",
+          "potrzeby": [
+            "dzieci"
+          ],
+          "kategorie": {
+            "codziennosc": 4,
+            "spokoj": 3
+          },
+          "nic": false
+        },
+        "jev_surowy": {
+          "persona": "rodzina",
+          "potrzeby": [
+            "dzieci",
+            "praca_centrum"
+          ],
+          "kategorie": {
+            "codziennosc": 4,
+            "spokoj": 3,
+            "transport": 4
+          },
+          "nic": false
+        },
+        "jev_z_zapasem": {
+          "persona": "rodzina",
+          "potrzeby": [
+            "dzieci",
+            "praca_centrum"
+          ],
+          "kategorie": {
+            "codziennosc": 4,
+            "spokoj": 3,
+            "transport": 4
+          },
+          "nic": false
+        }
+      },
+      "jev": {
+        "ms": 468,
+        "zrodlo": "jev",
+        "powod": null,
+        "profil": {
+          "wybor": "rodzina",
+          "pewnosc": 1
+        },
+        "noul": {
+          "dzieci": 0.95,
+          "pies": 0.11,
+          "zielen": 0.26,
+          "powietrze": 0.26,
+          "rower": 0.21,
+          "bez_samochodu": 0.43,
+          "senior": 0.04,
+          "praca_centrum": 0.77,
+          "zdrowie": 0.31,
+          "lotnisko": 0.06
+        },
+        "poziomy": {
+          "codziennosc": 3.24,
+          "transport": 3.09,
+          "spokoj": 1.79,
+          "przyszlosc": null,
+          "bezpieczenstwo": 1.77
+        },
+        "wlasna": 0.96
+      }
+    },
+    {
+      "id": "K2-A02",
+      "tekst": "Mam 74 lata, kolana już nie te. Co dwa tygodnie muszę na kontrolę INR, więc przychodnia musi być blisko. Syn mówi żebym się przeniosła bliżej niego bo sama sobie nie radzę z zakupami.",
+      "wzorzec": {
+        "persona": "senior",
+        "potrzeby": [
+          "senior",
+          "zdrowie",
+          "sklepy"
+        ],
+        "nic": false
+      },
+      "systemy": {
+        "reguly": {
+          "persona": "rodzina",
+          "potrzeby": [
+            "dzieci",
+            "zdrowie",
+            "sklepy"
+          ],
+          "kategorie": {
+            "codziennosc": 4,
+            "spokoj": 3
+          },
+          "nic": false
+        },
+        "jev_surowy": {
+          "persona": "senior",
+          "potrzeby": [
+            "bez_samochodu",
+            "senior",
+            "zdrowie"
+          ],
+          "kategorie": {
+            "transport": 4,
+            "codziennosc": 4,
+            "spokoj": 4
+          },
+          "nic": false
+        },
+        "jev_z_zapasem": {
+          "persona": "senior",
+          "potrzeby": [
+            "bez_samochodu",
+            "senior",
+            "zdrowie"
+          ],
+          "kategorie": {
+            "transport": 4,
+            "codziennosc": 4,
+            "spokoj": 4
+          },
+          "nic": false
+        }
+      },
+      "jev": {
+        "ms": 325,
+        "zrodlo": "jev",
+        "powod": null,
+        "profil": {
+          "wybor": "senior",
+          "pewnosc": 1
+        },
+        "noul": {
+          "dzieci": 0.3,
+          "pies": 0.12,
+          "zielen": 0.13,
+          "powietrze": 0.26,
+          "rower": 0.07,
+          "bez_samochodu": 0.66,
+          "senior": 0.98,
+          "praca_centrum": 0.03,
+          "zdrowie": 0.95,
+          "lotnisko": 0.05
+        },
+        "poziomy": {
+          "codziennosc": 3.92,
+          "transport": 3.03,
+          "spokoj": 1.93,
+          "przyszlosc": null,
+          "bezpieczenstwo": 2.08
+        },
+        "wlasna": 0.97
+      }
+    },
+    {
+      "id": "K2-A03",
+      "tekst": "border collie + ja + szosówka. tyle w temacie xD",
+      "wzorzec": {
+        "persona": "singiel",
+        "potrzeby": [
+          "pies",
+          "rower",
+          "singiel"
+        ],
+        "nic": false
+      },
+      "systemy": {
+        "reguly": {
+          "persona": null,
+          "potrzeby": [],
+          "kategorie": {},
+          "nic": true
+        },
+        "jev_surowy": {
+          "persona": null,
+          "potrzeby": [
+            "pies"
+          ],
+          "kategorie": {
+            "spokoj": 3
+          },
+          "nic": false
+        },
+        "jev_z_zapasem": {
+          "persona": null,
+          "potrzeby": [
+            "pies"
+          ],
+          "kategorie": {
+            "spokoj": 3
+          },
+          "nic": false
+        }
+      },
+      "jev": {
+        "ms": 307,
+        "zrodlo": "jev",
+        "powod": null,
+        "profil": {
+          "wybor": "nieznany",
+          "pewnosc": 0.82
+        },
+        "noul": {
+          "dzieci": 0.29,
+          "pies": 0.9,
+          "zielen": 0.61,
+          "powietrze": 0.39,
+          "rower": 0.34,
+          "bez_samochodu": 0.53,
+          "senior": 0.12,
+          "praca_centrum": 0.3,
+          "zdrowie": 0.26,
+          "lotnisko": 0.23
+        },
+        "poziomy": {
+          "codziennosc": 1.9,
+          "transport": 1.84,
+          "spokoj": 1.95,
+          "przyszlosc": null,
+          "bezpieczenstwo": 1.81
+        },
+        "wlasna": 0.41
+      }
+    },
+    {
+      "id": "K2-A04",
+      "tekst": "kupuje pod wynajem dla studentow, ma sie splacac, reszta mnie nie obchodzi",
+      "wzorzec": {
+        "persona": "inwestor",
+        "potrzeby": [
+          "inwestycja"
+        ],
+        "nic": false
+      },
+      "systemy": {
+        "reguly": {
+          "persona": "inwestor",
+          "potrzeby": [
+            "inwestycja",
+            "singiel"
+          ],
+          "kategorie": {
+            "przyszlosc": 4,
+            "transport": 3,
+            "codziennosc": 3
+          },
+          "nic": false
+        },
+        "jev_surowy": {
+          "persona": "inwestor",
+          "potrzeby": [
+            "inwestycja"
+          ],
+          "kategorie": {
+            "przyszlosc": 4
+          },
+          "nic": false
+        },
+        "jev_z_zapasem": {
+          "persona": "inwestor",
+          "potrzeby": [
+            "inwestycja"
+          ],
+          "kategorie": {
+            "przyszlosc": 4
+          },
+          "nic": false
+        }
+      },
+      "jev": {
+        "ms": 285,
+        "zrodlo": "jev",
+        "powod": null,
+        "profil": {
+          "wybor": "inwestor",
+          "pewnosc": 0.94
+        },
+        "noul": {
+          "dzieci": 0.14,
+          "pies": 0.18,
+          "zielen": 0.16,
+          "powietrze": 0.2,
+          "rower": 0.25,
+          "bez_samochodu": 0.52,
+          "senior": 0.12,
+          "praca_centrum": 0.34,
+          "zdrowie": 0.29,
+          "lotnisko": 0.17
+        },
+        "poziomy": {
+          "codziennosc": 1.79,
+          "transport": 1.91,
+          "spokoj": 1.67,
+          "przyszlosc": null,
+          "bezpieczenstwo": 1.58
+        },
+        "wlasna": 0.86
+      }
+    },
+    {
+      "id": "K2-A05",
+      "tekst": "mała ciągle kaszle jak tylko przyjdzie sezon grzewczy, pediatra mówi że to od powietrza. nie chcemy już żadnych kopciuchów pod oknem, serio",
+      "wzorzec": {
+        "persona": "rodzina",
+        "potrzeby": [
+          "dzieci",
+          "powietrze"
+        ],
+        "nic": false
+      },
+      "systemy": {
+        "reguly": {
+          "persona": null,
+          "potrzeby": [
+            "powietrze"
+          ],
+          "kategorie": {
+            "spokoj": 4
+          },
+          "nic": false
+        },
+        "jev_surowy": {
+          "persona": "rodzina",
+          "potrzeby": [
+            "dzieci",
+            "powietrze"
+          ],
+          "kategorie": {
+            "codziennosc": 4,
+            "spokoj": 4
+          },
+          "nic": false
+        },
+        "jev_z_zapasem": {
+          "persona": "rodzina",
+          "potrzeby": [
+            "dzieci",
+            "powietrze"
+          ],
+          "kategorie": {
+            "codziennosc": 4,
+            "spokoj": 4
+          },
+          "nic": false
+        }
+      },
+      "jev": {
+        "ms": 252,
+        "zrodlo": "jev",
+        "powod": null,
+        "profil": {
+          "wybor": "rodzina",
+          "pewnosc": 1
+        },
+        "noul": {
+          "dzieci": 0.92,
+          "pies": 0.15,
+          "zielen": 0.34,
+          "powietrze": 0.94,
+          "rower": 0.22,
+          "bez_samochodu": 0.53,
+          "senior": 0.17,
+          "praca_centrum": 0.26,
+          "zdrowie": 0.28,
+          "lotnisko": 0.08
+        },
+        "poziomy": {
+          "codziennosc": 1.72,
+          "transport": 1.42,
+          "spokoj": 3.93,
+          "przyszlosc": null,
+          "bezpieczenstwo": 2.26
+        },
+        "wlasna": 0.81
+      }
+    },
+    {
+      "id": "K2-A06",
+      "tekst": "Nie mam prawka i nie zamierzam robić. Dojeżdżam do pracy na Pędzichów, a sklep chcę mieć pod blokiem, bo nie będę dźwigać zgrzewek przez pół osiedla.",
+      "wzorzec": {
+        "persona": null,
+        "potrzeby": [
+          "bez_samochodu",
+          "praca_centrum",
+          "sklepy"
+        ],
+        "nic": false
+      },
+      "systemy": {
+        "reguly": {
+          "persona": null,
+          "potrzeby": [
+            "praca_centrum",
+            "sklepy"
+          ],
+          "kategorie": {
+            "transport": 4,
+            "codziennosc": 4
+          },
+          "nic": false
+        },
+        "jev_surowy": {
+          "persona": "singiel",
+          "potrzeby": [
+            "bez_samochodu"
+          ],
+          "kategorie": {
+            "transport": 3,
+            "codziennosc": 4
+          },
+          "nic": false
+        },
+        "jev_z_zapasem": {
+          "persona": "singiel",
+          "potrzeby": [
+            "bez_samochodu"
+          ],
+          "kategorie": {
+            "transport": 3,
+            "codziennosc": 4
+          },
+          "nic": false
+        }
+      },
+      "jev": {
+        "ms": 340,
+        "zrodlo": "jev",
+        "powod": null,
+        "profil": {
+          "wybor": "singiel",
+          "pewnosc": 0.88
+        },
+        "noul": {
+          "dzieci": 0.27,
+          "pies": 0.14,
+          "zielen": 0.11,
+          "powietrze": 0.24,
+          "rower": 0.58,
+          "bez_samochodu": 0.85,
+          "senior": 0.19,
+          "praca_centrum": 0.54,
+          "zdrowie": 0.24,
+          "lotnisko": 0.05
+        },
+        "poziomy": {
+          "codziennosc": 3.86,
+          "transport": 2.93,
+          "spokoj": 1.85,
+          "przyszlosc": null,
+          "bezpieczenstwo": 1.74
+        },
+        "wlasna": 0.96
+      }
+    },
+    {
+      "id": "K2-A07",
+      "tekst": "pisze w imieniu taty. wdowiec od roku, siedzi sam w domu pod Myslenicami, auta juz nie prowadzi (oczy). chcemy go sciagnac do Krakowa zeby mial lekarza i sklep na piechote",
+      "wzorzec": {
+        "persona": "senior",
+        "potrzeby": [
+          "senior",
+          "singiel",
+          "bez_samochodu",
+          "zdrowie",
+          "sklepy"
+        ],
+        "nic": false
+      },
+      "systemy": {
+        "reguly": {
+          "persona": null,
+          "potrzeby": [
+            "zdrowie",
+            "sklepy"
+          ],
+          "kategorie": {
+            "codziennosc": 4
+          },
+          "nic": false
+        },
+        "jev_surowy": {
+          "persona": null,
+          "potrzeby": [
+            "senior",
+            "zdrowie"
+          ],
+          "kategorie": {
+            "codziennosc": 4,
+            "spokoj": 4
+          },
+          "nic": false
+        },
+        "jev_z_zapasem": {
+          "persona": null,
+          "potrzeby": [
+            "senior",
+            "zdrowie"
+          ],
+          "kategorie": {
+            "codziennosc": 4,
+            "spokoj": 4
+          },
+          "nic": false
+        }
+      },
+      "jev": {
+        "ms": 240,
+        "zrodlo": "jev",
+        "powod": null,
+        "profil": {
+          "wybor": "senior",
+          "pewnosc": 0.98
+        },
+        "noul": {
+          "dzieci": 0.22,
+          "pies": 0.18,
+          "zielen": 0.23,
+          "powietrze": 0.34,
+          "rower": 0.09,
+          "bez_samochodu": 0.83,
+          "senior": 0.91,
+          "praca_centrum": 0.04,
+          "zdrowie": 0.92,
+          "lotnisko": 0.04
+        },
+        "poziomy": {
+          "codziennosc": 3.87,
+          "transport": 2.72,
+          "spokoj": 1.93,
+          "przyszlosc": null,
+          "bezpieczenstwo": 2.03
+        },
+        "wlasna": 0.06
+      }
+    },
+    {
+      "id": "K2-A08",
+      "tekst": "Jak kiedyś będą dzieci to pewnie szkoła by się przydała, ale na razie jesteśmy we dwoje i oboje jeździmy rowerem do biur w centrum.",
+      "wzorzec": {
+        "persona": null,
+        "potrzeby": [
+          "rower",
+          "praca_centrum"
+        ],
+        "nic": false
+      },
+      "systemy": {
+        "reguly": {
+          "persona": "rodzina",
+          "potrzeby": [
+            "dzieci",
+            "rower",
+            "praca_centrum"
+          ],
+          "kategorie": {
+            "codziennosc": 4,
+            "spokoj": 3,
+            "transport": 4
+          },
+          "nic": false
+        },
+        "jev_surowy": {
+          "persona": "singiel",
+          "potrzeby": [
+            "dzieci",
+            "rower",
+            "bez_samochodu",
+            "praca_centrum"
+          ],
+          "kategorie": {
+            "codziennosc": 4,
+            "spokoj": 3,
+            "transport": 4
+          },
+          "nic": false
+        },
+        "jev_z_zapasem": {
+          "persona": "singiel",
+          "potrzeby": [
+            "dzieci",
+            "rower",
+            "bez_samochodu",
+            "praca_centrum"
+          ],
+          "kategorie": {
+            "codziennosc": 4,
+            "spokoj": 3,
+            "transport": 4
+          },
+          "nic": false
+        }
+      },
+      "jev": {
+        "ms": 416,
+        "zrodlo": "jev",
+        "powod": null,
+        "profil": {
+          "wybor": "singiel",
+          "pewnosc": 0.89
+        },
+        "noul": {
+          "dzieci": 0.62,
+          "pies": 0.13,
+          "zielen": 0.23,
+          "powietrze": 0.34,
+          "rower": 0.94,
+          "bez_samochodu": 0.74,
+          "senior": 0.1,
+          "praca_centrum": 0.9,
+          "zdrowie": 0.21,
+          "lotnisko": 0.09
+        },
+        "poziomy": {
+          "codziennosc": 1.69,
+          "transport": 1.6,
+          "spokoj": 1.89,
+          "przyszlosc": null,
+          "bezpieczenstwo": 1.76
+        },
+        "wlasna": 0.54
+      }
+    },
+    {
+      "id": "K2-A09",
+      "tekst": "Za studenckich czasów mieszkałem na Starym Mieście i imprezy pod oknem mi nie przeszkadzały. Teraz mam 41 lat i chcę wreszcie ciszy i trochę drzew dookoła.",
+      "wzorzec": {
+        "persona": null,
+        "potrzeby": [
+          "cisza",
+          "zielen"
+        ],
+        "nic": false
+      },
+      "systemy": {
+        "reguly": {
+          "persona": null,
+          "potrzeby": [
+            "zielen",
+            "praca_centrum",
+            "cisza"
+          ],
+          "kategorie": {
+            "spokoj": 4,
+            "transport": 4
+          },
+          "nic": false
+        },
+        "jev_surowy": {
+          "persona": null,
+          "potrzeby": [
+            "zielen"
+          ],
+          "kategorie": {
+            "spokoj": 4
+          },
+          "nic": false
+        },
+        "jev_z_zapasem": {
+          "persona": null,
+          "potrzeby": [
+            "zielen"
+          ],
+          "kategorie": {
+            "spokoj": 4
+          },
+          "nic": false
+        }
+      },
+      "jev": {
+        "ms": 242,
+        "zrodlo": "jev",
+        "powod": null,
+        "profil": {
+          "wybor": "rodzina",
+          "pewnosc": 0.24
+        },
+        "noul": {
+          "dzieci": 0.2,
+          "pies": 0.17,
+          "zielen": 0.91,
+          "powietrze": 0.36,
+          "rower": 0.27,
+          "bez_samochodu": 0.47,
+          "senior": 0.21,
+          "praca_centrum": 0.25,
+          "zdrowie": 0.19,
+          "lotnisko": 0.12
+        },
+        "poziomy": {
+          "codziennosc": 1.89,
+          "transport": 1.76,
+          "spokoj": 3.84,
+          "przyszlosc": null,
+          "bezpieczenstwo": 1.76
+        },
+        "wlasna": 0.92
+      }
+    },
+    {
+      "id": "K2-A10",
+      "tekst": "nie potrzebuje auta, wszedzie rowerem... no dobra, auto mamy, zona nim jezdzi do Niepolomic. ja rowerem do biura przy rondzie mogilskim",
+      "wzorzec": {
+        "persona": null,
+        "potrzeby": [
+          "rower",
+          "praca_centrum"
+        ],
+        "nic": false
+      },
+      "systemy": {
+        "reguly": {
+          "persona": null,
+          "potrzeby": [
+            "rower"
+          ],
+          "kategorie": {
+            "codziennosc": 3
+          },
+          "nic": false
+        },
+        "jev_surowy": {
+          "persona": null,
+          "potrzeby": [
+            "rower",
+            "praca_centrum"
+          ],
+          "kategorie": {
+            "codziennosc": 3,
+            "transport": 4
+          },
+          "nic": false
+        },
+        "jev_z_zapasem": {
+          "persona": null,
+          "potrzeby": [
+            "rower",
+            "praca_centrum"
+          ],
+          "kategorie": {
+            "codziennosc": 3,
+            "transport": 4
+          },
+          "nic": false
+        }
+      },
+      "jev": {
+        "ms": 266,
+        "zrodlo": "jev",
+        "powod": null,
+        "profil": {
+          "wybor": "singiel",
+          "pewnosc": 0.56
+        },
+        "noul": {
+          "dzieci": 0.22,
+          "pies": 0.19,
+          "zielen": 0.31,
+          "powietrze": 0.49,
+          "rower": 0.85,
+          "bez_samochodu": 0.09,
+          "senior": 0.11,
+          "praca_centrum": 0.77,
+          "zdrowie": 0.29,
+          "lotnisko": 0.05
+        },
+        "poziomy": {
+          "codziennosc": 1.8,
+          "transport": 2.05,
+          "spokoj": 1.97,
+          "przyszlosc": null,
+          "bezpieczenstwo": 1.82
+        },
+        "wlasna": 0.9
+      }
+    },
+    {
+      "id": "K2-A11",
+      "tekst": "szukam mieszkania. pozdrawiam",
+      "wzorzec": {
+        "persona": null,
+        "potrzeby": [],
+        "nic": true
+      },
+      "systemy": {
+        "reguly": {
+          "persona": null,
+          "potrzeby": [],
+          "kategorie": {},
+          "nic": true
+        },
+        "jev_surowy": {
+          "persona": null,
+          "potrzeby": [],
+          "kategorie": {},
+          "nic": true
+        },
+        "jev_z_zapasem": {
+          "persona": null,
+          "potrzeby": [],
+          "kategorie": {},
+          "nic": true
+        }
+      },
+      "jev": {
+        "ms": 299,
+        "zrodlo": "zapas",
+        "powod": "nieczytelne",
+        "profil": {
+          "wybor": "nieznany",
+          "pewnosc": 1
+        },
+        "noul": {
+          "dzieci": 0.25,
+          "pies": 0.18,
+          "zielen": 0.28,
+          "powietrze": 0.31,
+          "rower": 0.2,
+          "bez_samochodu": 0.52,
+          "senior": 0.2,
+          "praca_centrum": 0.35,
+          "zdrowie": 0.27,
+          "lotnisko": 0.15
+        },
+        "poziomy": {
+          "codziennosc": 1.97,
+          "transport": 1.97,
+          "spokoj": 1.97,
+          "przyszlosc": null,
+          "bezpieczenstwo": 1.95
+        },
+        "wlasna": 0.93
+      }
+    },
+    {
+      "id": "K2-A12",
+      "tekst": "a co to wgl za apka? da sie tu cos wygrac?",
+      "wzorzec": {
+        "persona": null,
+        "potrzeby": [],
+        "nic": true
+      },
+      "systemy": {
+        "reguly": {
+          "persona": null,
+          "potrzeby": [],
+          "kategorie": {},
+          "nic": true
+        },
+        "jev_surowy": {
+          "persona": null,
+          "potrzeby": [],
+          "kategorie": {},
+          "nic": true
+        },
+        "jev_z_zapasem": {
+          "persona": null,
+          "potrzeby": [],
+          "kategorie": {},
+          "nic": true
+        }
+      },
+      "jev": {
+        "ms": 279,
+        "zrodlo": "jev",
+        "powod": null,
+        "profil": {
+          "wybor": "nieznany",
+          "pewnosc": 1
+        },
+        "noul": {
+          "dzieci": 0.25,
+          "pies": 0.2,
+          "zielen": 0.18,
+          "powietrze": 0.27,
+          "rower": 0.35,
+          "bez_samochodu": 0.55,
+          "senior": 0.17,
+          "praca_centrum": 0.35,
+          "zdrowie": 0.21,
+          "lotnisko": 0.22
+        },
+        "poziomy": {
+          "codziennosc": 1.54,
+          "transport": 1.7,
+          "spokoj": 1.72,
+          "przyszlosc": null,
+          "bezpieczenstwo": 1.64
+        },
+        "wlasna": 0.29
+      }
+    },
+    {
+      "id": "K2-A13",
+      "tekst": "Wracam z Norwegii po 8 latach, dalej latam tam co miesiąc na kontrakt. Mieszkam sam z kotem.",
+      "wzorzec": {
+        "persona": "singiel",
+        "potrzeby": [
+          "lotnisko",
+          "singiel"
+        ],
+        "nic": false
+      },
+      "systemy": {
+        "reguly": {
+          "persona": "singiel",
+          "potrzeby": [
+            "lotnisko",
+            "singiel"
+          ],
+          "kategorie": {
+            "transport": 3,
+            "codziennosc": 3
+          },
+          "nic": false
+        },
+        "jev_surowy": {
+          "persona": "singiel",
+          "potrzeby": [
+            "lotnisko"
+          ],
+          "kategorie": {
+            "transport": 3
+          },
+          "nic": false
+        },
+        "jev_z_zapasem": {
+          "persona": "singiel",
+          "potrzeby": [
+            "lotnisko"
+          ],
+          "kategorie": {
+            "transport": 3
+          },
+          "nic": false
+        }
+      },
+      "jev": {
+        "ms": 252,
+        "zrodlo": "jev",
+        "powod": null,
+        "profil": {
+          "wybor": "singiel",
+          "pewnosc": 0.99
+        },
+        "noul": {
+          "dzieci": 0.06,
+          "pies": 0.09,
+          "zielen": 0.35,
+          "powietrze": 0.44,
+          "rower": 0.18,
+          "bez_samochodu": 0.59,
+          "senior": 0.11,
+          "praca_centrum": 0.08,
+          "zdrowie": 0.42,
+          "lotnisko": 0.94
+        },
+        "poziomy": {
+          "codziennosc": 1.92,
+          "transport": 2.91,
+          "spokoj": 1.98,
+          "przyszlosc": null,
+          "bezpieczenstwo": 1.85
+        },
+        "wlasna": 0.83
+      }
+    },
+    {
+      "id": "K2-A14",
+      "tekst": "dwojka dzieci 7 i 11, starszy idzie do 8 klasy wiec chcemy porzadna podstawowke. i zeby mogli sami wracac ze szkoly bez przechodzenia przez czteropasmowke",
+      "wzorzec": {
+        "persona": "rodzina",
+        "potrzeby": [
+          "dzieci",
+          "bezpieczenstwo"
+        ],
+        "nic": false
+      },
+      "systemy": {
+        "reguly": {
+          "persona": "rodzina",
+          "potrzeby": [
+            "dzieci"
+          ],
+          "kategorie": {
+            "codziennosc": 4,
+            "spokoj": 3
+          },
+          "nic": false
+        },
+        "jev_surowy": {
+          "persona": "rodzina",
+          "potrzeby": [
+            "dzieci"
+          ],
+          "kategorie": {
+            "codziennosc": 4,
+            "spokoj": 3
+          },
+          "nic": false
+        },
+        "jev_z_zapasem": {
+          "persona": "rodzina",
+          "potrzeby": [
+            "dzieci"
+          ],
+          "kategorie": {
+            "codziennosc": 4,
+            "spokoj": 3
+          },
+          "nic": false
+        }
+      },
+      "jev": {
+        "ms": 294,
+        "zrodlo": "jev",
+        "powod": null,
+        "profil": {
+          "wybor": "rodzina",
+          "pewnosc": 1
+        },
+        "noul": {
+          "dzieci": 0.94,
+          "pies": 0.12,
+          "zielen": 0.16,
+          "powietrze": 0.25,
+          "rower": 0.24,
+          "bez_samochodu": 0.47,
+          "senior": 0.06,
+          "praca_centrum": 0.19,
+          "zdrowie": 0.23,
+          "lotnisko": 0.07
+        },
+        "poziomy": {
+          "codziennosc": 3.79,
+          "transport": 2.49,
+          "spokoj": 1.76,
+          "przyszlosc": null,
+          "bezpieczenstwo": 2.97
+        },
+        "wlasna": 0.9
+      }
+    },
+    {
+      "id": "K2-A15",
+      "tekst": "Jestem pielęgniarką, robię nocki w szpitalu na Kopernika. Wracam o 7 rano i MUSZĘ się wyspać w dzień, żadnych remontów i tramwajów pod oknem.",
+      "wzorzec": {
+        "persona": null,
+        "potrzeby": [
+          "praca_centrum",
+          "cisza"
+        ],
+        "nic": false
+      },
+      "systemy": {
+        "reguly": {
+          "persona": null,
+          "potrzeby": [
+            "bez_samochodu"
+          ],
+          "kategorie": {
+            "transport": 4,
+            "codziennosc": 3
+          },
+          "nic": false
+        },
+        "jev_surowy": {
+          "persona": null,
+          "potrzeby": [],
+          "kategorie": {
+            "spokoj": 4
+          },
+          "nic": false
+        },
+        "jev_z_zapasem": {
+          "persona": null,
+          "potrzeby": [],
+          "kategorie": {
+            "spokoj": 4
+          },
+          "nic": false
+        }
+      },
+      "jev": {
+        "ms": 236,
+        "zrodlo": "jev",
+        "powod": null,
+        "profil": {
+          "wybor": "singiel",
+          "pewnosc": 0.42
+        },
+        "noul": {
+          "dzieci": 0.19,
+          "pies": 0.13,
+          "zielen": 0.19,
+          "powietrze": 0.25,
+          "rower": 0.13,
+          "bez_samochodu": 0.59,
+          "senior": 0.04,
+          "praca_centrum": 0.38,
+          "zdrowie": 0.29,
+          "lotnisko": 0.06
+        },
+        "poziomy": {
+          "codziennosc": 1.76,
+          "transport": 1.57,
+          "spokoj": 3.89,
+          "przyszlosc": null,
+          "bezpieczenstwo": 1.77
+        },
+        "wlasna": 0.97
+      }
+    },
+    {
+      "id": "K2-A16",
+      "tekst": "Jesteśmy z mężem na emeryturze, on po udarze chodzi o balkoniku. Lubimy posiedzieć w parku na ławce jak jest ładnie.",
+      "wzorzec": {
+        "persona": "senior",
+        "potrzeby": [
+          "senior",
+          "zdrowie",
+          "zielen"
+        ],
+        "nic": false
+      },
+      "systemy": {
+        "reguly": {
+          "persona": "senior",
+          "potrzeby": [
+            "zielen",
+            "senior",
+            "zdrowie"
+          ],
+          "kategorie": {
+            "spokoj": 4,
+            "codziennosc": 4
+          },
+          "nic": false
+        },
+        "jev_surowy": {
+          "persona": "senior",
+          "potrzeby": [
+            "zielen",
+            "senior",
+            "zdrowie"
+          ],
+          "kategorie": {
+            "spokoj": 3,
+            "codziennosc": 4
+          },
+          "nic": false
+        },
+        "jev_z_zapasem": {
+          "persona": "senior",
+          "potrzeby": [
+            "zielen",
+            "senior",
+            "zdrowie"
+          ],
+          "kategorie": {
+            "spokoj": 3,
+            "codziennosc": 4
+          },
+          "nic": false
+        }
+      },
+      "jev": {
+        "ms": 270,
+        "zrodlo": "jev",
+        "powod": null,
+        "profil": {
+          "wybor": "senior",
+          "pewnosc": 1
+        },
+        "noul": {
+          "dzieci": 0.06,
+          "pies": 0.23,
+          "zielen": 0.81,
+          "powietrze": 0.42,
+          "rower": 0.06,
+          "bez_samochodu": 0.59,
+          "senior": 0.98,
+          "praca_centrum": 0.02,
+          "zdrowie": 0.7,
+          "lotnisko": 0.05
+        },
+        "poziomy": {
+          "codziennosc": 2.29,
+          "transport": 2.05,
+          "spokoj": 2.67,
+          "przyszlosc": null,
+          "bezpieczenstwo": 2.06
+        },
+        "wlasna": 0.93
+      }
+    },
+    {
+      "id": "K2-A17",
+      "tekst": "biegam ultra, codziennie las albo chociaz waly nad Wisla. w styczniu smog mnie zabija, plucka mam jak palacz",
+      "wzorzec": {
+        "persona": null,
+        "potrzeby": [
+          "zielen",
+          "powietrze"
+        ],
+        "nic": false
+      },
+      "systemy": {
+        "reguly": {
+          "persona": null,
+          "potrzeby": [
+            "zielen",
+            "powietrze"
+          ],
+          "kategorie": {
+            "spokoj": 4
+          },
+          "nic": false
+        },
+        "jev_surowy": {
+          "persona": null,
+          "potrzeby": [
+            "zielen",
+            "powietrze"
+          ],
+          "kategorie": {
+            "spokoj": 4
+          },
+          "nic": false
+        },
+        "jev_z_zapasem": {
+          "persona": null,
+          "potrzeby": [
+            "zielen",
+            "powietrze"
+          ],
+          "kategorie": {
+            "spokoj": 4
+          },
+          "nic": false
+        }
+      },
+      "jev": {
+        "ms": 266,
+        "zrodlo": "jev",
+        "powod": null,
+        "profil": {
+          "wybor": "nieznany",
+          "pewnosc": 0.34
+        },
+        "noul": {
+          "dzieci": 0.23,
+          "pies": 0.21,
+          "zielen": 0.91,
+          "powietrze": 0.89,
+          "rower": 0.1,
+          "bez_samochodu": 0.53,
+          "senior": 0.16,
+          "praca_centrum": 0.16,
+          "zdrowie": 0.52,
+          "lotnisko": 0.07
+        },
+        "poziomy": {
+          "codziennosc": 1.67,
+          "transport": 1.43,
+          "spokoj": 3.71,
+          "przyszlosc": null,
+          "bezpieczenstwo": 2.25
+        },
+        "wlasna": 0.93
+      }
+    },
+    {
+      "id": "K2-A18",
+      "tekst": "kupuję mieszkanie dla córki co za rok idzie na AGH, a jak skończy to się sprzeda z zyskiem",
+      "wzorzec": {
+        "persona": "inwestor",
+        "potrzeby": [
+          "inwestycja"
+        ],
+        "nic": false
+      },
+      "systemy": {
+        "reguly": {
+          "persona": "inwestor",
+          "potrzeby": [
+            "dzieci",
+            "inwestycja"
+          ],
+          "kategorie": {
+            "codziennosc": 4,
+            "spokoj": 3,
+            "przyszlosc": 4
+          },
+          "nic": false
+        },
+        "jev_surowy": {
+          "persona": "inwestor",
+          "potrzeby": [
+            "dzieci",
+            "inwestycja"
+          ],
+          "kategorie": {
+            "codziennosc": 4,
+            "spokoj": 3,
+            "przyszlosc": 4
+          },
+          "nic": false
+        },
+        "jev_z_zapasem": {
+          "persona": "inwestor",
+          "potrzeby": [
+            "dzieci",
+            "inwestycja"
+          ],
+          "kategorie": {
+            "codziennosc": 4,
+            "spokoj": 3,
+            "przyszlosc": 4
+          },
+          "nic": false
+        }
+      },
+      "jev": {
+        "ms": 350,
+        "zrodlo": "jev",
+        "powod": null,
+        "profil": {
+          "wybor": "inwestor",
+          "pewnosc": 0.92
+        },
+        "noul": {
+          "dzieci": 0.75,
+          "pies": 0.17,
+          "zielen": 0.19,
+          "powietrze": 0.27,
+          "rower": 0.15,
+          "bez_samochodu": 0.47,
+          "senior": 0.41,
+          "praca_centrum": 0.23,
+          "zdrowie": 0.27,
+          "lotnisko": 0.15
+        },
+        "poziomy": {
+          "codziennosc": 1.96,
+          "transport": 2.01,
+          "spokoj": 1.79,
+          "przyszlosc": null,
+          "bezpieczenstwo": 1.82
+        },
+        "wlasna": 0.68
+      }
+    },
+    {
+      "id": "K2-A19",
+      "tekst": "wprowadza sie do nas tesciowa, 83 lata, wiec winda albo parter i przychodnia niedaleko. do tego dzieciaki 4 i 9 lat, maz pracuje z domu",
+      "wzorzec": {
+        "persona": "rodzina",
+        "potrzeby": [
+          "dzieci",
+          "senior",
+          "zdrowie"
+        ],
+        "nic": false
+      },
+      "systemy": {
+        "reguly": {
+          "persona": "rodzina",
+          "potrzeby": [
+            "dzieci",
+            "zdrowie"
+          ],
+          "kategorie": {
+            "codziennosc": 4,
+            "spokoj": 3
+          },
+          "nic": false
+        },
+        "jev_surowy": {
+          "persona": "rodzina",
+          "potrzeby": [
+            "dzieci",
+            "senior",
+            "zdrowie"
+          ],
+          "kategorie": {
+            "codziennosc": 4,
+            "spokoj": 4
+          },
+          "nic": false
+        },
+        "jev_z_zapasem": {
+          "persona": "rodzina",
+          "potrzeby": [
+            "dzieci",
+            "senior",
+            "zdrowie"
+          ],
+          "kategorie": {
+            "codziennosc": 4,
+            "spokoj": 4
+          },
+          "nic": false
+        }
+      },
+      "jev": {
+        "ms": 306,
+        "zrodlo": "jev",
+        "powod": null,
+        "profil": {
+          "wybor": "rodzina",
+          "pewnosc": 0.97
+        },
+        "noul": {
+          "dzieci": 0.79,
+          "pies": 0.18,
+          "zielen": 0.27,
+          "powietrze": 0.36,
+          "rower": 0.08,
+          "bez_samochodu": 0.49,
+          "senior": 0.91,
+          "praca_centrum": 0.05,
+          "zdrowie": 0.91,
+          "lotnisko": 0.07
+        },
+        "poziomy": {
+          "codziennosc": 3.54,
+          "transport": 1.97,
+          "spokoj": 2.04,
+          "przyszlosc": null,
+          "bezpieczenstwo": 2.15
+        },
+        "wlasna": 0.78
+      }
+    },
+    {
+      "id": "K2-A20",
+      "tekst": "mieszkam sam, pracuje zdalnie dla firmy z Dublina i raz w miesiacu lece do biura. samochodu nie mam i nie chce miec",
+      "wzorzec": {
+        "persona": "singiel",
+        "potrzeby": [
+          "singiel",
+          "lotnisko",
+          "bez_samochodu"
+        ],
+        "nic": false
+      },
+      "systemy": {
+        "reguly": {
+          "persona": "singiel",
+          "potrzeby": [
+            "singiel"
+          ],
+          "kategorie": {
+            "transport": 3,
+            "codziennosc": 3
+          },
+          "nic": false
+        },
+        "jev_surowy": {
+          "persona": "singiel",
+          "potrzeby": [
+            "bez_samochodu"
+          ],
+          "kategorie": {
+            "transport": 3,
+            "codziennosc": 3
+          },
+          "nic": false
+        },
+        "jev_z_zapasem": {
+          "persona": "singiel",
+          "potrzeby": [
+            "bez_samochodu"
+          ],
+          "kategorie": {
+            "transport": 3,
+            "codziennosc": 3
+          },
+          "nic": false
+        }
+      },
+      "jev": {
+        "ms": 306,
+        "zrodlo": "jev",
+        "powod": null,
+        "profil": {
+          "wybor": "singiel",
+          "pewnosc": 1
+        },
+        "noul": {
+          "dzieci": 0.07,
+          "pies": 0.22,
+          "zielen": 0.35,
+          "powietrze": 0.39,
+          "rower": 0.38,
+          "bez_samochodu": 0.98,
+          "senior": 0.07,
+          "praca_centrum": 0.04,
+          "zdrowie": 0.55,
+          "lotnisko": 0.26
+        },
+        "poziomy": {
+          "codziennosc": 2.49,
+          "transport": 3.03,
+          "spokoj": 1.98,
+          "przyszlosc": null,
+          "bezpieczenstwo": 1.94
+        },
+        "wlasna": 0.96
+      }
+    },
+    {
+      "id": "K2-A21",
+      "tekst": "Mamy dwa owczarki niemieckie, więc dużo zieleni wokół to podstawa. Mąż jest kontrolerem ruchu w Balicach, może być w stronę Zabierzowa.",
+      "wzorzec": {
+        "persona": null,
+        "potrzeby": [
+          "pies",
+          "zielen",
+          "lotnisko"
+        ],
+        "nic": false
+      },
+      "systemy": {
+        "reguly": {
+          "persona": null,
+          "potrzeby": [
+            "zielen",
+            "lotnisko"
+          ],
+          "kategorie": {
+            "spokoj": 4,
+            "transport": 3
+          },
+          "nic": false
+        },
+        "jev_surowy": {
+          "persona": "rodzina",
+          "potrzeby": [
+            "pies",
+            "zielen"
+          ],
+          "kategorie": {
+            "spokoj": 3
+          },
+          "nic": false
+        },
+        "jev_z_zapasem": {
+          "persona": "rodzina",
+          "potrzeby": [
+            "pies",
+            "zielen"
+          ],
+          "kategorie": {
+            "spokoj": 3
+          },
+          "nic": false
+        }
+      },
+      "jev": {
+        "ms": 306,
+        "zrodlo": "jev",
+        "powod": null,
+        "profil": {
+          "wybor": "rodzina",
+          "pewnosc": 0.73
+        },
+        "noul": {
+          "dzieci": 0.17,
+          "pies": 0.98,
+          "zielen": 0.92,
+          "powietrze": 0.49,
+          "rower": 0.18,
+          "bez_samochodu": 0.36,
+          "senior": 0.13,
+          "praca_centrum": 0.27,
+          "zdrowie": 0.29,
+          "lotnisko": 0.25
+        },
+        "poziomy": {
+          "codziennosc": 2.14,
+          "transport": 2.5,
+          "spokoj": 3.2,
+          "przyszlosc": null,
+          "bezpieczenstwo": 1.83
+        },
+        "wlasna": 0.89
+      }
+    },
+    {
+      "id": "K2-A22",
+      "tekst": "po rozwodzie, na co dzien sam, dzieciaki (6 i 8) co drugi weekend u mnie. robota w Unity Tower",
+      "wzorzec": {
+        "persona": "singiel",
+        "potrzeby": [
+          "singiel",
+          "dzieci",
+          "praca_centrum"
+        ],
+        "nic": false
+      },
+      "systemy": {
+        "reguly": {
+          "persona": "rodzina",
+          "potrzeby": [
+            "dzieci"
+          ],
+          "kategorie": {
+            "codziennosc": 4,
+            "spokoj": 3
+          },
+          "nic": false
+        },
+        "jev_surowy": {
+          "persona": "rodzina",
+          "potrzeby": [
+            "praca_centrum"
+          ],
+          "kategorie": {
+            "transport": 4
+          },
+          "nic": false
+        },
+        "jev_z_zapasem": {
+          "persona": "rodzina",
+          "potrzeby": [
+            "praca_centrum"
+          ],
+          "kategorie": {
+            "transport": 4
+          },
+          "nic": false
+        }
+      },
+      "jev": {
+        "ms": 247,
+        "zrodlo": "jev",
+        "powod": null,
+        "profil": {
+          "wybor": "rodzina",
+          "pewnosc": 0.61
+        },
+        "noul": {
+          "dzieci": 0.59,
+          "pies": 0.28,
+          "zielen": 0.39,
+          "powietrze": 0.37,
+          "rower": 0.22,
+          "bez_samochodu": 0.42,
+          "senior": 0.07,
+          "praca_centrum": 0.65,
+          "zdrowie": 0.49,
+          "lotnisko": 0.13
+        },
+        "poziomy": {
+          "codziennosc": 2.16,
+          "transport": 2.18,
+          "spokoj": 1.98,
+          "przyszlosc": null,
+          "bezpieczenstwo": 1.91
+        },
+        "wlasna": 0.88
+      }
+    },
+    {
+      "id": "K2-A23",
+      "tekst": "Kupujemy pierwsze mieszkanie, budżet napięty jak struna. Chcemy żeby za 10 lat było warte więcej niż teraz. Ja w korpo na Zabłociu.",
+      "wzorzec": {
+        "persona": null,
+        "potrzeby": [
+          "inwestycja",
+          "praca_centrum"
+        ],
+        "nic": false
+      },
+      "systemy": {
+        "reguly": {
+          "persona": null,
+          "potrzeby": [],
+          "kategorie": {},
+          "nic": true
+        },
+        "jev_surowy": {
+          "persona": "inwestor",
+          "potrzeby": [
+            "inwestycja"
+          ],
+          "kategorie": {
+            "przyszlosc": 4
+          },
+          "nic": false
+        },
+        "jev_z_zapasem": {
+          "persona": "inwestor",
+          "potrzeby": [
+            "inwestycja"
+          ],
+          "kategorie": {
+            "przyszlosc": 4
+          },
+          "nic": false
+        }
+      },
+      "jev": {
+        "ms": 363,
+        "zrodlo": "jev",
+        "powod": null,
+        "profil": {
+          "wybor": "inwestor",
+          "pewnosc": 0.79
+        },
+        "noul": {
+          "dzieci": 0.29,
+          "pies": 0.22,
+          "zielen": 0.34,
+          "powietrze": 0.29,
+          "rower": 0.22,
+          "bez_samochodu": 0.46,
+          "senior": 0.03,
+          "praca_centrum": 0.43,
+          "zdrowie": 0.38,
+          "lotnisko": 0.14
+        },
+        "poziomy": {
+          "codziennosc": 1.97,
+          "transport": 2.09,
+          "spokoj": 1.92,
+          "przyszlosc": null,
+          "bezpieczenstwo": 1.98
+        },
+        "wlasna": 0.96
+      }
+    },
+    {
+      "id": "K2-A24",
+      "tekst": "boje sie wracac sama po ciemku a koncze zmiane w barze na Florianskiej o 1 w nocy",
+      "wzorzec": {
+        "persona": null,
+        "potrzeby": [
+          "bezpieczenstwo",
+          "praca_centrum"
+        ],
+        "nic": false
+      },
+      "systemy": {
+        "reguly": {
+          "persona": null,
+          "potrzeby": [],
+          "kategorie": {},
+          "nic": true
+        },
+        "jev_surowy": {
+          "persona": "singiel",
+          "potrzeby": [
+            "bez_samochodu"
+          ],
+          "kategorie": {
+            "transport": 4,
+            "codziennosc": 3
+          },
+          "nic": false
+        },
+        "jev_z_zapasem": {
+          "persona": "singiel",
+          "potrzeby": [
+            "bez_samochodu"
+          ],
+          "kategorie": {
+            "transport": 4,
+            "codziennosc": 3
+          },
+          "nic": false
+        }
+      },
+      "jev": {
+        "ms": 247,
+        "zrodlo": "jev",
+        "powod": null,
+        "profil": {
+          "wybor": "singiel",
+          "pewnosc": 0.98
+        },
+        "noul": {
+          "dzieci": 0.17,
+          "pies": 0.15,
+          "zielen": 0.15,
+          "powietrze": 0.23,
+          "rower": 0.21,
+          "bez_samochodu": 0.69,
+          "senior": 0.07,
+          "praca_centrum": 0.3,
+          "zdrowie": 0.25,
+          "lotnisko": 0.1
+        },
+        "poziomy": {
+          "codziennosc": 2.14,
+          "transport": 2.94,
+          "spokoj": 1.79,
+          "przyszlosc": null,
+          "bezpieczenstwo": 2.81
+        },
+        "wlasna": 0.94
+      }
+    },
+    {
+      "id": "K2-A25",
+      "tekst": "68 lat, jeszcze codziennie jeżdżę rowerem wzdłuż Wisły. Żona zmarła dwa lata temu, dzieci za granicą.",
+      "wzorzec": {
+        "persona": "senior",
+        "potrzeby": [
+          "senior",
+          "rower",
+          "singiel"
+        ],
+        "nic": false
+      },
+      "systemy": {
+        "reguly": {
+          "persona": "rodzina",
+          "potrzeby": [
+            "dzieci",
+            "rower"
+          ],
+          "kategorie": {
+            "codziennosc": 4,
+            "spokoj": 3
+          },
+          "nic": false
+        },
+        "jev_surowy": {
+          "persona": "senior",
+          "potrzeby": [
+            "rower",
+            "senior"
+          ],
+          "kategorie": {
+            "codziennosc": 4,
+            "spokoj": 4
+          },
+          "nic": false
+        },
+        "jev_z_zapasem": {
+          "persona": "senior",
+          "potrzeby": [
+            "rower",
+            "senior"
+          ],
+          "kategorie": {
+            "codziennosc": 4,
+            "spokoj": 4
+          },
+          "nic": false
+        }
+      },
+      "jev": {
+        "ms": 364,
+        "zrodlo": "jev",
+        "powod": null,
+        "profil": {
+          "wybor": "senior",
+          "pewnosc": 1
+        },
+        "noul": {
+          "dzieci": 0.03,
+          "pies": 0.23,
+          "zielen": 0.58,
+          "powietrze": 0.48,
+          "rower": 0.95,
+          "bez_samochodu": 0.52,
+          "senior": 0.98,
+          "praca_centrum": 0.12,
+          "zdrowie": 0.55,
+          "lotnisko": 0.08
+        },
+        "poziomy": {
+          "codziennosc": 1.96,
+          "transport": 1.44,
+          "spokoj": 2.49,
+          "przyszlosc": null,
+          "bezpieczenstwo": 2.1
+        },
+        "wlasna": 0.82
+      }
+    },
+    {
+      "id": "K2-A26",
+      "tekst": "my z narzeczona i labrador, staramy sie o dziecko wiec od razu patrzymy czy jest zlobek w okolicy. ona pracuje w szpitalu w Prokocimiu",
+      "wzorzec": {
+        "persona": null,
+        "potrzeby": [
+          "pies",
+          "dzieci"
+        ],
+        "nic": false
+      },
+      "systemy": {
+        "reguly": {
+          "persona": "rodzina",
+          "potrzeby": [
+            "dzieci"
+          ],
+          "kategorie": {
+            "codziennosc": 4,
+            "spokoj": 3
+          },
+          "nic": false
+        },
+        "jev_surowy": {
+          "persona": "rodzina",
+          "potrzeby": [
+            "dzieci",
+            "pies",
+            "zdrowie"
+          ],
+          "kategorie": {
+            "codziennosc": 4,
+            "spokoj": 3
+          },
+          "nic": false
+        },
+        "jev_z_zapasem": {
+          "persona": "rodzina",
+          "potrzeby": [
+            "dzieci",
+            "pies",
+            "zdrowie"
+          ],
+          "kategorie": {
+            "codziennosc": 4,
+            "spokoj": 3
+          },
+          "nic": false
+        }
+      },
+      "jev": {
+        "ms": 248,
+        "zrodlo": "jev",
+        "powod": null,
+        "profil": {
+          "wybor": "rodzina",
+          "pewnosc": 0.93
+        },
+        "noul": {
+          "dzieci": 0.97,
+          "pies": 0.98,
+          "zielen": 0.5,
+          "powietrze": 0.33,
+          "rower": 0.22,
+          "bez_samochodu": 0.45,
+          "senior": 0.04,
+          "praca_centrum": 0.32,
+          "zdrowie": 0.66,
+          "lotnisko": 0.09
+        },
+        "poziomy": {
+          "codziennosc": 2.46,
+          "transport": 1.87,
+          "spokoj": 1.99,
+          "przyszlosc": null,
+          "bezpieczenstwo": 1.96
+        },
+        "wlasna": 0.95
+      }
+    },
+    {
+      "id": "K2-A27",
+      "tekst": "WFH, introwertyk, sąsiad z wiertarką to mój koszmar. mieszkam sam. paczkomat pod nosem bo wszystko zamawiam online",
+      "wzorzec": {
+        "persona": "singiel",
+        "potrzeby": [
+          "cisza",
+          "singiel",
+          "sklepy"
+        ],
+        "nic": false
+      },
+      "systemy": {
+        "reguly": {
+          "persona": "singiel",
+          "potrzeby": [
+            "singiel"
+          ],
+          "kategorie": {
+            "transport": 3,
+            "codziennosc": 3
+          },
+          "nic": false
+        },
+        "jev_surowy": {
+          "persona": "singiel",
+          "potrzeby": [],
+          "kategorie": {},
+          "nic": false
+        },
+        "jev_z_zapasem": {
+          "persona": "singiel",
+          "potrzeby": [],
+          "kategorie": {},
+          "nic": false
+        }
+      },
+      "jev": {
+        "ms": 362,
+        "zrodlo": "jev",
+        "powod": null,
+        "profil": {
+          "wybor": "singiel",
+          "pewnosc": 0.95
+        },
+        "noul": {
+          "dzieci": 0.05,
+          "pies": 0.17,
+          "zielen": 0.28,
+          "powietrze": 0.31,
+          "rower": 0.13,
+          "bez_samochodu": 0.56,
+          "senior": 0.08,
+          "praca_centrum": 0.03,
+          "zdrowie": 0.3,
+          "lotnisko": 0.07
+        },
+        "poziomy": {
+          "codziennosc": 1.35,
+          "transport": 1.3,
+          "spokoj": 3.28,
+          "przyszlosc": null,
+          "bezpieczenstwo": 1.81
+        },
+        "wlasna": 0.96
+      }
+    },
+    {
+      "id": "K2-A28",
+      "tekst": "Prowadzę działalność, mam 4 mieszkania na krótki najem, szukam piątego. Goście przylatują głównie do Balic, więc dojazd z lotniska się liczy.",
+      "wzorzec": {
+        "persona": "inwestor",
+        "potrzeby": [
+          "inwestycja",
+          "lotnisko"
+        ],
+        "nic": false
+      },
+      "systemy": {
+        "reguly": {
+          "persona": null,
+          "potrzeby": [
+            "lotnisko"
+          ],
+          "kategorie": {
+            "transport": 3
+          },
+          "nic": false
+        },
+        "jev_surowy": {
+          "persona": "inwestor",
+          "potrzeby": [
+            "inwestycja"
+          ],
+          "kategorie": {
+            "przyszlosc": 4,
+            "transport": 4
+          },
+          "nic": false
+        },
+        "jev_z_zapasem": {
+          "persona": "inwestor",
+          "potrzeby": [
+            "inwestycja"
+          ],
+          "kategorie": {
+            "przyszlosc": 4,
+            "transport": 4
+          },
+          "nic": false
+        }
+      },
+      "jev": {
+        "ms": 308,
+        "zrodlo": "jev",
+        "powod": null,
+        "profil": {
+          "wybor": "inwestor",
+          "pewnosc": 1
+        },
+        "noul": {
+          "dzieci": 0.17,
+          "pies": 0.16,
+          "zielen": 0.2,
+          "powietrze": 0.23,
+          "rower": 0.14,
+          "bez_samochodu": 0.4,
+          "senior": 0.12,
+          "praca_centrum": 0.1,
+          "zdrowie": 0.27,
+          "lotnisko": 0.41
+        },
+        "poziomy": {
+          "codziennosc": 1.92,
+          "transport": 3.79,
+          "spokoj": 1.93,
+          "przyszlosc": null,
+          "bezpieczenstwo": 1.96
+        },
+        "wlasna": 0.97
+      }
+    },
+    {
+      "id": "K2-A29",
+      "tekst": "synek 5 lat uwielbia park, ale ja mam alergie na pylki i astme... wiem wiem. najwazniejsze zeby nie bylo smogu",
+      "wzorzec": {
+        "persona": "rodzina",
+        "potrzeby": [
+          "dzieci",
+          "powietrze"
+        ],
+        "nic": false
+      },
+      "systemy": {
+        "reguly": {
+          "persona": null,
+          "potrzeby": [
+            "zielen",
+            "powietrze"
+          ],
+          "kategorie": {
+            "spokoj": 4
+          },
+          "nic": false
+        },
+        "jev_surowy": {
+          "persona": "rodzina",
+          "potrzeby": [
+            "dzieci",
+            "zielen",
+            "powietrze"
+          ],
+          "kategorie": {
+            "codziennosc": 4,
+            "spokoj": 4
+          },
+          "nic": false
+        },
+        "jev_z_zapasem": {
+          "persona": "rodzina",
+          "potrzeby": [
+            "dzieci",
+            "zielen",
+            "powietrze"
+          ],
+          "kategorie": {
+            "codziennosc": 4,
+            "spokoj": 4
+          },
+          "nic": false
+        }
+      },
+      "jev": {
+        "ms": 262,
+        "zrodlo": "jev",
+        "powod": null,
+        "profil": {
+          "wybor": "rodzina",
+          "pewnosc": 1
+        },
+        "noul": {
+          "dzieci": 0.91,
+          "pies": 0.53,
+          "zielen": 0.79,
+          "powietrze": 0.95,
+          "rower": 0.25,
+          "bez_samochodu": 0.49,
+          "senior": 0.13,
+          "praca_centrum": 0.31,
+          "zdrowie": 0.52,
+          "lotnisko": 0.12
+        },
+        "poziomy": {
+          "codziennosc": 1.87,
+          "transport": 1.77,
+          "spokoj": 3.9,
+          "przyszlosc": null,
+          "bezpieczenstwo": 2.41
+        },
+        "wlasna": 0.88
+      }
+    },
+    {
+      "id": "K2-A30",
+      "tekst": "ziomek mieszka w Nowej Hucie i gada ze tam spoko bo tanio i blisko lasu. ja nie wiem, mi chodzi tylko zeby do roboty na Rynek dojechac tramwajem, auta nie mam",
+      "wzorzec": {
+        "persona": null,
+        "potrzeby": [
+          "praca_centrum",
+          "bez_samochodu"
+        ],
+        "nic": false
+      },
+      "systemy": {
+        "reguly": {
+          "persona": null,
+          "potrzeby": [
+            "zielen",
+            "bez_samochodu",
+            "praca_centrum"
+          ],
+          "kategorie": {
+            "spokoj": 4,
+            "transport": 4,
+            "codziennosc": 3
+          },
+          "nic": false
+        },
+        "jev_surowy": {
+          "persona": "singiel",
+          "potrzeby": [
+            "bez_samochodu",
+            "praca_centrum"
+          ],
+          "kategorie": {
+            "transport": 4,
+            "codziennosc": 3
+          },
+          "nic": false
+        },
+        "jev_z_zapasem": {
+          "persona": "singiel",
+          "potrzeby": [
+            "bez_samochodu",
+            "praca_centrum"
+          ],
+          "kategorie": {
+            "transport": 4,
+            "codziennosc": 3
+          },
+          "nic": false
+        }
+      },
+      "jev": {
+        "ms": 248,
+        "zrodlo": "jev",
+        "powod": null,
+        "profil": {
+          "wybor": "singiel",
+          "pewnosc": 0.97
+        },
+        "noul": {
+          "dzieci": 0.14,
+          "pies": 0.12,
+          "zielen": 0.22,
+          "powietrze": 0.31,
+          "rower": 0.12,
+          "bez_samochodu": 0.97,
+          "senior": 0.08,
+          "praca_centrum": 0.77,
+          "zdrowie": 0.18,
+          "lotnisko": 0.04
+        },
+        "poziomy": {
+          "codziennosc": 1.68,
+          "transport": 3.86,
+          "spokoj": 1.42,
+          "przyszlosc": null,
+          "bezpieczenstwo": 1.81
+        },
+        "wlasna": 0.74
+      }
+    }
+  ],
+  "b": [
+    {
+      "id": "K2-B01",
+      "pytanie": "da sie tu spac przy otwartym oknie czy tiry jezdza cala noc?",
+      "tematy": [
+        [
+          "halas_ldwn",
+          "halas_obwarzanek_lden"
+        ]
+      ],
+      "systemy": {
+        "reguly": null,
+        "jev_surowy": "halas_ldwn",
+        "jev_z_zapasem": "halas_ldwn"
+      },
+      "wiele": {
+        "reguly": [],
+        "jev_z_zapasem": [
+          "halas_ldwn"
+        ]
+      },
+      "jev": {
+        "ms": 307,
+        "zrodlo": "jev",
+        "powod": null,
+        "wybor": "halas_ldwn",
+        "pewnosc": 0.92,
+        "tematy": {
+          "halas": 0.91,
+          "powietrze": 0.3,
+          "zielen": 0.09,
+          "powodz": 0.04,
+          "komunikacja": 0.05,
+          "szkoly": 0.06,
+          "zdrowie": 0.05,
+          "sklepy": 0.08,
+          "ceny": 0.06,
+          "bezpieczenstwo": 0.17,
+          "parkowanie": 0.06,
+          "rower": 0.04,
+          "demografia": 0.1,
+          "plan": 0.09,
+          "przemysl_grunt": 0.09
+        }
+      }
+    },
+    {
+      "id": "K2-B02",
+      "pytanie": "zimą czuć tu dym z kominów?",
+      "tematy": [
+        [
+          "paleniska_200m",
+          "pm10_srednia",
+          "pm25_srednia",
+          "bap_srednia",
+          "przewietrzanie_klasa"
+        ]
+      ],
+      "systemy": {
+        "reguly": null,
+        "jev_surowy": "bap_srednia",
+        "jev_z_zapasem": "bap_srednia"
+      },
+      "wiele": {
+        "reguly": [],
+        "jev_z_zapasem": [
+          "bap_srednia"
+        ]
+      },
+      "jev": {
+        "ms": 421,
+        "zrodlo": "jev",
+        "powod": null,
+        "wybor": "bap_srednia",
+        "pewnosc": 0.77,
+        "tematy": {
+          "halas": 0.1,
+          "powietrze": 0.79,
+          "zielen": 0.19,
+          "powodz": 0.1,
+          "komunikacja": 0.07,
+          "szkoly": 0.08,
+          "zdrowie": 0.05,
+          "sklepy": 0.15,
+          "ceny": 0.08,
+          "bezpieczenstwo": 0.2,
+          "parkowanie": 0.06,
+          "rower": 0.09,
+          "demografia": 0.25,
+          "plan": 0.16,
+          "przemysl_grunt": 0.25
+        }
+      }
+    },
+    {
+      "id": "K2-B03",
+      "pytanie": "jak mały pójdzie do zerówki to daleko będzie chodzić?",
+      "tematy": [
+        [
+          "przedszkole_odleglosc",
+          "szkola_podst_odleglosc"
+        ]
+      ],
+      "systemy": {
+        "reguly": null,
+        "jev_surowy": "szkola_podst_odleglosc",
+        "jev_z_zapasem": "szkola_podst_odleglosc"
+      },
+      "wiele": {
+        "reguly": [],
+        "jev_z_zapasem": [
+          "szkola_podst_odleglosc"
+        ]
+      },
+      "jev": {
+        "ms": 484,
+        "zrodlo": "jev",
+        "powod": null,
+        "wybor": "szkola_podst_odleglosc",
+        "pewnosc": 0.57,
+        "tematy": {
+          "halas": 0.12,
+          "powietrze": 0.14,
+          "zielen": 0.26,
+          "powodz": 0.11,
+          "komunikacja": 0.17,
+          "szkoly": 0.76,
+          "zdrowie": 0.21,
+          "sklepy": 0.36,
+          "ceny": 0.08,
+          "bezpieczenstwo": 0.14,
+          "parkowanie": 0.12,
+          "rower": 0.1,
+          "demografia": 0.14,
+          "plan": 0.14,
+          "przemysl_grunt": 0.15
+        }
+      }
+    },
+    {
+      "id": "K2-B04",
+      "pytanie": "Wisła tu kiedyś wylewa?",
+      "tematy": [
+        [
+          "powodz_1proc",
+          "powodz_10proc",
+          "powodz_02proc",
+          "gmina_powodz_powierzchnia_pct"
+        ]
+      ],
+      "systemy": {
+        "reguly": "powodz_1proc",
+        "jev_surowy": "powodz_1proc",
+        "jev_z_zapasem": "powodz_1proc"
+      },
+      "wiele": {
+        "reguly": [
+          "powodz_1proc"
+        ],
+        "jev_z_zapasem": [
+          "powodz_1proc"
+        ]
+      },
+      "jev": {
+        "ms": 407,
+        "zrodlo": "jev",
+        "powod": null,
+        "wybor": "powodz_1proc",
+        "pewnosc": 0.75,
+        "tematy": {
+          "halas": 0.11,
+          "powietrze": 0.14,
+          "zielen": 0.28,
+          "powodz": 0.57,
+          "komunikacja": 0.1,
+          "szkoly": 0.09,
+          "zdrowie": 0.06,
+          "sklepy": 0.17,
+          "ceny": 0.13,
+          "bezpieczenstwo": 0.2,
+          "parkowanie": 0.07,
+          "rower": 0.15,
+          "demografia": 0.1,
+          "plan": 0.2,
+          "przemysl_grunt": 0.21
+        }
+      }
+    },
+    {
+      "id": "K2-B05",
+      "pytanie": "ile mi zejdzie na Rynek bez auta",
+      "tematy": [
+        [
+          "rynek_czas_min"
+        ]
+      ],
+      "systemy": {
+        "reguly": "rynek_czas_min",
+        "jev_surowy": "rynek_czas_min",
+        "jev_z_zapasem": "rynek_czas_min"
+      },
+      "wiele": {
+        "reguly": [
+          "rynek_czas_min"
+        ],
+        "jev_z_zapasem": [
+          "rynek_czas_min"
+        ]
+      },
+      "jev": {
+        "ms": 326,
+        "zrodlo": "jev",
+        "powod": null,
+        "wybor": "rynek_czas_min",
+        "pewnosc": 0.98,
+        "tematy": {
+          "halas": 0.16,
+          "powietrze": 0.27,
+          "zielen": 0.23,
+          "powodz": 0.13,
+          "komunikacja": 0.66,
+          "szkoly": 0.12,
+          "zdrowie": 0.15,
+          "sklepy": 0.57,
+          "ceny": 0.4,
+          "bezpieczenstwo": 0.13,
+          "parkowanie": 0.16,
+          "rower": 0.28,
+          "demografia": 0.14,
+          "plan": 0.14,
+          "przemysl_grunt": 0.09
+        }
+      }
+    },
+    {
+      "id": "K2-B06",
+      "pytanie": "gdzie tu najbliżej z psem do weta?",
+      "tematy": [
+        [
+          "weterynarz_odleglosc"
+        ]
+      ],
+      "systemy": {
+        "reguly": null,
+        "jev_surowy": "weterynarz_odleglosc",
+        "jev_z_zapasem": "weterynarz_odleglosc"
+      },
+      "wiele": {
+        "reguly": [],
+        "jev_z_zapasem": [
+          "weterynarz_odleglosc",
+          "przychodnia_odleglosc"
+        ]
+      },
+      "jev": {
+        "ms": 371,
+        "zrodlo": "jev",
+        "powod": null,
+        "wybor": "weterynarz_odleglosc",
+        "pewnosc": 0.98,
+        "tematy": {
+          "halas": 0.04,
+          "powietrze": 0.05,
+          "zielen": 0.15,
+          "powodz": 0.08,
+          "komunikacja": 0.08,
+          "szkoly": 0.03,
+          "zdrowie": 0.86,
+          "sklepy": 0.85,
+          "ceny": 0.01,
+          "bezpieczenstwo": 0.06,
+          "parkowanie": 0.04,
+          "rower": 0.02,
+          "demografia": 0.04,
+          "plan": 0.03,
+          "przemysl_grunt": 0.05
+        }
+      }
+    },
+    {
+      "id": "K2-B07",
+      "pytanie": "babcia ma rozrusznik, jak coś się stanie to jest gdzieś w pobliżu to urządzenie do reanimacji?",
+      "tematy": [
+        [
+          "defibrylator_odleglosc"
+        ]
+      ],
+      "systemy": {
+        "reguly": null,
+        "jev_surowy": "defibrylator_odleglosc",
+        "jev_z_zapasem": "defibrylator_odleglosc"
+      },
+      "wiele": {
+        "reguly": [],
+        "jev_z_zapasem": [
+          "defibrylator_odleglosc"
+        ]
+      },
+      "jev": {
+        "ms": 376,
+        "zrodlo": "jev",
+        "powod": null,
+        "wybor": "defibrylator_odleglosc",
+        "pewnosc": 0.92,
+        "tematy": {
+          "halas": 0.05,
+          "powietrze": 0.07,
+          "zielen": 0.07,
+          "powodz": 0.06,
+          "komunikacja": 0.05,
+          "szkoly": 0.05,
+          "zdrowie": 0.6,
+          "sklepy": 0.16,
+          "ceny": 0.02,
+          "bezpieczenstwo": 0.16,
+          "parkowanie": 0.04,
+          "rower": 0.04,
+          "demografia": 0.12,
+          "plan": 0.05,
+          "przemysl_grunt": 0.05
+        }
+      }
+    },
+    {
+      "id": "K2-B08",
+      "pytanie": "nie postawią mi tu zaraz bloku pod oknem?",
+      "tematy": [
+        [
+          "inwestycje_500m",
+          "mpzp_status"
+        ]
+      ],
+      "systemy": {
+        "reguly": null,
+        "jev_surowy": "inwestycje_500m",
+        "jev_z_zapasem": "inwestycje_500m"
+      },
+      "wiele": {
+        "reguly": [],
+        "jev_z_zapasem": [
+          "inwestycje_500m"
+        ]
+      },
+      "jev": {
+        "ms": 352,
+        "zrodlo": "jev",
+        "powod": null,
+        "wybor": "inwestycje_500m",
+        "pewnosc": 0.91,
+        "tematy": {
+          "halas": 0.11,
+          "powietrze": 0.11,
+          "zielen": 0.12,
+          "powodz": 0.04,
+          "komunikacja": 0.06,
+          "szkoly": 0.07,
+          "zdrowie": 0.03,
+          "sklepy": 0.07,
+          "ceny": 0.08,
+          "bezpieczenstwo": 0.17,
+          "parkowanie": 0.06,
+          "rower": 0.06,
+          "demografia": 0.1,
+          "plan": 0.77,
+          "przemysl_grunt": 0.1
+        }
+      }
+    },
+    {
+      "id": "K2-B09",
+      "pytanie": "drogo tu za metr?",
+      "tematy": [
+        [
+          "cena_m2_mediana"
+        ]
+      ],
+      "systemy": {
+        "reguly": "cena_m2_mediana",
+        "jev_surowy": null,
+        "jev_z_zapasem": "cena_m2_mediana"
+      },
+      "wiele": {
+        "reguly": [
+          "cena_m2_mediana"
+        ],
+        "jev_z_zapasem": [
+          "cena_m2_mediana"
+        ]
+      },
+      "jev": {
+        "ms": 377,
+        "zrodlo": "zapas",
+        "powod": "nieczytelne",
+        "wybor": "nie_wiem",
+        "pewnosc": 0.44,
+        "tematy": {
+          "halas": 0.2,
+          "powietrze": 0.33,
+          "zielen": 0.57,
+          "powodz": 0.36,
+          "komunikacja": 0.24,
+          "szkoly": 0.23,
+          "zdrowie": 0.67,
+          "sklepy": 0.41,
+          "ceny": 0.89,
+          "bezpieczenstwo": 0.21,
+          "parkowanie": 0.45,
+          "rower": 0.43,
+          "demografia": 0.17,
+          "plan": 0.31,
+          "przemysl_grunt": 0.25
+        }
+      }
+    },
+    {
+      "id": "K2-B10",
+      "pytanie": "dom jest na zboczu, nie zjedzie mi to kiedyś razem z ogródkiem?",
+      "tematy": [
+        [
+          "osuwisko_odleglosc",
+          "teren_osuwiskowy",
+          "osiadanie_mm_rok"
+        ]
+      ],
+      "systemy": {
+        "reguly": null,
+        "jev_surowy": "teren_osuwiskowy",
+        "jev_z_zapasem": "teren_osuwiskowy"
+      },
+      "wiele": {
+        "reguly": [],
+        "jev_z_zapasem": [
+          "teren_osuwiskowy"
+        ]
+      },
+      "jev": {
+        "ms": 299,
+        "zrodlo": "jev",
+        "powod": null,
+        "wybor": "teren_osuwiskowy",
+        "pewnosc": 0.8,
+        "tematy": {
+          "halas": 0.1,
+          "powietrze": 0.14,
+          "zielen": 0.22,
+          "powodz": 0.14,
+          "komunikacja": 0.06,
+          "szkoly": 0.06,
+          "zdrowie": 0.04,
+          "sklepy": 0.1,
+          "ceny": 0.1,
+          "bezpieczenstwo": 0.18,
+          "parkowanie": 0.05,
+          "rower": 0.09,
+          "demografia": 0.08,
+          "plan": 0.12,
+          "przemysl_grunt": 0.61
+        }
+      }
+    },
+    {
+      "id": "K2-B11",
+      "pytanie": "sami emeryci tu mieszkają czy jakieś dzieciaki też są?",
+      "tematy": [
+        [
+          "udzial_65plus",
+          "udzial_0_14"
+        ]
+      ],
+      "systemy": {
+        "reguly": "udzial_0_14",
+        "jev_surowy": "udzial_65plus",
+        "jev_z_zapasem": "udzial_65plus"
+      },
+      "wiele": {
+        "reguly": [
+          "udzial_0_14"
+        ],
+        "jev_z_zapasem": [
+          "udzial_65plus"
+        ]
+      },
+      "jev": {
+        "ms": 343,
+        "zrodlo": "jev",
+        "powod": null,
+        "wybor": "udzial_65plus",
+        "pewnosc": 0.84,
+        "tematy": {
+          "halas": 0.11,
+          "powietrze": 0.12,
+          "zielen": 0.13,
+          "powodz": 0.05,
+          "komunikacja": 0.05,
+          "szkoly": 0.42,
+          "zdrowie": 0.08,
+          "sklepy": 0.12,
+          "ceny": 0.08,
+          "bezpieczenstwo": 0.16,
+          "parkowanie": 0.04,
+          "rower": 0.07,
+          "demografia": 0.81,
+          "plan": 0.09,
+          "przemysl_grunt": 0.06
+        }
+      }
+    },
+    {
+      "id": "K2-B12",
+      "pytanie": "w grudniu słońce w ogóle tu zagląda?",
+      "tematy": [
+        [
+          "slonce_grudzien_h"
+        ]
+      ],
+      "systemy": {
+        "reguly": null,
+        "jev_surowy": "slonce_grudzien_h",
+        "jev_z_zapasem": "slonce_grudzien_h"
+      },
+      "wiele": {
+        "reguly": [],
+        "jev_z_zapasem": [
+          "slonce_grudzien_h"
+        ]
+      },
+      "jev": {
+        "ms": 301,
+        "zrodlo": "jev",
+        "powod": null,
+        "wybor": "slonce_grudzien_h",
+        "pewnosc": 0.95,
+        "tematy": {
+          "halas": 0.05,
+          "powietrze": 0.12,
+          "zielen": 0.15,
+          "powodz": 0.08,
+          "komunikacja": 0.04,
+          "szkoly": 0.05,
+          "zdrowie": 0.03,
+          "sklepy": 0.1,
+          "ceny": 0.04,
+          "bezpieczenstwo": 0.07,
+          "parkowanie": 0.04,
+          "rower": 0.05,
+          "demografia": 0.05,
+          "plan": 0.07,
+          "przemysl_grunt": 0.06
+        }
+      }
+    },
+    {
+      "id": "K2-B13",
+      "pytanie": "rano kolo 7 jest jakis pociag do miasta?",
+      "tematy": [
+        [
+          "kolej_kursy_szczyt_h",
+          "kolej_odleglosc"
+        ]
+      ],
+      "systemy": {
+        "reguly": "rynek_czas_min",
+        "jev_surowy": "kolej_odleglosc",
+        "jev_z_zapasem": "kolej_odleglosc"
+      },
+      "wiele": {
+        "reguly": [
+          "rynek_czas_min"
+        ],
+        "jev_z_zapasem": [
+          "kolej_odleglosc"
+        ]
+      },
+      "jev": {
+        "ms": 311,
+        "zrodlo": "jev",
+        "powod": null,
+        "wybor": "kolej_odleglosc",
+        "pewnosc": 0.75,
+        "tematy": {
+          "halas": 0.12,
+          "powietrze": 0.07,
+          "zielen": 0.09,
+          "powodz": 0.07,
+          "komunikacja": 0.59,
+          "szkoly": 0.09,
+          "zdrowie": 0.06,
+          "sklepy": 0.15,
+          "ceny": 0.03,
+          "bezpieczenstwo": 0.07,
+          "parkowanie": 0.08,
+          "rower": 0.18,
+          "demografia": 0.06,
+          "plan": 0.09,
+          "przemysl_grunt": 0.07
+        }
+      }
+    },
+    {
+      "id": "K2-B14",
+      "pytanie": "jak tu z przedszkolem i placem zabaw? i czy nie za głośno dla małego",
+      "tematy": [
+        [
+          "przedszkole_odleglosc"
+        ],
+        [
+          "plac_zabaw_odleglosc"
+        ],
+        [
+          "halas_ldwn",
+          "halas_obwarzanek_lden"
+        ]
+      ],
+      "systemy": {
+        "reguly": "halas_ldwn",
+        "jev_surowy": "przedszkole_odleglosc",
+        "jev_z_zapasem": "przedszkole_odleglosc"
+      },
+      "wiele": {
+        "reguly": [
+          "przedszkole_odleglosc",
+          "halas_ldwn"
+        ],
+        "jev_z_zapasem": [
+          "przedszkole_odleglosc",
+          "halas_ldwn"
+        ]
+      },
+      "jev": {
+        "ms": 290,
+        "zrodlo": "jev",
+        "powod": null,
+        "wybor": "przedszkole_odleglosc",
+        "pewnosc": 0.98,
+        "tematy": {
+          "halas": 0.68,
+          "powietrze": 0.15,
+          "zielen": 0.45,
+          "powodz": 0.05,
+          "komunikacja": 0.12,
+          "szkoly": 0.9,
+          "zdrowie": 0.05,
+          "sklepy": 0.12,
+          "ceny": 0.1,
+          "bezpieczenstwo": 0.15,
+          "parkowanie": 0.05,
+          "rower": 0.1,
+          "demografia": 0.32,
+          "plan": 0.25,
+          "przemysl_grunt": 0.07
+        }
+      }
+    },
+    {
+      "id": "K2-B15",
+      "pytanie": "chce dojezdzac rowerem, sa tu jakies sciezki? i gdzie go przypiac pod blokiem",
+      "tematy": [
+        [
+          "droga_rowerowa_odleglosc",
+          "rower_infrastruktura_odleglosc"
+        ],
+        [
+          "stojaki_300m"
+        ]
+      ],
+      "systemy": {
+        "reguly": "rower_infrastruktura_odleglosc",
+        "jev_surowy": "rower_infrastruktura_odleglosc",
+        "jev_z_zapasem": "rower_infrastruktura_odleglosc"
+      },
+      "wiele": {
+        "reguly": [
+          "rower_infrastruktura_odleglosc",
+          "stojaki_300m"
+        ],
+        "jev_z_zapasem": [
+          "rower_infrastruktura_odleglosc",
+          "stojaki_300m"
+        ]
+      },
+      "jev": {
+        "ms": 424,
+        "zrodlo": "jev",
+        "powod": null,
+        "wybor": "rower_infrastruktura_odleglosc",
+        "pewnosc": 0.96,
+        "tematy": {
+          "halas": 0.06,
+          "powietrze": 0.07,
+          "zielen": 0.17,
+          "powodz": 0.05,
+          "komunikacja": 0.04,
+          "szkoly": 0.06,
+          "zdrowie": 0.03,
+          "sklepy": 0.08,
+          "ceny": 0.03,
+          "bezpieczenstwo": 0.1,
+          "parkowanie": 0.03,
+          "rower": 0.94,
+          "demografia": 0.05,
+          "plan": 0.06,
+          "przemysl_grunt": 0.04
+        }
+      }
+    },
+    {
+      "id": "K2-B16",
+      "pytanie": "apteka i lekarz rodzinny – blisko czy trzeba jechać?",
+      "tematy": [
+        [
+          "apteka_odleglosc"
+        ],
+        [
+          "przychodnia_odleglosc",
+          "przychodnia_bez_barier_odleglosc"
+        ]
+      ],
+      "systemy": {
+        "reguly": "apteka_odleglosc",
+        "jev_surowy": "apteka_odleglosc",
+        "jev_z_zapasem": "apteka_odleglosc"
+      },
+      "wiele": {
+        "reguly": [
+          "apteka_odleglosc",
+          "przychodnia_odleglosc"
+        ],
+        "jev_z_zapasem": [
+          "apteka_odleglosc",
+          "przychodnia_odleglosc"
+        ]
+      },
+      "jev": {
+        "ms": 326,
+        "zrodlo": "jev",
+        "powod": null,
+        "wybor": "apteka_odleglosc",
+        "pewnosc": 0.97,
+        "tematy": {
+          "halas": 0.08,
+          "powietrze": 0.13,
+          "zielen": 0.1,
+          "powodz": 0.11,
+          "komunikacja": 0.3,
+          "szkoly": 0.04,
+          "zdrowie": 0.91,
+          "sklepy": 0.26,
+          "ceny": 0.05,
+          "bezpieczenstwo": 0.1,
+          "parkowanie": 0.05,
+          "rower": 0.12,
+          "demografia": 0.15,
+          "plan": 0.09,
+          "przemysl_grunt": 0.05
+        }
+      }
+    },
+    {
+      "id": "K2-B17",
+      "pytanie": "jest tu w okolicy jakaś fabryka co truje? albo eternit na dachach?",
+      "tematy": [
+        [
+          "emitent_odleglosc",
+          "seveso_odleglosc"
+        ],
+        [
+          "azbest_budynki_100m"
+        ]
+      ],
+      "systemy": {
+        "reguly": "azbest_budynki_100m",
+        "jev_surowy": "emitent_odleglosc",
+        "jev_z_zapasem": "emitent_odleglosc"
+      },
+      "wiele": {
+        "reguly": [
+          "azbest_budynki_100m"
+        ],
+        "jev_z_zapasem": [
+          "emitent_odleglosc",
+          "pm25_srednia"
+        ]
+      },
+      "jev": {
+        "ms": 307,
+        "zrodlo": "jev",
+        "powod": null,
+        "wybor": "emitent_odleglosc",
+        "pewnosc": 0.95,
+        "tematy": {
+          "halas": 0.06,
+          "powietrze": 0.74,
+          "zielen": 0.08,
+          "powodz": 0.05,
+          "komunikacja": 0.04,
+          "szkoly": 0.07,
+          "zdrowie": 0.06,
+          "sklepy": 0.06,
+          "ceny": 0.07,
+          "bezpieczenstwo": 0.12,
+          "parkowanie": 0.02,
+          "rower": 0.05,
+          "demografia": 0.08,
+          "plan": 0.12,
+          "przemysl_grunt": 0.79
+        }
+      }
+    },
+    {
+      "id": "K2-B18",
+      "pytanie": "parkowanie pod domem płatne? i czy mój stary diesel w ogóle może tu wjechać",
+      "tematy": [
+        [
+          "spp_podstrefa"
+        ],
+        [
+          "sct_w_strefie"
+        ]
+      ],
+      "systemy": {
+        "reguly": "spp_podstrefa",
+        "jev_surowy": "spp_podstrefa",
+        "jev_z_zapasem": "spp_podstrefa"
+      },
+      "wiele": {
+        "reguly": [
+          "spp_podstrefa"
+        ],
+        "jev_z_zapasem": [
+          "spp_podstrefa"
+        ]
+      },
+      "jev": {
+        "ms": 387,
+        "zrodlo": "jev",
+        "powod": null,
+        "wybor": "spp_podstrefa",
+        "pewnosc": 0.97,
+        "tematy": {
+          "halas": 0.07,
+          "powietrze": 0.14,
+          "zielen": 0.12,
+          "powodz": 0.04,
+          "komunikacja": 0.03,
+          "szkoly": 0.05,
+          "zdrowie": 0.04,
+          "sklepy": 0.11,
+          "ceny": 0.05,
+          "bezpieczenstwo": 0.08,
+          "parkowanie": 0.82,
+          "rower": 0.03,
+          "demografia": 0.09,
+          "plan": 0.11,
+          "przemysl_grunt": 0.06
+        }
+      }
+    },
+    {
+      "id": "K2-B19",
+      "pytanie": "ile stąd do Balic i czy rano jeździ jakiś bus do Krakowa?",
+      "tematy": [
+        [
+          "lotnisko_czas_min"
+        ],
+        [
+          "bus_mld_odleglosc",
+          "bus_mld_kursy_szczyt_h",
+          "przystanek_odleglosc",
+          "kursy_szczyt_h"
+        ]
+      ],
+      "systemy": {
+        "reguly": "lotnisko_czas_min",
+        "jev_surowy": "lotnisko_czas_min",
+        "jev_z_zapasem": "lotnisko_czas_min"
+      },
+      "wiele": {
+        "reguly": [
+          "lotnisko_czas_min"
+        ],
+        "jev_z_zapasem": [
+          "lotnisko_czas_min"
+        ]
+      },
+      "jev": {
+        "ms": 305,
+        "zrodlo": "jev",
+        "powod": null,
+        "wybor": "lotnisko_czas_min",
+        "pewnosc": 0.68,
+        "tematy": {
+          "halas": 0.04,
+          "powietrze": 0.05,
+          "zielen": 0.05,
+          "powodz": 0.03,
+          "komunikacja": 0.7,
+          "szkoly": 0.04,
+          "zdrowie": 0.03,
+          "sklepy": 0.08,
+          "ceny": 0.05,
+          "bezpieczenstwo": 0.05,
+          "parkowanie": 0.04,
+          "rower": 0.05,
+          "demografia": 0.05,
+          "plan": 0.04,
+          "przemysl_grunt": 0.04
+        }
+      }
+    },
+    {
+      "id": "K2-B20",
+      "pytanie": "po zmroku jest tu oświetlone? daleko na komisariat? i czy jakiś spożywczak blisko",
+      "tematy": [
+        [
+          "oswietlenie_100m"
+        ],
+        [
+          "policja_odleglosc"
+        ],
+        [
+          "sklep_odleglosc"
+        ]
+      ],
+      "systemy": {
+        "reguly": "sklep_odleglosc",
+        "jev_surowy": "oswietlenie_100m",
+        "jev_z_zapasem": "oswietlenie_100m"
+      },
+      "wiele": {
+        "reguly": [
+          "oswietlenie_100m",
+          "sklep_odleglosc"
+        ],
+        "jev_z_zapasem": [
+          "oswietlenie_100m",
+          "sklep_odleglosc"
+        ]
+      },
+      "jev": {
+        "ms": 306,
+        "zrodlo": "jev",
+        "powod": null,
+        "wybor": "oswietlenie_100m",
+        "pewnosc": 0.97,
+        "tematy": {
+          "halas": 0.09,
+          "powietrze": 0.07,
+          "zielen": 0.07,
+          "powodz": 0.04,
+          "komunikacja": 0.11,
+          "szkoly": 0.04,
+          "zdrowie": 0.08,
+          "sklepy": 0.8,
+          "ceny": 0.03,
+          "bezpieczenstwo": 0.67,
+          "parkowanie": 0.03,
+          "rower": 0.07,
+          "demografia": 0.06,
+          "plan": 0.05,
+          "przemysl_grunt": 0.04
+        }
+      }
+    },
+    {
+      "id": "K2-B21",
+      "pytanie": "sąsiedzi z góry imprezują?",
+      "tematy": [],
+      "systemy": {
+        "reguly": null,
+        "jev_surowy": null,
+        "jev_z_zapasem": null
+      },
+      "wiele": {
+        "reguly": [],
+        "jev_z_zapasem": []
+      },
+      "jev": {
+        "ms": 307,
+        "zrodlo": "jev",
+        "powod": null,
+        "wybor": "nie_wiem",
+        "pewnosc": 0.82,
+        "tematy": {
+          "halas": 0.51,
+          "powietrze": 0.1,
+          "zielen": 0.17,
+          "powodz": 0.05,
+          "komunikacja": 0.07,
+          "szkoly": 0.07,
+          "zdrowie": 0.04,
+          "sklepy": 0.17,
+          "ceny": 0.05,
+          "bezpieczenstwo": 0.19,
+          "parkowanie": 0.03,
+          "rower": 0.05,
+          "demografia": 0.15,
+          "plan": 0.07,
+          "przemysl_grunt": 0.05
+        }
+      }
+    },
+    {
+      "id": "K2-B22",
+      "pytanie": "czy ten blok ma winde i ile wynosi czynsz do wspolnoty?",
+      "tematy": [],
+      "systemy": {
+        "reguly": null,
+        "jev_surowy": null,
+        "jev_z_zapasem": null
+      },
+      "wiele": {
+        "reguly": [],
+        "jev_z_zapasem": []
+      },
+      "jev": {
+        "ms": 407,
+        "zrodlo": "jev",
+        "powod": null,
+        "wybor": "nie_wiem",
+        "pewnosc": 0.97,
+        "tematy": {
+          "halas": 0.06,
+          "powietrze": 0.07,
+          "zielen": 0.06,
+          "powodz": 0.05,
+          "komunikacja": 0.05,
+          "szkoly": 0.05,
+          "zdrowie": 0.04,
+          "sklepy": 0.06,
+          "ceny": 0.11,
+          "bezpieczenstwo": 0.06,
+          "parkowanie": 0.02,
+          "rower": 0.05,
+          "demografia": 0.08,
+          "plan": 0.06,
+          "przemysl_grunt": 0.05
+        }
+      }
+    },
+    {
+      "id": "K2-B23",
+      "pytanie": "jaki operator ciągnie tu światłowód?",
+      "tematy": [],
+      "systemy": {
+        "reguly": null,
+        "jev_surowy": null,
+        "jev_z_zapasem": null
+      },
+      "wiele": {
+        "reguly": [],
+        "jev_z_zapasem": []
+      },
+      "jev": {
+        "ms": 362,
+        "zrodlo": "jev",
+        "powod": null,
+        "wybor": "nie_wiem",
+        "pewnosc": 0.99,
+        "tematy": {
+          "halas": 0.06,
+          "powietrze": 0.08,
+          "zielen": 0.09,
+          "powodz": 0.08,
+          "komunikacja": 0.07,
+          "szkoly": 0.05,
+          "zdrowie": 0.03,
+          "sklepy": 0.12,
+          "ceny": 0.05,
+          "bezpieczenstwo": 0.07,
+          "parkowanie": 0.03,
+          "rower": 0.05,
+          "demografia": 0.05,
+          "plan": 0.11,
+          "przemysl_grunt": 0.07
+        }
+      }
+    },
+    {
+      "id": "K2-B24",
+      "pytanie": "zdrowo tu w ogóle mieszkać?",
+      "tematy": [
+        [
+          "pm25_srednia",
+          "pm10_srednia",
+          "no2_srednia",
+          "bap_srednia",
+          "paleniska_200m",
+          "przewietrzanie_klasa",
+          "emitent_odleglosc",
+          "seveso_odleglosc",
+          "halas_ldwn",
+          "halas_obwarzanek_lden",
+          "azbest_budynki_100m"
+        ]
+      ],
+      "systemy": {
+        "reguly": null,
+        "jev_surowy": null,
+        "jev_z_zapasem": null
+      },
+      "wiele": {
+        "reguly": [],
+        "jev_z_zapasem": []
+      },
+      "jev": {
+        "ms": 352,
+        "zrodlo": "zapas",
+        "powod": "nieczytelne",
+        "wybor": "nie_wiem",
+        "pewnosc": 0.49,
+        "tematy": {
+          "halas": 0.38,
+          "powietrze": 0.63,
+          "zielen": 0.46,
+          "powodz": 0.23,
+          "komunikacja": 0.11,
+          "szkoly": 0.21,
+          "zdrowie": 0.34,
+          "sklepy": 0.32,
+          "ceny": 0.12,
+          "bezpieczenstwo": 0.45,
+          "parkowanie": 0.12,
+          "rower": 0.12,
+          "demografia": 0.24,
+          "plan": 0.19,
+          "przemysl_grunt": 0.37
+        }
+      }
+    },
+    {
+      "id": "K2-B25",
+      "pytanie": "spokojna ta okolica?",
+      "tematy": [
+        [
+          "halas_ldwn",
+          "halas_obwarzanek_lden",
+          "oswietlenie_100m",
+          "policja_odleglosc",
+          "miejscowe_zagrozenia_gmina_2025"
+        ]
+      ],
+      "systemy": {
+        "reguly": "halas_ldwn",
+        "jev_surowy": "halas_ldwn",
+        "jev_z_zapasem": "halas_ldwn"
+      },
+      "wiele": {
+        "reguly": [
+          "halas_ldwn"
+        ],
+        "jev_z_zapasem": [
+          "halas_ldwn",
+          "oswietlenie_100m"
+        ]
+      },
+      "jev": {
+        "ms": 407,
+        "zrodlo": "jev",
+        "powod": null,
+        "wybor": "halas_ldwn",
+        "pewnosc": 0.73,
+        "tematy": {
+          "halas": 0.77,
+          "powietrze": 0.29,
+          "zielen": 0.21,
+          "powodz": 0.13,
+          "komunikacja": 0.08,
+          "szkoly": 0.13,
+          "zdrowie": 0.09,
+          "sklepy": 0.13,
+          "ceny": 0.09,
+          "bezpieczenstwo": 0.7,
+          "parkowanie": 0.1,
+          "rower": 0.15,
+          "demografia": 0.2,
+          "plan": 0.13,
+          "przemysl_grunt": 0.2
+        }
+      }
+    }
+  ]
+}

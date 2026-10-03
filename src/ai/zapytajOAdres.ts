@@ -11,8 +11,10 @@ import {
   type OdpowiedzJev,
   type OpcjeKlienta,
   takNie,
+  type WynikZZapasem,
   wybor,
   type ZapytanieJev,
+  zapytajJev,
   zJevem,
 } from './jev.ts'
 
@@ -196,7 +198,9 @@ export const TEMATY: readonly Temat[] = [
   {
     id: 'zielen',
     nazwa: 'zieleń',
-    twierdzenie: `${O}, czy w okolicy jest zieleń: parki, skwery, drzewa, las, przyroda, miejsce na spacer.`,
+    // #153: „z psem do weta” dokładało zieleń (zbiór kontrolny nr 1: 0,71). Jedno zdanie
+    // wykluczenia, jak przy czterech fałszywych dodatkach z #147; reszta tekstu bez zmian.
+    twierdzenie: `${O}, czy w okolicy jest zieleń: parki, skwery, drzewa, las, przyroda, miejsce na spacer. Wizyta u weterynarza albo samo posiadanie psa to nie to.`,
     warstwy: [
       'zielen_worldcover_100m',
       'zielen_udzial',
@@ -255,7 +259,8 @@ export const TEMATY: readonly Temat[] = [
   {
     id: 'zdrowie',
     nazwa: 'zdrowie',
-    twierdzenie: `${O}, czy blisko jest lekarz, przychodnia, apteka albo inna pomoc medyczna.`,
+    // #153: „Daleko stąd z psem do weta?” dokładało przychodnię (zdrowie 0,75).
+    twierdzenie: `${O}, czy blisko jest lekarz, przychodnia, apteka albo inna pomoc medyczna. Weterynarz to nie to.`,
     warstwy: [
       'przychodnia_odleglosc',
       'przychodnia_bez_barier_odleglosc',
@@ -413,6 +418,86 @@ export function przetworz(
 /** Wybór kilku warstw (#146): id z listy w kolejności pokazywania; [] = „nie wiem”. */
 export interface WyborWarstw {
   warstwy: string[]
+  /**
+   * #156: dwie propozycje do kliknięcia (pewność wyboru 0,5–0,9). Każda ma własną listę warstw
+   * (ta warstwa + dodatki z tematów). `warstwy` wyżej zostaje jak bez propozycji – to wynik
+   * pomiaru i odpowiedź, gdy propozycji nie da się pokazać.
+   */
+  propozycje?: Propozycja[]
+  /** #156 (R5): reguły zdecydowały o warstwie głównej, a JEV dołożył tematy. */
+  tematyZJev?: boolean
+}
+
+export interface Propozycja {
+  warstwa: string
+  warstwy: string[]
+}
+
+/** Od tej pewności wyboru odpowiadamy od razu; od PROG_PEWNOSCI do niej – dwie propozycje. */
+export const PROG_BEZ_PROPOZYCJI = 0.9
+/**
+ * Najmniejsze prawdopodobieństwo warstwy, żeby była propozycją. Na żywo (#156) druga warstwa
+ * z sensem miała 0,06–0,29, a reszta 0,00–0,02 („dług gminy” obok hałasu) – takiej nie pokazujemy.
+ */
+export const MIN_PROPOZYCJI = 0.05
+
+/**
+ * #156 (R4): dwie najlepsze warstwy z listy wg prawdopodobieństwa, gdy pewność wyboru jest
+ * w [PROG_PEWNOSCI, PROG_BEZ_PROPOZYCJI]. Bez `nie_wiem` i bez id spoza listy, każda
+ * z p ≥ MIN_PROPOZYCJI. null = jak dotąd (pewność poza pasmem, brak rozkładu, mniej niż dwie).
+ */
+export function propozycje(
+  odpowiedzi: Record<string, OdpowiedzJev | null>,
+  lista: readonly PozycjaListy[],
+): string[] | null {
+  const o = odpowiedzi[ID_PYTANIA]
+  if (!o || o.typ !== 'choice' || o.pewnosc === null) return null
+  if (!(o.pewnosc >= PROG_PEWNOSCI && o.pewnosc <= PROG_BEZ_PROPOZYCJI)) return null
+  // #154: rozkład po id opcji; pola nie ma, gdy JEV go nie przysłał.
+  const p = o.prawdopodobienstwa
+  if (!p || typeof p !== 'object') return null
+  const kandydaci = lista
+    .map((x, i) => ({ id: x.id, i, p: p[x.id] }))
+    .filter(
+      (x): x is { id: string; i: number; p: number } =>
+        typeof x.p === 'number' && Number.isFinite(x.p) && x.p >= MIN_PROPOZYCJI && x.p <= 1,
+    )
+    .sort((a, b) => b.p - a.p || a.i - b.i)
+    .slice(0, 2)
+    .map((x) => x.id)
+  return kandydaci.length === 2 ? kandydaci : null
+}
+
+/** Tematy JEV z oceną ≥ progu, malejąco po noul (remis = kolejność TEMATY). */
+function tematyJev(odpowiedzi: Record<string, OdpowiedzJev | null>, prog: number): Temat[] {
+  return TEMATY.map((t) => {
+    const o = odpowiedzi[idTematu(t)]
+    return { t, noul: o?.typ === 'noul' ? o.noul : null }
+  })
+    .filter((x): x is { t: Temat; noul: number } => x.noul !== null && x.noul >= prog)
+    .sort((a, b) => b.noul - a.noul)
+    .map((x) => x.t)
+}
+
+/** Start (warstwa główna albo warstwy reguł) + po jednej warstwie z tematów JEV + druga z tematu. */
+function zTematami(
+  start: readonly string[],
+  odpowiedzi: Record<string, OdpowiedzJev | null>,
+  lista: readonly PozycjaListy[],
+  pytanie: string,
+  prog: number,
+): string[] {
+  const ids = new Set(lista.map((p) => p.id))
+  const trafienia = trafieniaRegul(pytanie, lista)
+  return drugieZTematu(
+    dobierz(
+      start,
+      tematyJev(odpowiedzi, prog),
+      trafienia.map((t) => t.warstwa),
+      ids,
+    ),
+    nazwane(trafienia),
+  )
 }
 
 /**
@@ -420,6 +505,7 @@ export interface WyborWarstw {
  * `przetworz`), potem tematy z noul ≥ progu malejąco. Temat, w który trafiła już wybrana
  * warstwa, nic nie dokłada; inaczej dokłada warstwę z grupy, którą wskazują reguły słów
  * kluczowych, a bez nich – domyślną. Pewne `nie_wiem` → „nie wiem” bez dodatków.
+ * #156: przy pewności 0,5–0,9 i rozkładzie z JEV dochodzą dwie `propozycje`.
  */
 export function przetworzWiele(
   odpowiedzi: Record<string, OdpowiedzJev | null>,
@@ -429,27 +515,34 @@ export function przetworzWiele(
 ): WyborWarstw | null {
   const glowny = przetworz(odpowiedzi, lista)
   if (!glowny) return null
-  if (glowny.warstwa === null) return { warstwy: [] }
-  const ids = new Set(lista.map((p) => p.id))
-  const trafienia = trafieniaRegul(pytanie, lista)
-  const wskazane = trafienia.map((t) => t.warstwa)
-  const tematy = TEMATY.map((t) => {
-    const o = odpowiedzi[idTematu(t)]
-    return { t, noul: o?.typ === 'noul' ? o.noul : null }
-  })
-    .filter((x): x is { t: Temat; noul: number } => x.noul !== null && x.noul >= prog)
-    .sort((a, b) => b.noul - a.noul) // sort stabilny: remis = kolejność TEMATY
+  const warstwy =
+    glowny.warstwa === null ? [] : zTematami([glowny.warstwa], odpowiedzi, lista, pytanie, prog)
+  const prop = propozycje(odpowiedzi, lista)
+  if (!prop) return { warstwy }
   return {
-    warstwy: drugieZTematu(
-      dobierz(
-        [glowny.warstwa],
-        tematy.map((x) => x.t),
-        wskazane,
-        ids,
-      ),
-      nazwane(trafienia),
-    ),
+    warstwy,
+    propozycje: prop.map((w) => ({
+      warstwa: w,
+      warstwy: zTematami([w], odpowiedzi, lista, pytanie, prog),
+    })),
   }
+}
+
+/**
+ * #156 (R5): JEV odpowiedział, ale wyboru głównego nie bierzemy (pewność pod progiem, brak
+ * pewności, wybór spoza listy). Dawniej przepadały wtedy też tematy (B23 w #146). Teraz warstwy
+ * reguł (jak dotąd) + tematy JEV z noul ≥ progu: do 3, bez duplikatów, najwyżej jedna na temat,
+ * plus druga warstwa z tematu (#147/#150).
+ */
+export function regulyZTematami(
+  odpowiedzi: Record<string, OdpowiedzJev | null>,
+  lista: readonly PozycjaListy[],
+  pytanie: string,
+  prog: number = PROG_TEMATU,
+): WyborWarstw {
+  const reguly = regulaWiele(pytanie, lista).warstwy
+  const warstwy = zTematami(reguly, odpowiedzi, lista, pytanie, prog)
+  return warstwy.length > reguly.length ? { warstwy, tematyZJev: true } : { warstwy: reguly }
 }
 
 /**
@@ -499,6 +592,157 @@ function dobierz(
     zajete.add(t.id)
   }
   return wynik
+}
+
+// --- Druga warstwa z tematu przez JEV (#153) -----------------------------------------------
+
+/** Id pytania w drugim wywołaniu. */
+export const ID_DRUGIEJ = 'druga'
+/** Pewność drugiego wyboru od tej wartości – jak PROG_TEMATU (dokładamy, a nie odpowiadamy). */
+export const PROG_DRUGIEJ = 0.6
+
+/**
+ * Pytanie wygląda na złożone: wylicza kilka rzeczy („i”, „oraz”, „albo”, przecinek, kilka
+ * pytajników). To tylko warunek wstępny drugiego wywołania – o tym, czy pytanie naprawdę
+ * pyta o drugą rzecz, decyduje JEV (może wybrać `nie_wiem`).
+ */
+export function wygladaNaZlozone(pytanie: string): boolean {
+  const t = pytanie.toLowerCase()
+  return (
+    /[,;+]/.test(t) ||
+    (t.match(/\?/g) ?? []).length >= 2 ||
+    /(^|[^\p{L}])(i|oraz|albo|lub|ani|a także|czy też)([^\p{L}]|$)/u.test(t)
+  )
+}
+
+export interface DrugieWywolanie {
+  temat: string
+  /** Warstwa, do której szukamy drugiego obiektu. */
+  pierwsza: string
+  zapytanie: ZapytanieJev
+}
+
+/**
+ * #153: dwa różne obiekty z jednego tematu, których reguły słów kluczowych nie złapały
+ * („przedszkole, a dla młodszego coś na cały dzień”). Gdy temat z `obiekty` ma noul ≥
+ * PROG_TEMATU, ma w odpowiedzi dokładnie jedną warstwę, pytanie wygląda na złożone i jest
+ * wolne miejsce, pytamy JEV drugi raz: `choice` tylko z warstw tego tematu o INNYM obiekcie
+ * niż pierwsza, plus `nie_wiem`. Zwraca null, gdy drugiego wywołania nie trzeba (większość
+ * pytań – nadal jedno wywołanie). Najwyżej jedno drugie wywołanie na pytanie.
+ */
+export function drugieWywolanie(
+  odpowiedzi: Record<string, OdpowiedzJev | null>,
+  warstwy: readonly string[],
+  lista: readonly PozycjaListy[],
+  pytanie: string,
+): DrugieWywolanie | null {
+  if (warstwy.length === 0 || warstwy.length >= MAKS_ODPOWIEDZI) return null
+  if (!wygladaNaZlozone(pytanie)) return null
+  const pozycje = new Map(lista.map((p) => [p.id, p]))
+  for (const t of TEMATY) {
+    const obiekty = t.obiekty
+    if (!obiekty) continue
+    const o = odpowiedzi[idTematu(t)]
+    if (o?.typ !== 'noul' || !(o.noul >= PROG_TEMATU)) continue
+    const wTemacie = warstwy.filter((w) => tematWarstwy(w) === t.id)
+    const pierwsza = wTemacie[0]
+    if (wTemacie.length !== 1 || pierwsza === undefined) continue
+    const obiekt = obiekty[pierwsza]
+    const kandydaci = t.warstwy.filter(
+      (w) => pozycje.has(w) && obiekty[w] !== undefined && obiekty[w] !== obiekt,
+    )
+    if (obiekt === undefined || kandydaci.length === 0) continue
+    const k: Record<string, string> = {}
+    for (const w of kandydaci) k[w] = pozycje.get(w)?.opis ?? w
+    k[NIE_WIEM] = 'Pytanie nie pyta o nic więcej z tej grupy.'
+    const nazwa = pozycje.get(pierwsza)?.nazwa ?? pierwsza
+    return {
+      temat: t.id,
+      pierwsza,
+      zapytanie: {
+        stan: pytanie.slice(0, 2000),
+        pytania: {
+          [ID_DRUGIEJ]: wybor(
+            przytnij(
+              `Użytkownik pyta o kilka rzeczy naraz. Na „${nazwa}” już odpowiadamy. Czy pytanie dotyczy też innej rzeczy z listy niżej? Wybierz ją, a jeśli nie, wybierz nie_wiem.`,
+              MAKS_OPISU,
+            ),
+            k,
+          ),
+        },
+      },
+    }
+  }
+  return null
+}
+
+/** Odpowiedź na drugie wywołanie → warstwy z dołożoną drugą (zaraz po pierwszej z tematu). */
+export function dolozDruga(
+  warstwy: readonly string[],
+  d: Pick<DrugieWywolanie, 'pierwsza' | 'zapytanie'>,
+  odpowiedzi: Record<string, OdpowiedzJev | null> | null,
+): string[] {
+  const o = odpowiedzi?.[ID_DRUGIEJ]
+  if (o?.typ !== 'choice' || o.wybor === NIE_WIEM) return [...warstwy]
+  if (o.pewnosc === null || !(o.pewnosc >= PROG_DRUGIEJ)) return [...warstwy]
+  const dozwolone = d.zapytanie.pytania[ID_DRUGIEJ]
+  if (dozwolone?.typ !== 'choice' || !(o.wybor in dozwolone.kryteria)) return [...warstwy]
+  if (warstwy.includes(o.wybor) || warstwy.length >= MAKS_ODPOWIEDZI) return [...warstwy]
+  const wynik = [...warstwy]
+  wynik.splice(wynik.indexOf(d.pierwsza) + 1, 0, o.wybor)
+  return wynik
+}
+
+/** Wynik wyboru warstw z informacją o drugim wywołaniu (do pomiaru). */
+export interface WyborWarstwZJev extends WynikZZapasem<WyborWarstw> {
+  /** Temat drugiego wywołania albo null, gdy go nie było. */
+  drugie: string | null
+}
+
+/**
+ * Wybór 1–3 warstw (#146, #153): jedno wywołanie JEV (choice + tematy), a gdy trzeba – drugie
+ * po drugi obiekt z tematu. Każdy kłopot z pierwszym → reguły; z drugim → zostaje wynik
+ * pierwszego. #156: słaby wybór główny → reguły + tematy JEV (drugie wywołanie też możliwe).
+ * Tę samą ścieżkę woła aplikacja i pomiar.
+ */
+export async function wybierzWarstwy(
+  pytanie: string,
+  lista: readonly PozycjaListy[],
+  opcje: OpcjeKlienta = {},
+): Promise<WyborWarstwZJev> {
+  let odpowiedziJev: Record<string, OdpowiedzJev | null> | null = null
+  const pierwszy = await zJevem(
+    zapytanieJev(pytanie, lista),
+    (odp) => {
+      odpowiedziJev = odp
+      return przetworzWiele(odp, lista, pytanie)
+    },
+    // #156 (R5): JEV odpowiedział, ale wybór główny jest za słaby – tematy JEV nie przepadają.
+    () => {
+      const odp = odpowiedziJev as Record<string, OdpowiedzJev | null> | null
+      return odp ? regulyZTematami(odp, lista, pytanie) : regulaWiele(pytanie, lista)
+    },
+    opcje,
+  )
+  const odp = odpowiedziJev as Record<string, OdpowiedzJev | null> | null
+  if (!odp) return { ...pierwszy, drugie: null }
+  const d = drugieWywolanie(odp, pierwszy.wynik.warstwy, lista, pytanie)
+  if (!d) return { ...pierwszy, drugie: null }
+  const { odpowiedzi } = await zapytajJev(d.zapytanie, opcje)
+  const w = pierwszy.wynik
+  const dolozona = (warstwy: string[]) =>
+    warstwy.includes(d.pierwsza) ? dolozDruga(warstwy, d, odpowiedzi) : warstwy
+  return {
+    ...pierwszy,
+    wynik: {
+      ...w,
+      warstwy: dolozDruga(w.warstwy, d, odpowiedzi),
+      ...(w.propozycje && {
+        propozycje: w.propozycje.map((p) => ({ ...p, warstwy: dolozona(p.warstwy) })),
+      }),
+    },
+    drugie: d.temat,
+  }
 }
 
 // --- Reguła zapasowa: słowa kluczowe po polsku -------------------------------------------
@@ -711,7 +955,8 @@ export function regulaWiele(pytanie: string, lista: readonly PozycjaListy[]): Wy
 
 // --- Odpowiedź z danych ------------------------------------------------------------------
 
-export type ZrodloOdpowiedzi = 'jev' | 'reguly'
+/** #156: `reguly-i-jev` – warstwę główną wybrały reguły, a JEV dołożył tematy (R5). */
+export type ZrodloOdpowiedzi = 'jev' | 'reguly' | 'reguly-i-jev'
 
 export interface OdpowiedzWarstwy {
   rodzaj: 'warstwa'
@@ -833,25 +1078,62 @@ export function odpowiedzi(
     : [odpowiedz({ warstwa: null }, wskazniki, i, zrodloOdpowiedzi)]
 }
 
+/** #156: propozycja gotowa do pokazania – nazwa na przycisk i odpowiedzi z danych po kliknięciu. */
+export interface PropozycjaOdpowiedzi {
+  warstwa: string
+  /** Nazwa warstwy prostymi słowami (bez dopisku w nawiasie, np. „(LDWN)”). */
+  nazwa: string
+  odpowiedzi: Odpowiedz[]
+}
+
+export interface WynikPytania {
+  /** Odpowiedzi bez kliknięcia – jak dotąd. */
+  odpowiedzi: Odpowiedz[]
+  /** Dwie propozycje „Chodziło Ci o…?” albo null (odpowiedź od razu). */
+  propozycje: PropozycjaOdpowiedzi[] | null
+}
+
+/** „Najwyższe pasmo hałasu (LDWN)” → „Najwyższe pasmo hałasu”. */
+export function nazwaProsta(nazwa: string): string {
+  const bez = nazwa.replace(/\s*\([^)]*\)\s*$/, '').trim()
+  return bez || nazwa
+}
+
 /**
- * Całość (#146): jedno wywołanie JEV wybiera warstwę główną i ocenia tematy, a gdy nie może –
- * reguła z kilkoma tematami. Zwraca 1–3 odpowiedzi (albo jedno „nie wiem”), nigdy nie rzuca.
- * `zrodloOdpowiedzi` mówi, kto wybrał warstwy; liczby zawsze z danych.
+ * Całość (#146, #156): jedno wywołanie JEV wybiera warstwę główną i ocenia tematy, a gdy nie
+ * może – reguła z kilkoma tematami (plus tematy JEV, R5). #153: czasem drugie wywołanie po drugi
+ * obiekt z tematu. Przy pewności 0,5–0,9 dwie propozycje do kliknięcia; każda z odpowiedziami
+ * z danych. Nigdy nie rzuca; liczby zawsze z danych.
  */
+export async function zapytajOAdresZPropozycjami(
+  pytanie: string,
+  wskazniki: readonly WarstwaDanych[],
+  i: number,
+  opcje: OpcjeKlienta = {},
+): Promise<WynikPytania> {
+  const lista = listaWarstw(wskazniki.map((w) => w.meta))
+  const { wynik, zrodlo } = await wybierzWarstwy(pytanie, lista, opcje)
+  const kto: ZrodloOdpowiedzi =
+    zrodlo === 'jev' ? 'jev' : wynik.tematyZJev ? 'reguly-i-jev' : 'reguly'
+  const gotowe = odpowiedzi(wynik, wskazniki, i, kto)
+  const prop = (wynik.propozycje ?? []).flatMap((p): PropozycjaOdpowiedzi[] => {
+    const odp = odpowiedzi({ warstwy: p.warstwy }, wskazniki, i, kto)
+    const [pierwsza] = odp
+    // Propozycja, której warstwy nie da się pokazać z danych, przepada.
+    if (pierwsza?.rodzaj !== 'warstwa' || pierwsza.warstwa !== p.warstwa) return []
+    return [{ warstwa: p.warstwa, nazwa: nazwaProsta(pierwsza.etykieta), odpowiedzi: odp }]
+  })
+  return { odpowiedzi: gotowe, propozycje: prop.length === 2 ? prop : null }
+}
+
+/** Odpowiedzi bez propozycji (#146) – to, co pokazuje karta, gdy nikt nic nie kliknie. */
 export async function zapytajOAdresWiele(
   pytanie: string,
   wskazniki: readonly WarstwaDanych[],
   i: number,
   opcje: OpcjeKlienta = {},
 ): Promise<Odpowiedz[]> {
-  const lista = listaWarstw(wskazniki.map((w) => w.meta))
-  const { wynik, zrodlo } = await zJevem(
-    zapytanieJev(pytanie, lista),
-    (odp) => przetworzWiele(odp, lista, pytanie),
-    () => regulaWiele(pytanie, lista),
-    opcje,
-  )
-  return odpowiedzi(wynik, wskazniki, i, zrodlo === 'jev' ? 'jev' : 'reguly')
+  return (await zapytajOAdresZPropozycjami(pytanie, wskazniki, i, opcje)).odpowiedzi
 }
 
 /** Zgodność wstecz (#17): tylko pierwsza odpowiedź z `zapytajOAdresWiele`. */

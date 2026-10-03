@@ -29,6 +29,7 @@ const NAZWY_ROZDZIELCZOSCI: Record<Rozdzielczosc, string> = {
   siatka: 'siatka',
   rejon: 'rejon',
   gmina: 'gmina',
+  powiat: 'powiat',
 }
 
 /** „adres", „heks 1 km", „siatka 100 m": czego naprawdę dotyczy liczba. */

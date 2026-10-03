@@ -6,6 +6,8 @@
 //   node --env-file=.env.local src/ai/pomiar/pomiar.ts --na-zywo [--tylko a|b] [--wyjscie plik.json]
 //   … --zbior kontrolny     # zbiór pisany na ślepo (#147): tylko liczby zbiorcze, bez błędów
 //   … --zbior kontrolny2    # drugi zbiór na ślepo (#152), mierzony raz: tak samo, tylko liczby
+//   … --zbior kontrolny3    # trzeci zbiór na ślepo (#153), mierzony raz; + przekrój po cechach
+//   … --zbior kontrolny4    # czwarty zbiór na ślepo (#157, 40 + 35), mierzony raz; + propozycje #156
 //   … --tylko-pisane        # bez pozycji naśladujących mowę (MOWIONE niżej) – przekrój pomocniczy
 //   … --z-pliku wynik.json  # bez sieci: przelicza zapisany przebieg (--wyjscie) od nowa
 //
@@ -22,15 +24,15 @@
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import type { PlikWskaznika } from '../../kontrakty/index.ts'
 import type { OdpowiedzJev, OpcjeKlienta } from '../jev.ts'
-import { zJevem } from '../jev.ts'
 import {
-  ID_WLASNEJ_SYTUACJI,
+  BRAMKA,
+  bramkaZamknieta,
   KATEGORIE_OCENIANE,
   type KategoriaOceniana,
   nicNieZrozumiano,
   opiszSiebie,
   POTRZEBY,
-  PROG_WLASNEJ_SYTUACJI,
+  PROG_BRAMKI,
   PUSTE_ZROZUMIENIE,
   przetworzOdpowiedzi,
   type Zrozumienie,
@@ -47,7 +49,7 @@ import {
   regulaWiele,
   TEMATY,
   type WyborWarstw,
-  zapytanieJev,
+  wybierzWarstwy,
 } from '../zapytajOAdres.ts'
 
 // ── Zbiory ────────────────────────────────────────────────────────────────────────────────
@@ -55,6 +57,7 @@ import {
 interface PozycjaOpisz {
   id: string
   tekst: string
+  cechy?: string[]
   persona: string | null
   persona_tez?: string[]
   nic?: boolean
@@ -65,6 +68,7 @@ interface PozycjaOpisz {
 interface PozycjaZapytaj {
   id: string
   pytanie: string
+  cechy?: string[]
   tematy: string[][]
 }
 
@@ -84,6 +88,12 @@ const NAZWA_ZBIORU = iZbior >= 0 ? argv[iZbior + 1] : undefined
 const PLIKI_KONTROLNE: Record<string, { opisz: string; zapytaj: string }> = {
   kontrolny: { opisz: 'kontrolny-opisz.json', zapytaj: 'kontrolny-zapytaj.json' },
   kontrolny2: { opisz: 'kontrolny2-opisz.json', zapytaj: 'kontrolny2-zapytaj.json' },
+  // #153: trzeci zbiór na ślepo, z cechami pułapek (`domownik`, `cudza_sytuacja`,
+  // `pies_bez_spaceru`, `dwa_z_tematu`) – raport ma też przekrój po cechach, tylko liczby.
+  kontrolny3: { opisz: 'kontrolny3-opisz.json', zapytaj: 'kontrolny3-zapytaj.json' },
+  // #157: czwarty zbiór na ślepo, większy (40 opisów, 35 pytań), cechy `profil_glowny`,
+  // `profil_niejasny`, `cudza_sytuacja`, `domownik` (A) i `niejednoznaczne`, `zlozone`, `spoza` (B).
+  kontrolny4: { opisz: 'kontrolny4-opisz.json', zapytaj: 'kontrolny4-zapytaj.json' },
 }
 if (NAZWA_ZBIORU !== undefined && !PLIKI_KONTROLNE[NAZWA_ZBIORU]) {
   console.error(
@@ -155,12 +165,18 @@ type Posrednik = {
 
 let liczbaWywolan = 0
 
-async function klientNaZywo(): Promise<{ opcje: () => OpcjeKlienta; ostatnie: () => Wywolanie }> {
+async function klientNaZywo(): Promise<{
+  opcje: () => OpcjeKlienta
+  ostatnie: () => Wywolanie
+  /** #153: wszystkie wywołania od początku (pytanie może mieć dwa). */
+  wszystkie: () => readonly Wywolanie[]
+}> {
   // Ścieżka w zmiennej – TS nie typuje pliku JS, a i tak wołamy tylko dwie funkcje.
   const sciezka = new URL('api/_jev.js', KORZEN).href
   const { obsluz, utworzLimiter } = (await import(sciezka)) as Posrednik
   const limiter = utworzLimiter({ oknoMs: 60_000, naIp: 1000, naInstancje: 1000 })
   let ostatnie: Wywolanie = { ms: 0, odpowiedzi: null, powod: 'brak' }
+  const wszystkie: Wywolanie[] = []
   const fetchPrzezPosrednika = (async (_url: string | URL | Request, init?: RequestInit) => {
     const t0 = performance.now()
     liczbaWywolan++
@@ -177,9 +193,14 @@ async function klientNaZywo(): Promise<{ opcje: () => OpcjeKlienta; ostatnie: ()
       odpowiedzi: json.odpowiedzi ?? null,
       powod: json.powod ?? null,
     }
+    wszystkie.push(ostatnie)
     return new Response(JSON.stringify(r.json), { status: r.status })
   }) as typeof fetch
-  return { opcje: () => ({ fetch: fetchPrzezPosrednika }), ostatnie: () => ostatnie }
+  return {
+    opcje: () => ({ fetch: fetchPrzezPosrednika }),
+    ostatnie: () => ostatnie,
+    wszystkie: () => wszystkie,
+  }
 }
 
 // ── Statystyki ────────────────────────────────────────────────────────────────────────────
@@ -250,13 +271,19 @@ interface WynikA {
     ms: number
     zrodlo: string
     powod: string | null
-    /** Wybór profilu i pewność JEV – przed progiem. */
-    profil: { wybor: string; pewnosc: number | null } | null
+    /** Wybór profilu i pewność JEV – przed progiem; #157: z rozkładem (#154), gdy jest. */
+    profil: {
+      wybor: string
+      pewnosc: number | null
+      prawdopodobienstwa?: Record<string, number>
+    } | null
     /** Ocena twierdzeń (noul 0–1) dla potrzeb z twierdzeniem. */
     noul: Record<string, number | null>
     poziomy: Record<string, number | null>
-    /** #147: ocena twierdzenia „opisuje własną obecną sytuację” (noul 0–1). */
-    wlasna: number | null
+    /** #153: oceny twierdzeń bramki (noul 0–1), id z BRAMKA. */
+    bramka: Record<string, number | null>
+    /** #153: bramka zamknięta (profil bez zmian, tylko pewne potrzeby). */
+    zamknieta: boolean
   }
 }
 
@@ -293,15 +320,27 @@ async function biegA(naZywo: Awaited<ReturnType<typeof klientNaZywo>> | null): P
         const x = odp?.[`kat_${k}`]
         poziomy[k] = x?.typ === 'score' ? x.ocena : null
       }
-      const wlasna = odp?.[ID_WLASNEJ_SYTUACJI]
+      const bramka: Record<string, number | null> = {}
+      for (const x of BRAMKA) {
+        const o = odp?.[x.id]
+        bramka[x.id] = o?.typ === 'noul' ? o.noul : null
+      }
       w.jev = {
         ms: o.ms,
         zrodlo: r.zrodlo,
         powod: r.powod,
-        profil: profil?.typ === 'choice' ? { wybor: profil.wybor, pewnosc: profil.pewnosc } : null,
+        profil:
+          profil?.typ === 'choice'
+            ? {
+                wybor: profil.wybor,
+                pewnosc: profil.pewnosc,
+                ...(profil.prawdopodobienstwa && { prawdopodobienstwa: profil.prawdopodobienstwa }),
+              }
+            : null,
         noul,
         poziomy,
-        wlasna: wlasna?.typ === 'noul' ? wlasna.noul : null,
+        bramka,
+        zamknieta: Boolean(odp && bramkaZamknieta(odp)),
       }
       process.stderr.write(`A ${p.id} ${o.ms} ms ${r.zrodlo}\n`)
     }
@@ -395,6 +434,14 @@ interface WynikB {
     pewnosc: number | null
     /** Ocena twierdzeń tematów (noul 0–1) – do strojenia progu bez nowych wywołań. */
     tematy: Record<string, number | null>
+    /** #153: liczba wywołań na to pytanie (2 = było drugie, po drugi obiekt z tematu). */
+    wywolan: number
+    /** #153: temat drugiego wywołania albo null. */
+    drugie: string | null
+    /** #157: rozkład wyboru warstwy z JEV (#154), gdy jest. */
+    prawdopodobienstwa?: Record<string, number>
+    /** #156: dwie propozycje „Chodziło Ci o…?” (id warstw) albo null – odpowiedź od razu. */
+    propozycje: string[] | null
   }
 }
 
@@ -409,14 +456,13 @@ async function biegB(naZywo: Awaited<ReturnType<typeof klientNaZywo>> | null): P
       wiele: { reguly: regulaWiele(p.pytanie, LISTA).warstwy },
     }
     if (naZywo) {
-      // Ta sama ścieżka co zapytajOAdresWiele(), bez wczytywania wartości warstw.
-      const r = await zJevem(
-        zapytanieJev(p.pytanie, LISTA),
-        (odp) => przetworzWiele(odp, LISTA, p.pytanie),
-        () => regulaWiele(p.pytanie, LISTA),
-        naZywo.opcje(),
-      )
-      const o = naZywo.ostatnie()
+      // Ta sama ścieżka co zapytajOAdresWiele(), bez wczytywania wartości warstw (#153: z drugim
+      // wywołaniem, gdy trzeba). Czas pytania = suma jego wywołań.
+      const przed = naZywo.wszystkie().length
+      const r = await wybierzWarstwy(p.pytanie, LISTA, naZywo.opcje())
+      const wywolania = naZywo.wszystkie().slice(przed)
+      const o = wywolania[0] ?? naZywo.ostatnie()
+      const msRazem = wywolania.reduce((acc, x) => acc + x.ms, 0)
       const x = o.odpowiedzi?.[ID_PYTANIA]
       const surowy = x?.typ === 'choice' ? x : null
       w.systemy.jev_surowy = surowy && surowy.wybor !== NIE_WIEM ? surowy.wybor : null
@@ -428,14 +474,20 @@ async function biegB(naZywo: Awaited<ReturnType<typeof klientNaZywo>> | null): P
         tematy[t.id] = n?.typ === 'noul' ? n.noul : null
       }
       w.jev = {
-        ms: o.ms,
+        ms: msRazem,
         zrodlo: r.zrodlo,
         powod: r.powod,
         wybor: surowy?.wybor ?? null,
         pewnosc: surowy?.pewnosc ?? null,
         tematy,
+        wywolan: wywolania.length,
+        drugie: r.drugie,
+        ...(surowy?.prawdopodobienstwa && { prawdopodobienstwa: surowy.prawdopodobienstwa }),
+        propozycje: r.wynik.propozycje?.map((x) => x.warstwa) ?? null,
       }
-      process.stderr.write(`B ${p.id} ${o.ms} ms ${r.zrodlo}\n`)
+      process.stderr.write(
+        `B ${p.id} ${msRazem} ms ${r.zrodlo} ×${wywolania.length}${r.wynik.propozycje ? ' propozycje' : ''}\n`,
+      )
     }
     wyniki.push(w)
   }
@@ -519,6 +571,60 @@ export function ocenWiele(
       (x.wiele[system] ?? []).slice(1).some((l) => !wTemacie(x.tematy, l)),
     ).length,
     srednioWarstw: srednia(zakres.map((x) => (x.wiele[system] ?? []).length)),
+  }
+}
+
+/**
+ * #157: dwie propozycje z #156 i pasma pewności wyboru. Przy pewności 0,5–0,9 i rozkładzie z JEV
+ * karta pyta „Chodziło Ci o…?” i pokazuje dwie warstwy do kliknięcia. Liczymy to osobno od
+ * odpowiedzi od razu: „propozycja zawiera warstwę z wzorca” = któraś z dwóch jest w którymś
+ * temacie wzorca (pytanie spoza zakresu z propozycjami to zawsze pudło – wzorcem jest „nie wiem”).
+ * „Trafne od razu” = warstwa główna (jak w `ocenB`). „Po kliknięciu” = pytania bez propozycji
+ * liczone jak od razu, z propozycjami – czy wśród nich jest warstwa z wzorca.
+ */
+export function ocenPropozycje(
+  wyniki: readonly {
+    tematy: string[][]
+    systemy: Record<string, string | null>
+    jev?: { pewnosc: number | null; propozycje?: string[] | null; wybor?: string | null }
+  }[],
+) {
+  const zJev = wyniki.filter((w) => w.jev)
+  const odRazu = (w: (typeof zJev)[number]) => trafione(w.tematy, w.systemy.jev_z_zapasem ?? null)
+  const wPropozycji = (w: (typeof zJev)[number]) =>
+    w.tematy.length > 0 &&
+    (w.jev?.propozycje ?? []).some((l) => w.tematy.some((t) => t.includes(l)))
+  const pasmo = (od: number, doo: number, wlacznie: boolean) =>
+    zJev.filter((w) => {
+      const p = w.jev?.pewnosc
+      return p != null && p >= od && (wlacznie ? p <= doo : p < doo)
+    })
+  const pasma = {
+    powyzej: zJev.filter((w) => (w.jev?.pewnosc ?? -1) > 0.9),
+    srodek: pasmo(0.5, 0.9, true),
+    ponizej: zJev.filter((w) => w.jev?.pewnosc == null || (w.jev.pewnosc ?? 0) < 0.5),
+  }
+  const zPropozycjami = zJev.filter((w) => w.jev?.propozycje)
+  return {
+    n: zJev.length,
+    pasma: Object.fromEntries(
+      Object.entries(pasma).map(([k, xs]) => [
+        k,
+        {
+          n: xs.length,
+          odRazu: xs.filter(odRazu).length,
+          zPropozycjami: xs.filter((w) => w.jev?.propozycje).length,
+        },
+      ]),
+    ) as Record<keyof typeof pasma, { n: number; odRazu: number; zPropozycjami: number }>,
+    propozycje: {
+      n: zPropozycjami.length,
+      odRazu: zPropozycjami.filter(odRazu).length,
+      wPropozycji: zPropozycjami.filter(wPropozycji).length,
+      spoza: zPropozycjami.filter((w) => w.tematy.length === 0).length,
+    },
+    odRazu: zJev.filter(odRazu).length,
+    poKliknieciu: zJev.filter((w) => (w.jev?.propozycje ? wPropozycji(w) : odRazu(w))).length,
   }
 }
 
@@ -670,6 +776,17 @@ function raport(a: WynikA[], b: WynikB[], naZywo: boolean) {
       const ok = trafione(w.tematy, w.systemy.jev_surowy ?? null)
       ;(ok ? warstwaTrafna : warstwaBledna).push(w.jev.pewnosc)
     }
+    // #157: margines p1 − p2 z rozkładu (#154) na trafnych vs błędnych wyborach warstwy.
+    const marginesy = { trafna: [] as number[], bledna: [] as number[] }
+    for (const w of b) {
+      const pr = w.jev?.prawdopodobienstwa
+      if (!w.jev || !pr) continue
+      const [p1 = 0, p2 = 0] = Object.values(pr).sort((x, y) => y - x)
+      ;(trafione(w.tematy, w.systemy.jev_surowy ?? null)
+        ? marginesy.trafna
+        : marginesy.bledna
+      ).push(p1 - p2)
+    }
     const sr = (xs: number[]) => `${srednia(xs).toFixed(2)} (n=${xs.length})`
     out.push(
       '',
@@ -681,13 +798,39 @@ function raport(a: WynikA[], b: WynikB[], naZywo: boolean) {
       `- Opóźnienie p50 / p95 / max: A ${lat(msA)}; B ${lat(msB)}; razem ${lat(ms)}`,
       `- A, pewność profilu: trafny ${sr(profilTrafny)}, błędny ${sr(profilBledny)}`,
       `- A, noul potrzeb: we wzorcu ${sr(noulTak)}, poza wzorcem ${sr(noulNie)}`,
-      `- A, „własna sytuacja” (#147): średnio ${sr(a.flatMap((w) => (w.jev?.wlasna == null ? [] : [w.jev.wlasna])))}, poniżej progu ${PROG_WLASNEJ_SYTUACJI}: ${a.filter((w) => w.jev?.wlasna != null && w.jev.wlasna < PROG_WLASNEJ_SYTUACJI).length}`,
+      ...BRAMKA.map(
+        (x) =>
+          `- A, bramka „${x.id}” (#153): średnio ${sr(a.flatMap((w) => (w.jev?.bramka?.[x.id] == null ? [] : [w.jev.bramka[x.id] as number])))}, ≥ ${PROG_BRAMKI}: ${a.filter((w) => (w.jev?.bramka?.[x.id] ?? 0) >= PROG_BRAMKI).length}`,
+      ),
+      `- A, bramka zamknięta: ${a.filter((w) => w.jev?.zamknieta).length}/${a.filter((w) => w.jev).length}`,
+      `- B, drugie wywołanie (#153): ${b.filter((w) => (w.jev?.wywolan ?? 0) > 1).length}/${b.filter((w) => w.jev).length} pytań; p50 / max pytań z jednym wywołaniem ${lat(b.flatMap((w) => (w.jev && w.jev.wywolan <= 1 ? [w.jev.ms] : [])))}; z dwoma ${lat(b.flatMap((w) => (w.jev && w.jev.wywolan > 1 ? [w.jev.ms] : [])))}`,
       `- B, pewność warstwy: trafna ${sr(warstwaTrafna)}, błędna ${sr(warstwaBledna)}`,
+      `- Rozkład (#154) w odpowiedzi: A profil ${a.filter((w) => w.jev?.profil?.prawdopodobienstwa).length}/${a.filter((w) => w.jev?.profil).length}, B wybór ${b.filter((w) => w.jev?.prawdopodobienstwa).length}/${b.filter((w) => w.jev?.wybor != null).length}`,
+      `- B, różnica p1 − p2 rozkładu: trafna ${sr(marginesy.trafna)}, błędna ${sr(marginesy.bledna)}`,
     )
+    // #157: dwie propozycje (#156) i pasma pewności wyboru – osobno od odpowiedzi od razu.
+    const op = ocenPropozycje(b)
+    const ul = (x: number, n: number) => `${x}/${n}${n ? ` (${pct(x / n)})` : ''}`
+    out.push(
+      '',
+      '## B – dwie propozycje (#156) i pasma pewności wyboru',
+      '',
+      '| pasmo pewności wyboru | pytań | warstwa główna trafna od razu | z propozycjami |',
+      '|---|---|---|---|',
+      `| > 0,9 (odpowiedź od razu) | ${op.pasma.powyzej.n} | ${ul(op.pasma.powyzej.odRazu, op.pasma.powyzej.n)} | ${op.pasma.powyzej.zPropozycjami} |`,
+      `| 0,5–0,9 | ${op.pasma.srodek.n} | ${ul(op.pasma.srodek.odRazu, op.pasma.srodek.n)} | ${op.pasma.srodek.zPropozycjami} |`,
+      `| < 0,5 albo brak (reguły + tematy JEV) | ${op.pasma.ponizej.n} | ${ul(op.pasma.ponizej.odRazu, op.pasma.ponizej.n)} | ${op.pasma.ponizej.zPropozycjami} |`,
+      '',
+      `- Pytania z dwiema propozycjami: ${op.propozycje.n}/${op.n}; w nich warstwa główna trafna od razu ${ul(op.propozycje.odRazu, op.propozycje.n)}, **warstwa z wzorca wśród dwóch propozycji ${ul(op.propozycje.wPropozycji, op.propozycje.n)}**; spoza zakresu z propozycjami: ${op.propozycje.spoza}`,
+      `- Cały zbiór B: trafne od razu ${ul(op.odRazu, op.n)}; po kliknięciu właściwej propozycji (gdzie są) ${ul(op.poKliknieciu, op.n)}`,
+    )
+    podsumowanie.propozycje = op
     podsumowanie = {
       ...podsumowanie,
       wywolan: liczbaWywolan,
       zapas: { a: zapasA.length, b: zapasB.length },
+      bramkaZamknieta: a.filter((w) => w.jev?.zamknieta).length,
+      drugieWywolanie: b.filter((w) => (w.jev?.wywolan ?? 0) > 1).length,
       opoznienie: {
         a: { p50: kwantyl(msA, 0.5), p95: kwantyl(msA, 0.95), max: maks(msA) },
         b: { p50: kwantyl(msB, 0.5), p95: kwantyl(msB, 0.95), max: maks(msB) },
@@ -700,6 +843,52 @@ function raport(a: WynikA[], b: WynikB[], naZywo: boolean) {
       },
     }
   }
+  // #153: przekrój po cechach zbioru (np. `domownik`, `dwa_z_tematu`) – tylko liczby zbiorcze.
+  const cechyA = [...new Set(ZBIOR_A.flatMap((p) => p.cechy ?? []))].sort()
+  const cechyB = [...new Set(ZBIOR_B.flatMap((p) => p.cechy ?? []))].sort()
+  if (cechyA.length) {
+    out.push(
+      '',
+      '## Przekrój po cechach – A (liczby zbiorcze)',
+      '',
+      '| cecha | n | system | profil | potrzeby P / R / F1 | dokładnie | bramka zamknięta |',
+      '|---|---|---|---|---|---|---|',
+    )
+    for (const c of cechyA) {
+      const ids = new Set(ZBIOR_A.filter((p) => p.cechy?.includes(c)).map((p) => p.id))
+      const wycinek = a.filter((w) => ids.has(w.id))
+      for (const s of systemyA) {
+        const o = ocenA(wycinek, s)
+        const zamk = s === 'reguly' ? '–' : String(wycinek.filter((w) => w.jev?.zamknieta).length)
+        out.push(
+          `| ${c} | ${wycinek.length} | ${s} | ${pct(o.persona)} | ${pct(o.potrzeby10.p)} / ${pct(o.potrzeby10.r)} / ${pct(o.potrzeby10.f1)} | ${pct(o.dokladnie)} | ${zamk} |`,
+        )
+      }
+    }
+  }
+  if (cechyB.length) {
+    out.push(
+      '',
+      '## Przekrój po cechach – B (liczby zbiorcze)',
+      '',
+      '| cecha | n | system | warstwa główna | pokrycie złożonych | precyzja | fałszywe dodatki (pojedyncze) | średnio warstw | z propozycjami: wzorzec wśród nich | po kliknięciu |',
+      '|---|---|---|---|---|---|---|---|---|---|',
+    )
+    for (const c of cechyB) {
+      const ids = new Set(ZBIOR_B.filter((p) => p.cechy?.includes(c)).map((p) => p.id))
+      const wycinek = b.filter((w) => ids.has(w.id))
+      for (const s of ['reguly', 'jev_z_zapasem']) {
+        if (!wycinek.some((w) => s in w.wiele)) continue
+        const o = ocenB(wycinek, s)
+        const m = ocenWiele(wycinek, s)
+        const op = s === 'reguly' ? null : ocenPropozycje(wycinek)
+        out.push(
+          `| ${c} | ${wycinek.length} | ${s} | ${pct(o.trafnosc)} | ${Number.isNaN(m.pokrycie) ? '–' : pct(m.pokrycie)} | ${Number.isNaN(m.precyzja) ? '–' : pct(m.precyzja)} | ${m.falszyweDodatkiPojedyncze} | ${m.srednioWarstw.toFixed(2)} | ${op ? `${op.propozycje.wPropozycji}/${op.propozycje.n}` : '–'} | ${op ? `${op.poKliknieciu}/${op.n}` : '–'} |`,
+        )
+      }
+    }
+  }
+
   if (KONTROLNY) {
     out.push('', 'Zbiór kontrolny: bez błędów pozycja po pozycji (nie stroimy na nim).')
     return { tekst: out.join('\n'), podsumowanie }

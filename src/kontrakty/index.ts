@@ -16,7 +16,7 @@ export const KATEGORIE = {
 export type KategoriaId = keyof typeof KATEGORIE
 
 /** Uczciwa rozdzielczość: czego naprawdę dotyczy liczba przypisana adresowi. */
-export type Rozdzielczosc = 'adres' | 'budynek' | 'heks' | 'siatka' | 'rejon' | 'gmina'
+export type Rozdzielczosc = 'adres' | 'budynek' | 'heks' | 'siatka' | 'rejon' | 'gmina' | 'powiat'
 
 export type Kierunek = 'mniej-lepiej' | 'wiecej-lepiej' | 'neutralny'
 

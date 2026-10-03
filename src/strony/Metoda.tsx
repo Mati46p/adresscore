@@ -54,6 +54,7 @@ function rozdzielczoscOpis(meta: WskaznikMeta): string {
     siatka: 'siatka',
     rejon: 'rejon',
     gmina: 'gmina',
+    powiat: 'powiat',
   }
   const baza = nazwy[meta.rozdzielczosc]
   return meta.rozmiar ? `${baza}: ${meta.rozmiar}` : baza

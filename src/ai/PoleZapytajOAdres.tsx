@@ -1,20 +1,29 @@
 // Pole „Zapytaj o ten adres” (#17) dla karty okolicy. JEV (albo reguła zapasowa) wybiera tylko
 // warstwy; liczbę, źródło i rozdzielczość bierzemy z danych tego adresu. Montaż: tor `karta`.
 // Pytanie o kilka rzeczy naraz (#146) → do 3 odpowiedzi; pytanie o jedną wygląda jak dawniej.
+// #156: przy średniej pewności JEV dwa przyciski „Chodziło Ci o…?”; klik pokazuje odpowiedź z danych.
 import { useId, useRef, useState } from 'react'
 import { useDane } from '@/wynik/dane'
 import {
   listaWarstw,
   type Odpowiedz,
+  type PropozycjaOdpowiedzi,
   podpowiedzi as podpowiedziListy,
-  zapytajOAdresWiele,
+  zapytajOAdresZPropozycjami,
 } from './zapytajOAdres.ts'
 import './zapytaj.css'
 
 type Stan =
   | { stan: 'pusty' }
   | { stan: 'pytam'; pytanie: string }
-  | { stan: 'gotowe'; pytanie: string; odpowiedzi: Odpowiedz[] }
+  | {
+      stan: 'gotowe'
+      pytanie: string
+      /** Numer pytania – nowe pytanie zaczyna propozycje bez wyboru. */
+      numer: number
+      odpowiedzi: Odpowiedz[]
+      propozycje: PropozycjaOdpowiedzi[] | null
+    }
 
 /** `indeks` – indeks adresu w danych (ten sam co `stan.wybrany` w src/wynik/stan.ts). */
 export function PoleZapytajOAdres({ indeks }: { indeks: number }) {
@@ -34,9 +43,10 @@ export function PoleZapytajOAdres({ indeks }: { indeks: number }) {
     if (!p) return
     const numer = ++licznik.current
     setStan({ stan: 'pytam', pytanie: p })
-    const odpowiedzi = await zapytajOAdresWiele(p, wskazniki, indeks)
+    const { odpowiedzi, propozycje } = await zapytajOAdresZPropozycjami(p, wskazniki, indeks)
     // Starsze pytanie, które wróciło po nowszym, nie nadpisuje odpowiedzi.
-    if (numer === licznik.current) setStan({ stan: 'gotowe', pytanie: p, odpowiedzi })
+    if (numer === licznik.current)
+      setStan({ stan: 'gotowe', pytanie: p, numer, odpowiedzi, propozycje })
   }
 
   function przyklad(p: string) {
@@ -86,7 +96,12 @@ export function PoleZapytajOAdres({ indeks }: { indeks: number }) {
 
       <div aria-live="polite" className="zap-wynik">
         {stan.stan === 'pytam' && <p className="zap-czekam">Szukam w danych…</p>}
-        {stan.stan === 'gotowe' && <Odpowiedzi odpowiedzi={stan.odpowiedzi} />}
+        {stan.stan === 'gotowe' &&
+          (stan.propozycje ? (
+            <Propozycje key={stan.numer} propozycje={stan.propozycje} />
+          ) : (
+            <Odpowiedzi odpowiedzi={stan.odpowiedzi} />
+          ))}
       </div>
 
       <p className="zap-przypis">
@@ -102,8 +117,44 @@ function KtoWybral({ zrodlo }: { zrodlo: Odpowiedz['zrodloOdpowiedzi'] }) {
     <span className="zap-kto">
       {zrodlo === 'jev'
         ? 'pytanie rozpoznał JEV'
-        : 'pytanie rozpoznała reguła słów kluczowych (bez AI)'}
+        : zrodlo === 'reguly-i-jev'
+          ? 'pytanie rozpoznała reguła słów kluczowych, tematy dołożył JEV'
+          : 'pytanie rozpoznała reguła słów kluczowych (bez AI)'}
     </span>
+  )
+}
+
+/**
+ * #156: JEV waha się między dwiema warstwami – pytamy, zamiast zgadywać. Dwa zwykłe przyciski
+ * (aria-pressed), wybór można zmienić; odpowiedź z danych pojawia się pod nimi.
+ */
+function Propozycje({ propozycje }: { propozycje: PropozycjaOdpowiedzi[] }) {
+  const [wybrana, setWybrana] = useState<number | null>(null)
+  const idPytania = useId()
+  const odp = wybrana === null ? null : propozycje[wybrana]
+  return (
+    <div className="zap-wiele">
+      <div className="zap-propozycje" role="group" aria-labelledby={idPytania}>
+        <p id={idPytania} className="zap-pyt-prop">
+          Chodziło Ci o…?
+        </p>
+        <div className="zap-prop-przyciski">
+          {propozycje.map((p, i) => (
+            <button
+              key={p.warstwa}
+              type="button"
+              className="seg zap-prop"
+              aria-pressed={wybrana === i}
+              onClick={() => setWybrana(i)}
+            >
+              {p.nazwa}
+            </button>
+          ))}
+        </div>
+        {!odp && <KtoWybral zrodlo={propozycje[0]?.odpowiedzi[0]?.zrodloOdpowiedzi ?? 'jev'} />}
+      </div>
+      {odp && <Odpowiedzi odpowiedzi={odp.odpowiedzi} />}
+    </div>
   )
 }
 

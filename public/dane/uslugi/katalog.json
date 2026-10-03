@@ -136,790 +136,7 @@
       "licencja": "Dane jawne CEIDG (ustawa o CEIDG); API dane.biznes.gov.pl",
       "atrybucja": "Ministerstwo Rozwoju i Technologii, CEIDG",
       "uwagi": "Wyłącznie uzupełnienie: adres działalności firmy jednoosobowej z danym PKD, nie potwierdzony lokal. Do plików trafia tylko punkt, branża i źródło – bez nazwy firmy, nazwiska, NIP i REGON.",
-      "dataDanych": "2026-10-03",
-      "pobrano": "2026-10-03",
-      "wpisow": 6122,
-      "adresZnaleziony": 5754,
-      "punktowWObszarze": 5750,
-      "zapytanWTymBiegu": 0,
-      "zapytanLacznie": 295,
-      "paryRazem": 70,
-      "paryKompletne": 67,
-      "budzetWyczerpany": false,
-      "odmowa": null,
-      "blad": null,
-      "pary": [
-        {
-          "branza": "sklep_spozywczy",
-          "obszar": "krakow",
-          "pkd": "47.11.Z",
-          "count": 2560,
-          "pobranoFirm": 1050,
-          "kompletne": false,
-          "limitStron": 45,
-          "odRoku": 2016,
-          "doRoku": 2026
-        },
-        {
-          "branza": "sklep_spozywczy",
-          "obszar": "wieliczka",
-          "pkd": "47.11.Z",
-          "count": 196,
-          "pobranoFirm": 196,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 1984,
-          "doRoku": 2026
-        },
-        {
-          "branza": "sklep_spozywczy",
-          "obszar": "niepolomice",
-          "pkd": "47.11.Z",
-          "count": 97,
-          "pobranoFirm": 97,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 1989,
-          "doRoku": 2026
-        },
-        {
-          "branza": "sklep_spozywczy",
-          "obszar": "zabierzow",
-          "pkd": "47.11.Z",
-          "count": 75,
-          "pobranoFirm": 75,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 1979,
-          "doRoku": 2026
-        },
-        {
-          "branza": "sklep_spozywczy",
-          "obszar": "skawina",
-          "pkd": "47.11.Z",
-          "count": 119,
-          "pobranoFirm": 119,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 1987,
-          "doRoku": 2026
-        },
-        {
-          "branza": "sklep_spozywczy",
-          "obszar": "zielonki",
-          "pkd": "47.11.Z",
-          "count": 85,
-          "pobranoFirm": 85,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 1987,
-          "doRoku": 2026
-        },
-        {
-          "branza": "sklep_spozywczy",
-          "obszar": "liszki",
-          "pkd": "47.11.Z",
-          "count": 62,
-          "pobranoFirm": 62,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 1990,
-          "doRoku": 2026
-        },
-        {
-          "branza": "sklep_spozywczy",
-          "obszar": "kocmyrzow_luborzyca",
-          "pkd": "47.11.Z",
-          "count": 57,
-          "pobranoFirm": 57,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 1991,
-          "doRoku": 2026
-        },
-        {
-          "branza": "sklep_spozywczy",
-          "obszar": "wielka_wies",
-          "pkd": "47.11.Z",
-          "count": 50,
-          "pobranoFirm": 50,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 1992,
-          "doRoku": 2026
-        },
-        {
-          "branza": "sklep_spozywczy",
-          "obszar": "mogilany",
-          "pkd": "47.11.Z",
-          "count": 54,
-          "pobranoFirm": 54,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 1980,
-          "doRoku": 2026
-        },
-        {
-          "branza": "sklep_spozywczy",
-          "obszar": "michalowice",
-          "pkd": "47.11.Z",
-          "count": 35,
-          "pobranoFirm": 35,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 1990,
-          "doRoku": 2026
-        },
-        {
-          "branza": "sklep_spozywczy",
-          "obszar": "swiatniki_gorne",
-          "pkd": "47.11.Z",
-          "count": 27,
-          "pobranoFirm": 27,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 1997,
-          "doRoku": 2026
-        },
-        {
-          "branza": "sklep_spozywczy",
-          "obszar": "koniusza",
-          "pkd": "47.11.Z",
-          "count": 16,
-          "pobranoFirm": 16,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 1991,
-          "doRoku": 2026
-        },
-        {
-          "branza": "sklep_spozywczy",
-          "obszar": "igolomia_wawrzenczyce",
-          "pkd": "47.11.Z",
-          "count": 25,
-          "pobranoFirm": 25,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 1990,
-          "doRoku": 2023
-        },
-        {
-          "branza": "fryzjer",
-          "obszar": "krakow",
-          "pkd": "96.21.Z",
-          "count": 842,
-          "pobranoFirm": 842,
-          "kompletne": true,
-          "limitStron": 34,
-          "odRoku": 1990,
-          "doRoku": 2026
-        },
-        {
-          "branza": "fryzjer",
-          "obszar": "wieliczka",
-          "pkd": "96.21.Z",
-          "count": 62,
-          "pobranoFirm": 62,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 1991,
-          "doRoku": 2026
-        },
-        {
-          "branza": "fryzjer",
-          "obszar": "niepolomice",
-          "pkd": "96.21.Z",
-          "count": 32,
-          "pobranoFirm": 32,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 1993,
-          "doRoku": 2026
-        },
-        {
-          "branza": "fryzjer",
-          "obszar": "zabierzow",
-          "pkd": "96.21.Z",
-          "count": 17,
-          "pobranoFirm": 17,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 2001,
-          "doRoku": 2026
-        },
-        {
-          "branza": "fryzjer",
-          "obszar": "skawina",
-          "pkd": "96.21.Z",
-          "count": 38,
-          "pobranoFirm": 38,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 1989,
-          "doRoku": 2026
-        },
-        {
-          "branza": "fryzjer",
-          "obszar": "zielonki",
-          "pkd": "96.21.Z",
-          "count": 13,
-          "pobranoFirm": 13,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 2002,
-          "doRoku": 2026
-        },
-        {
-          "branza": "fryzjer",
-          "obszar": "liszki",
-          "pkd": "96.21.Z",
-          "count": 13,
-          "pobranoFirm": 13,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 2014,
-          "doRoku": 2026
-        },
-        {
-          "branza": "fryzjer",
-          "obszar": "kocmyrzow_luborzyca",
-          "pkd": "96.21.Z",
-          "count": 20,
-          "pobranoFirm": 20,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 1999,
-          "doRoku": 2026
-        },
-        {
-          "branza": "fryzjer",
-          "obszar": "wielka_wies",
-          "pkd": "96.21.Z",
-          "count": 14,
-          "pobranoFirm": 14,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 2014,
-          "doRoku": 2026
-        },
-        {
-          "branza": "fryzjer",
-          "obszar": "mogilany",
-          "pkd": "96.21.Z",
-          "count": 16,
-          "pobranoFirm": 16,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 1995,
-          "doRoku": 2026
-        },
-        {
-          "branza": "fryzjer",
-          "obszar": "michalowice",
-          "pkd": "96.21.Z",
-          "count": 7,
-          "pobranoFirm": 7,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 2014,
-          "doRoku": 2026
-        },
-        {
-          "branza": "fryzjer",
-          "obszar": "swiatniki_gorne",
-          "pkd": "96.21.Z",
-          "count": 8,
-          "pobranoFirm": 8,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 1996,
-          "doRoku": 2026
-        },
-        {
-          "branza": "fryzjer",
-          "obszar": "koniusza",
-          "pkd": "96.21.Z",
-          "count": 3,
-          "pobranoFirm": 3,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 2013,
-          "doRoku": 2025
-        },
-        {
-          "branza": "fryzjer",
-          "obszar": "igolomia_wawrzenczyce",
-          "pkd": "96.21.Z",
-          "count": 5,
-          "pobranoFirm": 5,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 1992,
-          "doRoku": 2026
-        },
-        {
-          "branza": "fryzjer",
-          "obszar": "krakow",
-          "pkd": "96.02.Z",
-          "count": 1740,
-          "pobranoFirm": 300,
-          "kompletne": false,
-          "limitStron": 12,
-          "odRoku": 2022,
-          "doRoku": 2025
-        },
-        {
-          "branza": "fryzjer",
-          "obszar": "wieliczka",
-          "pkd": "96.02.Z",
-          "count": 112,
-          "pobranoFirm": 112,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 1988,
-          "doRoku": 2024
-        },
-        {
-          "branza": "fryzjer",
-          "obszar": "niepolomice",
-          "pkd": "96.02.Z",
-          "count": 67,
-          "pobranoFirm": 67,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 1980,
-          "doRoku": 2024
-        },
-        {
-          "branza": "fryzjer",
-          "obszar": "zabierzow",
-          "pkd": "96.02.Z",
-          "count": 53,
-          "pobranoFirm": 53,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 1991,
-          "doRoku": 2024
-        },
-        {
-          "branza": "fryzjer",
-          "obszar": "skawina",
-          "pkd": "96.02.Z",
-          "count": 102,
-          "pobranoFirm": 102,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 1990,
-          "doRoku": 2024
-        },
-        {
-          "branza": "fryzjer",
-          "obszar": "zielonki",
-          "pkd": "96.02.Z",
-          "count": 44,
-          "pobranoFirm": 44,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 1999,
-          "doRoku": 2024
-        },
-        {
-          "branza": "fryzjer",
-          "obszar": "liszki",
-          "pkd": "96.02.Z",
-          "count": 28,
-          "pobranoFirm": 28,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 1990,
-          "doRoku": 2024
-        },
-        {
-          "branza": "fryzjer",
-          "obszar": "kocmyrzow_luborzyca",
-          "pkd": "96.02.Z",
-          "count": 22,
-          "pobranoFirm": 22,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 1987,
-          "doRoku": 2024
-        },
-        {
-          "branza": "fryzjer",
-          "obszar": "wielka_wies",
-          "pkd": "96.02.Z",
-          "count": 29,
-          "pobranoFirm": 29,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 1994,
-          "doRoku": 2024
-        },
-        {
-          "branza": "fryzjer",
-          "obszar": "mogilany",
-          "pkd": "96.02.Z",
-          "count": 33,
-          "pobranoFirm": 33,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 1989,
-          "doRoku": 2024
-        },
-        {
-          "branza": "fryzjer",
-          "obszar": "michalowice",
-          "pkd": "96.02.Z",
-          "count": 30,
-          "pobranoFirm": 30,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 1987,
-          "doRoku": 2024
-        },
-        {
-          "branza": "fryzjer",
-          "obszar": "swiatniki_gorne",
-          "pkd": "96.02.Z",
-          "count": 21,
-          "pobranoFirm": 21,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 2003,
-          "doRoku": 2024
-        },
-        {
-          "branza": "fryzjer",
-          "obszar": "koniusza",
-          "pkd": "96.02.Z",
-          "count": 10,
-          "pobranoFirm": 10,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 1997,
-          "doRoku": 2024
-        },
-        {
-          "branza": "fryzjer",
-          "obszar": "igolomia_wawrzenczyce",
-          "pkd": "96.02.Z",
-          "count": 10,
-          "pobranoFirm": 10,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 2005,
-          "doRoku": 2022
-        },
-        {
-          "branza": "piekarnia",
-          "obszar": "krakow",
-          "pkd": "10.71.Z",
-          "count": 404,
-          "pobranoFirm": 404,
-          "kompletne": true,
-          "limitStron": 17,
-          "odRoku": 1972,
-          "doRoku": 2026
-        },
-        {
-          "branza": "piekarnia",
-          "obszar": "wieliczka",
-          "pkd": "10.71.Z",
-          "count": 31,
-          "pobranoFirm": 31,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 1995,
-          "doRoku": 2026
-        },
-        {
-          "branza": "piekarnia",
-          "obszar": "niepolomice",
-          "pkd": "10.71.Z",
-          "count": 20,
-          "pobranoFirm": 20,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 1990,
-          "doRoku": 2024
-        },
-        {
-          "branza": "piekarnia",
-          "obszar": "zabierzow",
-          "pkd": "10.71.Z",
-          "count": 21,
-          "pobranoFirm": 21,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 1979,
-          "doRoku": 2023
-        },
-        {
-          "branza": "piekarnia",
-          "obszar": "skawina",
-          "pkd": "10.71.Z",
-          "count": 21,
-          "pobranoFirm": 21,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 1994,
-          "doRoku": 2025
-        },
-        {
-          "branza": "piekarnia",
-          "obszar": "zielonki",
-          "pkd": "10.71.Z",
-          "count": 16,
-          "pobranoFirm": 16,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 1994,
-          "doRoku": 2024
-        },
-        {
-          "branza": "piekarnia",
-          "obszar": "liszki",
-          "pkd": "10.71.Z",
-          "count": 11,
-          "pobranoFirm": 11,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 1990,
-          "doRoku": 2024
-        },
-        {
-          "branza": "piekarnia",
-          "obszar": "kocmyrzow_luborzyca",
-          "pkd": "10.71.Z",
-          "count": 7,
-          "pobranoFirm": 7,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 2000,
-          "doRoku": 2026
-        },
-        {
-          "branza": "piekarnia",
-          "obszar": "wielka_wies",
-          "pkd": "10.71.Z",
-          "count": 11,
-          "pobranoFirm": 11,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 1995,
-          "doRoku": 2025
-        },
-        {
-          "branza": "piekarnia",
-          "obszar": "mogilany",
-          "pkd": "10.71.Z",
-          "count": 10,
-          "pobranoFirm": 10,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 1980,
-          "doRoku": 2022
-        },
-        {
-          "branza": "piekarnia",
-          "obszar": "michalowice",
-          "pkd": "10.71.Z",
-          "count": 5,
-          "pobranoFirm": 5,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 1992,
-          "doRoku": 2023
-        },
-        {
-          "branza": "piekarnia",
-          "obszar": "swiatniki_gorne",
-          "pkd": "10.71.Z",
-          "count": 5,
-          "pobranoFirm": 5,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 2005,
-          "doRoku": 2022
-        },
-        {
-          "branza": "piekarnia",
-          "obszar": "koniusza",
-          "pkd": "10.71.Z",
-          "count": 3,
-          "pobranoFirm": 3,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 2005,
-          "doRoku": 2025
-        },
-        {
-          "branza": "piekarnia",
-          "obszar": "igolomia_wawrzenczyce",
-          "pkd": "10.71.Z",
-          "count": 2,
-          "pobranoFirm": 2,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 2007,
-          "doRoku": 2021
-        },
-        {
-          "branza": "kawiarnia",
-          "obszar": "krakow",
-          "pkd": "56.30.Z",
-          "count": 2304,
-          "pobranoFirm": 1050,
-          "kompletne": false,
-          "limitStron": 45,
-          "odRoku": 2017,
-          "doRoku": 2026
-        },
-        {
-          "branza": "kawiarnia",
-          "obszar": "wieliczka",
-          "pkd": "56.30.Z",
-          "count": 128,
-          "pobranoFirm": 128,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 1991,
-          "doRoku": 2026
-        },
-        {
-          "branza": "kawiarnia",
-          "obszar": "niepolomice",
-          "pkd": "56.30.Z",
-          "count": 73,
-          "pobranoFirm": 73,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 1990,
-          "doRoku": 2026
-        },
-        {
-          "branza": "kawiarnia",
-          "obszar": "zabierzow",
-          "pkd": "56.30.Z",
-          "count": 69,
-          "pobranoFirm": 69,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 1990,
-          "doRoku": 2025
-        },
-        {
-          "branza": "kawiarnia",
-          "obszar": "skawina",
-          "pkd": "56.30.Z",
-          "count": 65,
-          "pobranoFirm": 65,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 1993,
-          "doRoku": 2026
-        },
-        {
-          "branza": "kawiarnia",
-          "obszar": "zielonki",
-          "pkd": "56.30.Z",
-          "count": 53,
-          "pobranoFirm": 53,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 1987,
-          "doRoku": 2026
-        },
-        {
-          "branza": "kawiarnia",
-          "obszar": "liszki",
-          "pkd": "56.30.Z",
-          "count": 44,
-          "pobranoFirm": 44,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 1990,
-          "doRoku": 2026
-        },
-        {
-          "branza": "kawiarnia",
-          "obszar": "kocmyrzow_luborzyca",
-          "pkd": "56.30.Z",
-          "count": 31,
-          "pobranoFirm": 31,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 1991,
-          "doRoku": 2026
-        },
-        {
-          "branza": "kawiarnia",
-          "obszar": "wielka_wies",
-          "pkd": "56.30.Z",
-          "count": 47,
-          "pobranoFirm": 47,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 1992,
-          "doRoku": 2026
-        },
-        {
-          "branza": "kawiarnia",
-          "obszar": "mogilany",
-          "pkd": "56.30.Z",
-          "count": 36,
-          "pobranoFirm": 36,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 1980,
-          "doRoku": 2026
-        },
-        {
-          "branza": "kawiarnia",
-          "obszar": "michalowice",
-          "pkd": "56.30.Z",
-          "count": 26,
-          "pobranoFirm": 26,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 1995,
-          "doRoku": 2026
-        },
-        {
-          "branza": "kawiarnia",
-          "obszar": "swiatniki_gorne",
-          "pkd": "56.30.Z",
-          "count": 15,
-          "pobranoFirm": 15,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 1996,
-          "doRoku": 2026
-        },
-        {
-          "branza": "kawiarnia",
-          "obszar": "koniusza",
-          "pkd": "56.30.Z",
-          "count": 8,
-          "pobranoFirm": 8,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 1982,
-          "doRoku": 2023
-        },
-        {
-          "branza": "kawiarnia",
-          "obszar": "igolomia_wawrzenczyce",
-          "pkd": "56.30.Z",
-          "count": 11,
-          "pobranoFirm": 11,
-          "kompletne": true,
-          "limitStron": null,
-          "odRoku": 1992,
-          "doRoku": 2026
-        }
-      ]
+      "pominiete": "wyłączone flagą"
     }
   },
   "branze": [
@@ -947,33 +164,29 @@
       },
       "uwagi": "Supermarkety, sklepy osiedlowe i warzywniaki. Bez rzeźni, delikatesów specjalistycznych, kiosków i drogerii.",
       "plik": "sklep_spozywczy.json",
-      "n": 3923,
+      "n": 2619,
       "zrodlaWPliku": [
         "osm",
-        "overture",
-        "ceidg"
+        "overture"
       ],
-      "licencja": "Plik zawiera punkty z OpenStreetMap, więc jest bazą pochodną na licencji ODbL 1.0 (https://opendatacommons.org/licenses/odbl/1-0/): wymagana atrybucja „© OpenStreetMap contributors, ODbL\", a udostępniając go dalej, zachowaj tę licencję (share-alike). Overture Maps Foundation – Places: CDLA-Permissive-2.0. CEIDG – Centralna Ewidencja i Informacja o Działalności Gospodarczej (API v3): Dane jawne CEIDG (ustawa o CEIDG); API dane.biznes.gov.pl.",
-      "atrybucja": "© OpenStreetMap contributors, ODbL; Overture Maps Foundation, Places (CDLA-Permissive-2.0); Ministerstwo Rozwoju i Technologii, CEIDG",
+      "licencja": "Plik zawiera punkty z OpenStreetMap, więc jest bazą pochodną na licencji ODbL 1.0 (https://opendatacommons.org/licenses/odbl/1-0/): wymagana atrybucja „© OpenStreetMap contributors, ODbL\", a udostępniając go dalej, zachowaj tę licencję (share-alike). Overture Maps Foundation – Places: CDLA-Permissive-2.0.",
+      "atrybucja": "© OpenStreetMap contributors, ODbL; Overture Maps Foundation, Places (CDLA-Permissive-2.0)",
       "liczby": {
         "surowe": {
           "osm": 2128,
-          "overture": 1273,
-          "ceidg": 1795
+          "overture": 1273
         },
-        "poDeduplikacji": 3923,
-        "wPliku": 3923,
+        "poDeduplikacji": 2619,
+        "wPliku": 2619,
         "wPlikuWgZrodel": {
           "osm": 2089,
-          "overture": 1266,
-          "ceidg": 1684
+          "overture": 1266
         },
         "tylkoJednoZrodlo": {
-          "osm": 1229,
-          "overture": 492,
-          "ceidg": 1304
+          "osm": 1353,
+          "overture": 530
         },
-        "potwierdzoneWielomaZrodlami": 898,
+        "potwierdzoneWielomaZrodlami": 736,
         "bezSamegoCeidg": 2619
       }
     },
@@ -1094,33 +307,29 @@
       },
       "uwagi": "Flaga barber: salon męski (OSM hairdresser=barber, Overture barber). CEIDG: PKD 96.21.Z (od 2025) i dawne 96.02.Z.",
       "plik": "fryzjer.json",
-      "n": 2337,
+      "n": 1063,
       "zrodlaWPliku": [
         "osm",
-        "overture",
-        "ceidg"
+        "overture"
       ],
-      "licencja": "Plik zawiera punkty z OpenStreetMap, więc jest bazą pochodną na licencji ODbL 1.0 (https://opendatacommons.org/licenses/odbl/1-0/): wymagana atrybucja „© OpenStreetMap contributors, ODbL\", a udostępniając go dalej, zachowaj tę licencję (share-alike). Overture Maps Foundation – Places: CDLA-Permissive-2.0. CEIDG – Centralna Ewidencja i Informacja o Działalności Gospodarczej (API v3): Dane jawne CEIDG (ustawa o CEIDG); API dane.biznes.gov.pl.",
-      "atrybucja": "© OpenStreetMap contributors, ODbL; Overture Maps Foundation, Places (CDLA-Permissive-2.0); Ministerstwo Rozwoju i Technologii, CEIDG",
+      "licencja": "Plik zawiera punkty z OpenStreetMap, więc jest bazą pochodną na licencji ODbL 1.0 (https://opendatacommons.org/licenses/odbl/1-0/): wymagana atrybucja „© OpenStreetMap contributors, ODbL\", a udostępniając go dalej, zachowaj tę licencję (share-alike). Overture Maps Foundation – Places: CDLA-Permissive-2.0.",
+      "atrybucja": "© OpenStreetMap contributors, ODbL; Overture Maps Foundation, Places (CDLA-Permissive-2.0)",
       "liczby": {
         "surowe": {
           "osm": 704,
-          "overture": 498,
-          "ceidg": 1860
+          "overture": 498
         },
-        "poDeduplikacji": 2337,
-        "wPliku": 2337,
+        "poDeduplikacji": 1063,
+        "wPliku": 1063,
         "wPlikuWgZrodel": {
           "osm": 700,
-          "overture": 498,
-          "ceidg": 1554
+          "overture": 498
         },
         "tylkoJednoZrodlo": {
-          "osm": 416,
-          "overture": 285,
-          "ceidg": 1274
+          "osm": 565,
+          "overture": 363
         },
-        "potwierdzoneWielomaZrodlami": 362,
+        "potwierdzoneWielomaZrodlami": 135,
         "bezSamegoCeidg": 1063
       }
     },
@@ -1146,33 +355,29 @@
       },
       "uwagi": "Piekarnie i cukiernie (OSM shop=bakery i pastry, Overture bakery, PKD 10.71.Z). Sklepy ze słodyczami (shop=confectionery) są poza branżą.",
       "plik": "piekarnia.json",
-      "n": 1226,
+      "n": 764,
       "zrodlaWPliku": [
         "osm",
-        "overture",
-        "ceidg"
+        "overture"
       ],
-      "licencja": "Plik zawiera punkty z OpenStreetMap, więc jest bazą pochodną na licencji ODbL 1.0 (https://opendatacommons.org/licenses/odbl/1-0/): wymagana atrybucja „© OpenStreetMap contributors, ODbL\", a udostępniając go dalej, zachowaj tę licencję (share-alike). Overture Maps Foundation – Places: CDLA-Permissive-2.0. CEIDG – Centralna Ewidencja i Informacja o Działalności Gospodarczej (API v3): Dane jawne CEIDG (ustawa o CEIDG); API dane.biznes.gov.pl.",
-      "atrybucja": "© OpenStreetMap contributors, ODbL; Overture Maps Foundation, Places (CDLA-Permissive-2.0); Ministerstwo Rozwoju i Technologii, CEIDG",
+      "licencja": "Plik zawiera punkty z OpenStreetMap, więc jest bazą pochodną na licencji ODbL 1.0 (https://opendatacommons.org/licenses/odbl/1-0/): wymagana atrybucja „© OpenStreetMap contributors, ODbL\", a udostępniając go dalej, zachowaj tę licencję (share-alike). Overture Maps Foundation – Places: CDLA-Permissive-2.0.",
+      "atrybucja": "© OpenStreetMap contributors, ODbL; Overture Maps Foundation, Places (CDLA-Permissive-2.0)",
       "liczby": {
         "surowe": {
           "osm": 605,
-          "overture": 254,
-          "ceidg": 536
+          "overture": 254
         },
-        "poDeduplikacji": 1226,
-        "wPliku": 1226,
+        "poDeduplikacji": 764,
+        "wPliku": 764,
         "wPlikuWgZrodel": {
           "osm": 602,
-          "overture": 254,
-          "ceidg": 520
+          "overture": 254
         },
         "tylkoJednoZrodlo": {
-          "osm": 491,
-          "overture": 139,
-          "ceidg": 462
+          "osm": 510,
+          "overture": 162
         },
-        "potwierdzoneWielomaZrodlami": 134,
+        "potwierdzoneWielomaZrodlami": 92,
         "bezSamegoCeidg": 764
       }
     },
@@ -1198,33 +403,29 @@
       },
       "uwagi": "Kawiarnie i kawiarnie specjalistyczne. Bez barów, restauracji i kafejek internetowych.",
       "plik": "kawiarnia.json",
-      "n": 2206,
+      "n": 836,
       "zrodlaWPliku": [
         "osm",
-        "overture",
-        "ceidg"
+        "overture"
       ],
-      "licencja": "Plik zawiera punkty z OpenStreetMap, więc jest bazą pochodną na licencji ODbL 1.0 (https://opendatacommons.org/licenses/odbl/1-0/): wymagana atrybucja „© OpenStreetMap contributors, ODbL\", a udostępniając go dalej, zachowaj tę licencję (share-alike). Overture Maps Foundation – Places: CDLA-Permissive-2.0. CEIDG – Centralna Ewidencja i Informacja o Działalności Gospodarczej (API v3): Dane jawne CEIDG (ustawa o CEIDG); API dane.biznes.gov.pl.",
-      "atrybucja": "© OpenStreetMap contributors, ODbL; Overture Maps Foundation, Places (CDLA-Permissive-2.0); Ministerstwo Rozwoju i Technologii, CEIDG",
+      "licencja": "Plik zawiera punkty z OpenStreetMap, więc jest bazą pochodną na licencji ODbL 1.0 (https://opendatacommons.org/licenses/odbl/1-0/): wymagana atrybucja „© OpenStreetMap contributors, ODbL\", a udostępniając go dalej, zachowaj tę licencję (share-alike). Overture Maps Foundation – Places: CDLA-Permissive-2.0.",
+      "atrybucja": "© OpenStreetMap contributors, ODbL; Overture Maps Foundation, Places (CDLA-Permissive-2.0)",
       "liczby": {
         "surowe": {
           "osm": 519,
-          "overture": 536,
-          "ceidg": 1559
+          "overture": 536
         },
-        "poDeduplikacji": 2206,
-        "wPliku": 2206,
+        "poDeduplikacji": 836,
+        "wPliku": 836,
         "wPlikuWgZrodel": {
           "osm": 513,
-          "overture": 534,
-          "ceidg": 1456
+          "overture": 534
         },
         "tylkoJednoZrodlo": {
-          "osm": 271,
-          "overture": 298,
-          "ceidg": 1370
+          "osm": 302,
+          "overture": 323
         },
-        "potwierdzoneWielomaZrodlami": 267,
+        "potwierdzoneWielomaZrodlami": 211,
         "bezSamegoCeidg": 836
       }
     },

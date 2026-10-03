@@ -69,9 +69,14 @@ export const POZIOMY_WAZNOSCI = [
  * zajęło twierdzenie o własnej sytuacji – limit pośrednika to 16 pytań. Przyszłość okolicy
  * wynika z profilu Inwestor (potrzeba `inwestycja` z tabeli POTRZEBY); w #18 JEV odszedł od
  * środka skali tylko w 2 z 30 opisów, a jeden z nich i tak był inwestorem.
+ *
+ * #153: bez „Codzienności pieszo” – jej miejsce zajęło drugie twierdzenie bramki. Codzienność
+ * podnoszą potrzeby (dzieci, senior, lekarz, sklepy, rower, bez samochodu). Przeliczenie
+ * zapisanych przebiegów bez tego pytania (bez nowych wywołań): kategorie F1 bez zmian na
+ * zbiorze kontrolnym nr 1 i nr 2, −2 pp na wzorcowym; z czterech kategorii najtańsza
+ * (WYNIKI.md, „Trzy błędy (#153)”).
  */
 export const KATEGORIE_JEV = [
-  'codziennosc',
   'transport',
   'spokoj',
   'bezpieczenstwo',
@@ -80,23 +85,50 @@ export const KATEGORIE_JEV = [
 /** Środek skali = „tekst o tym nie mówi” – nie zmienia wag. */
 const POZIOM_NEUTRALNY = 2
 
-/** Poniżej tej pewności JEV nie wierzymy wyborowi profilu ani poziomowi kategorii. */
+/** Poniżej tej pewności JEV nie wierzymy poziomowi kategorii. */
 export const PROG_PEWNOSCI = 0.6
+/**
+ * #155: poniżej tej pewności JEV nie wierzymy wyborowi profilu (było 0,6 jak dla kategorii).
+ * Zły profil przestawia wszystkie wagi, a „bez zmian” zostawia te, które użytkownik już ma.
+ * Wtedy profil daje tylko mocna potrzeba (`profilZMocnychPotrzeb`). Dowody: WYNIKI.md, „Profil (#155)”.
+ */
+export const PROG_PROFILU = 0.85
+/**
+ * #155: od tej oceny twierdzenia (noul) potrzeba jest mocna i pod progiem profilu go wyznacza.
+ * Ten sam poziom co „pewna potrzeba” przy zamkniętej bramce (PROG_POTRZEBY_PEWNEJ). Przy 0,8
+ * zapas oddawał Rodzinę za dzieci kumpla (stary A06: dzieci 0,81 przy profilu 0,66).
+ */
+export const PROG_MOCNEJ_POTRZEBY = 0.9
 /** Od tej oceny twierdzenia (noul) uznajemy potrzebę. */
 export const PROG_POTRZEBY = 0.6
 
 /**
- * #147: tekst o cudzej, hipotetycznej albo przeszłej sytuacji („Kumpel ma trójkę dzieci…”,
- * „Gdybyśmy kiedyś mieli dzieci…”). JEV ocenia to twierdzenie w tym samym wywołaniu.
+ * Bramka „cudza sytuacja” (#147, #153): tekst o kimś spoza domu („Pytam dla koleżanki…”) albo
+ * o sytuacji tylko wyobrażonej lub dawnej („Gdybym kiedyś miał psa…”). Gdy bramka jest
+ * zamknięta, profil zostaje bez zmian, a z potrzeb zostają tylko bardzo pewne.
  *
- * #152: brzmienie z #147, a nie z #150. Na zbiorze kontrolnym nr 1 bramka z #150 odcinała
- * 10 z 30 opisów i pełność potrzeb spadła z 88% do 71% (WYNIKI.md, „Wersja końcowa (#152)”).
+ * #153: dwa wąskie twierdzenia zamiast jednego „Osoba opisuje własną obecną sytuację…” (#147)
+ * i odwrócona logika – bramka zamyka się tylko na DOWÓD cudzej albo nieaktualnej sytuacji
+ * (któreś twierdzenie ≥ PROG_BRAMKI), a nie na brak dowodu własnej. Twierdzenie z #147 dawało
+ * „teściowa z nami zamieszka” 0,35 i „mama z nami zamieszka” 0,18 (profil Senior przepadał),
+ * a dawnej sytuacji 0,71. Domownik, rodzina i własne plany to własna sytuacja; zakup na
+ * wynajem też (inwestor). Dowody: WYNIKI.md, „Trzy błędy (#153)”.
  */
-export const ID_WLASNEJ_SYTUACJI = 'wlasna_sytuacja'
-export const TWIERDZENIE_WLASNEJ_SYTUACJI =
-  'Osoba opisuje własną obecną sytuację i swoje potrzeby (nie cudzą, nie hipotetyczną, nie przeszłą).'
-/** Poniżej tej oceny profil zostaje bez zmian, a potrzeby muszą mieć noul ≥ PROG_POTRZEBY_PEWNEJ. */
-export const PROG_WLASNEJ_SYTUACJI = 0.5
+export const BRAMKA = [
+  {
+    id: 'cudza_osoba',
+    twierdzenie:
+      'Osoba szuka mieszkania dla kogoś innego, kto z nią nie mieszka i nie zamieszka (np. dla znajomego, klienta, rodzeństwa). Zakup na wynajem albo jako inwestycja to nie to.',
+  },
+  {
+    id: 'sytuacja_nieaktualna',
+    twierdzenie:
+      'Tekst mówi wyłącznie o sytuacji wyobrażonej („gdyby…”) albo nieaktualnej (tak było kiedyś), a nie o obecnej ani planowanej.',
+  },
+] as const
+/** Od tej oceny któregokolwiek twierdzenia BRAMKA bramka się zamyka. */
+export const PROG_BRAMKI = 0.5
+/** Przy zamkniętej bramce zostają tylko potrzeby z noul ≥ PROG_POTRZEBY_PEWNEJ. */
 export const PROG_POTRZEBY_PEWNEJ = 0.9
 
 interface Wzorzec {
@@ -122,7 +154,7 @@ export interface Potrzeba {
 }
 
 // Kolejność = kolejność pytań do JEV i chipów „zrozumiałem”. Najwyżej 10 z twierdzeniem
-// (limit 16 pytań: 1 profil + 4 kategorie + 10 potrzeb + własna sytuacja).
+// (limit 16 pytań: 1 profil + 3 kategorie + 10 potrzeb + 2 twierdzenia bramki, #153).
 // #147: każde twierdzenie to jeden warunek – JEV obniża ocenę, gdy tekst spełnia tylko część
 // koniunkcji („nie ma samochodu i jeździ komunikacją” → „Nie mam samochodu” 0,58 w #18).
 // Pozostałe twierdzenia nie mają „i”. Próba ich zaostrzenia (dzieci, pies, praca w centrum,
@@ -297,12 +329,39 @@ export const POTRZEBY: readonly Potrzeba[] = [
   },
 ]
 
-/** Gdy kilka potrzeb sugeruje profil, wygrywa pierwszy z tej listy. */
-const PIERWSZENSTWO_PERSON: readonly PersonaId[] = ['inwestor', 'senior', 'rodzina', 'singiel']
+/**
+ * Gdy kilka potrzeb sugeruje profil, wygrywa pierwszy z tej listy (reguły i #155 – profil
+ * z mocnych potrzeb). Uzasadnienie kolejności:
+ * - Inwestor pierwszy: kupujący pod wynajem sam nie zamieszka, więc jego dzieci czy wiek nie
+ *   ustawiają wag mieszkania („pod wynajem dla studentów” to też nie Singiel).
+ * - Senior przed Rodziną: starsza osoba często pisze o wnukach albo dorosłych dzieciach,
+ *   a senior z małymi dziećmi w domu to rzadkość. Gdy do rodziny z dziećmi wprowadza się
+ *   starszy rodzic, potrzeby seniora (przychodnia, apteka, krawężniki) i tak zostają.
+ * - Singiel ostatni: najsłabszy sygnał, wyklucza się z dziećmi i seniorem.
+ */
+export const PIERWSZENSTWO_PERSON: readonly PersonaId[] = [
+  'inwestor',
+  'senior',
+  'rodzina',
+  'singiel',
+]
 
 /** Profile do wyboru przez JEV – bez „Od zera”, plus jawne „nie wiadomo”. */
 const PROFILE_JEV = PERSONY.filter((p) => p.id !== 'od-zera')
 const PROFIL_NIEZNANY = 'nieznany'
+
+/**
+ * #155: opisy opcji profilu dla JEV mówią, KIM jest osoba, a nie, co ceni. Opisy z UI
+ * („Komunikacja i sklepy pod ręką”) pasowały do każdego, kto chce mieć blisko tramwaj, więc
+ * JEV wybierał Singla dla par i rodzin. Nazwy i opisy w UI (`persony.ts`) się nie zmieniają.
+ */
+export const OPISY_PROFILI_JEV: Readonly<Record<Exclude<PersonaId, 'od-zera'>, string>> = {
+  rodzina: 'Rodzic z dziećmi w domu (także gdy dziecko jest w drodze)',
+  singiel: 'Osoba mieszkająca sama, zwykle młoda, pracująca albo studiująca',
+  senior: 'Osoba na emeryturze albo w starszym wieku',
+  inwestor: 'Kupujący pod wynajem albo jako lokatę, sam tam nie zamieszka',
+}
+export const OPIS_PROFILU_NIEZNANEGO = 'Nie da się tego określić z tekstu'
 
 export interface PozycjaZrozumienia {
   rodzaj: 'profil' | 'potrzeba' | 'kategoria'
@@ -346,12 +405,14 @@ export const ID_PROFILU = 'profil'
 export const idKategorii = (k: KategoriaOceniana) => `kat_${k}`
 export const idPotrzeby = (p: Potrzeba) => `p_${p.id}`
 
-/** Zapytanie w stałej kolejności: profil, 4 kategorie, potrzeby z twierdzeniem, własna sytuacja. */
+/** Zapytanie w stałej kolejności: profil, 3 kategorie, potrzeby z twierdzeniem, bramka. */
 export function zapytanieOpiszSiebie(tekst: string): ZapytanieJev {
   const pytania: ZapytanieJev['pytania'] = {}
   pytania[ID_PROFILU] = wybor('Który profil najlepiej pasuje do osoby szukającej mieszkania?', {
-    ...Object.fromEntries(PROFILE_JEV.map((p) => [p.id, `${p.nazwa} – ${p.opis}`])),
-    [PROFIL_NIEZNANY]: 'Nie da się tego określić z tekstu',
+    ...Object.fromEntries(
+      PROFILE_JEV.map((p) => [p.id, OPISY_PROFILI_JEV[p.id as keyof typeof OPISY_PROFILI_JEV]]),
+    ),
+    [PROFIL_NIEZNANY]: OPIS_PROFILU_NIEZNANEGO,
   })
   for (const k of KATEGORIE_JEV) {
     pytania[idKategorii(k)] = ocena(
@@ -360,7 +421,7 @@ export function zapytanieOpiszSiebie(tekst: string): ZapytanieJev {
     )
   }
   for (const p of POTRZEBY) if (p.twierdzenie) pytania[idPotrzeby(p)] = takNie(p.twierdzenie)
-  pytania[ID_WLASNEJ_SYTUACJI] = takNie(TWIERDZENIE_WLASNEJ_SYTUACJI)
+  for (const b of BRAMKA) pytania[b.id] = takNie(b.twierdzenie)
   return { stan: tekst, pytania }
 }
 
@@ -417,22 +478,71 @@ function zloz(
 const procent = (x: number) => Math.round(Math.min(Math.max(x, 0), 1) * 100)
 const pewny = (pewnosc: number | null) => pewnosc === null || pewnosc >= PROG_PEWNOSCI
 
+/** Progi profilu – parametr tylko dla testów i przeliczeń zapisanych przebiegów (WYNIKI.md). */
+export interface ProgiProfilu {
+  profil: number
+  mocnaPotrzeba: number
+}
+export const PROGI_PROFILU: ProgiProfilu = {
+  profil: PROG_PROFILU,
+  mocnaPotrzeba: PROG_MOCNEJ_POTRZEBY,
+}
+
+/**
+ * #155: profil pod progiem pewności – deterministycznie, tylko z MOCNYCH potrzeb:
+ * - `senior` z noul ≥ PROG_MOCNEJ_POTRZEBY → Senior, `dzieci` z noul ≥ PROG_MOCNEJ_POTRZEBY → Rodzina;
+ * - `inwestycja` i `singiel` nie mają twierdzenia dla JEV (pokrywa je wybór profilu), więc mocny
+ *   sygnał to jawne słowa z reguł („pod wynajem”, „inwestycja”, „mieszkam sama”, „studiuję”),
+ *   z tą samą obsługą przeczeń co w `zRegul` – i to tylko wtedy, gdy JEV (pod progiem) wskazał
+ *   ten sam profil. Same słowa to słabość reguł (przeczenia, cudza sytuacja, #18).
+ * Przy kilku naraz rozstrzyga PIERWSZENSTWO_PERSON. Bez mocnej potrzeby – null (profil bez
+ * zmian). Słabsze potrzeby (0,6–0,9) już profilu nie ustawiają – przed #155 ustawiały od 0,6.
+ */
+export function profilZMocnychPotrzeb(
+  odpowiedzi: Record<string, OdpowiedzJev | null>,
+  tekst: string,
+  progi: ProgiProfilu = PROGI_PROFILU,
+): PersonaId | null {
+  const t = normalizuj(tekst)
+  const profil = odpowiedzi[ID_PROFILU]
+  const wyborJev = profil?.typ === 'choice' ? profil.wybor : null
+  const mocne: string[] = []
+  for (const p of POTRZEBY) {
+    if (!p.persona) continue
+    if (p.twierdzenie) {
+      const o = odpowiedzi[idPotrzeby(p)]
+      if (o?.typ === 'noul' && o.noul >= progi.mocnaPotrzeba) mocne.push(p.id)
+    } else if (t && wyborJev === p.persona && p.wzorce.some((w) => wystepuje(t, w)))
+      mocne.push(p.id)
+  }
+  return personaZPotrzeb(mocne)
+}
+
+/** #153: bramka zamknięta = któreś twierdzenie BRAMKA ma noul ≥ PROG_BRAMKI. */
+export function bramkaZamknieta(odpowiedzi: Record<string, OdpowiedzJev | null>): boolean {
+  return BRAMKA.some((b) => {
+    const o = odpowiedzi[b.id]
+    // Brak odpowiedzi = brak dowodu cudzej sytuacji – bramka zostaje otwarta.
+    return o?.typ === 'noul' && o.noul >= PROG_BRAMKI
+  })
+}
+
 /**
  * Odpowiedzi JEV → zrozumienie. null (→ reguły), gdy nic nie przeszło progu pewności.
  * Poziom kategorii liczy się tylko, gdy JEV jest pewny i odszedł od środka skali.
  *
- * #147: gdy JEV ocenia, że tekst nie opisuje własnej obecnej sytuacji (noul < próg), profil
- * zostaje bez zmian, poziomy kategorii przepadają, a z potrzeb zostają tylko bardzo pewne.
- * Wtedy pusty wynik to „nic nie zrozumiano” od JEV, a nie powód do reguł – reguły złapałyby
- * słowa z cudzej sytuacji („kumpel ma psa” → pies).
+ * #147: gdy tekst opisuje cudzą, wyobrażoną albo dawną sytuację (bramka zamknięta, #153),
+ * profil zostaje bez zmian, poziomy kategorii przepadają, a z potrzeb zostają tylko bardzo
+ * pewne. Wtedy pusty wynik to „nic nie zrozumiano” od JEV, a nie powód do reguł – reguły
+ * złapałyby słowa z cudzej sytuacji („kumpel ma psa” → pies).
  */
 export function przetworzOdpowiedzi(
   odpowiedzi: Record<string, OdpowiedzJev | null>,
+  /** Tekst użytkownika – #155: słowa „pod wynajem”, „mieszkam sama” dla profilu pod progiem. */
+  tekst = '',
+  progi: ProgiProfilu = PROGI_PROFILU,
 ): Zrozumienie | null {
-  const w = odpowiedzi[ID_WLASNEJ_SYTUACJI]
-  // Brak odpowiedzi na to jedno pytanie = jak przed #147 (nie karzemy za milczenie JEV).
-  const wlasna = w?.typ !== 'noul' || w.noul >= PROG_WLASNEJ_SYTUACJI
-  if (!wlasna) {
+  if (bramkaZamknieta(odpowiedzi)) {
     const potrzeby: { id: string; procent: number }[] = []
     for (const p of POTRZEBY) {
       const o = p.twierdzenie ? odpowiedzi[idPotrzeby(p)] : null
@@ -445,7 +555,7 @@ export function przetworzOdpowiedzi(
   let persona: PersonaId | null = null
   let pewnoscPersony: number | null = null
   const profil = odpowiedzi[ID_PROFILU]
-  if (profil?.typ === 'choice' && pewny(profil.pewnosc)) {
+  if (profil?.typ === 'choice' && (profil.pewnosc === null || profil.pewnosc >= progi.profil)) {
     const p = PROFILE_JEV.find((x) => x.id === profil.wybor)
     if (p) {
       persona = p.id
@@ -468,17 +578,14 @@ export function przetworzOdpowiedzi(
     if (o?.typ === 'noul' && o.noul >= PROG_POTRZEBY)
       potrzeby.push({ id: p.id, procent: procent(o.noul) })
   }
+  // Nic pewnego od JEV → reguły (one i tak czytają te same słowa, co zapas profilu niżej).
+  if (persona === null && potrzeby.length === 0 && Object.keys(poziomy).length === 0) return null
+  // #155: pod progiem (albo „nieznany”) profil tylko z mocnych potrzeb; bez nich – bez zmian.
+  if (persona === null) persona = profilZMocnychPotrzeb(odpowiedzi, tekst, progi)
   // Przyszłość okolicy nie ma już pytania o poziom – niesie ją profil Inwestor przez potrzebę
   // `inwestycja` (jej kategorie i wskaźniki z tabeli POTRZEBY, bez liczby od JEV).
   if (persona === 'inwestor') potrzeby.push({ id: 'inwestycja', procent: null })
-
-  if (persona === null && potrzeby.length === 0 && Object.keys(poziomy).length === 0) return null
-  return zloz(
-    persona ?? personaZPotrzeb(potrzeby.map((x) => x.id)),
-    persona ? pewnoscPersony : null,
-    potrzeby,
-    poziomy,
-  )
+  return zloz(persona, pewnoscPersony, potrzeby, poziomy)
 }
 
 // ── Reguły zapasowe ───────────────────────────────────────────────────────────────────────
@@ -525,7 +632,12 @@ export async function opiszSiebie(
   opcje: OpcjeKlienta = {},
 ): Promise<WynikZZapasem<Zrozumienie>> {
   if (!tekst.trim()) return { wynik: PUSTE_ZROZUMIENIE, zrodlo: 'zapas', powod: null }
-  return zJevem(zapytanieOpiszSiebie(tekst), przetworzOdpowiedzi, () => zRegul(tekst), opcje)
+  return zJevem(
+    zapytanieOpiszSiebie(tekst),
+    (odpowiedzi) => przetworzOdpowiedzi(odpowiedzi, tekst),
+    () => zRegul(tekst),
+    opcje,
+  )
 }
 
 // ── Zrozumienie → wagi wskaźników ─────────────────────────────────────────────────────────
