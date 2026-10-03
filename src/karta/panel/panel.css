@@ -99,6 +99,40 @@
   border-color: var(--ramka);
 }
 
+.panel-tryb-mapy {
+  position: sticky;
+  bottom: 8px;
+  z-index: 2;
+  align-self: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  max-width: 100%;
+  padding: 8px;
+  border: 1px solid var(--ramka);
+  border-radius: 10px;
+  background: rgb(255 255 255 / 92%);
+  box-shadow: 0 2px 12px rgb(20 38 32 / 10%);
+  font-size: 12px;
+}
+.panel-tryb-mapy-etykieta {
+  color: var(--tekst-2);
+  font-weight: 600;
+}
+.panel-tryb-mapy-opcje {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.panel-tryb-mapy-opcje .seg {
+  min-height: 32px;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+.panel-tryb-mapy-podpowiedz {
+  color: var(--tekst-2);
+}
+
 .panel-grupa {
   border: 1px solid var(--ramka);
   border-radius: var(--promien);

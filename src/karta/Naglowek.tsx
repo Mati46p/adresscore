@@ -3,9 +3,8 @@ import type { Ekran } from '@/wynik/url'
 import { Logo } from './Logo'
 
 const KROKI: { ekran: Ekran; etykieta: string }[] = [
-  { ekran: 'szukaj', etykieta: '1 Szukaj' },
-  { ekran: 'okolica', etykieta: '2 Okolica' },
-  { ekran: 'porownanie', etykieta: '3 Porównanie' },
+  { ekran: 'szukaj', etykieta: 'Szukaj' },
+  { ekran: 'porownanie', etykieta: 'Porównanie' },
 ]
 
 export function Naglowek() {

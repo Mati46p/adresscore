@@ -18,6 +18,7 @@ import { czytajHash, type Ekran, MAKS_POROWNANIE, type StanUrl, zapiszHash } fro
 
 /** `'wynik'` = wynik łączny; inaczej id wskaźnika pokazywanego na mapie. */
 export type WarstwaMapy = 'wynik' | (string & {})
+export type TrybMapy = 'suma' | 'ostatnia'
 
 export interface StanAplikacji {
   ekran: Ekran
@@ -33,6 +34,9 @@ export interface StanAplikacji {
   /** Indeksy adresów do porównania, najwyżej 5. */
   porownanie: readonly number[]
   warstwa: WarstwaMapy
+  /** Czy mapa śledzi wynik łączny, czy ostatnio zmienioną warstwę. */
+  trybMapy: TrybMapy
+  ostatniaWarstwa: string | null
   /** Twarde filtry: adres, który ich nie spełnia, jest wykluczony (nie dostaje kary w wyniku). */
   filtry: readonly TwardyFiltr[]
 }
@@ -46,6 +50,8 @@ let stan: StanAplikacji = {
   wybrany: null,
   porownanie: [],
   warstwa: 'wynik',
+  trybMapy: 'suma',
+  ostatniaWarstwa: null,
   filtry: [],
 }
 
@@ -102,6 +108,8 @@ export function ustawWage(id: string, waga: number) {
   zmien({
     wagi: { ...stan.wagi, [id]: Math.min(Math.max(Math.round(waga), 0), 4) },
     persona: 'wlasna',
+    ostatniaWarstwa: id,
+    ...(stan.trybMapy === 'ostatnia' ? { warstwa: id } : {}),
   })
 }
 
@@ -110,7 +118,12 @@ export function ustawKierunek(id: string, kierunek: KierunekOceny | null) {
   const kierunki = { ...stan.kierunki }
   if (kierunek) kierunki[id] = kierunek
   else delete kierunki[id]
-  zmien({ kierunki, persona: 'wlasna' })
+  zmien({
+    kierunki,
+    persona: 'wlasna',
+    ostatniaWarstwa: id,
+    ...(stan.trybMapy === 'ostatnia' ? { warstwa: id } : {}),
+  })
 }
 
 /** Zaznacza adres bez zmiany ekranu (np. klik w mapę na ekranie Szukaj). */
@@ -146,16 +159,35 @@ export function wyczyscPorownanie() {
 }
 
 export function ustawWarstwe(warstwa: WarstwaMapy) {
-  zmien({ warstwa })
+  zmien({
+    warstwa,
+    trybMapy: warstwa === 'wynik' ? 'suma' : 'ostatnia',
+    ...(warstwa === 'wynik' ? {} : { ostatniaWarstwa: warstwa }),
+  })
+}
+
+export function ustawTrybMapy(trybMapy: TrybMapy) {
+  zmien({
+    trybMapy,
+    warstwa: trybMapy === 'suma' ? 'wynik' : (stan.ostatniaWarstwa ?? 'wynik'),
+  })
 }
 
 /** Dodaje twardy filtr albo podmienia filtr tej samej warstwy. */
 export function ustawFiltr(filtr: TwardyFiltr) {
-  zmien({ filtry: zPodmienionymFiltrem(stan.filtry, filtr) })
+  zmien({
+    filtry: zPodmienionymFiltrem(stan.filtry, filtr),
+    ostatniaWarstwa: filtr.id,
+    ...(stan.trybMapy === 'ostatnia' ? { warstwa: filtr.id } : {}),
+  })
 }
 
 export function usunFiltr(id: string) {
-  zmien({ filtry: stan.filtry.filter((f) => f.id !== id) })
+  zmien({
+    filtry: stan.filtry.filter((f) => f.id !== id),
+    ostatniaWarstwa: id,
+    ...(stan.trybMapy === 'ostatnia' ? { warstwa: id } : {}),
+  })
 }
 
 export function wyczyscFiltry() {

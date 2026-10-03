@@ -17,6 +17,7 @@ import {
   ustawFiltr,
   ustawKierunek,
   ustawTryb,
+  ustawTrybMapy,
   ustawWage,
   usunFiltr,
   wybierzPersone,
@@ -70,6 +71,8 @@ export function PanelFiltrow() {
   const wagi = useStan((s) => s.wagi)
   const kierunki = useStan((s) => s.kierunki)
   const filtry = useStan((s) => s.filtry)
+  const trybMapy = useStan((s) => s.trybMapy)
+  const ostatniaWarstwa = useStan((s) => s.ostatniaWarstwa)
   const wyniki = useWyniki()
 
   useEffect(() => {
@@ -221,6 +224,32 @@ export function PanelFiltrow() {
             />
           )
         })}
+        <div className="panel-tryb-mapy" role="group" aria-label="Widok mapy">
+          <span className="panel-tryb-mapy-etykieta">Mapa pokazuje</span>
+          <div className="panel-tryb-mapy-opcje">
+            <button
+              type="button"
+              className="seg"
+              aria-pressed={trybMapy === 'suma'}
+              onClick={() => ustawTrybMapy('suma')}
+            >
+              Sumę wybranych opcji
+            </button>
+            <button
+              type="button"
+              className="seg"
+              aria-pressed={trybMapy === 'ostatnia'}
+              onClick={() => ustawTrybMapy('ostatnia')}
+            >
+              Ostatnio zmienioną opcję
+            </button>
+          </div>
+          {trybMapy === 'ostatnia' && !ostatniaWarstwa && (
+            <span className="panel-tryb-mapy-podpowiedz">
+              Zmień wagę lub kierunek wybranej warstwy.
+            </span>
+          )}
+        </div>
       </section>
     </>
   )
