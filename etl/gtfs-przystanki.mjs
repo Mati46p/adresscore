@@ -400,7 +400,7 @@ export async function generuj() {
       jednostka: 'kursy/h',
       kierunek: 'wiecej-lepiej',
       rozdzielczosc: 'adres',
-      zakres: [0, 60],
+      zakres: [0, 80],
       zadanie: 5,
       zrodla,
     },
