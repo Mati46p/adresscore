@@ -220,6 +220,8 @@ interface Wywolanie {
   powod: string | null
   /** #170: nieudane próby przed tą (status: 429, 5xx, `timeout`, `siec`) – ponowione. */
   ponowienia?: string[]
+  /** #184: pole `usage` z odpowiedzi JEV (same liczby tokenów), gdy jest. */
+  usage?: Record<string, number>
 }
 
 /**
@@ -234,10 +236,25 @@ const czekaj = (ms: number) => new Promise((r) => setTimeout(r, ms))
 /** #170: wszystkie nieudane próby z całego przebiegu (do raportu ryzyka timeoutu). */
 const NIEUDANE: { status: string; ms: number }[] = []
 let ostatniStatus = 'ok'
+/** #184: `usage` z ostatniej odpowiedzi JEV – tylko pola liczbowe (tokeny), nic więcej. */
+let ostatnieUsage: Record<string, number> | undefined
 const fetchDoJev = (async (url: string | URL | Request, init?: RequestInit) => {
   try {
     const r = await fetch(url, init)
     ostatniStatus = String(r.status)
+    ostatnieUsage = undefined
+    if (r.ok) {
+      const u = (
+        (await r
+          .clone()
+          .json()
+          .catch(() => null)) as { usage?: Record<string, unknown> } | null
+      )?.usage
+      if (u && typeof u === 'object')
+        ostatnieUsage = Object.fromEntries(
+          Object.entries(u).filter((x): x is [string, number] => typeof x[1] === 'number'),
+        )
+    }
     return r
   } catch (e) {
     ostatniStatus = (e as Error).name === 'TimeoutError' ? 'timeout' : 'siec'
@@ -295,6 +312,7 @@ async function klientNaZywo(): Promise<{
         odpowiedzi: json.odpowiedzi ?? null,
         powod: json.powod ?? null,
         ...(ponowienia.length && { ponowienia }),
+        ...(ostatnieUsage && { usage: ostatnieUsage }),
       }
       wszystkie.push(ostatnie)
       return new Response(JSON.stringify(r.json), { status: r.status })
@@ -573,7 +591,7 @@ interface WynikA {
       potrzeby: string[]
       kategorie: Partial<Record<KategoriaOceniana, number>>
       nic: boolean
-    }
+    } & Record<string, unknown>
   >
   jev?: {
     ms: number
@@ -594,15 +612,28 @@ interface WynikA {
     zamknieta: boolean
     /** #170: nieudane próby przed udaną (ponowione), gdy były. */
     ponowienia?: string[]
+    /**
+     * #184: odpowiedź na KAŻDE pytanie zapytania, po przetworzeniu przez pośrednika: noul
+     * (0–1), ocena score albo wybór choice. Nowe pytania (#182, #183) mają tu swoje id, więc
+     * miary siły, „nie chcę” i nowych potrzeb da się liczyć z zapisu, bez nowych wywołań.
+     */
+    oceny?: Record<string, number | string | null>
+    /** #184: rozmiar zapytania: liczba pytań i znaki pytań (JSON, przed pośrednikiem). */
+    zapytanie?: { pytan: number; znakow: number }
+    /** #184: `usage` z odpowiedzi JEV (tokeny), gdy jest. */
+    usage?: Record<string, number>
   }
 }
 
-const zZrozumienia = (z: Zrozumienie) => ({
-  persona: z.persona,
-  potrzeby: z.potrzeby,
-  kategorie: z.kategorie,
-  nic: nicNieZrozumiano(z),
-})
+/**
+ * Wynik systemu do zapisu. #184: całe zrozumienie bez etykiet do wyświetlenia (`zrozumialem`) –
+ * z nowymi polami wersji, która je ma (#182: siła i „nie chcę”), żeby wagi dało się policzyć
+ * z zapisu kodem tej wersji (spełnienie na mapie z rozpoznania JEV).
+ */
+const zZrozumienia = (z: Zrozumienie) => {
+  const { zrozumialem: _etykiety, ...reszta } = z
+  return { ...reszta, nic: nicNieZrozumiano(z) }
+}
 
 async function biegA(naZywo: Klient | null, modul: Modul = MODUL_TERAZ): Promise<WynikA[]> {
   const wyniki: WynikA[] = []
@@ -637,6 +668,17 @@ async function biegA(naZywo: Klient | null, modul: Modul = MODUL_TERAZ): Promise
         const o = odp?.[x.id]
         bramka[x.id] = o?.typ === 'noul' ? o.noul : null
       }
+      const oceny: Record<string, number | string | null> = {}
+      for (const [id, x] of Object.entries(odp ?? {}))
+        oceny[id] =
+          x?.typ === 'noul'
+            ? x.noul
+            : x?.typ === 'score'
+              ? x.ocena
+              : x?.typ === 'choice'
+                ? x.wybor
+                : null
+      const zapytanie = modul.opisz.zapytanieOpiszSiebie(p.tekst)
       w.jev = {
         ms: o.ms,
         zrodlo: r.zrodlo,
@@ -654,6 +696,12 @@ async function biegA(naZywo: Klient | null, modul: Modul = MODUL_TERAZ): Promise
         bramka,
         zamknieta: Boolean(odp && modul.opisz.bramkaZamknieta(odp)),
         ...(o.ponowienia && { ponowienia: o.ponowienia }),
+        oceny,
+        zapytanie: {
+          pytan: Object.keys(zapytanie.pytania).length,
+          znakow: JSON.stringify(zapytanie.pytania).length,
+        },
+        ...(o.usage && { usage: o.usage }),
       }
       process.stderr.write(`A ${p.id} ${o.ms} ms ${r.zrodlo}\n`)
     }

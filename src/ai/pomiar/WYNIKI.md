@@ -3101,6 +3101,346 @@ Opóźnienie i rozmiar (pośrednik czeka 800 ms, limit znaków to 60 tys.):
 
 Wywołania na żywo: 88 (16 + 24 w próbie źródeł siły, 24 + 24 w sprawdzianach końcowych).
 
+## Pomiar #182 i #183 na zbiorze nr 8 (#184)
+
+Pomiar z 2026-10-04, model `jev-1.13.0`. Obie zmiany zmierzyłem na świeżym zbiorze, każdą
+osobno. W kodzie aplikacji nic nie zmieniałem i niczego nie cofałem: tu są tylko liczby
+i rekomendacja.
+
+### Zbiór nr 8
+
+`kontrolny8-opisz.json`: 150 opisów „opisz siebie”, bez części B.
+
+- Napisał go na ślepo osobny agent AI, bez dostępu do kodu, poleceń i poprzednich zbiorów.
+  Jedynym wejściem był słownik etykiet (`etykiety-k8.txt`) i lista warstw.
+- Nowe pola wzorca: `sila` (każda potrzeba → 1–3) i `nie_chce` (7 id). W zbiorze jest sześć
+  nowych potrzeb (`auto`, `wozek`, `praca_zdalna`, `zycie_nocne`, `sport`, `student`).
+  Rozkład: 96 wystąpień nowych potrzeb w 82 opisach, siła 1 / 2 / 3 = 30 / 158 / 55,
+  46 „nie chcę” w 40 opisach, 100 opisów z profilem null.
+- Cechy: `nowa_potrzeba` 82, `nie_chce` 40, `sila_3` 45, `sila_1` 25, `sprzeczne` 12,
+  `w_imieniu` 11, `nikt_nie_szuka` 8, `bez_sygnalu` 6.
+- Plik wszedł bajt w bajt osobnym commitem `dc6a96e` (00:16:49). Było to przed kodem #183
+  (`8ff0e0c`, 00:21:48) i #182 (`81b6602`, 00:26:03) i przed pierwszym wywołaniem na żywo.
+  Walidacja (`zbiory.test.ts`) sprawdza id względem słownika autora, a nie POTRZEBY.
+- Dwa krótkie opisy bez sygnału (K8-A145, K8-A147) są dosłownie takie same jak K7-A051
+  i K7-A048. Zostały, tak jak K3-B05 i K4-B25.
+- Tekstów nie czytałem. Z pozycji widziałem tylko id, cechy i etykiety w liczbach zbiorczych.
+
+### Metoda: pięć osobnych drzew kodu
+
+| Przebieg | Kod | Co | Pytań w zapytaniu |
+|---|---|---|---|
+| **R0** | `a78589d` (BASE: `main` tuż przed #183; wczesny commit #182 `7ea4f84` z opisami warstw już w nim) | bez zmian | 16 |
+| **R1** | BASE + cherry-pick `81b6602` (`2995275`, tylko lokalnie) | tylko #182 | 26 |
+| **R2** | `8ff0e0c` (= BASE + #183, rodzicem jest BASE) | tylko #183 | 22 |
+| **R3** | `81b6602` (`main` z oboma) | #182 i #183 | 32 |
+| **R3b** | jak R3 | A/A wersji końcowej | 32 |
+
+- Każde drzewo wyeksportowałem z gita (`git archive`) do osobnego katalogu. Każdy przebieg to
+  `pomiar.ts --na-zywo --tylko a --zbior kontrolny8` z własnego drzewa, a więc z własnymi
+  zapytaniami i własnym przetwarzaniem. Wspólny jest tylko `pomiar.ts` z tej gałęzi (zapisuje
+  dodatkowo odpowiedź na każde pytanie, pełne zrozumienie, rozmiar zapytania i `usage`).
+  #182 i #183 `pomiar.ts` nie zmieniały.
+- **Konflikt przy cherry-picku #182 na BASE.** #182 był pisany na #183, więc konflikt wyszedł
+  w czterech plikach. Rozwiązałem go minimalnie:
+  - `api/_jev.js`: wersja z #182 (`LIMITY.pytan` 32, bo R1 ma 26 pytań);
+  - `spelnienie.ts`: bez części #183 (`--syntetyczne`), z linią `--182`;
+  - `opiszSiebie.test.ts`: bez testów #183, licznik pytań 26;
+  - `WYNIKI.md`: wersja BASE.
+
+  `opiszSiebie.ts` złączył się sam. Zmienione linie kodu `opiszSiebie.ts` i `spelnienie.ts`
+  są identyczne z `81b6602` (ten sam skrót posortowanych linii diffu). W drzewie R1 pada
+  5 testów, wszystkie zależne od #183 (limit 16 w `api/_jev.test.js`, nowe potrzeby
+  w `GRUPY_SILY` i tabeli). Drzewo służyło tylko do pomiaru.
+- Zapytania różnią się między drzewami, i tak ma być (skrót sha256 zapytań dla 150 opisów:
+  R0 `2d9195b4`, R1 `09d0086e`, R2 `b9cf16c8`, R3 `fefb4ade`). Każde przechodzi walidację
+  pośrednika swojego drzewa.
+- Pięć przebiegów szło równolegle, o tej samej porze. Przedziały to 95% Wilsona. „Zyski /
+  straty” to porównanie sparowane z R0 na tych samych pozycjach, a p to dokładny test McNemara.
+- **Stały słownik do porównań.** „Stare potrzeby (10)” to 10 potrzeb z twierdzeniem w BASE.
+  „Dokładnie (stare)” to profil + te 10 + „nic”, czyli to samo „dokładnie” co w #174. „Dokładnie
+  (21)” to profil + wszystkie 21 potrzeb słownika + „nic”. „Dokładnie (21 + nie chcę)” wymaga
+  jeszcze tego samego zbioru „nie chcę”. Potrzeby spoza słownika zbioru (`koszty`, `kolej`,
+  `sasiedzi`) nie liczą się ani na plus, ani na minus.
+- Siła bez sygnału = waga z tabeli, czyli siła 3 (tak działa kod przed #182 i po nim).
+
+### Wynik (JEV = to, co widzi użytkownik; reguły = ścieżka bez sieci w tym samym drzewie)
+
+| | Reguły R0 | Reguły R3 | R0 bez zmian | R1 tylko #182 | R2 tylko #183 | **R3 oba** | R3b (A/A) |
+|---|---|---|---|---|---|---|---|
+| Profil | 82% [75–87%] (123) | 82% [75–87%] (123) | 77% [69–83%] (115) | 77% [69–83%] (115) | 75% [68–82%] (113) | **75% [67–81%] (112)** | 78% [71–84%] (117) |
+| Dokładnie (stare) | 49% [41–57%] (74) | 59% [51–66%] (88) | 55% [47–62%] (82) | 58% [50–66%] (87) | 57% [49–64%] (85) | **59% [51–67%] (89)** | 61% [53–69%] (92) |
+| Dokładnie (21) | 28% [21–36%] (42) | 49% [41–57%] (74) | 25% [19–33%] (38) | 27% [21–35%] (41) | 41% [34–49%] (62) | **42% [34–50%] (63)** | 44% [36–52%] (66) |
+| Dokładnie (21 + „nie chcę”) | 16% [11–23%] (24) | 41% [33–49%] (61) | 17% [12–23%] (25) | 26% [20–34%] (39) | 32% [25–40%] (48) | **40% [33–48%] (60)** | 42% [34–50%] (63) |
+| Stare potrzeby (10) P / R / F1 | 67 / 82 / 74% | 67 / 81 / 73% | 81 / 94 / 87% | 79 / 93 / 85% | 82 / 89 / 85% | 82 / 89 / 85% | 83 / 89 / 86% |
+| Nowe potrzeby (6) P / R / F1 | – / 0 / – | 97 / 80 / 88% | – / 0 / – | – / 0 / – | 100 / 86 / 93% | **99 / 86 / 92%** | 100 / 86 / 93% |
+| Wszystkie 21 P / R / F1 | 70 / 51 / 59% | 78 / 81 / 80% | 82 / 40 / 54% | 80 / 39 / 52% | 90 / 72 / 80% | 89 / 72 / 80% | 90 / 72 / 80% |
+| „Nie chcę” P / R / F1 | – / 0 / – | 96 / 52 / 68% | – / 0 / – | 88 / 91 / 89% | – / 0 / – | **85 / 89 / 87%** | 86 / 91 / 88% |
+| Kategorie ważne P / R / F1 (`pomiar.ts`, wzorzec z tabeli drzewa) | 73 / 89 / 80% | 89 / 88 / 89% | 83 / 86 / 84% | 83 / 83 / 83% | 95 / 87 / 91% | 94 / 87 / 91% | 94 / 87 / 90% |
+| „Nic” tam, gdzie trzeba | 12/14 | 11/14 | 13/14 | 13/14 | 13/14 | 13/14 | 12/14 |
+| Zapas (reguły) / bramka zamknięta | – | – | 29 / 12 | 22 / 13 | 14 / 13 | 13 / 13 | 12 / 13 |
+
+Kategorie nie są porównywalne między drzewami bez #183 i z #183, bo wzorzec kategorii bierze się
+z tabeli POTRZEBY drzewa, a #183 dopisał do niej sześć wierszy.
+
+**Nowe potrzeby (#183)** – P / R (tp, fp, fn) na 96 wystąpieniach wzorca:
+
+| Potrzeba | n | Reguły R3 | R2 | **R3** | R3b |
+|---|---|---|---|---|---|
+| auto | 14 | 100 / 93% (13, 0, 1) | 100 / 86% (12, 0, 2) | 100 / 86% | 100 / 86% |
+| wózek | 15 | 92 / 80% (12, 1, 3) | 100 / 93% (14, 0, 1) | 93 / 93% (14, 1, 1) | 100 / 93% |
+| praca zdalna | 19 | 100 / 84% (16, 0, 3) | 100 / 100% (19, 0, 0) | 100 / 100% | 100 / 100% |
+| życie nocne | 17 | 100 / 76% (13, 0, 4) | 100 / 76% (13, 0, 4) | 100 / 76% | 100 / 82% |
+| sport | 16 | 100 / 81% (13, 0, 3) | 100 / 69% (11, 0, 5) | 100 / 69% | 100 / 69% |
+| student | 15 | 91 / 67% (10, 1, 5) | 100 / 93% (14, 0, 1) | 100 / 93% | 100 / 87% |
+
+**„Nie chcę” (#182)** – P / R (tp, fp, fn) na 46 wystąpieniach wzorca:
+
+| „Nie chcę” | n | Reguły R3 | R1 | **R3** | R3b |
+|---|---|---|---|---|---|
+| życie nocne obok | 5 | 67 / 40% (2, 1, 3) | 44 / 80% (4, 5, 1) | 38 / 60% (3, 5, 2) | 44 / 80% |
+| turyści | 5 | 100 / 60% | 100 / 80% | 100 / 80% | 100 / 80% |
+| szkoła obok | 5 | 100 / 20% | 100 / 80% | 100 / 80% | 100 / 80% |
+| duża droga | 12 | 100 / 42% | 100 / 100% | 100 / 100% | 100 / 100% |
+| przemysł | 6 | 100 / 67% | 100 / 100% | 100 / 100% | 100 / 100% |
+| imprezy | 5 | 100 / 80% | 100 / 80% | 100 / 80% | 100 / 80% |
+| budowy | 8 | 100 / 63% | 89 / 100% (8, 1, 0) | 80 / 100% (8, 2, 0) | 80 / 100% |
+
+Fałszywe „nie chcę” to głównie `zycie_nocne_obok` (5 z 6–7). Ich źródła nie oglądałem, bo to
+zbiór kontrolny. Nie wiem więc, czy to ten sam opis z „lubię knajpy”, czy z „cisza”.
+
+**Siła (#182)** – na potrzebach wzorca, które przebieg rozpoznał (brak siły = 3):
+
+| Przebieg | Podzbiór | n | Poziom dokładnie | \|Δ\| śr. | Stała 3 (= przed #182): dokładnie / \|Δ\| | Stała 2: dokładnie / \|Δ\| |
+|---|---|---|---|---|---|---|
+| R1 | wszystkie (same stare) | 95 | **50 (53%)** | **0,48** | 22 (23%) / 0,83 | 67 (71%) / 0,29 |
+| R3 | stare potrzeby | 93 | 48 (52%) | 0,49 | 20 (22%) / 0,85 | 67 (72%) / 0,28 |
+| R3 | nowe potrzeby | 83 | 23 (28%) | 0,90 | 22 (27%) / 0,90 | 47 (57%) / 0,43 |
+| R3 | potrzeby spoza GRUPY_SILY (zawsze 3) | 50 | 9 (18%) | 1,00 | 9 (18%) / 1,00 | 32 (64%) / 0,36 |
+| R3 | wszystkie | 176 | 71 (40%) | 0,69 | 42 (24%) / 0,88 | 114 (65%) / 0,35 |
+| R3b | wszystkie | 175 | 68 (39%) | 0,71 | 42 (24%) / 0,87 | 113 (65%) / 0,35 |
+
+- Macierz wzorzec × rozpoznanie w R1 (wiersze 1–3, kolumny 1–3): `[2,3,1] [9,28,30] [0,2,20]`.
+  Korelacja Spearmana 0,44 (R1), 0,12 (R3), 0,10 (R3b). W R3 spadek bierze się z potrzeb spoza
+  grup: `praca_zdalna`, `zycie_nocne` i `sport` zawsze dostają 3, a wzorzec to zwykle 2.
+- Sparowane z R0 (siła 3) na tych samych potrzebach: R1 trafia poziom +30 / −2 (p < 0,001),
+  |Δ| 0,83 → 0,48. R3: +31 / −3 (p < 0,001).
+- **Ale stała 2 jest lepsza od siły z JEV:** 71% zamiast 53% poziomu dokładnie, |Δ| 0,29 zamiast
+  0,48. Wzorzec ma siłę 2 w 65% potrzeb, a JEV daje 3 tam, gdzie wzorzec ma 2, w 30 z 67
+  przypadków.
+
+**Cechy** (pozycje; kolejno: profil / dokładnie (21) / dokładnie (stare) / nowe potrzeby trafione
+/ „nie chcę” trafione / siła dokładnie):
+
+| Cecha | n | Reguły R3 | R0 | R1 | R2 | **R3** | R3b |
+|---|---|---|---|---|---|---|---|
+| `nowa_potrzeba` | 82 | 64 / 30 / 41 / 77 z 96 / 6 z 11 / 38 z 130 | 55 / 0 / 32 / 0 / 0 / – | 54 / 0 / 33 / 0 / 9 / 24 z 40 | 53 / 25 / 36 / 83 / 0 / – | 53 / 23 / 37 / 83 / 8 / 43 z 120 | 57 / 27 / 41 / 83 / 9 / 43 z 120 |
+| `nie_chce` | 40 | 37 / 27 / 32 / 9 z 12 / 24 z 46 / 7 z 45 | 31 / 13 / 19 / 0 / 0 / – | 31 / 16 / 24 / 0 / 42 / 12 z 25 | 31 / 14 / 20 / 10 / 0 / – | 31 / 17 / 25 / 10 / 41 / 15 z 35 | 31 / 18 / 25 / 10 / 42 / 13 z 35 |
+| `sila_1` | 25 | 23 / 12 / 17 / 19 z 27 / 2 z 3 / 4 z 37 | 18 / 2 / 12 / 0 / 0 / – | 17 / 2 / 12 / 0 / 3 / 5 z 11 | 16 / 5 / 10 / 21 / 0 / – | 16 / 5 / 12 / 21 / 3 / 9 z 31 | 17 / 6 / 12 / 21 / 3 / 8 z 31 |
+| `sila_3` | 45 | 38 / 20 / 23 / 30 z 32 / 5 z 7 / 51 z 72 | 33 / 8 / 22 / 0 / 0 / – | 34 / 9 / 24 / 0 / 7 / 24 z 36 | 33 / 22 / 26 / 31 / 0 / – | 32 / 21 / 25 / 31 / 7 / 35 z 65 | 33 / 22 / 26 / 31 / 7 / 36 z 65 |
+| `sprzeczne` | 12 | 11 / 5 / 7 / 8 z 9 / 2 z 4 / 5 z 16 | 9 / 2 / 5 / 0 / 0 / – | 9 / 1 / 4 / 0 / 3 / 4 z 7 | 9 / 3 / 5 / 8 / 0 / – | 9 / 3 / 5 / 8 / 2 / 6 z 15 | 9 / 4 / 6 / 8 / 3 / 4 z 15 |
+| `w_imieniu` | 11 | 3 / 1 / 2 / 8 z 10 / – / 4 z 19 | 7 / 1 / 5 / 0 / – / – | 7 / 1 / 5 / 0 / – / 2 z 10 | 7 / 3 / 5 / 10 / – / – | 8 / 4 / 6 / 10 / – / 5 z 20 | 9 / 4 / 7 / 10 / – / 6 z 20 |
+| `nikt_nie_szuka` | 8 | 7 / 6 / 6 | 8 / 8 / 8 | 8 / 8 / 8 | 8 / 8 / 8 | 8 / 8 / 8 | 8 / 8 / 8 |
+| `bez_sygnalu` | 6 | 6 / 5 / 5 | 6 / 5 / 5 | 6 / 5 / 5 | 6 / 5 / 5 | 6 / 5 / 5 | 6 / 4 / 4 |
+
+`sila_1` to cel #182, którego JEV nie trafia: siła 1 wychodzi dobrze w 5 z 11 (R1) i 9 z 31
+(R3) potrzeb. „W imieniu” reguły psują profil (3 z 11), JEV nie (7–9 z 11).
+
+**Sparowane względem R0** (zyski / straty, p McNemara):
+
+| | R0 → R1 (#182) | R0 → R2 (#183) | **R0 → R3 (oba)** | R0 → R3b |
+|---|---|---|---|---|
+| Profil | +1 / −1, p = 1 | +0 / −2, p = 0,50 | +1 / −4, p = 0,38 | +3 / −1, p = 0,63 |
+| Dokładnie (stare) | +8 / −3, p = 0,23 | +10 / −7, p = 0,63 | +15 / −8, p = 0,21 | +20 / −10, p = 0,099 |
+| Stare potrzeby (15) bez błędu | +2 / −5, p = 0,45 | +6 / −5, p = 1 | +7 / −8, p = 1 | +8 / −8, p = 1 |
+| Stare potrzeby (10): wystąpienia wzorca zyskane / utracone | +0 / −1, p = 1 | +0 / −4, p = 0,13 | +0 / −4, p = 0,13 | +0 / −4, p = 0,13 |
+| **Dokładnie (21)** | +6 / −3, p = 0,51 | **+25 / −1, p < 0,001** | **+28 / −3, p < 0,001** | +32 / −4, p < 0,001 |
+| **Dokładnie (21 + „nie chcę”)** | **+15 / −1, p < 0,001** | **+24 / −1, p < 0,001** | **+36 / −1, p < 0,001** | +40 / −2, p < 0,001 |
+| **Nowe potrzeby bez błędu** | +0 / −0 | **+69 / −0, p < 0,001** | **+68 / −0, p < 0,001** | +69 / −0, p < 0,001 |
+| **„Nie chcę” bez błędu** | **+34 / −4, p < 0,001** | +0 / −0 | **+32 / −4, p < 0,001** | +33 / −4, p < 0,001 |
+
+Utracone wystąpienia starych potrzeb w R2 i R3 to `rower` (4 → 2) i `praca_centrum` (3 → 1).
+To 4 z 89, czyli bez istotności, ale powtarza się w R2, R3 i R3b.
+
+**JEV a reguły w tym samym przebiegu (R3, sparowane).** Na tym zbiorze JEV nie jest lepszy od
+reguł. Profil: 112 wobec 123 (tylko JEV 14 / tylko reguły 25, p = 0,11). Dokładnie (21): 63 wobec
+74 (28 / 39, p = 0,22). Dokładnie (stare): 89 wobec 88. Reguły z #182 i #183 nadrabiają
+nowe potrzeby (R 80%) i potrzeby bez twierdzenia dla JEV (`cisza`, `sklepy`,
+`bezpieczenstwo`, `singiel`). Tych JEV nie rozpoznaje, więc „stare potrzeby (15)” mają w JEV
+pełność 63–66%, a w regułach 82–84%. Dużo gorzej reguły rozpoznają „nie chcę” (pełność 52%
+wobec 89%).
+
+### Spełnienie na mapie (`spelnienie.ts`, kod każdego drzewa)
+
+Dla każdego opisu z potrzebą albo „nie chcę” (136 ze 150) liczę top 100 adresów (tryb „kupuję”,
+176 tys. adresów) kodem danego drzewa (`wagiZeZrozumienia`, silnik) z trzech źródeł:
+
+- sam wzorcowy profil;
+- wzorcowe etykiety: profil, potrzeby, a siła i „nie chcę” tylko tam, gdzie kod je zna;
+- zrozumienie JEV z przebiegu.
+
+Wskaźniki spełnienia to stała miarka dla wszystkich drzew: `MIARY` z `spelnienie.ts` po #183
+i `MIARY_NIE` z #182. Liczę pary opis × wskaźnik: czy top jest lepszy niż przy samym profilu,
+a sparowanie z R0 pokazuje, czy wersja jest lepsza od R0 na tej samej parze. Skrypt
+(`mapa8.ts`) i agregacja leżą poza repo, jak w #170 i #174.
+
+**Względem samego profilu** (lepiej / gorzej / bez zmiany):
+
+| Etykiety | Grupa | n | R0 | R1 | R2 | **R3** |
+|---|---|---|---|---|---|---|
+| wzorcowe | stare potrzeby | 280 | 186 / 56 / 38 | 162 / 67 / 51 | 173 / 70 / 37 | 161 / 75 / 44 |
+| wzorcowe | nowe potrzeby | 192 | 46 / 35 / 111 | 43 / 39 / 110 | 143 / 31 / 18 | **141 / 27 / 24** |
+| wzorcowe | „nie chcę” | 46 | 19 / 5 / 22 | 36 / 2 / 8 | 20 / 9 / 17 | **36 / 2 / 8** |
+| JEV | stare potrzeby | 280 | 154 / 88 / 38 | 149 / 85 / 46 | 149 / 98 / 33 | 148 / 92 / 40 |
+| JEV | nowe potrzeby | 192 | 92 / 56 / 44 | 94 / 55 / 43 | 137 / 33 / 22 | **130 / 38 / 24** |
+| JEV | „nie chcę” | 46 | 21 / 14 / 11 | 33 / 3 / 10 | 21 / 14 / 11 | **32 / 5 / 9** |
+
+**Sparowane z R0** (para lepsza / gorsza niż w R0, p McNemara):
+
+| Etykiety | Grupa | R0 → R1 (#182) | R0 → R2 (#183) | R0 → R3 (oba) |
+|---|---|---|---|---|
+| wzorcowe | stare potrzeby | **+53 / −114, p < 0,001** | +40 / −46, p = 0,59 | **+62 / −125, p < 0,001** |
+| wzorcowe | nowe potrzeby | +22 / −33, p = 0,18 | **+142 / −26, p < 0,001** | **+137 / −24, p < 0,001** |
+| wzorcowe | „nie chcę” | **+34 / −0, p < 0,001** | +2 / −4, p = 0,69 | **+34 / −0, p < 0,001** |
+| wzorcowe, sama siła | stare potrzeby | **+60 / −105, p < 0,001** | – | +69 / −119, p < 0,001 |
+| wzorcowe, samo „nie chcę” | stare potrzeby | +17 / −34, p = 0,024 | – | +57 / −80, p = 0,060 |
+| wzorcowe, samo „nie chcę” | „nie chcę” | +33 / −1, p < 0,001 | – | +33 / −1, p < 0,001 |
+| JEV | stare potrzeby | +64 / −87, p = 0,073 | +54 / −48, p = 0,62 | +89 / −103, p = 0,35 |
+| JEV | nowe potrzeby | +26 / −32, p = 0,51 | **+123 / −31, p < 0,001** | **+115 / −42, p < 0,001** |
+| JEV | „nie chcę” | **+37 / −3, p < 0,001** | +4 / −5, p = 1 | **+37 / −5, p < 0,001** |
+
+R3b ma te same liczby co R3 przy etykietach wzorcowych (to deterministyczne), a przy etykietach
+JEV różni się o 1–5 par.
+
+**Stare potrzeby wg siły we wzorcu** (wzorcowe etykiety, para lepsza / gorsza niż w R0):
+
+| Siła we wzorcu | n | R0 → R1, sama siła | R0 → R1 | R0 → R1, JEV |
+|---|---|---|---|---|
+| 1 | 59 | +3 / −18, p = 0,001 | +2 / −20, p < 0,001 | +4 / −13, p = 0,049 |
+| 2 | 307 | +70 / −100, p = 0,026 | +61 / −116, p < 0,001 | +72 / −95, p = 0,088 |
+| 3 | 106 | +12 / −10, p = 0,83 | +12 / −11, p = 1 | +14 / −11, p = 0,69 |
+
+(Tu „n” liczy pary potrzeb na tak, także nowych; w R1 nowych nikt nie waży, więc to w praktyce
+stare.) Siła robi dokładnie to, co obiecuje: potrzeby „byłoby miło” i „ważne” ważą mniej, więc
+top gorzej je spełnia. Potrzeby z siłą 3 nic na tym nie zyskują (+12 / −10).
+
+**Przykłady (mediana wskaźnika w top 100 po opisach; profil → R0 → R3, etykiety wzorcowe):**
+
+- turyści – łóżka noclegowe w 300 m: 61 → 61 → 3;
+- imprezy – dni imprez w 500 m: 6 → 6 → 0;
+- przemysł – odległość do emitenta: 4,0 → 4,0 → 5,4 km;
+- szkoła obok – odległość do szkoły: 187 → 208 → 252 m;
+- budowy – pozwolenia w 500 m: 2,5 → 2,5 → 1;
+- życie nocne – bary w 300 m (% top z > 0): 13 → 13 → 96;
+- student – akademik: 1241 → 1241 → 906 m;
+- sport – obiekt sportowy: 834 → 834 → 388 m;
+- wózek – POZ bez barier: 410 → 410 → 263 m;
+- auto – SPP (% top): 41 → 41 → 6,5.
+
+### Stabilność (A/A)
+
+| Para | Odpowiedź inna | Profil | Potrzeby | Siła | „Nie chcę” | Kategorie | Wybór profilu | „Dokładnie (21)” zmienione | „Dokładnie (stare)” zmienione | \|Δ ocen\| śr. / max |
+|---|---|---|---|---|---|---|---|---|---|---|
+| R3 / R3b | 25/150 (17%) | 5 | 11 | **17** | 1 | 9 | 2 | 5 | 9 | 0,013 / 0,41 |
+
+- Siła jest największym nowym źródłem przeskoków: 17 ze 150 opisów zmienia siłę którejś
+  potrzeby między dwoma identycznymi przebiegami. „Nie chcę” zmienia się w 1 opisie.
+- Wynik nagłówkowy waha się o 2–3 pozycje: „dokładnie (stare)” 89 / 92, „dokładnie (21)”
+  63 / 66, profil 112 / 117. Na zbiorze nr 7 (#174) było 17 / 120 różnych odpowiedzi.
+- Pary bazowej (R0 / R0b) nie robiłem. Szum dla porównań z R0 oceniam z R3 / R3b: około
+  ±3 pozycje i do ±5 przy profilu.
+
+### Opóźnienie i rozmiar zapytania
+
+| Przebieg | Pytań | Znaki pytań | Tokeny wej. / wyj. (mediana, `usage`) | p50 / p95 / max | > 800 ms |
+|---|---|---|---|---|---|
+| R0 | 16 | 4 373 | 1 867 / 348 | 271 / 346 / 562 ms | 0 |
+| R1 | 26 | 8 495 | 3 403 / 538 | 284 / 346 / 398 ms | 0 |
+| R2 | 22 | 7 829 | 3 149 / 462 | 281 / 391 / 552 ms | 0 |
+| R3 | 32 | 11 951 | 4 685 / 652 | 295 / 382 / 773 ms | 0 |
+| R3b | 32 | 11 951 | 4 685 / 652 | 295 / 398 / 542 ms | 0 |
+
+- Zapytanie urosło 2,5 raza (1,9 tys. → 4,7 tys. tokenów), a p50 wzrosło o ok. 25 ms. Limit
+  pośrednika (32 pytania) jest wyczerpany do końca.
+- Max 773 ms w R3 to 27 ms od timeoutu 800 ms. Żadnego timeoutu ani ponowienia w 750
+  wywołaniach.
+
+**Wywołania na żywo: 751.** To 5 × 150 udanych i 1 próbne (sprawdzenie zapisu `usage` na
+własnym zdaniu). Nieudanych i ponowionych: 0. Budżet: 900. Przebieg samych reguł, przeliczenie
+z plików i mapa nic nie kosztowały.
+
+### Decyzja – z danych, bez cofania
+
+**#183 (sześć nowych potrzeb): ZOSTAJE.**
+
+- Cel poprawia się daleko ponad szum:
+  - nowe potrzeby: pełność 0 → 86%, precyzja 99–100%;
+  - „dokładnie (21)”: +25 / −1 (p < 0,001);
+  - na mapie (etykiety JEV) nowe potrzeby spełnione lepiej niż w R0 w 123 parach, gorzej w 31
+    (p < 0,001).
+- Bez istotnej straty:
+  - profil +0 / −2 (p = 0,5);
+  - „dokładnie (stare)” +10 / −7;
+  - stare potrzeby bez błędu +6 / −5;
+  - na mapie stare potrzeby +40 / −46 (wzorzec) i +54 / −48 (JEV).
+- Do obserwacji:
+  - −4 wystąpienia starych potrzeb (`rower`, `praca_centrum`; p = 0,13, powtarza się w R3
+    i R3b);
+  - `sport` ma pełność tylko 69%;
+  - zapytanie +3,1 tys. znaków przy tym samym p50.
+
+**#182 (siła i „nie chcę”): według reguły „cel ponad szum bez istotnej straty” – rekomendacja
+cofnięcia części o sile. „Nie chcę” ma dowody za.**
+
+- **„Nie chcę” – cel poprawia się wyraźnie:**
+  - pełność 0 → 91%, precyzja 88%;
+  - „nie chcę” bez błędu +34 / −4 (p < 0,001);
+  - na mapie top odsuwa się od rzeczy niechcianej: +34 / −0 (wzorzec), +37 / −3 (JEV),
+    oba p < 0,001.
+- **Siła – cel poprawia się tylko względem tego, co było:**
+  - poziom trafiony +30 / −2 względem stałej 3 (p < 0,001);
+  - ale stała 2 jest lepsza od JEV (71% wobec 53% trafień, |Δ| 0,29 wobec 0,48);
+  - korelacja z wzorcem w R3 to tylko 0,12;
+  - siła to największe źródło przeskoków A/A (17 / 150).
+- **Istotna strata gdzie indziej – stare potrzeby na mapie:**
+  - przy wzorcowych etykietach +53 / −114 (p < 0,001), z czego +60 / −105 daje sama siła;
+  - potrzeby o sile 1–2 ważą mniej i top gorzej je spełnia, a potrzeby o sile 3 nic nie zyskują
+    (+12 / −10).
+  - Przy etykietach JEV strata nie jest istotna (+64 / −87, p = 0,073; R3 +89 / −103,
+    p = 0,35), bo JEV często daje 3 tam, gdzie wzorzec ma 2.
+- **Samo „nie chcę” też kosztuje trochę starych potrzeb** przy wzorcowych etykietach:
+  +17 / −34 (p = 0,024). To wymiana z celem: ta sama warstwa, inny kierunek, np. gastronomia
+  dalej przy „knajpach pod oknem”. Za to 33 pary są lepsze, a 1 gorsza na rzeczach
+  niechcianych.
+- **Rozpoznanie bez strat:**
+  - profil +1 / −1;
+  - „dokładnie (stare)” +8 / −3;
+  - stare potrzeby bez błędu +2 / −5 (p = 0,45);
+  - opóźnienie +13 ms p50.
+- **Rekomendacja:**
+  - wagi z siły (`wagaZSily` w `zloz`) i trzy pytania o siłę cofnąć. Siła z JEV przegrywa
+    ze stałą, a mapa przez nią gorzej spełnia stare potrzeby;
+  - albo zostawić je jako opis (chip „byłoby miło”), bez wpływu na wagi. Zwalnia to też 3 z 32
+    pytań;
+  - „nie chcę” zostawić. Cena (+17 / −34 starych par przy wzorcu) jest mniejsza niż zysk na
+    celu i nie wychodzi istotnie przy etykietach JEV dla całego #182.
+
+  Decyzja należy do właściciela – tu niczego nie cofałem.
+
+### Bez sieci, do powtórzenia
+
+Przebiegi leżą w `przebiegi/k8-r0-184.json`, `k8-r1-184.json`, `k8-r2-184.json`,
+`k8-r3-184.json` i `k8-r3b-184.json`. Mają odpowiedź na każde pytanie (`oceny`), pełne
+zrozumienie (z `sily` i `nieChce`), rozmiar zapytania i `usage`; nie mają klucza ani nagłówków.
+`pomiar.ts --zbior kontrolny8 --z-pliku <plik>` odtwarza z nich liczby zbiorcze.
+
+Poza repo (scratchpad), jak w #170 i #174, zostały:
+
+- miary siły, „nie chcę” i nowych potrzeb;
+- porównania sparowane;
+- A/A;
+- `mapa8.ts`: spełnienie na mapie, uruchamiane w każdym drzewie.
+
 ## Na slajd
 
 **Zbiór kontrolny nr 7 (#174).** To 120 opisów i 150 pytań, które napisały na ślepo osobne
@@ -3176,6 +3516,11 @@ bez nowych wywołań:
 | `przebiegi/k7-r2-174.json` | zbiór kontrolny nr 7, BASE + #173 (`3a9580b`) | #174 |
 | `przebiegi/k7-r3-174.json` | zbiór kontrolny nr 7, `main` z #172 i #173 (`59a58c5`), wynik nagłówkowy | #174 |
 | `przebiegi/k7-r3b-174.json` | zbiór kontrolny nr 7, powtórka R3 (A/A wersji końcowej) | #174 |
+| `przebiegi/k8-r0-184.json` | zbiór kontrolny nr 8 (150 opisów), kod BASE `a78589d` – bez #182 i #183 | #184 |
+| `przebiegi/k8-r1-184.json` | zbiór kontrolny nr 8 (150 opisów), BASE + #182 (cherry-pick `81b6602`) | #184 |
+| `przebiegi/k8-r2-184.json` | zbiór kontrolny nr 8 (150 opisów), BASE + #183 (`8ff0e0c`) | #184 |
+| `przebiegi/k8-r3-184.json` | zbiór kontrolny nr 8 (150 opisów), `main` z #182 i #183 (`81b6602`), wynik nagłówkowy | #184 |
+| `przebiegi/k8-r3b-184.json` | zbiór kontrolny nr 8 (150 opisów), powtórka R3 (A/A wersji końcowej) | #184 |
 
 Przebiegów zbioru nr 1 (#147, #150) nie zapisywaliśmy pozycja po pozycji – są tylko liczby
 zbiorcze powyżej. Raport z przeglądu projektu JEV (nazwy warstw, prawdopodobieństwa, profil,
