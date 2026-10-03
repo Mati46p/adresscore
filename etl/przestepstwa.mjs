@@ -3,6 +3,7 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { DANE, dzis, pobierzDoCache, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
+import { PRZENIESIONE } from './uprosc-kryteria.mjs'
 
 export const ROK = 2025
 const BDL_API = 'https://bdl.stat.gov.pl/api/v1/data/by-variable'
@@ -59,6 +60,17 @@ export function powiatAdresu(teryt) {
 const urlZmiennej = (id) =>
   `${BDL_API}/${id}?unit-parent-id=011200000000&unit-level=5&year=${ROK}&format=json&lang=pl&page-size=100`
 
+/**
+ * Grupa i kierunek warstwy z PRZENIESIONE (etl/uprosc-kryteria.mjs, #171). Importujemy, a nie
+ * kopiujemy: inaczej ponowny bieg tego ETL cofałby integrację (warstwa wracałaby do „kontekstu”),
+ * a test z przestepstwa.test.mjs wykrywałby to dopiero po fakcie.
+ */
+export function grupa(id) {
+  const g = PRZENIESIONE[id]
+  if (!g) throw new Error(`Brak ${id} w PRZENIESIONE (etl/uprosc-kryteria.mjs) – dopisz grupę`)
+  return { kategoria: g[0], kierunek: g[1] }
+}
+
 async function main() {
   const { wersja, adresy } = wczytajAdresy()
   const odp = {}
@@ -107,30 +119,36 @@ async function main() {
       const t = powiatAdresu(a.teryt)
       return t ? powiaty[t][pole] : null
     })
+  const idPrzestepstw = `przestepstwa_1000_powiat_${ROK}`
+  const idWykrywalnosci = `wykrywalnosc_powiat_${ROK}`
+  // Opisy poniżej mają dwa nieaktualne zdania: „BIP Krakowa niedostępny z ETL” (BIP jest osiągalny,
+  // liczb per komisariat po prostu nie publikuje – patrz uwaga niżej i przestepstwa.md) oraz
+  // „nie wpływa na wynik” (od #171 waga startowa 0, więc użytkownik może ją podnieść). Zostają
+  // celowo: zmiana meta.opis unieważnia kompakt (niezgodnoscKompaktu: „inna meta”), a ten
+  // przebudowuje się osobno. Popraw je przy najbliższym przebudowaniu kompaktu.
   zapiszWskaznik(
     {
-      id: `przestepstwa_1000_powiat_${ROK}`,
+      id: idPrzestepstw,
       nazwa: `Przestępstwa stwierdzone na 1000 mieszkańców (powiat, ${ROK})`,
       opis: `${zastrzezenie}Dane per rejon komisariatu KMP Kraków nie są jeszcze dostępne (BIP Krakowa niedostępny z ETL), dlatego cały Kraków ma jedną wartość. Wskaźnik informacyjny – nie wpływa na wynik adresu.`,
       jednostka: 'na 1000 mieszkańców',
-      kategoria: 'kontekst',
-      kierunek: 'neutralny',
+      ...grupa(idPrzestepstw),
       rozdzielczosc: 'rejon',
       zadanie: 68,
       zrodla: [
         zrodlo('przestępstwa stwierdzone przez Policję na 1000 mieszkańców', ZMIENNE.na1000),
       ],
+      domyslnaWaga: 0,
     },
     wartosci('na1000'),
   )
   zapiszWskaznik(
     {
-      id: `wykrywalnosc_powiat_${ROK}`,
+      id: idWykrywalnosci,
       nazwa: `Wykrywalność sprawców przestępstw (powiat, ${ROK})`,
       opis: `${zastrzezenie}Wskaźnik wykrywalności sprawców przestępstw stwierdzonych ogółem; opisuje pracę Policji w powiecie, nie ryzyko przy adresie.`,
       jednostka: '%',
-      kategoria: 'kontekst',
-      kierunek: 'neutralny',
+      ...grupa(idWykrywalnosci),
       rozdzielczosc: 'rejon',
       zadanie: 68,
       zrodla: [
@@ -139,6 +157,7 @@ async function main() {
           ZMIENNE.wykrywalnosc,
         ),
       ],
+      domyslnaWaga: 0,
     },
     wartosci('wykrywalnosc'),
   )
@@ -157,7 +176,7 @@ async function main() {
       })),
       komisariatyKrakow: {
         uwaga:
-          'Przypisanie dzielnic do komisariatów pochodzi ze stron KMP Kraków. Liczby przestępstw per komisariat („Informacja o stanie bezpieczeństwa”, BIP RMK) nie zostały pobrane – serwer bip.krakow.pl (także przez web.archive.org) jest niedostępny z ETL, a BDL publikuje przestępstwa najniżej na poziomie powiatu. Wartości = null (brak danych, nie zero).',
+          'Przypisanie dzielnic do komisariatów pochodzi ze stron KMP Kraków. Liczb przestępstw per komisariat nie znaleziono w otwartych źródłach (stan 2026-10-03): Raporty o stanie Gminy 2018–2025 podają tylko sumę dla miasta, Informacja Policji dla Komisji Praworządności RMK jest w BIP wyłącznie jako protokół bez podziału na komisariaty, a BDL publikuje przestępstwa najniżej na poziomie powiatu. Wartości = null (brak danych, nie zero).',
         rejony: Object.values(komisariaty).map((k) => ({
           id: k.id,
           dzielnice: k.dzielnice,
