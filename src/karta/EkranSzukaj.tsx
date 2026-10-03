@@ -73,7 +73,7 @@ export function EkranSzukaj() {
               aria-pressed={warstwa === 'wynik'}
               onClick={() => ustawWarstwe('wynik')}
             >
-              Twój wynik
+              Wynik tej okolicy
             </button>
             {warstwy.map((w) => (
               <button
@@ -90,7 +90,7 @@ export function EkranSzukaj() {
           <div className="slot-mapy" data-slot="mapa">
             <MapaKrakowa
               heksy={wyniki?.heksy ?? BRAK_HEKSOW}
-              podpisWarstwy={wyniki?.podpis ?? 'Twój wynik'}
+              podpisWarstwy={wyniki?.podpis ?? 'Wynik tej okolicy'}
               wykluczone={wyniki?.wykluczoneHeksy}
               wybrany={adres ? { lon: adres.lon, lat: adres.lat } : null}
               onKlik={(lon, lat) => {
@@ -169,7 +169,7 @@ export function EkranSzukaj() {
                 {' · '}
                 {wynikWybranego === undefined || Number.isNaN(wynikWybranego)
                   ? 'brak danych'
-                  : `${wyniki?.podpis}: ${Math.round(wynikWybranego)}`}
+                  : `${wyniki?.podpis ?? 'Wynik tej okolicy'}: ${Math.round(wynikWybranego)}`}
                 {wyniki?.wykluczenia.wykluczony[adres.i] ? ' · wykluczony filtrem' : ''}
                 {wyniki?.wykluczenia.niewiadomy[adres.i]
                   ? ' · nie wiemy, czy spełnia filtr (brak danych)'

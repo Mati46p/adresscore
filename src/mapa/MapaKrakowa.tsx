@@ -64,7 +64,7 @@ import './mapa.css'
 export interface MapaKrakowaProps {
   /** h3 r10 → wynik 0–100; null = brak danych (szary). */
   heksy: ReadonlyMap<string, number | null>
-  /** Np. „Twój wynik" – nagłówek legendy. */
+  /** Np. „Wynik tej okolicy" – nagłówek legendy. */
   podpisWarstwy: string
   /** Znacznik wybranego adresu + lot kamery do niego. */
   wybrany?: { lon: number; lat: number } | null

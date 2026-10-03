@@ -28,7 +28,7 @@ export interface Wyniki {
   wykluczoneHeksy: ReadonlySet<string>
   /** Które adresy wykluczono, a które „nie wiemy” (brak danych dla filtra). */
   wykluczenia: Wykluczenia
-  /** Podpis legendy: „Twój wynik" albo nazwa wskaźnika. */
+  /** Podpis legendy: „Wynik tej okolicy" albo nazwa wskaźnika. */
   podpis: string
 }
 
@@ -84,7 +84,7 @@ export function policzWyniki(
       ? wykluczoneHeksy(wykluczenia.wykluczony, dane.grupyHeksow)
       : BRAK_WYKLUCZONYCH,
     wykluczenia,
-    podpis: wskaznik ? wskaznik.meta.nazwa : 'Twój wynik',
+    podpis: wskaznik ? wskaznik.meta.nazwa : 'Wynik tej okolicy',
   }
   ostatni = { dane, wagi, kierunki, warstwa, filtry, wynik }
   return wynik
