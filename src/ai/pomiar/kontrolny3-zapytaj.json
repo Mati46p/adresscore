@@ -1,0 +1,31 @@
+{
+  "opis": "Kontrolny zestaw nr 3 – „zapytaj o adres”. Napisany na ślepo przez agenta AI bez dostępu do kodu aplikacji, jej promptów ani wcześniejszych zestawów; jedyne wejście to etykiety.txt i warstwy.txt. Styl wpisywany z klawiatury (telefon/komputer): brak polskich znaków, literówki, skróty, slang. Data: 2026-10-03.",
+  "zasady": "tematy = jedna grupa na każdą rzecz, o którą pyta pytanie; grupa = tablica akceptowalnych id warstw z warstwy.txt (trafienie dowolnej warstwy z grupy zalicza grupę). Pytania spoza zakresu: [[\"nie_wiem\"]]. Warstwy wyborcze nie są używane, bo żadne pytanie nie dotyczy wyborów. cechy: pojedyncze, zlozone, dwa_z_tematu, poza_zakresem, niejednoznaczne oraz cechy stylu.",
+  "pozycje": [
+    {"id":"K3-B01","pytanie":"da sie tu spac przy otwartym oknie czy cos ciagle huczy?","tematy":[["halas_ldwn","halas_obwarzanek_lden"]],"cechy":["pojedyncze","posrednie","bez_polskich_znakow"]},
+    {"id":"K3-B02","pytanie":"jak tu zima z tym smrodem z kominow, ludzie jeszcze pala w piecach?","tematy":[["paleniska_200m","pm10_srednia","pm25_srednia","bap_srednia"]],"cechy":["pojedyncze","posrednie","bez_polskich_znakow"]},
+    {"id":"K3-B03","pytanie":"jak wisla wyleje to mnie zaleje czy spoko?","tematy":[["powodz_1proc","powodz_10proc","powodz_02proc"]],"cechy":["pojedyncze","slang","bez_polskich_znakow"]},
+    {"id":"K3-B04","pytanie":"czesto rano cos jezdzi z tego przystanku?","tematy":[["kursy_szczyt_h","przystanek_odleglosc"]],"cechy":["pojedyncze","posrednie","bez_polskich_znakow"]},
+    {"id":"K3-B05","pytanie":"drogo tu za metr?","tematy":[["cena_m2_mediana"]],"cechy":["pojedyncze","krotkie"]},
+    {"id":"K3-B06","pytanie":"bede bulic za postawienie auta pod blokiem?","tematy":[["spp_podstrefa"]],"cechy":["pojedyncze","slang","posrednie"]},
+    {"id":"K3-B07","pytanie":"jest tu gdzie pochodzic wsrod drzew po pracy?","tematy":[["zielen_udzial","zielen_worldcover_100m","drzewa_100m","przyroda_chroniona_odleglosc","woda_odleglosc"]],"cechy":["pojedyncze","posrednie","bez_polskich_znakow"]},
+    {"id":"K3-B08","pytanie":"wieczorem sa tu jakies latarnie czy ciemno jak w d***?","tematy":[["oswietlenie_100m"]],"cechy":["pojedyncze","slang","bez_polskich_znakow"]},
+    {"id":"K3-B09","pytanie":"nie postawia mi zaraz bloku przed oknem?","tematy":[["inwestycje_500m","inwestycje_500m_obwarzanek","mpzp_status"]],"cechy":["pojedyncze","posrednie","bez_polskich_znakow"]},
+    {"id":"K3-B10","pytanie":"mieszkaja tu raczej emeryci czy mlode rodziny?","tematy":[["udzial_65plus","udzial_0_14"]],"cechy":["pojedyncze","posrednie","bez_polskich_znakow"]},
+    {"id":"K3-B11","pytanie":"ile mi zejdzie stad na samolot?","tematy":[["lotnisko_czas_min"]],"cechy":["pojedyncze","posrednie","bez_polskich_znakow"]},
+    {"id":"K3-B12","pytanie":"gdzie najblizej oddam malego do zlobka, a starsza do podstawowki?","tematy":[["zlobek_odleglosc"],["szkola_podst_odleglosc"]],"cechy":["zlozone","dwa_z_tematu","bez_polskich_znakow"]},
+    {"id":"K3-B13","pytanie":"daleko stad do lekarza rodzinnego? i czy jest gdzie od razu wykupic recepte","tematy":[["przychodnia_odleglosc","przychodnia_bez_barier_odleglosc"],["apteka_odleglosc"]],"cechy":["zlozone","dwa_z_tematu","posrednie","bez_polskich_znakow"]},
+    {"id":"K3-B14","pytanie":"jezdzi stad jakis bus do miasta i ile sie potem jedzie pod sukiennice?","tematy":[["bus_mld_odleglosc","bus_mld_kursy_szczyt_h","przystanek_odleglosc"],["rynek_czas_min"]],"cechy":["zlozone","dwa_z_tematu","posrednie","bez_polskich_znakow"]},
+    {"id":"K3-B15","pytanie":"jest gdzie przypiac rower pod domem i czy da sie dojechac do centrum sciezka a nie ulica","tematy":[["stojaki_300m"],["droga_rowerowa_odleglosc","rower_infrastruktura_odleglosc"]],"cechy":["zlozone","dwa_z_tematu","bez_polskich_znakow","zdania_ciagniete"]},
+    {"id":"K3-B16","pytanie":"spozywczak i paczkomat daleko?","tematy":[["sklep_odleglosc"],["paczkomat_odleglosc"]],"cechy":["zlozone","dwa_z_tematu","slang","krotkie"]},
+    {"id":"K3-B17","pytanie":"jest blisko jakas hustawka dla corki? i jak ta szkola obok wypadla na egzaminie osmoklasisty","tematy":[["plac_zabaw_odleglosc"],["szkola_podst_wynik_e8"]],"cechy":["zlozone","dwa_z_tematu","posrednie","bez_polskich_znakow"]},
+    {"id":"K3-B18","pytanie":"spokojnie tu i da sie oddychac czy smog?","tematy":[["halas_ldwn","halas_obwarzanek_lden"],["pm25_srednia","pm10_srednia","no2_srednia","bap_srednia","paleniska_200m","przewietrzanie_klasa"]],"cechy":["zlozone","posrednie","bez_polskich_znakow"]},
+    {"id":"K3-B19","pytanie":"mysle o kupnie pod wynajem – ile tu chodzi metr i czy cos sie w okolicy buduje?","tematy":[["cena_m2_mediana"],["inwestycje_500m","inwestycje_500m_obwarzanek","bo_projekty_1km","mpzp_status"]],"cechy":["zlozone","bez_polskich_znakow"]},
+    {"id":"K3-B20","pytanie":"czy ten teren sie nie osuwa, czy nie zalewa i jak daleko do policji","tematy":[["osuwisko_odleglosc","teren_osuwiskowy","osiadanie_mm_rok"],["powodz_1proc","powodz_10proc","powodz_02proc"],["policja_odleglosc"]],"cechy":["zlozone","trzy_rzeczy","bez_polskich_znakow"]},
+    {"id":"K3-B21","pytanie":"jaki jest numer ksiegi wieczystej tego mieszkania?","tematy":[["nie_wiem"]],"cechy":["poza_zakresem","bez_polskich_znakow"]},
+    {"id":"K3-B22","pytanie":"ile kosztuje swiatlowod pod tym adresem i ktory operator?","tematy":[["nie_wiem"]],"cechy":["poza_zakresem","bez_polskich_znakow"]},
+    {"id":"K3-B23","pytanie":"kto wygra derby krakowa w ten weekend?","tematy":[["nie_wiem"]],"cechy":["poza_zakresem"]},
+    {"id":"K3-B24","pytanie":"dobra okolica dla dzieciakow?","tematy":[["szkola_podst_odleglosc","przedszkole_odleglosc","zlobek_odleglosc","plac_zabaw_odleglosc","udzial_0_14"]],"cechy":["niejednoznaczne","slang","krotkie"]},
+    {"id":"K3-B25","pytanie":"jak sie tu zyje na co dzien bez auta?","tematy":[["przystanek_odleglosc","kursy_szczyt_h","rynek_czas_min","uslugi_15min","sklep_odleglosc"]],"cechy":["niejednoznaczne","posrednie","bez_polskich_znakow"]}
+  ]
+}

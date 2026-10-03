@@ -8,7 +8,9 @@
       "!kontrolny-opisz.json",
       "!kontrolny-zapytaj.json",
       "!kontrolny2-opisz.json",
-      "!kontrolny2-zapytaj.json"
+      "!kontrolny2-zapytaj.json",
+      "!kontrolny3-opisz.json",
+      "!kontrolny3-zapytaj.json"
     ]
   }
 }

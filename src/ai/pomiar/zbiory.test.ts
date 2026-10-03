@@ -97,7 +97,7 @@ describe('zbiór wzorcowy „zapytaj o adres”', () => {
   })
 })
 
-// Zbiory kontrolne: nr 1 (#147) i nr 2 (#152), oba napisane na ślepo przez osobnego agenta,
+// Zbiory kontrolne: nr 1 (#147), nr 2 (#152) i nr 3 (#153), napisane na ślepo przez osobnego agenta,
 // bez dostępu do kodu. Etykiet nie poprawiamy – test pilnuje tylko, że id są znane, a pomiar
 // je zrozumie, i że teksty nie powtarzają się między zbiorami.
 const katalogWskaznikow = 'public/dane/wskazniki'
@@ -116,6 +116,7 @@ const warstwyJev = () =>
 const ZBIORY_KONTROLNE = [
   { nazwa: 'kontrolny', opisz: 'kontrolny-opisz.json', zapytaj: 'kontrolny-zapytaj.json' },
   { nazwa: 'kontrolny nr 2', opisz: 'kontrolny2-opisz.json', zapytaj: 'kontrolny2-zapytaj.json' },
+  { nazwa: 'kontrolny nr 3', opisz: 'kontrolny3-opisz.json', zapytaj: 'kontrolny3-zapytaj.json' },
 ] as const
 const kontrolne = ZBIORY_KONTROLNE.map((z) => ({
   nazwa: z.nazwa,
@@ -123,7 +124,16 @@ const kontrolne = ZBIORY_KONTROLNE.map((z) => ({
   zapytaj: czytaj(z.zapytaj).pozycje as PozycjaZapytaj[],
 }))
 const wszystkieOpisy = [...opisz, ...kontrolne.flatMap((k) => k.opisz)]
-const wszystkiePytania = [...zapytaj, ...kontrolne.flatMap((k) => k.zapytaj)]
+/**
+ * #153: pytanie K3-B05 (17 znaków) jest dosłownie takie samo jak K2-B09 – autor zbioru nr 3
+ * pisał na ślepo, bez dostępu do zbioru nr 2, i trafił na to samo krótkie pytanie. Etykiet ani
+ * tekstów zbioru nie zmieniamy, więc ta jedna pozycja jest zwolniona z wymogu „inne niż
+ * w pozostałych zbiorach” (w swoim zbiorze nadal musi być unikalna).
+ */
+const ZNANE_POWTORZENIA = new Set(['K3-B05'])
+const wszystkiePytania = [...zapytaj, ...kontrolne.flatMap((k) => k.zapytaj)].filter(
+  (p) => !ZNANE_POWTORZENIA.has(p.id),
+)
 
 for (const k of kontrolne) {
   describe(`zbiór ${k.nazwa} „opisz siebie” (na ślepo)`, () => {
@@ -160,6 +170,10 @@ for (const k of kontrolne) {
       bezPowtorzen(
         k.zapytaj.map((p) => p.id),
         'id',
+      )
+      bezPowtorzen(
+        k.zapytaj.map((p) => p.pytanie),
+        'pytanie (w tym zbiorze)',
       )
       bezPowtorzen(
         wszystkiePytania.map((p) => p.pytanie),
