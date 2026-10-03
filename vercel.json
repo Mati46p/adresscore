@@ -5,5 +5,14 @@
   "buildCommand": "pnpm build",
   "outputDirectory": "dist",
   "git": { "deploymentEnabled": false },
-  "rewrites": [{ "source": "/((?!assets/|api/).*)", "destination": "/index.html" }]
+  "functions": { "api/seo.js": { "includeFiles": "api/_seo-index.json.gz" } },
+  "rewrites": [
+    { "source": "/adres/:slug", "destination": "/api/seo?view=adres&slug=:slug" },
+    { "source": "/katalog/:slug", "destination": "/api/seo?view=ulica&slug=:slug" },
+    { "source": "/katalog", "destination": "/api/seo?view=katalog" },
+    {
+      "source": "/((?!assets/|api/|dane/|mapa/|sitemap|robots\\.txt|seo-boot\\.js).*)",
+      "destination": "/index.html"
+    }
+  ]
 }

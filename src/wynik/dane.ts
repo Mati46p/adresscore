@@ -65,6 +65,7 @@ async function wczytajWszystko(): Promise<Dane> {
   podlaczDane(
     plikAdresow.kolumny.id,
     wskazniki.map((w) => w.meta),
+    adresy,
   )
   return {
     plikAdresow,

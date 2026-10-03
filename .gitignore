@@ -1,6 +1,7 @@
 # Zależności i build
 node_modules
 dist
+public/sitemap*.xml
 *.tsbuildinfo
 coverage
 

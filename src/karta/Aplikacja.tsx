@@ -2,9 +2,11 @@ import { useEffect, useRef } from 'react'
 import { Pokaz3D, parametrPokazu } from '@/miasto3d/Pokaz3D'
 import { Metoda } from '@/strony/Metoda'
 import { useDane } from '@/wynik/dane'
+import { hrefAdresu } from '@/wynik/slug'
 import { useStan } from '@/wynik/stan'
 import { opisAdresu } from './adres'
 import { EkranSzukaj } from './EkranSzukaj'
+import { KatalogAdresow } from './KatalogAdresow'
 import { Naglowek } from './Naglowek'
 import { EkranOkolica } from './okolica/EkranOkolica'
 import { EkranPorownanie } from './porownanie/EkranPorownanie'
@@ -32,7 +34,9 @@ function Powloka() {
         ? 'Porównanie'
         : ekran === 'metoda'
           ? 'Metoda i źródła'
-          : 'Szukaj okolicy'
+          : ekran === 'katalog'
+            ? 'Katalog adresów Krakowa'
+            : 'Szukaj okolicy'
 
   // Przejście = inny ekran albo, na karcie, inny adres. Klik w mapę na Szukaj niczego nie resetuje.
   const klucz = ekran === 'okolica' ? `okolica:${wybrany}` : ekran
@@ -40,8 +44,29 @@ function Powloka() {
   const czekaNaFokus = useRef(false)
 
   useEffect(() => {
+    if (ekran === 'okolica' && !adres) return
+    if (ekran === 'katalog' && location.pathname.startsWith('/katalog/')) return
     document.title = `${tytul} – adresscore`
-  }, [tytul])
+  }, [tytul, ekran, adres])
+
+  useEffect(() => {
+    if (ekran === 'okolica' && !adres) return
+    const sciezka =
+      ekran === 'okolica' && adres
+        ? hrefAdresu(adres)
+        : ekran === 'katalog'
+          ? location.pathname.startsWith('/katalog/')
+            ? location.pathname
+            : '/katalog'
+          : '/'
+    let link = document.querySelector<HTMLLinkElement>('link[rel="canonical"]')
+    if (!link) {
+      link = document.createElement('link')
+      link.rel = 'canonical'
+      document.head.append(link)
+    }
+    link.href = `https://adresscore.pl${sciezka}`
+  }, [ekran, adres])
 
   useEffect(() => {
     // Pierwsze wejście: ani przewijania, ani przenoszenia fokusu.
@@ -71,6 +96,7 @@ function Powloka() {
       {ekran === 'okolica' && <EkranOkolica />}
       {ekran === 'porownanie' && <EkranPorownanie />}
       {ekran === 'metoda' && <Metoda />}
+      {ekran === 'katalog' && <KatalogAdresow />}
     </>
   )
 }

@@ -1,0 +1,62 @@
+.katalog {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding-block: 30px 80px;
+}
+.katalog h1 {
+  margin: 0 0 12px;
+}
+.katalog h2 {
+  margin-top: 32px;
+}
+.katalog-szukaj {
+  display: grid;
+  gap: 8px;
+  max-width: 600px;
+  margin: 24px 0;
+  font-weight: 600;
+}
+.katalog-szukaj input {
+  min-height: 48px;
+  padding: 10px 14px;
+  border: 1px solid #929da5;
+  border-radius: 8px;
+  background: #fff;
+  font: inherit;
+}
+.katalog-szukaj input:focus-visible {
+  outline: 3px solid #1f5c46;
+  outline-offset: 2px;
+}
+.katalog-ulice,
+.katalog-adresy {
+  padding-left: 24px;
+}
+.katalog-ulice > li {
+  margin: 8px 0;
+}
+.katalog-ulice details {
+  padding: 10px 14px;
+  border: 1px solid #d9dfdc;
+  border-radius: 8px;
+  background: #fff;
+}
+.katalog-ulice summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.katalog-ulice summary span {
+  color: #5b6470;
+  font-weight: 400;
+}
+.katalog-ulice details > a {
+  display: inline-block;
+  margin: 12px 0 4px;
+}
+.katalog-adresy {
+  columns: 3 200px;
+}
+.katalog-adresy li {
+  break-inside: avoid;
+  margin: 5px 0;
+}

@@ -4,7 +4,7 @@
 // twarde filtry.
 
 import { useSyncExternalStore } from 'react'
-import type { WskaznikMeta } from '@/kontrakty'
+import type { Adres, WskaznikMeta } from '@/kontrakty'
 import { type TwardyFiltr, zPodmienionymFiltrem } from './filtry.ts'
 import {
   PERSONA_DOMYSLNA,
@@ -14,6 +14,7 @@ import {
   ustawieniaPersony,
 } from './persony.ts'
 import type { KierunekOceny, Kierunki } from './silnik.ts'
+import { hashAdresu, hashZeSluga, slugAdresu } from './slug.ts'
 import { czytajHash, type Ekran, MAKS_POROWNANIE, type StanUrl, zapiszHash } from './url.ts'
 
 /** `'wynik'` = wynik łączny; inaczej id wskaźnika pokazywanego na mapie. */
@@ -60,8 +61,11 @@ const sluchacze = new Set<() => void>()
 // Słownik id ↔ indeks dostajemy dopiero po wczytaniu adresów. Do tego czasu id z URL czekają.
 let idAdresow: readonly string[] | null = null
 let indeksPoId = new Map<string, number>()
+let indeksPoHash = new Map<string, number>()
+let slugPoIndeks: readonly string[] = []
 let metaWskaznikow: readonly Pick<WskaznikMeta, 'id' | 'kategoria'>[] = []
 let oczekujacyUrl: StanUrl | null = null
+let odczytujemyHistorie = false
 
 export function pobierzStan(): StanAplikacji {
   return stan
@@ -210,11 +214,14 @@ export function indeksAdresu(id: string | null): number | null {
 export function podlaczDane(
   ids: readonly string[],
   wskazniki: readonly Pick<WskaznikMeta, 'id' | 'kategoria'>[],
+  adresy: readonly Adres[],
 ) {
   idAdresow = ids
   indeksPoId = new Map(ids.map((id, i) => [id, i]))
+  indeksPoHash = new Map(ids.map((id, i) => [hashAdresu(id), i]))
+  slugPoIndeks = adresy.map(slugAdresu)
   metaWskaznikow = wskazniki
-  const url = oczekujacyUrl ?? (typeof window === 'undefined' ? null : czytajHash(location.hash))
+  const url = typeof window === 'undefined' ? oczekujacyUrl : czytajBiezacyUrl()
   oczekujacyUrl = null
   const persona = url?.ustawienia
     ? 'wlasna'
@@ -277,34 +284,71 @@ function doUrl(s: StanAplikacji): StanUrl {
   }
 }
 
+function czytajBiezacyUrl(): StanUrl {
+  const url = czytajHash(location.hash)
+  const sciezka = location.pathname
+  if (sciezka === '/katalog' || sciezka.startsWith('/katalog/')) {
+    return { ...url, ekran: 'katalog', idAdresu: null }
+  }
+  if (sciezka.startsWith('/adres/')) {
+    const slug = sciezka.slice('/adres/'.length)
+    const hash = hashZeSluga(slug)
+    const indeks = hash ? indeksPoHash.get(hash) : undefined
+    return {
+      ...url,
+      ekran: 'okolica',
+      idAdresu: indeks === undefined ? null : (idAdresow?.[indeks] ?? null),
+    }
+  }
+  return url
+}
+
+function sciezkaStanu(s: StanAplikacji): string {
+  if (s.ekran === 'okolica' && s.wybrany !== null) {
+    const slug = slugPoIndeks[s.wybrany]
+    if (slug) return `/adres/${slug}`
+  }
+  if (s.ekran === 'katalog') return '/katalog'
+  return `/${zapiszHash(doUrl(s))}`
+}
+
 /**
  * Stan z łatką jako hash – do `<a href>`. Stan podaj z `useStan((s) => s)`, żeby React
  * Compiler widział zależność i odświeżał link.
  */
 export function hrefDla(s: StanAplikacji, latka: Partial<StanAplikacji>): string {
-  return zapiszHash(doUrl({ ...s, ...latka }))
+  return sciezkaStanu({ ...s, ...latka })
 }
 
 function zapiszDoUrl(poprzedni: StanAplikacji) {
   // Przed wczytaniem adresów nie znamy id – zapis wyczyściłby link, z którym ktoś wszedł.
-  if (typeof window === 'undefined' || !idAdresow) return
-  const hash = zapiszHash(doUrl(stan))
-  if (hash === location.hash || (hash === '#/' && location.hash === '')) return
+  if (typeof window === 'undefined' || !idAdresow || odczytujemyHistorie) return
+  // Strona konkretnej ulicy ma własną ścieżkę, chociaż w aplikacji używa ekranu katalogu.
+  if (
+    stan.ekran === 'katalog' &&
+    poprzedni.ekran === 'katalog' &&
+    location.pathname.startsWith('/katalog/')
+  )
+    return
+  const cel = sciezkaStanu(stan)
+  const obecny = `${location.pathname}${location.hash}`
+  if (cel === obecny || (cel === '/#/' && obecny === '/')) return
   // Zmiana ekranu albo adresu to krok w historii (działa „Wstecz"), reszta tylko podmienia URL.
   const krok = poprzedni.ekran !== stan.ekran || poprzedni.wybrany !== stan.wybrany
-  if (krok) history.pushState(null, '', hash)
-  else history.replaceState(null, '', hash)
+  // Stare linki #/adres/<id> otwierają kartę i dostają kanoniczną ścieżkę bez drugiego wpisu.
+  if (krok && !location.hash.startsWith('#/adres/')) history.pushState(null, '', cel)
+  else history.replaceState(null, '', cel)
 }
 
 if (typeof window !== 'undefined') {
-  const startowy = czytajHash(location.hash)
+  const startowy = czytajBiezacyUrl()
   oczekujacyUrl = startowy
   stan = { ...stan, ekran: startowy.ekran }
   if (startowy.persona) stan = { ...stan, persona: startowy.persona }
   if (startowy.tryb) stan = { ...stan, tryb: startowy.tryb }
   stan = { ...stan, filtry: startowy.filtry }
-  window.addEventListener('hashchange', () => {
-    const url = czytajHash(location.hash)
+  const odczytajZmianeUrl = () => {
+    const url = czytajBiezacyUrl()
     if (!idAdresow) {
       oczekujacyUrl = url
       return zmien({ ekran: url.ekran, filtry: url.filtry })
@@ -322,6 +366,13 @@ if (typeof window !== 'undefined') {
       tryb,
       ...(url.ustawienia ? sprawdzUstawienia(url.ustawienia, metaWskaznikow, domyslne) : domyslne),
     })
-    zmien(latka)
-  })
+    odczytujemyHistorie = true
+    try {
+      zmien(latka)
+    } finally {
+      odczytujemyHistorie = false
+    }
+  }
+  window.addEventListener('hashchange', odczytajZmianeUrl)
+  window.addEventListener('popstate', odczytajZmianeUrl)
 }

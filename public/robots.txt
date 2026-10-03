@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://adresscore.pl/sitemap.xml
