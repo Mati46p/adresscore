@@ -1,0 +1,98 @@
+.wysz {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: "IBM Plex Sans", system-ui, sans-serif;
+  color: #18202b;
+}
+
+.wysz-etykieta {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.wysz-pole {
+  font: inherit;
+  font-size: 15px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid #b9c0c6;
+  border-radius: 12px;
+  background: #fff;
+  color: #18202b;
+}
+
+.wysz-pole::placeholder {
+  color: #5b6470;
+}
+
+.wysz-pole:focus-visible {
+  outline: 2px solid #1f5c46;
+  outline-offset: 1px;
+  border-color: #1f5c46;
+}
+
+.wysz-lista {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  margin: 4px 0 0;
+  padding: 4px;
+  list-style: none;
+  max-height: min(60vh, 22rem);
+  overflow-y: auto;
+  border: 1px solid #dde1e4;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgb(24 32 43 / 0.12);
+}
+
+.wysz-opcja {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 44px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.wysz-opcja[aria-selected="true"] {
+  background: #e3efe8;
+}
+
+.wysz-tytul {
+  font-size: 15px;
+  font-weight: 500;
+  color: #18202b;
+}
+
+.wysz-opis {
+  font-size: 13px;
+  color: #3d4652;
+}
+
+.wysz-status {
+  margin: 0;
+  font-size: 13px;
+  color: #3d4652;
+}
+
+.wysz-status[data-ukryty="true"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .wysz-pole {
+    transition: border-color 120ms ease;
+  }
+}
