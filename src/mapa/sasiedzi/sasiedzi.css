@@ -1,0 +1,44 @@
+/* Znaczniki „Lepszego sąsiada” (#95). Kolor litery tylko jako wypełnienie (--sasiad-tlo),
+   tekst w kolorze z kontrastem ≥ 4,5:1 (--sasiad-tekst). Pole klikania 40 px – wygodne na
+   telefonie. Bez przyciągania i powiększania pod kursorem: znacznik to cel kliknięcia. */
+.mapa-sasiad {
+  box-sizing: border-box;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border: 3px solid #ffffff;
+  border-radius: 50%;
+  background: var(--sasiad-tlo, #8a9097);
+  color: var(--sasiad-tekst, #18202b);
+  font:
+    700 17px / 1 "IBM Plex Sans",
+    system-ui,
+    sans-serif;
+  box-shadow:
+    0 0 0 1px rgb(24 32 43 / 0.35),
+    0 2px 6px rgb(24 32 43 / 0.3);
+  cursor: pointer;
+  z-index: 1;
+}
+
+.mapa-sasiad:hover {
+  box-shadow:
+    0 0 0 2px #18202b,
+    0 2px 6px rgb(24 32 43 / 0.3);
+}
+
+.mapa-sasiad:focus-visible {
+  outline: 3px solid #18202b;
+  outline-offset: 2px;
+}
+
+/* Wybrany na karcie albo na mapie: gruba ciemna obwódka, nad pozostałymi. */
+.mapa-sasiad--wybrany {
+  border-color: #18202b;
+  box-shadow:
+    0 0 0 3px #ffffff,
+    0 2px 8px rgb(24 32 43 / 0.45);
+  z-index: 2;
+}

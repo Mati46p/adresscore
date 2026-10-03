@@ -41,6 +41,8 @@ import {
   STYL,
   ustawGrupePodkladu,
 } from '@/mapa/podklad'
+import type { SasiedziNaMapie } from '@/mapa/sasiedzi/model'
+import { useZnacznikiSasiadow } from '@/mapa/sasiedzi/ZnacznikiSasiadow'
 import {
   gradientCss,
   KOLOR_SZRAFURY,
@@ -86,6 +88,8 @@ export interface MapaKrakowaProps {
   wartoscRodzica?: (heksyR10: readonly string[]) => number | null
   /** Ramka do pokazania (np. okolica z rankingu, #91) – zmiana wartości = przelot kamery. */
   granice?: [[number, number], [number, number]] | null
+  /** „Lepszy sąsiad” (#95): okrąg i znaczniki kandydatów; brak = warstwa wyłączona. */
+  sasiedzi?: SasiedziNaMapie
 }
 
 const BRAK_WYKLUCZONYCH: ReadonlySet<string> = new Set()
@@ -184,6 +188,7 @@ export function MapaKrakowa({
   opisHeksu,
   wartoscRodzica,
   granice,
+  sasiedzi,
 }: MapaKrakowaProps): JSX.Element {
   const kontener = useRef<HTMLDivElement>(null)
   const mapaRef = useRef<MapaLibre | null>(null)
@@ -490,6 +495,8 @@ export function MapaKrakowa({
         wyslij(res, h, wszystkieWykluczone(dzieci, wykluczone) ? W_WYKLUCZONY : rodzic(dzieci))
     }
   }
+
+  useZnacznikiSasiadow(mapaRef, gotowa, sasiedzi)
 
   const lon = wybrany?.lon
   const lat = wybrany?.lat
