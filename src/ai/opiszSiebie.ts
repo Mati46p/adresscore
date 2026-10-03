@@ -569,6 +569,31 @@ export const POTRZEBY: readonly Potrzeba[] = [
     // Wagi niesie profil Singiel (#177: bez zmian).
     wskazniki: {},
   },
+  {
+    id: 'koszty',
+    etykieta: 'niskie opłaty',
+    wzorce: [
+      { re: /\b(tanio|tani[aey]?\b|koszt|oplat|podat|smieci|oszczed|budzet|niski[ce]h? rachunk)/ },
+    ],
+    kategorie: {},
+    wskazniki: { gmina_koszty_stale_rok: 4 },
+  },
+  {
+    id: 'kolej',
+    etykieta: 'pociąg',
+    wzorce: [{ re: /\b(pociag|kolej|skm|dojezdzam pociagiem|stacj[aiey] kolej)/ }],
+    kategorie: { transport: 3 },
+    wskazniki: { kolej_punktualnosc: 4 },
+  },
+  {
+    id: 'sasiedzi',
+    etykieta: 'aktywni sąsiedzi',
+    wzorce: [
+      { re: /\b(sasiad|sasiedz|spolecznosc|lokaln[aey] spolecz|aktywn[iy]ch? mieszkanc|obywatel)/ },
+    ],
+    kategorie: { spolecznosc: 3 },
+    wskazniki: { frekwencja_samorzad_2024: 3 },
+  },
 ]
 
 /**

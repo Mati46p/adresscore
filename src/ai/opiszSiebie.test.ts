@@ -740,6 +740,10 @@ describe('zRegul – parser po polsku', () => {
     ['Szukam miejsca z miejscem parkingowym', [], null],
     ['Babcia z wnukami, spokojna okolica', ['senior', 'cisza'], 'senior'],
     ['Lubię dobrą kawę', [], null],
+    // Warstwy z nocy 3/4.10 (#136, #138–#142): tylko reguły, bez nowych pytań do JEV.
+    ['Chcę niskie opłaty, liczę każdy koszt', ['koszty'], null],
+    ['Do pracy dojeżdżam pociągiem', ['kolej', 'bez_samochodu', 'praca_centrum'], null],
+    ['Zależy mi na aktywnych sąsiadach', ['sasiedzi'], null],
   ]
   for (const [zdanie, potrzeby, persona] of PRZYPADKI) {
     it(zdanie, () => {
