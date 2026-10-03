@@ -1,0 +1,2331 @@
+{
+ "meta": {
+  "zadanie": 144,
+  "nazwa": "Kontrola modelu PM2,5 i PM10 na czujnikach Sensor.Community",
+  "opis": "Porównanie rocznych średnich PM2,5 i PM10 z modelu GIOŚ (warstwy pm25_srednia i pm10_srednia za 2025) ze średnimi 2025 z czujników obywatelskich Sensor.Community w Krakowie i gminach wokół niego. Tabela służy stronie metody; to nie jest wskaźnik i nie zmienia wartości adresów ani wyniku.",
+  "rok": 2025,
+  "jednostka": "µg/m³",
+  "wersjaAdresow": "a7d233814059",
+  "wygenerowano": "2026-10-03",
+  "grupy": {
+   "Kraków": "gmina Kraków",
+   "obwarzanek": "pozostałe gminy z warstwy adresów (obwarzanek)"
+  },
+  "atrybucja": "Contains information from Sensor.Community, which is made available here under the Open Database License (ODbL).",
+  "zrodla": [
+   {
+    "nazwa": "Sensor.Community – archiwum odczytów czujników, pliki dobowe CSV, 2025",
+    "url": "https://archive.sensor.community/",
+    "licencja": "Open Database License (ODbL) 1.0 dla bazy i Database Contents License (DbCL) 1.0 dla zawartości (00disclamer.md archiwum). Tabela agregatów w tym pliku jest bazą pochodną i też jest udostępniana na warunkach ODbL. Atrybucja: Contains information from Sensor.Community, which is made available here under the Open Database License (ODbL).",
+    "dataDanych": "2025",
+    "pobrano": "2026-10-03"
+   },
+   {
+    "nazwa": "Sensor.Community – żywe API (lista czujników wokół Krakowa)",
+    "url": "https://data.sensor.community/static/v2/data.24h.json",
+    "licencja": "Te same dane co w archiwum (ODbL 1.0, DbCL 1.0); z żywego API użyto wyłącznie listy lokalizacji i typów czujników.",
+    "dataDanych": "2026-10-03",
+    "pobrano": "2026-10-03"
+   },
+   {
+    "nazwa": "GIOŚ – Modelowanie na potrzeby ocen, 2025, PM2.5 i PM10, średnia roczna (Źródło danych: GIOŚ - EKOINFONET)",
+    "url": "https://powietrze.gios.gov.pl/pjp/maps/modeling",
+    "licencja": "Ponowne wykorzystanie informacji sektora publicznego; wymagane wskazanie źródła GIOŚ - EKOINFONET i informacja o przetworzeniu",
+    "dataDanych": "2025",
+    "pobrano": "2026-10-03"
+   }
+  ],
+  "liczby": {
+   "lokalizacjiWProstokacie": 47,
+   "pozaAdresamiModelu": 4,
+   "czujnikowOcenionych": 39,
+   "czujnikowWTabeli": 24,
+   "czujnikowOdrzuconych": 19
+  },
+  "wynik": [
+   "PM2,5, Kraków, średnie z wszystkich godzin, 13 czujników: model 15,9 µg/m³, średnia czujników 10,1 µg/m³ (pojedyncze czujniki od 5,2 do 16,0), mediana stosunku czujnik/model 0,63, średni błąd bezwzględny 5,8 µg/m³, korelacja model–czujnik −0,10.",
+   "PM2,5, Kraków, średnie z godzin o wilgotności do 80%, 8 czujników: model 15,7 µg/m³, średnia czujników 7,7 µg/m³ (pojedyncze czujniki od 3,8 do 10,9), mediana stosunku czujnik/model 0,52, średni błąd bezwzględny 8,0 µg/m³, korelacja model–czujnik 0,71.",
+   "PM10, Kraków, średnie z wszystkich godzin, 13 czujników: model 25,4 µg/m³, średnia czujników 19,4 µg/m³ (pojedyncze czujniki od 7,6 do 35,9), mediana stosunku czujnik/model 0,70, średni błąd bezwzględny 8,7 µg/m³, korelacja model–czujnik −0,23.",
+   "PM10, Kraków, średnie z godzin o wilgotności do 80%, 8 czujników: model 24,4 µg/m³, średnia czujników 13,8 µg/m³ (pojedyncze czujniki od 6,1 do 19,1), mediana stosunku czujnik/model 0,60, średni błąd bezwzględny 10,6 µg/m³, korelacja model–czujnik −0,29.",
+   "Wilgotność zmierzona przy czujnikach pyłu (20 stanowisk): średnia roczna od 38% do 87%, udział godzin powyżej 80% od 0% do 71%."
+  ],
+  "metoda": [
+   "Rok porównania: 2025, ten sam co model GIOŚ. Wszystkie godziny w UTC.",
+   "Czujniki: stacje Sensor.Community z czujnikiem pyłu na zewnątrz, nadające dziś (żywe API) albo w jednej z dwóch dób kontrolnych roku (2025-02-12, 2025-08-13, spis archiwum); do tabeli wchodzą te, które mają adres modelu w promieniu 250 m.",
+   "Odczyty: średnie godzinowe z dobowych plików archiwum; godzina jest ważna od 3 odczytów (czujnik raportujący rzadziej: od połowy swojej typowej liczby odczytów na godzinę, co najmniej od jednego). Odrzucamy odczyty poza zakresem 0–999 µg/m³ i pojedyncze skoki (ponad 3× mediana godziny + 15 µg/m³ dla PM2,5, ponad 3× mediana + 25 dla PM10), godziny zawieszone (co najmniej 6 identycznych odczytów PM2,5), godziny z PM2,5 większym od PM10 o więcej niż 15% + 2 µg/m³ oraz godziny odstające względem mediany wszystkich czujników (ponad 4× mediana + 30 µg/m³, albo poniżej 1/5 mediany, gdy mediana przekracza 20 µg/m³).",
+   "Wilgotność: z czujnika wilgotności w tej samej lokalizacji (BME280, SHT3x, DHT22). Powyżej 80% czujniki optyczne zawyżają odczyt (rosną krople), więc dla każdego czujnika są dwie średnie: z wszystkich godzin i „suche” (tylko godziny o wilgotności do 80%). Czujnik wilgotności zawieszony w danej dobie (rozstęp odczytów poniżej 0,5 p.p.) nie liczy się jako pomiar. Bez czujnika wilgotności jest tylko średnia z wszystkich godzin.",
+   "Średnia roczna to średnia ze średnich miesięcznych (miesiąc wchodzi od 200 ważnych godzin, a dla średniej „suchej” od 50; potrzeba co najmniej 10 miesięcy).",
+   "Czujnik wchodzi do tabeli przy pokryciu co najmniej 75% godzin roku, stałej lokalizacji oraz udziale godzin odstających do 10%, zawieszonych do 10% i niespójnych do 25%. Pozostałe są na liście odrzuconych z powodem.",
+   "Model: średnia warstwy z adresów do 100 m od czujnika (do 250 m, gdy brak) – kolumna „model”, w Krakowie z doprecyzowaniem do adresu (#131) – oraz surowa wartość oczka GIOŚ w punkcie czujnika, bez doprecyzowania – kolumna „modelOczko”. Różnica = model − czujnik (dodatnia: model wyższy)."
+  ],
+  "ograniczenia": [
+   "Czujniki Sensor.Community (SDS011, SPS30) to tanie czujniki optyczne, nie referencyjne: przy dużej wilgotności zawyżają odczyt, z wiekiem mogą tracić czułość i różnią się między egzemplarzami. Nikt ich tu nie skalibrował względem stacji GIOŚ, więc tabela pokazuje zgodność modelu z czujnikami, a nie błąd modelu.",
+   "Średnia „suche” pomija godziny z wilgotnością powyżej 80%, a to częściej noce i dni z mgłą i inwersją, czyli stężenia wyższe od typowych, więc jest z natury niższa od prawdziwej średniej rocznej. Średnia z wszystkich godzin jest za to zawyżona przez wilgoć. Dlatego podajemy obie; przy skalibrowanym czujniku prawdziwa średnia roczna leży najpewniej między nimi. Do porównania z modelem lepiej nadaje się średnia z wszystkich godzin, bo ma pełną próbę i nie ma błędu doboru godzin.",
+   "Czujnik wilgotności stoi zwykle w tej samej obudowie co czujnik pyłu, więc mierzy wilgotność w obudowie, nie na zewnątrz (nagrzewa ją wentylator i elektronika). Średnia roczna wilgotność i udział godzin powyżej 80% różnią się między stanowiskami kilkakrotnie, więc ten sam próg 80% odrzuca na jednych stanowiskach prawie żadne godziny, a na innych jedną trzecią.",
+   "Próba jest mała i nielosowa (czujniki stoją tam, gdzie mieszkają ich właściciele), więc korelacji ani średnich nie należy uogólniać na całe miasto.",
+   "Na liście są czujniki nadające dziś albo w jednej z dwóch dób kontrolnych roku; czujnik, który działał tylko w innych tygodniach roku, mógł nie wejść.",
+   "Pozycje czujników podajemy z dokładnością do 3 miejsc po przecinku (ok. 100 m), tak jak publikuje je Sensor.Community; model GIOŚ ma oczko 360 × 560 m (Kraków) i 1,8 × 2,8 km."
+  ],
+  "kolumny": {
+   "model": "Wartość warstwy (pm25_srednia albo pm10_srednia) w adresach do 100 m od czujnika, µg/m³; w Krakowie z doprecyzowaniem do adresu (#131).",
+   "modelOczko": "Surowa wartość oczka GIOŚ w punkcie czujnika, µg/m³, bez doprecyzowania. Różnica model − modelOczko pokazuje wpływ doprecyzowania.",
+   "czujnik.suche": "Średnia roczna z godzin o wilgotności do 80%, µg/m³. null: brak czujnika wilgotności albo za mało suchych godzin.",
+   "czujnik.wszystkie": "Średnia roczna ze wszystkich ważnych godzin, µg/m³ (bez filtra wilgotności).",
+   "roznica": "model − czujnik, µg/m³ (dodatnia: model wyższy od czujnika), osobno dla średniej „suche” i „wszystkie”.",
+   "roznicaProc": "Różnica w procentach wartości czujnika.",
+   "wilgotnosc.srednia": "Średnia roczna wilgotność (%) zmierzona przy czujniku pyłu w godzinach z ważnym odczytem pyłu; to wilgotność w obudowie czujnika, nie na zewnątrz."
+  }
+ },
+ "podsumowanie": {
+  "PM2.5": {
+   "Kraków": {
+    "czujnikow": 13,
+    "suche": {
+     "adres": {
+      "n": 8,
+      "sredniaModelu": 15.65,
+      "sredniaCzujnikow": 7.67,
+      "zakresCzujnikow": [
+       3.81,
+       10.9
+      ],
+      "medianaStosunku": 0.52,
+      "medianaRoznicy": 7.84,
+      "sredniaRoznica": 7.98,
+      "mae": 7.98,
+      "rmse": 8.13,
+      "maeProc": 122.5,
+      "korelacja": 0.71,
+      "udzialW25": 0,
+      "udzialW50": 0
+     },
+     "oczko": {
+      "n": 8,
+      "sredniaModelu": 15.46,
+      "sredniaCzujnikow": 7.67,
+      "zakresCzujnikow": [
+       3.81,
+       10.9
+      ],
+      "medianaStosunku": 0.53,
+      "medianaRoznicy": 7.37,
+      "sredniaRoznica": 7.79,
+      "mae": 7.79,
+      "rmse": 7.95,
+      "maeProc": 119,
+      "korelacja": 0.66,
+      "udzialW25": 0,
+      "udzialW50": 0
+     }
+    },
+    "wszystkie": {
+     "adres": {
+      "n": 13,
+      "sredniaModelu": 15.89,
+      "sredniaCzujnikow": 10.08,
+      "zakresCzujnikow": [
+       5.2,
+       16.02
+      ],
+      "medianaStosunku": 0.63,
+      "medianaRoznicy": 6.43,
+      "sredniaRoznica": 5.82,
+      "mae": 5.82,
+      "rmse": 6.92,
+      "maeProc": 75.6,
+      "korelacja": -0.1,
+      "udzialW25": 0.31,
+      "udzialW50": 0.38
+     },
+     "oczko": {
+      "n": 13,
+      "sredniaModelu": 16.22,
+      "sredniaCzujnikow": 10.08,
+      "zakresCzujnikow": [
+       5.2,
+       16.02
+      ],
+      "medianaStosunku": 0.56,
+      "medianaRoznicy": 7.03,
+      "sredniaRoznica": 6.15,
+      "mae": 6.21,
+      "rmse": 7.25,
+      "maeProc": 78.3,
+      "korelacja": 0,
+      "udzialW25": 0.23,
+      "udzialW50": 0.31
+     }
+    }
+   },
+   "obwarzanek": {
+    "czujnikow": 11,
+    "suche": {
+     "adres": {
+      "n": 9,
+      "sredniaModelu": 16.03,
+      "sredniaCzujnikow": 7.97,
+      "zakresCzujnikow": [
+       4.58,
+       21.52
+      ],
+      "medianaStosunku": 0.37,
+      "medianaRoznicy": 9.77,
+      "sredniaRoznica": 8.06,
+      "mae": 9.36,
+      "rmse": 9.7,
+      "maeProc": 152.3,
+      "korelacja": -0.11,
+      "udzialW25": 0,
+      "udzialW50": 0.11
+     },
+     "oczko": {
+      "n": 9,
+      "sredniaModelu": 16.06,
+      "sredniaCzujnikow": 7.97,
+      "zakresCzujnikow": [
+       4.58,
+       21.52
+      ],
+      "medianaStosunku": 0.37,
+      "medianaRoznicy": 10.11,
+      "sredniaRoznica": 8.09,
+      "mae": 9.38,
+      "rmse": 9.73,
+      "maeProc": 152.9,
+      "korelacja": -0.13,
+      "udzialW25": 0,
+      "udzialW50": 0.11
+     }
+    },
+    "wszystkie": {
+     "adres": {
+      "n": 11,
+      "sredniaModelu": 15.93,
+      "sredniaCzujnikow": 11.18,
+      "zakresCzujnikow": [
+       5.45,
+       21.52
+      ],
+      "medianaStosunku": 0.6,
+      "medianaRoznicy": 5.85,
+      "sredniaRoznica": 4.75,
+      "mae": 6.25,
+      "rmse": 7.04,
+      "maeProc": 75.1,
+      "korelacja": -0.26,
+      "udzialW25": 0.27,
+      "udzialW50": 0.45
+     },
+     "oczko": {
+      "n": 11,
+      "sredniaModelu": 15.95,
+      "sredniaCzujnikow": 11.18,
+      "zakresCzujnikow": [
+       5.45,
+       21.52
+      ],
+      "medianaStosunku": 0.6,
+      "medianaRoznicy": 5.85,
+      "sredniaRoznica": 4.77,
+      "mae": 6.27,
+      "rmse": 7.07,
+      "maeProc": 75.4,
+      "korelacja": -0.28,
+      "udzialW25": 0.27,
+      "udzialW50": 0.45
+     }
+    }
+   },
+   "razem": {
+    "czujnikow": 24,
+    "suche": {
+     "adres": {
+      "n": 17,
+      "sredniaModelu": 15.85,
+      "sredniaCzujnikow": 7.83,
+      "zakresCzujnikow": [
+       3.81,
+       21.52
+      ],
+      "medianaStosunku": 0.48,
+      "medianaRoznicy": 8.03,
+      "sredniaRoznica": 8.02,
+      "mae": 8.71,
+      "rmse": 9,
+      "maeProc": 138.3,
+      "korelacja": 0.05,
+      "udzialW25": 0,
+      "udzialW50": 0.06
+     },
+     "oczko": {
+      "n": 17,
+      "sredniaModelu": 15.78,
+      "sredniaCzujnikow": 7.83,
+      "zakresCzujnikow": [
+       3.81,
+       21.52
+      ],
+      "medianaStosunku": 0.5,
+      "medianaRoznicy": 8.67,
+      "sredniaRoznica": 7.95,
+      "mae": 8.63,
+      "rmse": 8.94,
+      "maeProc": 136.9,
+      "korelacja": 0.07,
+      "udzialW25": 0,
+      "udzialW50": 0.06
+     }
+    },
+    "wszystkie": {
+     "adres": {
+      "n": 24,
+      "sredniaModelu": 15.91,
+      "sredniaCzujnikow": 10.58,
+      "zakresCzujnikow": [
+       5.2,
+       21.52
+      ],
+      "medianaStosunku": 0.62,
+      "medianaRoznicy": 6.17,
+      "sredniaRoznica": 5.33,
+      "mae": 6.02,
+      "rmse": 6.98,
+      "maeProc": 75.3,
+      "korelacja": -0.17,
+      "udzialW25": 0.29,
+      "udzialW50": 0.42
+     },
+     "oczko": {
+      "n": 24,
+      "sredniaModelu": 16.1,
+      "sredniaCzujnikow": 10.58,
+      "zakresCzujnikow": [
+       5.2,
+       21.52
+      ],
+      "medianaStosunku": 0.58,
+      "medianaRoznicy": 6.74,
+      "sredniaRoznica": 5.52,
+      "mae": 6.24,
+      "rmse": 7.17,
+      "maeProc": 77,
+      "korelacja": -0.13,
+      "udzialW25": 0.25,
+      "udzialW50": 0.38
+     }
+    }
+   }
+  },
+  "PM10": {
+   "Kraków": {
+    "czujnikow": 13,
+    "suche": {
+     "adres": {
+      "n": 8,
+      "sredniaModelu": 24.41,
+      "sredniaCzujnikow": 13.82,
+      "zakresCzujnikow": [
+       6.1,
+       19.13
+      ],
+      "medianaStosunku": 0.6,
+      "medianaRoznicy": 10.03,
+      "sredniaRoznica": 10.59,
+      "mae": 10.59,
+      "rmse": 11.7,
+      "maeProc": 107.3,
+      "korelacja": -0.29,
+      "udzialW25": 0.13,
+      "udzialW50": 0.38
+     },
+     "oczko": {
+      "n": 8,
+      "sredniaModelu": 24.06,
+      "sredniaCzujnikow": 13.82,
+      "zakresCzujnikow": [
+       6.1,
+       19.13
+      ],
+      "medianaStosunku": 0.6,
+      "medianaRoznicy": 10.25,
+      "sredniaRoznica": 10.24,
+      "mae": 10.24,
+      "rmse": 11.17,
+      "maeProc": 101.1,
+      "korelacja": 0.24,
+      "udzialW25": 0.13,
+      "udzialW50": 0.38
+     }
+    },
+    "wszystkie": {
+     "adres": {
+      "n": 13,
+      "sredniaModelu": 25.35,
+      "sredniaCzujnikow": 19.42,
+      "zakresCzujnikow": [
+       7.63,
+       35.86
+      ],
+      "medianaStosunku": 0.7,
+      "medianaRoznicy": 7.3,
+      "sredniaRoznica": 5.92,
+      "mae": 8.73,
+      "rmse": 10.62,
+      "maeProc": 68.3,
+      "korelacja": -0.23,
+      "udzialW25": 0.31,
+      "udzialW50": 0.69
+     },
+     "oczko": {
+      "n": 13,
+      "sredniaModelu": 25.98,
+      "sredniaCzujnikow": 19.42,
+      "zakresCzujnikow": [
+       7.63,
+       35.86
+      ],
+      "medianaStosunku": 0.7,
+      "medianaRoznicy": 8.74,
+      "sredniaRoznica": 6.56,
+      "mae": 9.56,
+      "rmse": 10.93,
+      "maeProc": 68.8,
+      "korelacja": 0.05,
+      "udzialW25": 0.23,
+      "udzialW50": 0.54
+     }
+    }
+   },
+   "obwarzanek": {
+    "czujnikow": 11,
+    "suche": {
+     "adres": {
+      "n": 9,
+      "sredniaModelu": 23.99,
+      "sredniaCzujnikow": 15.88,
+      "zakresCzujnikow": [
+       10.81,
+       41.31
+      ],
+      "medianaStosunku": 0.5,
+      "medianaRoznicy": 11.68,
+      "sredniaRoznica": 8.12,
+      "mae": 11.54,
+      "rmse": 12.21,
+      "maeProc": 87.5,
+      "korelacja": 0.2,
+      "udzialW25": 0.11,
+      "udzialW50": 0.22
+     },
+     "oczko": {
+      "n": 9,
+      "sredniaModelu": 24.02,
+      "sredniaCzujnikow": 15.88,
+      "zakresCzujnikow": [
+       10.81,
+       41.31
+      ],
+      "medianaStosunku": 0.5,
+      "medianaRoznicy": 11.9,
+      "sredniaRoznica": 8.15,
+      "mae": 11.57,
+      "rmse": 12.24,
+      "maeProc": 87.8,
+      "korelacja": 0.19,
+      "udzialW25": 0.11,
+      "udzialW50": 0.22
+     }
+    },
+    "wszystkie": {
+     "adres": {
+      "n": 11,
+      "sredniaModelu": 23.78,
+      "sredniaCzujnikow": 22.69,
+      "zakresCzujnikow": [
+       13.76,
+       41.31
+      ],
+      "medianaStosunku": 0.78,
+      "medianaRoznicy": 5.48,
+      "sredniaRoznica": 1.09,
+      "mae": 8.06,
+      "rmse": 9,
+      "maeProc": 38.6,
+      "korelacja": -0.1,
+      "udzialW25": 0.18,
+      "udzialW50": 0.82
+     },
+     "oczko": {
+      "n": 11,
+      "sredniaModelu": 23.8,
+      "sredniaCzujnikow": 22.69,
+      "zakresCzujnikow": [
+       13.76,
+       41.31
+      ],
+      "medianaStosunku": 0.78,
+      "medianaRoznicy": 5.58,
+      "sredniaRoznica": 1.11,
+      "mae": 8.08,
+      "rmse": 9.01,
+      "maeProc": 38.8,
+      "korelacja": -0.11,
+      "udzialW25": 0.18,
+      "udzialW50": 0.82
+     }
+    }
+   },
+   "razem": {
+    "czujnikow": 24,
+    "suche": {
+     "adres": {
+      "n": 17,
+      "sredniaModelu": 24.19,
+      "sredniaCzujnikow": 14.91,
+      "zakresCzujnikow": [
+       6.1,
+       41.31
+      ],
+      "medianaStosunku": 0.51,
+      "medianaRoznicy": 11.53,
+      "sredniaRoznica": 9.28,
+      "mae": 11.09,
+      "rmse": 11.97,
+      "maeProc": 96.8,
+      "korelacja": 0.08,
+      "udzialW25": 0.12,
+      "udzialW50": 0.29
+     },
+     "oczko": {
+      "n": 17,
+      "sredniaModelu": 24.04,
+      "sredniaCzujnikow": 14.91,
+      "zakresCzujnikow": [
+       6.1,
+       41.31
+      ],
+      "medianaStosunku": 0.51,
+      "medianaRoznicy": 11.9,
+      "sredniaRoznica": 9.13,
+      "mae": 10.94,
+      "rmse": 11.75,
+      "maeProc": 94,
+      "korelacja": 0.19,
+      "udzialW25": 0.12,
+      "udzialW50": 0.29
+     }
+    },
+    "wszystkie": {
+     "adres": {
+      "n": 24,
+      "sredniaModelu": 24.63,
+      "sredniaCzujnikow": 20.92,
+      "zakresCzujnikow": [
+       7.63,
+       41.31
+      ],
+      "medianaStosunku": 0.75,
+      "medianaRoznicy": 5.89,
+      "sredniaRoznica": 3.71,
+      "mae": 8.42,
+      "rmse": 9.91,
+      "maeProc": 54.7,
+      "korelacja": -0.22,
+      "udzialW25": 0.25,
+      "udzialW50": 0.75
+     },
+     "oczko": {
+      "n": 24,
+      "sredniaModelu": 24.98,
+      "sredniaCzujnikow": 20.92,
+      "zakresCzujnikow": [
+       7.63,
+       41.31
+      ],
+      "medianaStosunku": 0.73,
+      "medianaRoznicy": 6.39,
+      "sredniaRoznica": 4.06,
+      "mae": 8.88,
+      "rmse": 10.1,
+      "maeProc": 55,
+      "korelacja": -0.05,
+      "udzialW25": 0.21,
+      "udzialW50": 0.67
+     }
+    }
+   }
+  }
+ },
+ "czujniki": [
+  {
+   "id": 86823,
+   "typ": "SDS011",
+   "lokalizacja": 77623,
+   "grupa": "Kraków",
+   "gmina": "Kraków",
+   "dzielnica": "II Grzegórzki",
+   "lon": 19.964,
+   "lat": 50.058,
+   "wilgotnosc": {
+    "czujniki": [
+     "BME280#86824"
+    ],
+    "godzinSuchych": 5620,
+    "godzinWilgotnych": 2774,
+    "godzinBezPomiaru": 120,
+    "srednia": 67
+   },
+   "jakosc": {
+    "pokrycie": 0.97,
+    "godzinWaznych": 8514,
+    "miesiace": 12,
+    "usuniete": {
+     "odstajace": 0,
+     "zawieszone": 0,
+     "niespojne": 0,
+     "skoki": 22,
+     "zaKrotkie": 9
+    }
+   },
+   "pm25": {
+    "model": 14.36,
+    "modelOczko": 14.6,
+    "adresowWPromieniu": 9,
+    "czujnik": {
+     "suche": 5.18,
+     "wszystkie": 6.88
+    },
+    "roznica": {
+     "suche": 9.18,
+     "wszystkie": 7.47
+    },
+    "roznicaProc": {
+     "suche": 177.3,
+     "wszystkie": 108.5
+    },
+    "godzinSuchych": 5620,
+    "miesiaceSuche": 12,
+    "odstajace": 0
+   },
+   "pm10": {
+    "model": 24.53,
+    "modelOczko": 25.2,
+    "adresowWPromieniu": 9,
+    "czujnik": {
+     "suche": 12.35,
+     "wszystkie": 16.46
+    },
+    "roznica": {
+     "suche": 12.18,
+     "wszystkie": 8.07
+    },
+    "roznicaProc": {
+     "suche": 98.7,
+     "wszystkie": 49.1
+    },
+    "godzinSuchych": 5620,
+    "miesiaceSuche": 12,
+    "odstajace": 0
+   }
+  },
+  {
+   "id": 61982,
+   "typ": "SDS011",
+   "lokalizacja": 51978,
+   "grupa": "Kraków",
+   "gmina": "Kraków",
+   "dzielnica": "III Prądnik Czerwony",
+   "lon": 19.969,
+   "lat": 50.078,
+   "wilgotnosc": {
+    "czujniki": [
+     "BME280#61983"
+    ],
+    "godzinSuchych": 4085,
+    "godzinWilgotnych": 4110,
+    "godzinBezPomiaru": 311,
+    "srednia": 78
+   },
+   "jakosc": {
+    "pokrycie": 0.97,
+    "godzinWaznych": 8506,
+    "miesiace": 12,
+    "usuniete": {
+     "odstajace": 5,
+     "zawieszone": 0,
+     "niespojne": 0,
+     "skoki": 3713,
+     "zaKrotkie": 13
+    }
+   },
+   "pm25": {
+    "model": 15.54,
+    "modelOczko": 15,
+    "adresowWPromieniu": 12,
+    "czujnik": {
+     "suche": 8.3,
+     "wszystkie": 15.21
+    },
+    "roznica": {
+     "suche": 7.25,
+     "wszystkie": 0.34
+    },
+    "roznicaProc": {
+     "suche": 87.3,
+     "wszystkie": 2.2
+    },
+    "godzinSuchych": 4085,
+    "miesiaceSuche": 12,
+    "odstajace": 5
+   },
+   "pm10": {
+    "model": 24.73,
+    "modelOczko": 23.6,
+    "adresowWPromieniu": 12,
+    "czujnik": {
+     "suche": 15,
+     "wszystkie": 30.37
+    },
+    "roznica": {
+     "suche": 9.72,
+     "wszystkie": -5.65
+    },
+    "roznicaProc": {
+     "suche": 64.8,
+     "wszystkie": -18.6
+    },
+    "godzinSuchych": 4085,
+    "miesiaceSuche": 12,
+    "odstajace": 15
+   }
+  },
+  {
+   "id": 68509,
+   "typ": "SDS011",
+   "lokalizacja": 55512,
+   "grupa": "Kraków",
+   "gmina": "Kraków",
+   "dzielnica": "IV Prądnik Biały",
+   "lon": 19.958,
+   "lat": 50.102,
+   "wilgotnosc": {
+    "czujniki": [
+     "SHT31#68511"
+    ],
+    "godzinSuchych": 7829,
+    "godzinWilgotnych": 122,
+    "godzinBezPomiaru": 0,
+    "srednia": 55
+   },
+   "jakosc": {
+    "pokrycie": 0.91,
+    "godzinWaznych": 7951,
+    "miesiace": 12,
+    "usuniete": {
+     "odstajace": 1,
+     "zawieszone": 0,
+     "niespojne": 0,
+     "skoki": 66,
+     "zaKrotkie": 14
+    }
+   },
+   "pm25": {
+    "model": 15.94,
+    "modelOczko": 15.7,
+    "adresowWPromieniu": 5,
+    "czujnik": {
+     "suche": 8.26,
+     "wszystkie": 8.26
+    },
+    "roznica": {
+     "suche": 7.68,
+     "wszystkie": 7.68
+    },
+    "roznicaProc": {
+     "suche": 92.9,
+     "wszystkie": 93
+    },
+    "godzinSuchych": 7829,
+    "miesiaceSuche": 12,
+    "odstajace": 1
+   },
+   "pm10": {
+    "model": 24,
+    "modelOczko": 23.5,
+    "adresowWPromieniu": 5,
+    "czujnik": {
+     "suche": 16.71,
+     "wszystkie": 16.7
+    },
+    "roznica": {
+     "suche": 7.29,
+     "wszystkie": 7.3
+    },
+    "roznicaProc": {
+     "suche": 43.6,
+     "wszystkie": 43.7
+    },
+    "godzinSuchych": 7830,
+    "miesiaceSuche": 12,
+    "odstajace": 0
+   }
+  },
+  {
+   "id": 19919,
+   "typ": "SDS011",
+   "lokalizacja": 10122,
+   "grupa": "Kraków",
+   "gmina": "Kraków",
+   "dzielnica": "V Krowodrza",
+   "lon": 19.92,
+   "lat": 50.074,
+   "wilgotnosc": {
+    "czujniki": [
+     "DHT22#19920"
+    ],
+    "godzinSuchych": 535,
+    "godzinWilgotnych": 1282,
+    "godzinBezPomiaru": 5638,
+    "srednia": 87
+   },
+   "jakosc": {
+    "pokrycie": 0.85,
+    "godzinWaznych": 7455,
+    "miesiace": 12,
+    "usuniete": {
+     "odstajace": 102,
+     "zawieszone": 0,
+     "niespojne": 0,
+     "skoki": 77,
+     "zaKrotkie": 8
+    }
+   },
+   "pm25": {
+    "model": 20.08,
+    "modelOczko": 20,
+    "adresowWPromieniu": 19,
+    "czujnik": {
+     "suche": null,
+     "wszystkie": 6.57
+    },
+    "roznica": {
+     "suche": null,
+     "wszystkie": 13.51
+    },
+    "roznicaProc": {
+     "suche": null,
+     "wszystkie": 205.5
+    },
+    "godzinSuchych": 535,
+    "miesiaceSuche": 3,
+    "odstajace": 102
+   },
+   "pm10": {
+    "model": 31.91,
+    "modelOczko": 31,
+    "adresowWPromieniu": 19,
+    "czujnik": {
+     "suche": null,
+     "wszystkie": 11.04
+    },
+    "roznica": {
+     "suche": null,
+     "wszystkie": 20.87
+    },
+    "roznicaProc": {
+     "suche": null,
+     "wszystkie": 189
+    },
+    "godzinSuchych": 527,
+    "miesiaceSuche": 3,
+    "odstajace": 111
+   }
+  },
+  {
+   "id": 19691,
+   "typ": "SDS011",
+   "lokalizacja": 42748,
+   "grupa": "Kraków",
+   "gmina": "Kraków",
+   "dzielnica": "VIII Dębniki",
+   "lon": 19.89,
+   "lat": 50.016,
+   "wilgotnosc": null,
+   "jakosc": {
+    "pokrycie": 0.95,
+    "godzinWaznych": 8357,
+    "miesiace": 12,
+    "usuniete": {
+     "odstajace": 0,
+     "zawieszone": 0,
+     "niespojne": 0,
+     "skoki": 54,
+     "zaKrotkie": 8
+    }
+   },
+   "pm25": {
+    "model": 16.57,
+    "modelOczko": 15.8,
+    "adresowWPromieniu": 6,
+    "czujnik": {
+     "suche": null,
+     "wszystkie": 16.02
+    },
+    "roznica": {
+     "suche": null,
+     "wszystkie": 0.55
+    },
+    "roznicaProc": {
+     "suche": null,
+     "wszystkie": 3.4
+    },
+    "godzinSuchych": 0,
+    "miesiaceSuche": 0,
+    "odstajace": 0
+   },
+   "pm10": {
+    "model": 25.4,
+    "modelOczko": 23.9,
+    "adresowWPromieniu": 6,
+    "czujnik": {
+     "suche": null,
+     "wszystkie": 35.86
+    },
+    "roznica": {
+     "suche": null,
+     "wszystkie": -10.46
+    },
+    "roznicaProc": {
+     "suche": null,
+     "wszystkie": -29.2
+    },
+    "godzinSuchych": 0,
+    "miesiaceSuche": 0,
+    "odstajace": 181
+   }
+  },
+  {
+   "id": 67164,
+   "typ": "SDS011",
+   "lokalizacja": 54093,
+   "grupa": "Kraków",
+   "gmina": "Kraków",
+   "dzielnica": "XI Podgórze Duchackie",
+   "lon": 19.984,
+   "lat": 50.014,
+   "wilgotnosc": {
+    "czujniki": [
+     "SHT31#67165"
+    ],
+    "godzinSuchych": 4982,
+    "godzinWilgotnych": 3238,
+    "godzinBezPomiaru": 0,
+    "srednia": 71
+   },
+   "jakosc": {
+    "pokrycie": 0.94,
+    "godzinWaznych": 8220,
+    "miesiace": 12,
+    "usuniete": {
+     "odstajace": 2,
+     "zawieszone": 1,
+     "niespojne": 0,
+     "skoki": 14,
+     "zaKrotkie": 83
+    }
+   },
+   "pm25": {
+    "model": 15.03,
+    "modelOczko": 14.5,
+    "adresowWPromieniu": 22,
+    "czujnik": {
+     "suche": 3.81,
+     "wszystkie": 5.2
+    },
+    "roznica": {
+     "suche": 11.22,
+     "wszystkie": 9.83
+    },
+    "roznicaProc": {
+     "suche": 294.8,
+     "wszystkie": 189
+    },
+    "godzinSuchych": 4982,
+    "miesiaceSuche": 12,
+    "odstajace": 2
+   },
+   "pm10": {
+    "model": 25.59,
+    "modelOczko": 24.2,
+    "adresowWPromieniu": 22,
+    "czujnik": {
+     "suche": 6.1,
+     "wszystkie": 8.7
+    },
+    "roznica": {
+     "suche": 19.48,
+     "wszystkie": 16.89
+    },
+    "roznicaProc": {
+     "suche": 319.2,
+     "wszystkie": 194.1
+    },
+    "godzinSuchych": 4948,
+    "miesiaceSuche": 12,
+    "odstajace": 73
+   }
+  },
+  {
+   "id": 28007,
+   "typ": "SDS011",
+   "lokalizacja": 15333,
+   "grupa": "Kraków",
+   "gmina": "Kraków",
+   "dzielnica": "XII Bieżanów-Prokocim",
+   "lon": 20.02,
+   "lat": 50.01,
+   "wilgotnosc": {
+    "czujniki": [
+     "BME280#28008"
+    ],
+    "godzinSuchych": 3406,
+    "godzinWilgotnych": 2444,
+    "godzinBezPomiaru": 2598,
+    "srednia": 66
+   },
+   "jakosc": {
+    "pokrycie": 0.96,
+    "godzinWaznych": 8448,
+    "miesiace": 12,
+    "usuniete": {
+     "odstajace": 25,
+     "zawieszone": 0,
+     "niespojne": 0,
+     "skoki": 52,
+     "zaKrotkie": 10
+    }
+   },
+   "pm25": {
+    "model": 13.5,
+    "modelOczko": 20.4,
+    "adresowWPromieniu": 1,
+    "czujnik": {
+     "suche": null,
+     "wszystkie": 11.34
+    },
+    "roznica": {
+     "suche": null,
+     "wszystkie": 2.16
+    },
+    "roznicaProc": {
+     "suche": null,
+     "wszystkie": 19
+    },
+    "godzinSuchych": 3406,
+    "miesiaceSuche": 9,
+    "odstajace": 25
+   },
+   "pm10": {
+    "model": 22.6,
+    "modelOczko": 37.4,
+    "adresowWPromieniu": 1,
+    "czujnik": {
+     "suche": null,
+     "wszystkie": 24.74
+    },
+    "roznica": {
+     "suche": null,
+     "wszystkie": -2.14
+    },
+    "roznicaProc": {
+     "suche": null,
+     "wszystkie": -8.6
+    },
+    "godzinSuchych": 3404,
+    "miesiaceSuche": 9,
+    "odstajace": 79
+   }
+  },
+  {
+   "id": 34920,
+   "typ": "SDS011",
+   "lokalizacja": 21128,
+   "grupa": "Kraków",
+   "gmina": "Kraków",
+   "dzielnica": "XII Bieżanów-Prokocim",
+   "lon": 20.002,
+   "lat": 50.016,
+   "wilgotnosc": {
+    "czujniki": [
+     "BME280#34921"
+    ],
+    "godzinSuchych": 2211,
+    "godzinWilgotnych": 2454,
+    "godzinBezPomiaru": 3682,
+    "srednia": 77
+   },
+   "jakosc": {
+    "pokrycie": 0.95,
+    "godzinWaznych": 8347,
+    "miesiace": 12,
+    "usuniete": {
+     "odstajace": 0,
+     "zawieszone": 0,
+     "niespojne": 0,
+     "skoki": 22,
+     "zaKrotkie": 2
+    }
+   },
+   "pm25": {
+    "model": 13.95,
+    "modelOczko": 13.6,
+    "adresowWPromieniu": 11,
+    "czujnik": {
+     "suche": null,
+     "wszystkie": 12.54
+    },
+    "roznica": {
+     "suche": null,
+     "wszystkie": 1.4
+    },
+    "roznicaProc": {
+     "suche": null,
+     "wszystkie": 11.2
+    },
+    "godzinSuchych": 2211,
+    "miesiaceSuche": 9,
+    "odstajace": 0
+   },
+   "pm10": {
+    "model": 24.64,
+    "modelOczko": 23.7,
+    "adresowWPromieniu": 11,
+    "czujnik": {
+     "suche": null,
+     "wszystkie": 24.47
+    },
+    "roznica": {
+     "suche": null,
+     "wszystkie": 0.16
+    },
+    "roznicaProc": {
+     "suche": null,
+     "wszystkie": 0.7
+    },
+    "godzinSuchych": 2211,
+    "miesiaceSuche": 9,
+    "odstajace": 0
+   }
+  },
+  {
+   "id": 48897,
+   "typ": "SDS011",
+   "lokalizacja": 34713,
+   "grupa": "Kraków",
+   "gmina": "Kraków",
+   "dzielnica": "XIII Podgórze",
+   "lon": 20,
+   "lat": 50.038,
+   "wilgotnosc": null,
+   "jakosc": {
+    "pokrycie": 0.82,
+    "godzinWaznych": 7142,
+    "miesiace": 11,
+    "usuniete": {
+     "odstajace": 0,
+     "zawieszone": 0,
+     "niespojne": 0,
+     "skoki": 14,
+     "zaKrotkie": 5
+    }
+   },
+   "pm25": {
+    "model": 17.33,
+    "modelOczko": 17.4,
+    "adresowWPromieniu": 12,
+    "czujnik": {
+     "suche": null,
+     "wszystkie": 11.42
+    },
+    "roznica": {
+     "suche": null,
+     "wszystkie": 5.91
+    },
+    "roznicaProc": {
+     "suche": null,
+     "wszystkie": 51.8
+    },
+    "godzinSuchych": 0,
+    "miesiaceSuche": 0,
+    "odstajace": 0
+   },
+   "pm10": {
+    "model": 29.64,
+    "modelOczko": 29.3,
+    "adresowWPromieniu": 12,
+    "czujnik": {
+     "suche": null,
+     "wszystkie": 20.4
+    },
+    "roznica": {
+     "suche": null,
+     "wszystkie": 9.24
+    },
+    "roznicaProc": {
+     "suche": null,
+     "wszystkie": 45.3
+    },
+    "godzinSuchych": 0,
+    "miesiaceSuche": 0,
+    "odstajace": 0
+   }
+  },
+  {
+   "id": 84521,
+   "typ": "SDS011",
+   "lokalizacja": 74758,
+   "grupa": "Kraków",
+   "gmina": "Kraków",
+   "dzielnica": "XIV Czyżyny",
+   "lon": 20.008,
+   "lat": 50.066,
+   "wilgotnosc": {
+    "czujniki": [
+     "BME280#84522"
+    ],
+    "godzinSuchych": 7841,
+    "godzinWilgotnych": 552,
+    "godzinBezPomiaru": 106,
+    "srednia": 59
+   },
+   "jakosc": {
+    "pokrycie": 0.97,
+    "godzinWaznych": 8499,
+    "miesiace": 12,
+    "usuniete": {
+     "odstajace": 0,
+     "zawieszone": 0,
+     "niespojne": 0,
+     "skoki": 9,
+     "zaKrotkie": 6
+    }
+   },
+   "pm25": {
+    "model": 16.73,
+    "modelOczko": 17.4,
+    "adresowWPromieniu": 4,
+    "czujnik": {
+     "suche": 8.73,
+     "wszystkie": 8.93
+    },
+    "roznica": {
+     "suche": 7.99,
+     "wszystkie": 7.79
+    },
+    "roznicaProc": {
+     "suche": 91.5,
+     "wszystkie": 87.3
+    },
+    "godzinSuchych": 7841,
+    "miesiaceSuche": 12,
+    "odstajace": 0
+   },
+   "pm10": {
+    "model": 25.53,
+    "modelOczko": 27.1,
+    "adresowWPromieniu": 4,
+    "czujnik": {
+     "suche": 15.2,
+     "wszystkie": 15.61
+    },
+    "roznica": {
+     "suche": 10.33,
+     "wszystkie": 9.91
+    },
+    "roznicaProc": {
+     "suche": 68,
+     "wszystkie": 63.5
+    },
+    "godzinSuchych": 7841,
+    "miesiaceSuche": 12,
+    "odstajace": 0
+   }
+  },
+  {
+   "id": 87944,
+   "typ": "SPS30",
+   "lokalizacja": 79073,
+   "grupa": "Kraków",
+   "gmina": "Kraków",
+   "dzielnica": "XIV Czyżyny",
+   "lon": 20,
+   "lat": 50.082,
+   "wilgotnosc": {
+    "czujniki": [
+     "BME280#87945"
+    ],
+    "godzinSuchych": 8093,
+    "godzinWilgotnych": 420,
+    "godzinBezPomiaru": 1,
+    "srednia": 59
+   },
+   "jakosc": {
+    "pokrycie": 0.97,
+    "godzinWaznych": 8514,
+    "miesiace": 12,
+    "usuniete": {
+     "odstajace": 0,
+     "zawieszone": 0,
+     "niespojne": 0,
+     "skoki": 8,
+     "zaKrotkie": 8
+    }
+   },
+   "pm25": {
+    "model": 15.35,
+    "modelOczko": 13.8,
+    "adresowWPromieniu": 6,
+    "czujnik": {
+     "suche": 7.32,
+     "wszystkie": 7.36
+    },
+    "roznica": {
+     "suche": 8.03,
+     "wszystkie": 7.99
+    },
+    "roznicaProc": {
+     "suche": 109.6,
+     "wszystkie": 108.6
+    },
+    "godzinSuchych": 8093,
+    "miesiaceSuche": 12,
+    "odstajace": 0
+   },
+   "pm10": {
+    "model": 23.83,
+    "modelOczko": 21.1,
+    "adresowWPromieniu": 6,
+    "czujnik": {
+     "suche": 7.59,
+     "wszystkie": 7.63
+    },
+    "roznica": {
+     "suche": 16.24,
+     "wszystkie": 16.2
+    },
+    "roznicaProc": {
+     "suche": 213.9,
+     "wszystkie": 212.2
+    },
+    "godzinSuchych": 8082,
+    "miesiaceSuche": 12,
+    "odstajace": 11
+   }
+  },
+  {
+   "id": 33285,
+   "typ": "SDS011",
+   "lokalizacja": 19656,
+   "grupa": "Kraków",
+   "gmina": "Kraków",
+   "dzielnica": "XV Mistrzejowice",
+   "lon": 20.014,
+   "lat": 50.096,
+   "wilgotnosc": {
+    "czujniki": [
+     "BME280#33286"
+    ],
+    "godzinSuchych": 7317,
+    "godzinWilgotnych": 1022,
+    "godzinBezPomiaru": 1,
+    "srednia": 61
+   },
+   "jakosc": {
+    "pokrycie": 0.95,
+    "godzinWaznych": 8340,
+    "miesiace": 12,
+    "usuniete": {
+     "odstajace": 0,
+     "zawieszone": 0,
+     "niespojne": 0,
+     "skoki": 3843,
+     "zaKrotkie": 16
+    }
+   },
+   "pm25": {
+    "model": 17.6,
+    "modelOczko": 18.2,
+    "adresowWPromieniu": 6,
+    "czujnik": {
+     "suche": 10.9,
+     "wszystkie": 11.17
+    },
+    "roznica": {
+     "suche": 6.7,
+     "wszystkie": 6.43
+    },
+    "roznicaProc": {
+     "suche": 61.4,
+     "wszystkie": 57.5
+    },
+    "godzinSuchych": 7317,
+    "miesiaceSuche": 12,
+    "odstajace": 0
+   },
+   "pm10": {
+    "model": 25.35,
+    "modelOczko": 26.4,
+    "adresowWPromieniu": 6,
+    "czujnik": {
+     "suche": 19.13,
+     "wszystkie": 19.37
+    },
+    "roznica": {
+     "suche": 6.22,
+     "wszystkie": 5.98
+    },
+    "roznicaProc": {
+     "suche": 32.5,
+     "wszystkie": 30.9
+    },
+    "godzinSuchych": 7317,
+    "miesiaceSuche": 12,
+    "odstajace": 0
+   }
+  },
+  {
+   "id": 67640,
+   "typ": "SDS011",
+   "lokalizacja": 54434,
+   "grupa": "Kraków",
+   "gmina": "Kraków",
+   "dzielnica": "XVII Wzgórza Krzesławickie",
+   "lon": 20.082,
+   "lat": 50.096,
+   "wilgotnosc": {
+    "czujniki": [
+     "SHT31#67641"
+    ],
+    "godzinSuchych": 4855,
+    "godzinWilgotnych": 1822,
+    "godzinBezPomiaru": 579,
+    "srednia": 67
+   },
+   "jakosc": {
+    "pokrycie": 0.83,
+    "godzinWaznych": 7256,
+    "miesiace": 12,
+    "usuniete": {
+     "odstajace": 0,
+     "zawieszone": 0,
+     "niespojne": 0,
+     "skoki": 341,
+     "zaKrotkie": 5
+    }
+   },
+   "pm25": {
+    "model": 14.65,
+    "modelOczko": 14.5,
+    "adresowWPromieniu": 21,
+    "czujnik": {
+     "suche": 8.86,
+     "wszystkie": 10.11
+    },
+    "roznica": {
+     "suche": 5.79,
+     "wszystkie": 4.54
+    },
+    "roznicaProc": {
+     "suche": 65.3,
+     "wszystkie": 44.9
+    },
+    "godzinSuchych": 4855,
+    "miesiaceSuche": 10,
+    "odstajace": 0
+   },
+   "pm10": {
+    "model": 21.74,
+    "modelOczko": 21.4,
+    "adresowWPromieniu": 21,
+    "czujnik": {
+     "suche": 18.51,
+     "wszystkie": 21.17
+    },
+    "roznica": {
+     "suche": 3.23,
+     "wszystkie": 0.58
+    },
+    "roznicaProc": {
+     "suche": 17.5,
+     "wszystkie": 2.7
+    },
+    "godzinSuchych": 4855,
+    "miesiaceSuche": 10,
+    "odstajace": 0
+   }
+  },
+  {
+   "id": 11141,
+   "typ": "SDS011",
+   "lokalizacja": 5625,
+   "grupa": "obwarzanek",
+   "gmina": "Wielka Wieś",
+   "dzielnica": null,
+   "lon": 19.864,
+   "lat": 50.122,
+   "wilgotnosc": {
+    "czujniki": [
+     "DHT22#11142"
+    ],
+    "godzinSuchych": 5516,
+    "godzinWilgotnych": 3003,
+    "godzinBezPomiaru": 0,
+    "srednia": 68
+   },
+   "jakosc": {
+    "pokrycie": 0.97,
+    "godzinWaznych": 8519,
+    "miesiace": 12,
+    "usuniete": {
+     "odstajace": 0,
+     "zawieszone": 0,
+     "niespojne": 0,
+     "skoki": 53,
+     "zaKrotkie": 4
+    }
+   },
+   "pm25": {
+    "model": 15.91,
+    "modelOczko": 15.8,
+    "adresowWPromieniu": 15,
+    "czujnik": {
+     "suche": 8.67,
+     "wszystkie": 11.78
+    },
+    "roznica": {
+     "suche": 7.24,
+     "wszystkie": 4.13
+    },
+    "roznicaProc": {
+     "suche": 83.5,
+     "wszystkie": 35
+    },
+    "godzinSuchych": 5516,
+    "miesiaceSuche": 12,
+    "odstajace": 0
+   },
+   "pm10": {
+    "model": 24.31,
+    "modelOczko": 24.1,
+    "adresowWPromieniu": 15,
+    "czujnik": {
+     "suche": 12.63,
+     "wszystkie": 17.55
+    },
+    "roznica": {
+     "suche": 11.67,
+     "wszystkie": 6.76
+    },
+    "roznicaProc": {
+     "suche": 92.4,
+     "wszystkie": 38.5
+    },
+    "godzinSuchych": 5516,
+    "miesiaceSuche": 12,
+    "odstajace": 0
+   }
+  },
+  {
+   "id": 20739,
+   "typ": "SDS011",
+   "lokalizacja": 10530,
+   "grupa": "obwarzanek",
+   "gmina": "Skawina",
+   "dzielnica": null,
+   "lon": 19.844,
+   "lat": 49.968,
+   "wilgotnosc": {
+    "czujniki": [
+     "DHT22#20740"
+    ],
+    "godzinSuchych": 3217,
+    "godzinWilgotnych": 5127,
+    "godzinBezPomiaru": 120,
+    "srednia": 80
+   },
+   "jakosc": {
+    "pokrycie": 0.97,
+    "godzinWaznych": 8464,
+    "miesiace": 12,
+    "usuniete": {
+     "odstajace": 33,
+     "zawieszone": 0,
+     "niespojne": 0,
+     "skoki": 31,
+     "zaKrotkie": 13
+    }
+   },
+   "pm25": {
+    "model": 15.4,
+    "modelOczko": 15.4,
+    "adresowWPromieniu": 24,
+    "czujnik": {
+     "suche": 4.58,
+     "wszystkie": 5.45
+    },
+    "roznica": {
+     "suche": 10.82,
+     "wszystkie": 9.95
+    },
+    "roznicaProc": {
+     "suche": 236.5,
+     "wszystkie": 182.7
+    },
+    "godzinSuchych": 3217,
+    "miesiaceSuche": 11,
+    "odstajace": 33
+   },
+   "pm10": {
+    "model": 22,
+    "modelOczko": 22,
+    "adresowWPromieniu": 24,
+    "czujnik": {
+     "suche": 11.32,
+     "wszystkie": 13.92
+    },
+    "roznica": {
+     "suche": 10.68,
+     "wszystkie": 8.08
+    },
+    "roznicaProc": {
+     "suche": 94.3,
+     "wszystkie": 58
+    },
+    "godzinSuchych": 3216,
+    "miesiaceSuche": 11,
+    "odstajace": 50
+   }
+  },
+  {
+   "id": 34471,
+   "typ": "SDS011",
+   "lokalizacja": 20710,
+   "grupa": "obwarzanek",
+   "gmina": "Skawina",
+   "dzielnica": null,
+   "lon": 19.836,
+   "lat": 49.976,
+   "wilgotnosc": null,
+   "jakosc": {
+    "pokrycie": 0.86,
+    "godzinWaznych": 7525,
+    "miesiace": 12,
+    "usuniete": {
+     "odstajace": 5,
+     "zawieszone": 0,
+     "niespojne": 0,
+     "skoki": 96,
+     "zaKrotkie": 15
+    }
+   },
+   "pm25": {
+    "model": 15.2,
+    "modelOczko": 15.2,
+    "adresowWPromieniu": 6,
+    "czujnik": {
+     "suche": null,
+     "wszystkie": 17.62
+    },
+    "roznica": {
+     "suche": null,
+     "wszystkie": -2.42
+    },
+    "roznicaProc": {
+     "suche": null,
+     "wszystkie": -13.7
+    },
+    "godzinSuchych": 0,
+    "miesiaceSuche": 0,
+    "odstajace": 5
+   },
+   "pm10": {
+    "model": 22.2,
+    "modelOczko": 22.2,
+    "adresowWPromieniu": 6,
+    "czujnik": {
+     "suche": null,
+     "wszystkie": 35.33
+    },
+    "roznica": {
+     "suche": null,
+     "wszystkie": -13.13
+    },
+    "roznicaProc": {
+     "suche": null,
+     "wszystkie": -37.2
+    },
+    "godzinSuchych": 0,
+    "miesiaceSuche": 0,
+    "odstajace": 30
+   }
+  },
+  {
+   "id": 35438,
+   "typ": "SDS011",
+   "lokalizacja": 21558,
+   "grupa": "obwarzanek",
+   "gmina": "Zabierzów",
+   "dzielnica": null,
+   "lon": 19.799,
+   "lat": 50.112,
+   "wilgotnosc": {
+    "czujniki": [
+     "BME280#35439"
+    ],
+    "godzinSuchych": 8141,
+    "godzinWilgotnych": 0,
+    "godzinBezPomiaru": 1,
+    "srednia": 38
+   },
+   "jakosc": {
+    "pokrycie": 0.93,
+    "godzinWaznych": 8142,
+    "miesiace": 12,
+    "usuniete": {
+     "odstajace": 104,
+     "zawieszone": 0,
+     "niespojne": 0,
+     "skoki": 1185,
+     "zaKrotkie": 5
+    }
+   },
+   "pm25": {
+    "model": 15.7,
+    "modelOczko": 15.7,
+    "adresowWPromieniu": 28,
+    "czujnik": {
+     "suche": 21.52,
+     "wszystkie": 21.52
+    },
+    "roznica": {
+     "suche": -5.82,
+     "wszystkie": -5.82
+    },
+    "roznicaProc": {
+     "suche": -27.1,
+     "wszystkie": -27.1
+    },
+    "godzinSuchych": 8141,
+    "miesiaceSuche": 12,
+    "odstajace": 104
+   },
+   "pm10": {
+    "model": 25.9,
+    "modelOczko": 25.9,
+    "adresowWPromieniu": 28,
+    "czujnik": {
+     "suche": 41.31,
+     "wszystkie": 41.31
+    },
+    "roznica": {
+     "suche": -15.41,
+     "wszystkie": -15.41
+    },
+    "roznicaProc": {
+     "suche": -37.3,
+     "wszystkie": -37.3
+    },
+    "godzinSuchych": 7865,
+    "miesiaceSuche": 12,
+    "odstajace": 380
+   }
+  },
+  {
+   "id": 36243,
+   "typ": "SDS011",
+   "lokalizacja": 22284,
+   "grupa": "obwarzanek",
+   "gmina": "Skawina",
+   "dzielnica": null,
+   "lon": 19.816,
+   "lat": 49.956,
+   "wilgotnosc": null,
+   "jakosc": {
+    "pokrycie": 0.89,
+    "godzinWaznych": 7784,
+    "miesiace": 11,
+    "usuniete": {
+     "odstajace": 5,
+     "zawieszone": 0,
+     "niespojne": 0,
+     "skoki": 196,
+     "zaKrotkie": 5
+    }
+   },
+   "pm25": {
+    "model": 15.8,
+    "modelOczko": 15.8,
+    "adresowWPromieniu": 20,
+    "czujnik": {
+     "suche": null,
+     "wszystkie": 12.99
+    },
+    "roznica": {
+     "suche": null,
+     "wszystkie": 2.81
+    },
+    "roznicaProc": {
+     "suche": null,
+     "wszystkie": 21.6
+    },
+    "godzinSuchych": 0,
+    "miesiaceSuche": 0,
+    "odstajace": 5
+   },
+   "pm10": {
+    "model": 23.4,
+    "modelOczko": 23.4,
+    "adresowWPromieniu": 20,
+    "czujnik": {
+     "suche": null,
+     "wszystkie": 25.74
+    },
+    "roznica": {
+     "suche": null,
+     "wszystkie": -2.34
+    },
+    "roznicaProc": {
+     "suche": null,
+     "wszystkie": -9.1
+    },
+    "godzinSuchych": 0,
+    "miesiaceSuche": 0,
+    "odstajace": 12
+   }
+  },
+  {
+   "id": 38427,
+   "typ": "SDS011",
+   "lokalizacja": 24211,
+   "grupa": "obwarzanek",
+   "gmina": "Skawina",
+   "dzielnica": null,
+   "lon": 19.776,
+   "lat": 49.98,
+   "wilgotnosc": {
+    "czujniki": [
+     "BME280#38939",
+     "DHT22#38428"
+    ],
+    "godzinSuchych": 3608,
+    "godzinWilgotnych": 2508,
+    "godzinBezPomiaru": 1408,
+    "srednia": 68
+   },
+   "jakosc": {
+    "pokrycie": 0.86,
+    "godzinWaznych": 7524,
+    "miesiace": 11,
+    "usuniete": {
+     "odstajace": 5,
+     "zawieszone": 0,
+     "niespojne": 0,
+     "skoki": 85,
+     "zaKrotkie": 68
+    }
+   },
+   "pm25": {
+    "model": 14.86,
+    "modelOczko": 15.2,
+    "adresowWPromieniu": 9,
+    "czujnik": {
+     "suche": 5.09,
+     "wszystkie": 7.48
+    },
+    "roznica": {
+     "suche": 9.76,
+     "wszystkie": 7.38
+    },
+    "roznicaProc": {
+     "suche": 191.7,
+     "wszystkie": 98.7
+    },
+    "godzinSuchych": 3608,
+    "miesiaceSuche": 10,
+    "odstajace": 5
+   },
+   "pm10": {
+    "model": 22.63,
+    "modelOczko": 23,
+    "adresowWPromieniu": 9,
+    "czujnik": {
+     "suche": 11.1,
+     "wszystkie": 16.84
+    },
+    "roznica": {
+     "suche": 11.54,
+     "wszystkie": 5.8
+    },
+    "roznicaProc": {
+     "suche": 104,
+     "wszystkie": 34.4
+    },
+    "godzinSuchych": 3606,
+    "miesiaceSuche": 10,
+    "odstajace": 12
+   }
+  },
+  {
+   "id": 52806,
+   "typ": "SDS011",
+   "lokalizacja": 38672,
+   "grupa": "obwarzanek",
+   "gmina": "Zielonki",
+   "dzielnica": null,
+   "lon": 19.913,
+   "lat": 50.111,
+   "wilgotnosc": {
+    "czujniki": [
+     "BME280#52807"
+    ],
+    "godzinSuchych": 4037,
+    "godzinWilgotnych": 4037,
+    "godzinBezPomiaru": 22,
+    "srednia": 78
+   },
+   "jakosc": {
+    "pokrycie": 0.92,
+    "godzinWaznych": 8096,
+    "miesiace": 12,
+    "usuniete": {
+     "odstajace": 0,
+     "zawieszone": 0,
+     "niespojne": 0,
+     "skoki": 0,
+     "zaKrotkie": 0
+    }
+   },
+   "pm25": {
+    "model": 17.7,
+    "modelOczko": 17.7,
+    "adresowWPromieniu": 75,
+    "czujnik": {
+     "suche": 6.49,
+     "wszystkie": 9.92
+    },
+    "roznica": {
+     "suche": 11.21,
+     "wszystkie": 7.78
+    },
+    "roznicaProc": {
+     "suche": 172.6,
+     "wszystkie": 78.4
+    },
+    "godzinSuchych": 4037,
+    "miesiaceSuche": 10,
+    "odstajace": 0
+   },
+   "pm10": {
+    "model": 25.3,
+    "modelOczko": 25.4,
+    "adresowWPromieniu": 75,
+    "czujnik": {
+     "suche": 12.44,
+     "wszystkie": 19.82
+    },
+    "roznica": {
+     "suche": 12.86,
+     "wszystkie": 5.49
+    },
+    "roznicaProc": {
+     "suche": 103.3,
+     "wszystkie": 27.7
+    },
+    "godzinSuchych": 4036,
+    "miesiaceSuche": 10,
+    "odstajace": 2
+   }
+  },
+  {
+   "id": 56567,
+   "typ": "SDS011",
+   "lokalizacja": 42456,
+   "grupa": "obwarzanek",
+   "gmina": "Wieliczka",
+   "dzielnica": null,
+   "lon": 20.004,
+   "lat": 49.956,
+   "wilgotnosc": {
+    "czujniki": [
+     "BME280#56568"
+    ],
+    "godzinSuchych": 2958,
+    "godzinWilgotnych": 3976,
+    "godzinBezPomiaru": 551,
+    "srednia": 79
+   },
+   "jakosc": {
+    "pokrycie": 0.85,
+    "godzinWaznych": 7485,
+    "miesiace": 12,
+    "usuniete": {
+     "odstajace": 2,
+     "zawieszone": 0,
+     "niespojne": 0,
+     "skoki": 84,
+     "zaKrotkie": 45
+    }
+   },
+   "pm25": {
+    "model": 16.5,
+    "modelOczko": 16.5,
+    "adresowWPromieniu": 2,
+    "czujnik": {
+     "suche": 6.02,
+     "wszystkie": 9.08
+    },
+    "roznica": {
+     "suche": 10.48,
+     "wszystkie": 7.42
+    },
+    "roznicaProc": {
+     "suche": 174.3,
+     "wszystkie": 81.7
+    },
+    "godzinSuchych": 2958,
+    "miesiaceSuche": 10,
+    "odstajace": 2
+   },
+   "pm10": {
+    "model": 24.2,
+    "modelOczko": 24.2,
+    "adresowWPromieniu": 2,
+    "czujnik": {
+     "suche": 12.19,
+     "wszystkie": 17.98
+    },
+    "roznica": {
+     "suche": 12.01,
+     "wszystkie": 6.22
+    },
+    "roznicaProc": {
+     "suche": 98.5,
+     "wszystkie": 34.6
+    },
+    "godzinSuchych": 2956,
+    "miesiaceSuche": 10,
+    "odstajace": 4
+   }
+  },
+  {
+   "id": 58226,
+   "typ": "SDS011",
+   "lokalizacja": 44022,
+   "grupa": "obwarzanek",
+   "gmina": "Kocmyrzów-Luborzyca",
+   "dzielnica": null,
+   "lon": 20.135,
+   "lat": 50.128,
+   "wilgotnosc": {
+    "czujniki": [
+     "BME280#58227"
+    ],
+    "godzinSuchych": 4794,
+    "godzinWilgotnych": 3522,
+    "godzinBezPomiaru": 121,
+    "srednia": 72
+   },
+   "jakosc": {
+    "pokrycie": 0.96,
+    "godzinWaznych": 8437,
+    "miesiace": 12,
+    "usuniete": {
+     "odstajace": 2,
+     "zawieszone": 0,
+     "niespojne": 0,
+     "skoki": 184,
+     "zaKrotkie": 6
+    }
+   },
+   "pm25": {
+    "model": 13.8,
+    "modelOczko": 13.8,
+    "adresowWPromieniu": 11,
+    "czujnik": {
+     "suche": 8.18,
+     "wszystkie": 11.77
+    },
+    "roznica": {
+     "suche": 5.62,
+     "wszystkie": 2.03
+    },
+    "roznicaProc": {
+     "suche": 68.7,
+     "wszystkie": 17.3
+    },
+    "godzinSuchych": 4794,
+    "miesiaceSuche": 12,
+    "odstajace": 2
+   },
+   "pm10": {
+    "model": 20.5,
+    "modelOczko": 20.5,
+    "adresowWPromieniu": 11,
+    "czujnik": {
+     "suche": 19.28,
+     "wszystkie": 27.93
+    },
+    "roznica": {
+     "suche": 1.22,
+     "wszystkie": -7.43
+    },
+    "roznicaProc": {
+     "suche": 6.3,
+     "wszystkie": -26.6
+    },
+    "godzinSuchych": 4789,
+    "miesiaceSuche": 12,
+    "odstajace": 12
+   }
+  },
+  {
+   "id": 73170,
+   "typ": "SDS011",
+   "lokalizacja": 61381,
+   "grupa": "obwarzanek",
+   "gmina": "Zielonki",
+   "dzielnica": null,
+   "lon": 19.962,
+   "lat": 50.118,
+   "wilgotnosc": {
+    "czujniki": [
+     "BME280#73171"
+    ],
+    "godzinSuchych": 5517,
+    "godzinWilgotnych": 2025,
+    "godzinBezPomiaru": 932,
+    "srednia": 62
+   },
+   "jakosc": {
+    "pokrycie": 0.97,
+    "godzinWaznych": 8474,
+    "miesiace": 12,
+    "usuniete": {
+     "odstajace": 14,
+     "zawieszone": 0,
+     "niespojne": 0,
+     "skoki": 69,
+     "zaKrotkie": 20
+    }
+   },
+   "pm25": {
+    "model": 19.6,
+    "modelOczko": 19.6,
+    "adresowWPromieniu": 42,
+    "czujnik": {
+     "suche": 5.63,
+     "wszystkie": 6.44
+    },
+    "roznica": {
+     "suche": 13.97,
+     "wszystkie": 13.16
+    },
+    "roznicaProc": {
+     "suche": 248.2,
+     "wszystkie": 204.2
+    },
+    "godzinSuchych": 5517,
+    "miesiaceSuche": 12,
+    "odstajace": 14
+   },
+   "pm10": {
+    "model": 27.5,
+    "modelOczko": 27.5,
+    "adresowWPromieniu": 42,
+    "czujnik": {
+     "suche": 11.81,
+     "wszystkie": 13.76
+    },
+    "roznica": {
+     "suche": 15.69,
+     "wszystkie": 13.74
+    },
+    "roznicaProc": {
+     "suche": 132.8,
+     "wszystkie": 99.8
+    },
+    "godzinSuchych": 5504,
+    "miesiaceSuche": 12,
+    "odstajace": 28
+   }
+  },
+  {
+   "id": 75021,
+   "typ": "SDS011",
+   "lokalizacja": 63583,
+   "grupa": "obwarzanek",
+   "gmina": "Niepołomice",
+   "dzielnica": null,
+   "lon": 20.182,
+   "lat": 49.976,
+   "wilgotnosc": {
+    "czujniki": [
+     "SHT31#75022"
+    ],
+    "godzinSuchych": 4126,
+    "godzinWilgotnych": 4348,
+    "godzinBezPomiaru": 0,
+    "srednia": 78
+   },
+   "jakosc": {
+    "pokrycie": 0.97,
+    "godzinWaznych": 8474,
+    "miesiace": 12,
+    "usuniete": {
+     "odstajace": 20,
+     "zawieszone": 0,
+     "niespojne": 0,
+     "skoki": 142,
+     "zaKrotkie": 5
+    }
+   },
+   "pm25": {
+    "model": 14.8,
+    "modelOczko": 14.8,
+    "adresowWPromieniu": 13,
+    "czujnik": {
+     "suche": 5.51,
+     "wszystkie": 8.95
+    },
+    "roznica": {
+     "suche": 9.29,
+     "wszystkie": 5.85
+    },
+    "roznicaProc": {
+     "suche": 168.7,
+     "wszystkie": 65.4
+    },
+    "godzinSuchych": 4126,
+    "miesiaceSuche": 12,
+    "odstajace": 20
+   },
+   "pm10": {
+    "model": 23.6,
+    "modelOczko": 23.6,
+    "adresowWPromieniu": 13,
+    "czujnik": {
+     "suche": 10.81,
+     "wszystkie": 19.36
+    },
+    "roznica": {
+     "suche": 12.79,
+     "wszystkie": 4.24
+    },
+    "roznicaProc": {
+     "suche": 118.4,
+     "wszystkie": 21.9
+    },
+    "godzinSuchych": 4121,
+    "miesiaceSuche": 12,
+    "odstajace": 96
+   }
+  }
+ ],
+ "odrzucone": [
+  {
+   "id": 16804,
+   "typ": "SDS011",
+   "powod": "odstające godziny w 19% pomiarów"
+  },
+  {
+   "id": 21354,
+   "typ": "SDS011",
+   "powod": "brak pliku w archiwum w obu dobach kontrolnych (2025-02-12, 2025-08-13)"
+  },
+  {
+   "id": 21754,
+   "typ": "SDS011",
+   "powod": "pokrycie godzin 22% < 75%; dane (≥ 200 h) w 3 z 12 miesięcy"
+  },
+  {
+   "id": 23898,
+   "typ": "SDS011",
+   "powod": "pokrycie godzin 64% < 75%; dane (≥ 200 h) w 9 z 12 miesięcy"
+  },
+  {
+   "id": 39128,
+   "typ": "SDS011",
+   "powod": "pokrycie godzin 1% < 75%; dane (≥ 200 h) w 0 z 12 miesięcy; odstające godziny w 55% pomiarów"
+  },
+  {
+   "id": 49001,
+   "typ": "PMS3003",
+   "powod": "pokrycie godzin 13% < 75%; dane (≥ 200 h) w 3 z 12 miesięcy"
+  },
+  {
+   "id": 51194,
+   "typ": "SDS011",
+   "powod": "pokrycie godzin 74% < 75%"
+  },
+  {
+   "id": 51766,
+   "typ": "SDS011",
+   "powod": "pokrycie godzin 28% < 75%; dane (≥ 200 h) w 5 z 12 miesięcy"
+  },
+  {
+   "id": 53483,
+   "typ": "SDS011",
+   "powod": "pokrycie godzin 63% < 75%"
+  },
+  {
+   "id": 53630,
+   "typ": "SDS011",
+   "powod": "pokrycie godzin 54% < 75%; dane (≥ 200 h) w 7 z 12 miesięcy"
+  },
+  {
+   "id": 68086,
+   "typ": "SDS011",
+   "powod": "pokrycie godzin 29% < 75%; dane (≥ 200 h) w 6 z 12 miesięcy; odstające godziny w 16% pomiarów; zawieszone odczyty w 19% godzin"
+  },
+  {
+   "id": 75810,
+   "typ": "SDS011",
+   "powod": "pokrycie godzin 36% < 75%; dane (≥ 200 h) w 6 z 12 miesięcy"
+  },
+  {
+   "id": 76745,
+   "typ": "SDS011",
+   "powod": "pokrycie godzin 58% < 75%; dane (≥ 200 h) w 9 z 12 miesięcy"
+  },
+  {
+   "id": 78856,
+   "typ": "SDS011",
+   "powod": "pokrycie godzin 40% < 75%; dane (≥ 200 h) w 5 z 12 miesięcy"
+  },
+  {
+   "id": 84984,
+   "typ": "SDS011",
+   "powod": "pokrycie godzin 49% < 75%; dane (≥ 200 h) w 8 z 12 miesięcy"
+  },
+  {
+   "id": 90851,
+   "typ": "SDS011",
+   "powod": "pokrycie godzin 9% < 75%; dane (≥ 200 h) w 2 z 12 miesięcy"
+  },
+  {
+   "id": 97236,
+   "typ": "SPS30",
+   "powod": "brak pliku w archiwum w obu dobach kontrolnych (2025-02-12, 2025-08-13)"
+  },
+  {
+   "id": 97521,
+   "typ": "SDS011",
+   "powod": "brak pliku w archiwum w obu dobach kontrolnych (2025-02-12, 2025-08-13)"
+  },
+  {
+   "id": 98195,
+   "typ": "SDS011",
+   "powod": "brak pliku w archiwum w obu dobach kontrolnych (2025-02-12, 2025-08-13)"
+  }
+ ]
+}
