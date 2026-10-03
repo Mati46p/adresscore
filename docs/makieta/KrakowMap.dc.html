@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<title>Mapa Krakowa z warstwami</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="display: flex; flex-direction: column; gap: 12px; font-family: 'IBM Plex Sans', system-ui, sans-serif; color: #18202B; width: {{W}}px; max-width: 100%">
+<div role="group" aria-label="Warstwy mapy" style="display: flex; flex-wrap: wrap; gap: 6px">
+<sc-for list="{{toggles}}" as="t" hint-placeholder-count="5">
+<button type="button" onClick="{{t.pick}}" aria-pressed="{{t.pressed}}" style="display: inline-flex; align-items: center; gap: 8px; padding: 0 12px; height: 40px; border-radius: 999px; font: inherit; font-size: 13px; cursor: pointer; background: {{t.bg}}; border: 1px solid {{t.bd}}; color: {{t.fg}}; font-weight: {{t.fw}}">
+<span aria-hidden="true" style="width: 12px; height: 12px; border-radius: 3px; box-sizing: border-box; border: 1px solid #9AA2A8; background: {{t.swatch}}"></span>{{t.label}}</button>
+</sc-for>
+</div>
+
+<div style="position: relative; width: {{W}}px; height: {{H}}px; border-radius: 12px; overflow: hidden; background: #E4E7E2; border: 1px solid #DDE1E4">
+<svg viewBox="0 0 1000 640" preserveAspectRatio="none" aria-hidden="true" style="position: absolute; inset: 0; width: 100%; height: 100%">
+<polygon points="60,330 90,262 150,215 230,188 300,150 380,122 470,105 560,118 650,133 740,150 830,185 900,230 950,290 972,360 942,420 872,452 780,472 700,520 620,560 540,592 450,612 360,602 280,577 200,546 130,502 80,442" fill="#F6F5F1" stroke="#9AA2A8" stroke-width="2.5" stroke-dasharray="10 7"></polygon>
+</svg>
+
+<sc-if value="{{showGreen}}" hint-placeholder-val="{{true}}">
+<svg viewBox="0 0 1000 640" preserveAspectRatio="none" aria-hidden="true" style="position: absolute; inset: 0; width: 100%; height: 100%">
+<ellipse cx="225" cy="372" rx="70" ry="42" fill="#CFE3CB"></ellipse>
+<ellipse cx="368" cy="318" rx="26" ry="16" fill="#CFE3CB"></ellipse>
+<ellipse cx="602" cy="300" rx="42" ry="18" fill="#CFE3CB"></ellipse>
+<ellipse cx="300" cy="512" rx="34" ry="20" fill="#CFE3CB"></ellipse>
+<ellipse cx="430" cy="560" rx="60" ry="26" fill="#CFE3CB"></ellipse>
+<ellipse cx="860" cy="330" rx="50" ry="40" fill="#CFE3CB"></ellipse>
+<ellipse cx="520" cy="180" rx="38" ry="20" fill="#CFE3CB"></ellipse>
+</svg>
+</sc-if>
+
+<sc-if value="{{showHex}}" hint-placeholder-val="{{true}}">
+<div aria-hidden="true" style="position: absolute; inset: 0; animation: {{anim}} 0.5s ease-out">
+<sc-for list="{{hexes}}" as="h" hint-placeholder-count="200">
+<div style="position: absolute; left: {{h.x}}px; top: {{h.y}}px; width: {{h.w}}px; height: {{h.h}}px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{h.fill}}; display: flex; align-items: center; justify-content: center">
+<sc-if value="{{h.offer}}" hint-placeholder-val="{{false}}">
+<span style="width: 7px; height: 7px; border-radius: 50%; background: #FFFFFF; border: 2px solid #18202B"></span>
+</sc-if>
+</div>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{showGreen}}" hint-placeholder-val="{{true}}">
+<svg viewBox="0 0 1000 640" preserveAspectRatio="none" aria-hidden="true" style="position: absolute; inset: 0; width: 100%; height: 100%">
+<path d="M0,560 C80,545 130,525 170,502 C220,476 255,440 300,402 C330,378 362,372 400,384 C440,397 470,402 505,400 C545,398 572,420 612,430 C662,442 702,446 760,441 C822,436 880,450 1000,470" fill="none" stroke="#A9C8E0" stroke-width="15" stroke-linecap="round"></path>
+<path d="M40,300 C130,308 220,338 300,398" fill="none" stroke="#A9C8E0" stroke-width="5"></path>
+<ellipse cx="808" cy="372" rx="14" ry="8" fill="#A9C8E0"></ellipse>
+</svg>
+</sc-if>
+
+<sc-if value="{{showStreets}}" hint-placeholder-val="{{true}}">
+<svg viewBox="0 0 1000 640" preserveAspectRatio="none" aria-hidden="true" style="position: absolute; inset: 0; width: 100%; height: 100%">
+<g fill="none" stroke-linecap="round">
+<path d="M0,250 C80,240 122,262 152,332 C182,420 262,520 380,560 C480,590 580,580 680,570 C760,560 860,540 1000,540" stroke="#B87A35" stroke-width="11"></path>
+<path d="M0,250 C80,240 122,262 152,332 C182,420 262,520 380,560 C480,590 580,580 680,570 C760,560 860,540 1000,540" stroke="#F2B866" stroke-width="7"></path>
+<path d="M152,250 C252,170 402,132 560,120 C680,111 780,140 862,190" stroke="#B87A35" stroke-width="10"></path>
+<path d="M152,250 C252,170 402,132 560,120 C680,111 780,140 862,190" stroke="#F2B866" stroke-width="6"></path>
+<g stroke="#BFC5CA" stroke-width="9">
+<ellipse cx="455" cy="332" rx="150" ry="110"></ellipse>
+<ellipse cx="440" cy="335" rx="70" ry="55"></ellipse>
+<path d="M500,330 C580,320 650,300 730,290 C780,284 830,280 900,272"></path>
+<path d="M380,300 C320,272 240,242 150,230 C100,224 60,226 20,230"></path>
+<path d="M432,372 C426,452 412,522 402,630"></path>
+<path d="M472,382 C522,442 582,502 642,590"></path>
+<path d="M742,290 C782,250 832,220 912,198"></path>
+<path d="M402,382 C372,422 342,472 318,540"></path>
+<path d="M440,280 C436,230 430,180 424,110"></path>
+<path d="M600,330 C640,380 700,420 760,441"></path>
+</g>
+<g stroke="#FFFFFF" stroke-width="5.5">
+<ellipse cx="455" cy="332" rx="150" ry="110"></ellipse>
+<ellipse cx="440" cy="335" rx="70" ry="55"></ellipse>
+<path d="M500,330 C580,320 650,300 730,290 C780,284 830,280 900,272"></path>
+<path d="M380,300 C320,272 240,242 150,230 C100,224 60,226 20,230"></path>
+<path d="M432,372 C426,452 412,522 402,630"></path>
+<path d="M472,382 C522,442 582,502 642,590"></path>
+<path d="M742,290 C782,250 832,220 912,198"></path>
+<path d="M402,382 C372,422 342,472 318,540"></path>
+<path d="M440,280 C436,230 430,180 424,110"></path>
+<path d="M600,330 C640,380 700,420 760,441"></path>
+</g>
+<circle cx="430" cy="335" r="22" stroke="#8DBE8A" stroke-width="5"></circle>
+</g>
+</svg>
+</sc-if>
+
+<sc-if value="{{showTrams}}" hint-placeholder-val="{{false}}">
+<svg viewBox="0 0 1000 640" preserveAspectRatio="none" aria-hidden="true" style="position: absolute; inset: 0; width: 100%; height: 100%">
+<g fill="none" stroke="#7B3F8C" stroke-width="3.5" stroke-linecap="round">
+<path d="M430,335 C520,326 620,306 730,292 C770,288 800,286 830,284"></path>
+<path d="M430,335 C360,300 300,265 240,225"></path>
+<path d="M430,345 C440,420 450,470 470,520"></path>
+<path d="M425,360 C395,410 360,460 330,500"></path>
+<path d="M440,320 C445,270 440,230 430,200"></path>
+<path d="M455,345 C530,370 580,385 620,392"></path>
+</g>
+<g fill="#7B3F8C">
+<circle cx="830" cy="284" r="6"></circle><circle cx="240" cy="225" r="6"></circle><circle cx="470" cy="520" r="6"></circle>
+<circle cx="330" cy="500" r="6"></circle><circle cx="430" cy="200" r="6"></circle><circle cx="620" cy="392" r="6"></circle>
+</g>
+</svg>
+</sc-if>
+
+<sc-if value="{{showLabels}}" hint-placeholder-val="{{true}}">
+<svg viewBox="0 0 1000 640" preserveAspectRatio="none" aria-hidden="true" style="position: absolute; inset: 0; width: 100%; height: 100%">
+<g font-family="IBM Plex Sans, sans-serif" font-size="17" font-weight="600" fill="#2B333D" stroke="#FFFFFF" stroke-width="4" paint-order="stroke" text-anchor="middle">
+<text x="430" y="340" font-size="14">Stare Miasto</text>
+<text x="392" y="252">Krowodrza</text>
+<text x="262" y="208">Bronowice Małe</text>
+<text x="432" y="168">Prądnik Biały</text>
+<text x="560" y="214">Prądnik Czerwony</text>
+<text x="612" y="270">Czyżyny</text>
+<text x="770" y="330">Nowa Huta</text>
+<text x="352" y="430">Dębniki</text>
+<text x="330" y="478">Ruczaj</text>
+<text x="500" y="446">Podgórze</text>
+<text x="548" y="392" font-size="14">Zabłocie</text>
+<text x="452" y="504">Łagiewniki</text>
+<text x="614" y="506">Bieżanów</text>
+<text x="438" y="586">Swoszowice</text>
+<text x="190" y="400" font-weight="400" font-style="italic" fill="#3F6B47">Las Wolski</text>
+<text x="700" y="468" font-weight="400" font-style="italic" fill="#2F5F84">Wisła</text>
+<text x="62" y="200" font-size="15">Balice</text>
+</g>
+<path d="M52,210 L72,210 M62,200 L62,222 M56,216 L68,216" stroke="#2B333D" stroke-width="2.5" fill="none"></path>
+</svg>
+</sc-if>
+
+<div aria-hidden="true" style="position: absolute; left: {{pinX}}px; top: {{pinY}}px; display: flex; align-items: center; gap: 6px; pointer-events: none">
+<span style="width: 14px; height: 14px; border-radius: 50%; background: #B25E12; border: 3px solid #FFFFFF; box-shadow: 0 0 0 1px #7A3E08"></span>
+<span style="font-size: 12px; font-weight: 600; color: #7A3E08; background: #FFFFFF; padding: 2px 6px; border-radius: 4px">Praca</span>
+</div>
+
+<div role="status" style="position: absolute; right: 10px; bottom: 10px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #3D4652; background: rgba(255,255,255,0.9); padding: 4px 8px; border-radius: 6px">{{status}}</div>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 14px; align-items: center; font-size: 12px; color: #3D4652">
+<span style="display: flex; align-items: center; gap: 6px">{{legendLow}}
+<span aria-hidden="true" style="display: flex"><span style="width: 20px; height: 10px; background: #E9F2EC"></span><span style="width: 20px; height: 10px; background: #BFDCCB"></span><span style="width: 20px; height: 10px; background: #8BC0A3"></span><span style="width: 20px; height: 10px; background: #4E9A78"></span><span style="width: 20px; height: 10px; background: #1F5C46"></span></span>
+{{legendHigh}}</span>
+<sc-if value="{{hasExcluded}}" hint-placeholder-val="{{true}}">
+<span style="display: flex; align-items: center; gap: 6px"><span aria-hidden="true" style="width: 12px; height: 12px; background: #A9AFB4"></span>Wykluczone: {{excludedWhy}}</span>
+</sc-if>
+<span style="color: #5B6470">Szkic mapy; docelowo podkład OSM.</span>
+</div>
+
+<sc-if value="{{showRank}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #5B6470">Najlepiej pasujące teraz</span>
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px">
+<sc-for list="{{rank}}" as="r" hint-placeholder-count="5">
+<a href="Okolica.dc.html" style="display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 10px; border: 1px solid #DDE1E4; background: #FFFFFF; text-decoration: none; color: #18202B">
+<span style="flex: none; width: 40px; height: 40px; border-radius: 10px; background: {{r.fill}}; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-family: 'IBM Plex Mono', monospace; font-size: 15px">{{r.score}}</span>
+<span style="font-size: 14px; font-weight: 600; line-height: 1.2">{{r.name}}</span>
+</a>
+</sc-for>
+</div>
+</div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"weights":{"editor":null},"dirs":{"editor":null},"maxmin":{"editor":"int","default":30,"min":10,"max":90},"floodDb":{"editor":"boolean","default":false},"mode":{"editor":"enum","options":["buy","rent"],"default":"buy"},"layer":{"editor":"enum","options":["score","commute","noise","green"],"default":"score"},"offers":{"editor":"boolean","default":false},"showRank":{"editor":"boolean","default":false},"width":{"editor":"int","default":820,"min":300,"max":1200},"cols":{"editor":"int","default":44,"min":16,"max":70},"$preview":{"width":820,"height":640}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { hex: true, streets: true, trams: false, green: true, labels: true };
+    this._sig = ''; this._n = 0;
+  }
+  renderVals() {
+    var self = this, s = this.state, p = this.props;
+    var W = p.width || 820, H = Math.round(W * 0.64), cols = p.cols || 44;
+    var layer = p.layer || 'score', maxmin = p.maxmin || 30, offers = !!p.offers, mode = p.mode || 'buy';
+    var weights = p.weights || { commute: 3, stops: 2, schools: 4, green: 4, noise: 3, air: 3, price: 2, shops: 1 };
+    var dirs = p.dirs || {};
+    var defDir = { price: 'down', rent: 'down', commute: 'down', stops: 'up', airport: 'down', bike: 'up', parking: 'down', schools: 'up', kinder: 'up', clinics: 'up', queues: 'down', air: 'down', noise: 'down', green: 'up', flood: 'down', safety: 'down', shops: 'up', culture: 'up', buildings: 'opt', plans: 'down', roads: 'up', fiber: 'up', growth: 'up', density: 'opt', foreign: 'up' };
+    var poly = [[60,330],[90,262],[150,215],[230,188],[300,150],[380,122],[470,105],[560,118],[650,133],[740,150],[830,185],[900,230],[950,290],[972,360],[942,420],[872,452],[780,472],[700,520],[620,560],[540,592],[450,612],[360,602],[280,577],[200,546],[130,502],[80,442]];
+    var riv = [[0,560],[170,502],[300,402],[400,384],[505,400],[612,430],[760,441],[1000,470]];
+    function inside(x, y) {
+      var c = false;
+      for (var i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+        var xi = poly[i][0], yi = poly[i][1], xj = poly[j][0], yj = poly[j][1];
+        if (((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) c = !c;
+      }
+      return c;
+    }
+    function riverY(x) { for (var i = 0; i < riv.length - 1; i++) { if (x <= riv[i + 1][0]) { var t = (x - riv[i][0]) / (riv[i + 1][0] - riv[i][0]); return riv[i][1] + t * (riv[i + 1][1] - riv[i][1]); } } return 470; }
+    function g(x, y, cx, cy, sd) { return Math.exp(-((x - cx) * (x - cx) + (y - cy) * (y - cy)) / (2 * sd * sd)); }
+    function cl(v) { return Math.max(0, Math.min(100, v)); }
+    function rawFields(vx, vy, n, mins) {
+      var dc = Math.sqrt((vx - 430) * (vx - 430) + (vy - 335) * (vy - 335));
+      var dr = Math.abs(vy - riverY(vx)), nearRiver = Math.exp(-dr * dr / (2 * 25 * 25));
+      var ring = Math.abs(Math.sqrt(Math.pow((vx - 455) / 150, 2) + Math.pow((vy - 332) / 110, 2)) - 1) * 130;
+      var base = 95 - dc * 0.17 + 10 * g(vx, vy, 560, 390, 40) - 15 * g(vx, vy, 770, 328, 90) + n;
+      return {
+        price: cl(base), rent: cl(base - 8 * g(vx, vy, 400, 250, 70) + 5),
+        commute: cl((mins - 8) * 2.2),
+        stops: cl(100 - dc * 0.24 + n),
+        airport: cl(Math.sqrt((vx - 40) * (vx - 40) + (vy - 230) * (vy - 230)) / 9),
+        bike: cl(85 - dc * 0.25 + 30 * nearRiver + n),
+        parking: cl(100 * g(vx, vy, 440, 335, 80)),
+        schools: cl(40 + 40 * g(vx, vy, 400, 230, 90) + 35 * g(vx, vy, 340, 480, 60) + 20 * g(vx, vy, 700, 300, 80) + n),
+        kinder: cl(35 + 35 * g(vx, vy, 330, 480, 70) + 35 * g(vx, vy, 560, 200, 70) + 30 * g(vx, vy, 620, 510, 70) + n),
+        clinics: cl(80 - dc * 0.18 + 20 * g(vx, vy, 770, 320, 60) + n),
+        queues: cl(50 + 10 * Math.sin(vx / 90) + n),
+        air: cl(30 + 40 * g(vx, vy, 430, 335, 90) + 35 * g(vx, vy, 780, 340, 70) - 20 * g(vx, vy, 230, 370, 80) + n),
+        noise: cl(25 + 45 * g(vx, vy, 430, 335, 70) + 30 * Math.exp(-ring * ring / (2 * 18 * 18)) + n),
+        green: cl(28 + 70 * g(vx, vy, 230, 370, 70) + 50 * g(vx, vy, 370, 315, 30) + 50 * g(vx, vy, 600, 300, 45) + 40 * g(vx, vy, 430, 560, 80) + 30 * g(vx, vy, 860, 330, 60) + n),
+        flood: cl(100 * Math.exp(-dr * dr / (2 * 22 * 22))),
+        safety: cl(25 + 55 * g(vx, vy, 430, 335, 80) + 20 * g(vx, vy, 770, 330, 60) + n),
+        shops: cl(95 - dc * 0.28 + 20 * g(vx, vy, 770, 300, 50) + n),
+        culture: cl(100 - dc * 0.33 + n),
+        buildings: cl(100 - dc * 0.25 + 20 * g(vx, vy, 770, 320, 60) - 30 * g(vx, vy, 330, 476, 60) - 25 * g(vx, vy, 560, 200, 60) + n),
+        plans: cl(15 + 50 * g(vx, vy, 330, 500, 70) + 45 * g(vx, vy, 560, 190, 70) + 40 * g(vx, vy, 620, 510, 70) + n),
+        roads: cl(40 + 30 * g(vx, vy, 560, 390, 60) + 20 * g(vx, vy, 330, 470, 60) + n * 3),
+        fiber: cl(90 - dc * 0.15 + n),
+        growth: cl(20 + 60 * g(vx, vy, 330, 480, 70) + 50 * g(vx, vy, 560, 190, 70) + 50 * g(vx, vy, 620, 510, 80) - 20 * g(vx, vy, 430, 335, 60) + n),
+        density: cl(95 - dc * 0.25 + 25 * g(vx, vy, 770, 320, 60) + n),
+        foreign: 50
+      };
+    }
+    function scoreOf(raw, dir) { if (dir === 'down') return 100 - raw; if (dir === 'opt') return 100 - 2 * Math.abs(raw - 50); return raw; }
+    var hw = W / cols, hh = hw * 1.155, rows = Math.ceil(H / (hh * 0.75)) + 1;
+    var cells = [], minV = 1e9, maxV = -1e9, sumW = 0;
+    for (var k0 in weights) sumW += weights[k0] || 0;
+    for (var r = 0; r < rows; r++) {
+      for (var c = 0; c < cols; c++) {
+        var px = c * hw + (r % 2 ? hw / 2 : 0), py = r * hh * 0.75;
+        var vx = (px + hw / 2) / W * 1000, vy = (py + hh / 2) / H * 640;
+        if (!inside(vx, vy)) continue;
+        var n = ((c * 37 + r * 91) % 17) / 17 * 8;
+        var mins = 8 + Math.sqrt((vx - 520) * (vx - 520) + (vy - 300) * (vy - 300)) * 0.09;
+        var f = rawFields(vx, vy, n, mins), v;
+        if (layer === 'commute') v = 100 - f.commute;
+        else if (layer === 'noise') v = 100 - f.noise;
+        else if (layer === 'green') v = f.green;
+        else if (!sumW) v = 50;
+        else {
+          var sv = 0;
+          for (var k in weights) { var wk = weights[k] || 0; if (wk && f[k] !== undefined) sv += wk * scoreOf(f[k], dirs[k] || defDir[k]); }
+          v = sv / sumW;
+        }
+        var whyMin = layer === 'score' && mins > maxmin, whyFlood = layer === 'score' && p.floodDb && f.flood > 55;
+        if (v < minV) minV = v; if (v > maxV) maxV = v;
+        cells.push({ x: px, y: py, vx: vx, vy: vy, v: v, excluded: whyMin || whyFlood, offer: offers && ((c * 7 + r * 13) % 11 === 0) });
+      }
+    }
+    var stops = [[233,242,236],[191,220,203],[139,192,163],[78,154,120],[31,92,70]];
+    function col(v, a) {
+      var t = Math.max(0, Math.min(0.999, v / 100)) * 4;
+      var i = Math.floor(t), fr = t - i, A = stops[i], B = stops[i + 1];
+      return 'rgba(' + [0,1,2].map(function (q) { return Math.round(A[q] + (B[q] - A[q]) * fr); }).join(',') + ',' + a + ')';
+    }
+    var span = maxV - minV, hasExcluded = false;
+    cells.forEach(function (cell) { cell.n = span > 0.5 ? 5 + (cell.v - minV) / span * 93 : 50; if (cell.excluded) hasExcluded = true; });
+    var hexes = cells.map(function (cell) {
+      return { x: cell.x.toFixed(1), y: cell.y.toFixed(1), w: (hw + 0.6).toFixed(1), h: (hh + 0.6).toFixed(1), fill: cell.excluded ? 'rgba(150,156,161,0.62)' : col(cell.n, 0.78), offer: cell.offer && !cell.excluded };
+    });
+    var areas = [['Stare Miasto',430,335],['Krowodrza',392,250],['Bronowice Małe',262,206],['Prądnik Biały',432,166],['Prądnik Czerwony',560,212],['Czyżyny',612,268],['Nowa Huta',770,328],['Dębniki',352,428],['Ruczaj',330,476],['Podgórze',500,444],['Zabłocie',548,392],['Łagiewniki',452,502],['Bieżanów',614,504],['Swoszowice',438,584]];
+    var rank = areas.map(function (a) {
+      var near = cells.filter(function (cell) { return (cell.vx - a[1]) * (cell.vx - a[1]) + (cell.vy - a[2]) * (cell.vy - a[2]) < 45 * 45; });
+      var ok = near.filter(function (cell) { return !cell.excluded; });
+      var sc = ok.length && ok.length >= near.length / 2 ? Math.round(ok.reduce(function (t, cell) { return t + cell.n; }, 0) / ok.length) : -1;
+      return { name: a[0], score: sc };
+    }).filter(function (a) { return a.score >= 0; }).sort(function (a, b) { return b.score - a.score; }).slice(0, 6)
+      .map(function (a) { return { name: a.name, score: a.score, fill: a.score >= 70 ? '#1F5C46' : '#3B7E62' }; });
+    var sig = JSON.stringify([weights, dirs, maxmin, p.floodDb, mode, layer]);
+    if (sig !== this._sig) { this._sig = sig; this._n += 1; }
+    var legend = { score: ['Słabo', 'Idealnie dla Ciebie'], commute: ['Daleko', 'Blisko pracy'], noise: ['Głośno', 'Cicho'], green: ['Mało zieleni', 'Dużo zieleni'] }[layer];
+    var why = [];
+    if (layer === 'score') { why.push('dojazd > ' + maxmin + ' min'); if (p.floodDb) why.push('strefa powodziowa'); }
+    var defs = [['hex', 'Wynik (heksy)', '#4E9A78'], ['streets', 'Ulice', '#F2B866'], ['trams', 'Tramwaje', '#7B3F8C'], ['green', 'Zieleń i woda', '#A9C8E0'], ['labels', 'Nazwy', '#2B333D']];
+    var toggles = defs.map(function (d) {
+      var on = !!s[d[0]];
+      return { label: d[1], swatch: on ? d[2] : '#FFFFFF', pressed: on ? 'true' : 'false',
+        bg: on ? '#E3EFE8' : '#FFFFFF', bd: on ? '#1F5C46' : '#B9C0C6', fg: on ? '#163F31' : '#3D4652', fw: on ? '600' : '400',
+        pick: function () { var o = {}; o[d[0]] = !self.state[d[0]]; self.setState(o); } };
+    });
+    return {
+      W: W, H: H, hexes: hexes, toggles: toggles, hasExcluded: hasExcluded, excludedWhy: why.join(', '),
+      showHex: s.hex, showStreets: s.streets, showTrams: s.trams, showGreen: s.green, showLabels: s.labels,
+      showRank: !!p.showRank, rank: rank,
+      legendLow: legend[0], legendHigh: legend[1],
+      anim: this._n % 2 ? 'fcFadeA' : 'fcFadeB',
+      status: (layer === 'score' && !sumW) ? 'ustaw wagi, by policzyć wynik' : 'przeliczono ' + hexes.length + ' heksów · zmiana #' + this._n,
+      pinX: Math.round(520 / 1000 * W - 10), pinY: Math.round(300 / 640 * H - 10)
+    };
+  }
+}
+</script>
+</body>
+</html>

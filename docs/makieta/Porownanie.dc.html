@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<title>Frame Check: porównanie okolic</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#1F5C46}a:hover{color:#163F31}
+.seg{background:#FFFFFF;border:1px solid #DDE1E4;color:#3D4652;cursor:pointer;font:inherit}
+.seg:hover{border-color:#8BC0A3}
+.seg.on{background:#1F5C46;border-color:#1F5C46;color:#FFFFFF}
+.chip{background:#FFFFFF;border:1px solid #DDE1E4;color:#3D4652;cursor:pointer;font:inherit}
+.chip:hover{border-color:#8BC0A3}
+.chip.on{background:#E3EFE8;border-color:#1F5C46;color:#163F31;font-weight:600}
+</style>
+</helmet>
+<div style="min-height: 1350px; background: #F5F6F3; font-family: 'IBM Plex Sans', system-ui, sans-serif; color: #18202B">
+<header style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 32px; background: #FFFFFF; border-bottom: 1px solid #DDE1E4">
+<a href="Main.dc.html" style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: #18202B; font-weight: 700; font-size: 18px">
+<svg width="26" height="28" viewBox="0 0 26 28" fill="none" stroke="#1F5C46" stroke-width="2.2" aria-hidden="true"><path d="M13 2 L24 8 L24 20 L13 26 L2 20 L2 8 Z"></path><path d="M13 9 L18 12 L18 17 L13 20 L8 17 L8 12 Z" fill="#1F5C46"></path></svg>
+<span>Frame Check</span>
+<span style="font-family: 'IBM Plex Mono', monospace; font-weight: 400; font-size: 13px; color: #5B6470">Kraków</span>
+</a>
+<nav aria-label="Kroki" style="display: flex; flex-wrap: wrap; gap: 6px; font-size: 14px">
+<a href="Main.dc.html" style="padding: 11px 16px; border-radius: 999px; border: 1px solid #DDE1E4; color: #3D4652; text-decoration: none">1 Szukaj</a>
+<a href="Okolica.dc.html" style="padding: 11px 16px; border-radius: 999px; border: 1px solid #DDE1E4; color: #3D4652; text-decoration: none">2 Okolica</a>
+<a href="Porownanie.dc.html" aria-current="step" style="padding: 11px 16px; border-radius: 999px; background: #1F5C46; color: #FFFFFF; text-decoration: none">3 Porównanie</a>
+</nav>
+</header>
+
+<main style="max-width: 1180px; margin: 0 auto; padding: 32px 32px 48px; display: flex; flex-direction: column; gap: 22px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; align-items: flex-end">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<h1 style="margin: 0; font-size: 36px; letter-spacing: -0.02em">Porównaj okolice pod siebie</h1>
+<span style="font-size: 15px; color: #3D4652">Kształt pokazuje mocne strony okolicy, przerywana linia Twoje priorytety. <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #5B6470">dane przykładowe</span></span>
+</div>
+<div role="tablist" aria-label="Widok" style="display: flex; gap: 6px">
+<sc-for list="{{views}}" as="v" hint-placeholder-count="2">
+<button type="button" role="tab" aria-selected="{{v.sel}}" class="{{v.cls}}" onClick="{{v.pick}}" style="padding: 0 16px; height: 44px; border-radius: 999px; font-size: 14px">{{v.label}}</button>
+</sc-for>
+</div>
+</div>
+
+<section style="background: #FFFFFF; border: 1px solid #DDE1E4; border-radius: 16px; padding: 16px 20px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center">
+<span style="font-size: 14px; font-weight: 600; min-width: 110px">Twój profil</span>
+<div role="group" aria-label="Profil" style="display: flex; flex-wrap: wrap; gap: 6px">
+<sc-for list="{{personas}}" as="p" hint-placeholder-count="4">
+<button type="button" class="{{p.cls}}" onClick="{{p.pick}}" style="padding: 0 14px; height: 40px; border-radius: 999px; font-size: 13px">{{p.label}}</button>
+</sc-for>
+</div>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center">
+<span style="font-size: 14px; font-weight: 600; min-width: 110px">Okolice (do 5)</span>
+<div role="group" aria-label="Okolice" style="display: flex; flex-wrap: wrap; gap: 6px">
+<sc-for list="{{places}}" as="o" hint-placeholder-count="6">
+<button type="button" class="{{o.cls}}" onClick="{{o.pick}}" aria-pressed="{{o.pressed}}" style="padding: 0 14px; height: 40px; border-radius: 999px; font-size: 13px">{{o.name}}</button>
+</sc-for>
+</div>
+</div>
+</section>
+
+<sc-if value="{{isRadar}}" hint-placeholder-val="{{true}}">
+<section style="display: flex; flex-wrap: wrap; gap: 20px; align-items: stretch">
+<div style="flex: 1 1 480px; min-width: 0; background: #FFFFFF; border: 1px solid #DDE1E4; border-radius: 16px; padding: 16px; display: flex; justify-content: center">
+<svg viewBox="0 0 600 480" role="img" aria-label="Wykres diamentowy: porównanie wybranych okolic na ośmiu osiach" style="width: 100%; max-width: 560px; height: auto">
+<polygon points="{{ring4}}" fill="#FAFBF9" stroke="#DDE1E4" stroke-width="1"></polygon>
+<polygon points="{{ring3}}" fill="none" stroke="#E6E9EB" stroke-width="1"></polygon>
+<polygon points="{{ring2}}" fill="none" stroke="#E6E9EB" stroke-width="1"></polygon>
+<polygon points="{{ring1}}" fill="none" stroke="#E6E9EB" stroke-width="1"></polygon>
+<line x1="300" y1="240" x2="{{a0.x}}" y2="{{a0.y}}" stroke="#DDE1E4"></line>
+<line x1="300" y1="240" x2="{{a1.x}}" y2="{{a1.y}}" stroke="#DDE1E4"></line>
+<line x1="300" y1="240" x2="{{a2.x}}" y2="{{a2.y}}" stroke="#DDE1E4"></line>
+<line x1="300" y1="240" x2="{{a3.x}}" y2="{{a3.y}}" stroke="#DDE1E4"></line>
+<line x1="300" y1="240" x2="{{a4.x}}" y2="{{a4.y}}" stroke="#DDE1E4"></line>
+<line x1="300" y1="240" x2="{{a5.x}}" y2="{{a5.y}}" stroke="#DDE1E4"></line>
+<line x1="300" y1="240" x2="{{a6.x}}" y2="{{a6.y}}" stroke="#DDE1E4"></line>
+<line x1="300" y1="240" x2="{{a7.x}}" y2="{{a7.y}}" stroke="#DDE1E4"></line>
+<polygon points="{{pE.points}}" fill="{{pE.fill}}" stroke="{{pE.stroke}}" stroke-width="2.5" stroke-dasharray="{{pE.dash}}" stroke-linejoin="round" style="display: {{pE.display}}"></polygon>
+<polygon points="{{pD.points}}" fill="{{pD.fill}}" stroke="{{pD.stroke}}" stroke-width="2.5" stroke-dasharray="{{pD.dash}}" stroke-linejoin="round" style="display: {{pD.display}}"></polygon>
+<polygon points="{{pC.points}}" fill="{{pC.fill}}" stroke="{{pC.stroke}}" stroke-width="2.5" stroke-dasharray="{{pC.dash}}" stroke-linejoin="round" style="display: {{pC.display}}"></polygon>
+<polygon points="{{pB.points}}" fill="{{pB.fill}}" stroke="{{pB.stroke}}" stroke-width="2.5" stroke-dasharray="{{pB.dash}}" stroke-linejoin="round" style="display: {{pB.display}}"></polygon>
+<polygon points="{{pA.points}}" fill="{{pA.fill}}" stroke="{{pA.stroke}}" stroke-width="3" stroke-dasharray="{{pA.dash}}" stroke-linejoin="round" style="display: {{pA.display}}"></polygon>
+<polygon points="{{pri}}" fill="none" stroke="#18202B" stroke-width="2" stroke-dasharray="3 5" stroke-linejoin="round"></polygon>
+<g font-family="IBM Plex Sans, sans-serif" font-size="14" font-weight="600" fill="#2B333D">
+<text x="{{a0.lx}}" y="{{a0.ly}}" text-anchor="{{a0.anchor}}">{{a0.label}}</text>
+<text x="{{a1.lx}}" y="{{a1.ly}}" text-anchor="{{a1.anchor}}">{{a1.label}}</text>
+<text x="{{a2.lx}}" y="{{a2.ly}}" text-anchor="{{a2.anchor}}">{{a2.label}}</text>
+<text x="{{a3.lx}}" y="{{a3.ly}}" text-anchor="{{a3.anchor}}">{{a3.label}}</text>
+<text x="{{a4.lx}}" y="{{a4.ly}}" text-anchor="{{a4.anchor}}">{{a4.label}}</text>
+<text x="{{a5.lx}}" y="{{a5.ly}}" text-anchor="{{a5.anchor}}">{{a5.label}}</text>
+<text x="{{a6.lx}}" y="{{a6.ly}}" text-anchor="{{a6.anchor}}">{{a6.label}}</text>
+<text x="{{a7.lx}}" y="{{a7.ly}}" text-anchor="{{a7.anchor}}">{{a7.label}}</text>
+</g>
+<g font-family="IBM Plex Mono, monospace" font-size="11" fill="#5B6470" font-weight="400">
+<text x="{{a0.wx}}" y="{{a0.wy}}" text-anchor="{{a0.anchor}}">{{a0.wl}}</text>
+<text x="{{a1.wx}}" y="{{a1.wy}}" text-anchor="{{a1.anchor}}">{{a1.wl}}</text>
+<text x="{{a2.wx}}" y="{{a2.wy}}" text-anchor="{{a2.anchor}}">{{a2.wl}}</text>
+<text x="{{a3.wx}}" y="{{a3.wy}}" text-anchor="{{a3.anchor}}">{{a3.wl}}</text>
+<text x="{{a4.wx}}" y="{{a4.wy}}" text-anchor="{{a4.anchor}}">{{a4.wl}}</text>
+<text x="{{a5.wx}}" y="{{a5.wy}}" text-anchor="{{a5.anchor}}">{{a5.wl}}</text>
+<text x="{{a6.wx}}" y="{{a6.wy}}" text-anchor="{{a6.anchor}}">{{a6.wl}}</text>
+<text x="{{a7.wx}}" y="{{a7.wy}}" text-anchor="{{a7.anchor}}">{{a7.wl}}</text>
+</g>
+</svg>
+</div>
+
+<div style="flex: 1 1 340px; min-width: 0; display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-size: 18px">Dopasowanie do Ciebie</h2>
+<sc-for list="{{cards}}" as="c" hint-placeholder-count="2">
+<div style="background: #FFFFFF; border: {{c.border}}; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 10px">
+<span style="display: flex; align-items: center; gap: 10px">
+<svg width="34" height="10" aria-hidden="true"><line x1="2" y1="5" x2="32" y2="5" stroke="{{c.stroke}}" stroke-width="3" stroke-dasharray="{{c.dash}}"></line></svg>
+<span style="font-size: 18px; font-weight: 700">{{c.name}}</span>
+</span>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 28px; font-weight: 500">{{c.fit}}</span>
+</div>
+<div style="height: 8px; border-radius: 4px; background: #EEF0F1"><div style="height: 8px; border-radius: 4px; background: {{c.stroke}}; width: {{c.fit}}%"></div></div>
+<span style="font-size: 13px; color: #3D4652">Najmocniej: {{c.best}}</span>
+</div>
+</sc-for>
+<div style="display: flex; align-items: center; gap: 10px; font-size: 13px; color: #3D4652">
+<svg width="34" height="10" aria-hidden="true"><line x1="2" y1="5" x2="32" y2="5" stroke="#18202B" stroke-width="2" stroke-dasharray="3 5"></line></svg>
+Twoje priorytety (waga osi; liczby przy osiach to wagi 0–4)
+</div>
+</div>
+</section>
+</sc-if>
+
+<sc-if value="{{isTable}}" hint-placeholder-val="{{false}}">
+<section aria-label="Tabela porównania" style="background: #FFFFFF; border: 1px solid #DDE1E4; border-radius: 16px; padding: 8px 20px 12px; overflow-x: auto">
+<div style="display: grid; grid-template-columns: {{gridCols}}; gap: 10px; padding: 10px 0; font-size: 13px; font-weight: 600; color: #5B6470">
+<span>Oś</span>
+<sc-for list="{{cards}}" as="c" hint-placeholder-count="2"><span>{{c.name}}</span></sc-for>
+</div>
+<sc-for list="{{tableRows}}" as="r" hint-placeholder-count="8">
+<div style="display: grid; grid-template-columns: {{gridCols}}; gap: 10px; padding: 10px 0; border-top: 1px solid #EEF0F1; align-items: center; font-size: 15px">
+<span style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">{{r.label}}</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #5B6470">waga {{r.w}}/4</span></span>
+<sc-for list="{{r.cells}}" as="cell" hint-placeholder-count="2">
+<span style="padding: 8px 10px; border-radius: 8px; background: {{cell.bg}}; font-family: 'IBM Plex Mono', monospace; font-weight: {{cell.fw}}">{{cell.v}}</span>
+</sc-for>
+</div>
+</sc-for>
+</section>
+</sc-if>
+
+<section style="background: #E3EFE8; border-radius: 16px; padding: 20px 24px; display: flex; flex-direction: column; gap: 8px">
+<h2 style="margin: 0; font-size: 18px; color: #1F5C46">Werdykt</h2>
+<p style="margin: 0; font-size: 16px; line-height: 1.55; color: #18202B; max-width: 860px">{{verdict}}</p>
+</section>
+
+<div style="display: flex; flex-wrap: wrap; gap: 10px">
+<button type="button" class="seg" style="padding: 0 18px; height: 48px; border-radius: 12px; font-size: 15px">Zapisz porównanie</button>
+<button type="button" class="seg" style="padding: 0 18px; height: 48px; border-radius: 12px; font-size: 15px">Wyślij link partnerowi</button>
+<a href="Okolica.dc.html" style="display: inline-flex; align-items: center; padding: 0 18px; height: 48px; border-radius: 12px; border: 1px solid #DDE1E4; background: #FFFFFF; text-decoration: none; font-size: 15px">Szczegóły zwycięzcy</a>
+<a href="Main.dc.html" style="display: inline-flex; align-items: center; padding: 0 18px; height: 48px; border-radius: 12px; background: #1F5C46; color: #FFFFFF; text-decoration: none; font-weight: 600">Dostrój wagi i przelicz</a>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":1350}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { view: 'radar', persona: 'family', sel: ['bron', 'ruczaj', 'krow'] };
+  }
+  renderVals() {
+    var self = this, s = this.state;
+    var axes = ['Dojazd', 'Komunikacja', 'Szkoły', 'Zieleń', 'Cisza', 'Powietrze', 'Bezpieczeństwo', 'Cena'];
+    var P = {
+      bron: ['Bronowice Małe', [70, 72, 85, 90, 85, 78, 80, 60]],
+      ruczaj: ['Ruczaj', [88, 80, 72, 75, 55, 65, 72, 55]],
+      krow: ['Krowodrza', [80, 90, 84, 60, 50, 52, 75, 45]],
+      pradnik: ['Prądnik Biały', [62, 70, 78, 70, 82, 70, 82, 70]],
+      debniki: ['Dębniki', [75, 78, 70, 85, 65, 60, 70, 58]],
+      zablocie: ['Zabłocie', [92, 88, 60, 45, 45, 50, 68, 50]],
+      czyzyny: ['Czyżyny', [78, 80, 70, 72, 62, 55, 74, 66]],
+      huta: ['Nowa Huta', [55, 74, 66, 80, 70, 40, 60, 88]],
+      podgorze: ['Podgórze', [86, 84, 68, 58, 52, 55, 66, 52]],
+      lagiewniki: ['Łagiewniki', [72, 76, 70, 66, 64, 62, 76, 64]],
+      biezanow: ['Bieżanów', [58, 64, 68, 68, 78, 72, 80, 78]]
+    };
+    var PW = {
+      family: ['Rodzina z dziećmi', [3, 2, 4, 4, 3, 3, 4, 2]],
+      single: ['Singiel w mieście', [3, 4, 0, 1, 1, 2, 2, 3]],
+      senior: ['Senior', [1, 3, 0, 3, 4, 4, 3, 2]],
+      investor: ['Inwestor', [1, 4, 1, 1, 1, 1, 2, 4]]
+    };
+    var ORD = [0, 1, 2, 3, 6, 4, 5, 7];
+    function re(a) { return ORD.map(function (i) { return a[i]; }); }
+    axes = re(axes);
+    Object.keys(P).forEach(function (k) { P[k][1] = re(P[k][1]); });
+    Object.keys(PW).forEach(function (k) { PW[k][1] = re(PW[k][1]); });
+    var w = PW[s.persona][1];
+    var CX = 300, CY = 240, R = 165;
+    function pt(i, v) { var a = (i * 45 - 90) * Math.PI / 180; return [CX + Math.cos(a) * R * v / 100, CY + Math.sin(a) * R * v / 100]; }
+    function poly(vals) { return vals.map(function (v, i) { var p = pt(i, v); return p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join(' '); }
+    function fit(vals) { var sw = 0, sv = 0; vals.forEach(function (v, i) { sw += w[i]; sv += w[i] * v; }); return Math.round(sw ? sv / sw : 0); }
+    var out = {};
+    [25, 50, 75, 100].forEach(function (lv, k) { out['ring' + (k + 1)] = poly([lv, lv, lv, lv, lv, lv, lv, lv]); });
+    axes.forEach(function (label, i) {
+      var e = pt(i, 100), l = pt(i, 118), a = (i * 45 - 90);
+      var anchor = Math.abs(Math.cos(a * Math.PI / 180)) < 0.2 ? 'middle' : (Math.cos(a * Math.PI / 180) > 0 ? 'start' : 'end');
+      out['a' + i] = { x: e[0].toFixed(1), y: e[1].toFixed(1), lx: l[0].toFixed(1), ly: (l[1] + 5).toFixed(1), wx: l[0].toFixed(1), wy: (l[1] + 20).toFixed(1), anchor: anchor, label: label, wl: 'waga ' + w[i] };
+    });
+    out.pri = poly(w.map(function (x) { return x * 25; }));
+    var styles = [['#1F5C46', 'rgba(31,92,70,0.14)', 'none'], ['#B25E12', 'rgba(178,94,18,0.10)', '9 6'], ['#3E5BA9', 'rgba(62,91,169,0.09)', '2 5'], ['#7B3F8C', 'rgba(123,63,140,0.08)', '12 4 2 4'], ['#B08A12', 'rgba(176,138,18,0.08)', '4 3']];
+    var chosen = s.sel.map(function (id) { return { id: id, name: P[id][0], vals: P[id][1], fit: fit(P[id][1]) }; });
+    ['pA', 'pB', 'pC', 'pD', 'pE'].forEach(function (key, k) {
+      var c = chosen[k];
+      out[key] = c ? { points: poly(c.vals), stroke: styles[k][0], fill: styles[k][1], dash: styles[k][2], display: 'inline' } : { points: '0,0', stroke: 'none', fill: 'none', dash: 'none', display: 'none' };
+    });
+    var maxFit = Math.max.apply(null, chosen.map(function (c) { return c.fit; }).concat([0]));
+    out.cards = chosen.map(function (c, k) {
+      var bestIdx = c.vals.map(function (v, i) { return [v * (w[i] + 0.5), i]; }).sort(function (a, b) { return b[0] - a[0]; }).slice(0, 2).map(function (x) { return axes[x[1]]; });
+      return { name: c.name, fit: c.fit, stroke: styles[k][0], dash: styles[k][2] === 'none' ? '' : styles[k][2], best: bestIdx.join(', '),
+        border: c.fit === maxFit && chosen.length > 1 ? '2px solid #1F5C46' : '1px solid #DDE1E4' };
+    });
+    out.gridCols = 'minmax(150px, 1.2fr) ' + chosen.map(function () { return 'minmax(110px, 1fr)'; }).join(' ');
+    out.tableRows = axes.map(function (label, i) {
+      var best = Math.max.apply(null, chosen.map(function (c) { return c.vals[i]; }));
+      return { label: label, w: w[i], cells: chosen.map(function (c) { var top = c.vals[i] === best && chosen.length > 1; return { v: c.vals[i], bg: top ? '#E3EFE8' : '#F7F8F6', fw: top ? '600' : '400' }; }) };
+    });
+    var sorted = chosen.slice().sort(function (a, b) { return b.fit - a.fit; });
+    if (sorted.length < 2) out.verdict = 'Wybierz co najmniej dwie okolice, żeby je porównać.';
+    else {
+      var A = sorted[0], B = sorted[1], plus = [], minus = [];
+      axes.forEach(function (ax, i) { var d = (A.vals[i] - B.vals[i]) * w[i]; if (d > 20) plus.push([d, ax]); if (d < -20) minus.push([-d, ax]); });
+      plus.sort(function (a, b) { return b[0] - a[0]; }); minus.sort(function (a, b) { return b[0] - a[0]; });
+      out.verdict = 'Dla profilu ' + PW[s.persona][0] + ' najlepiej pasuje ' + A.name + ' (' + A.fit + ' wobec ' + B.fit + ' dla ' + B.name + ').' +
+        (plus.length ? ' Przewaga w tym, co dla Ciebie ważne: ' + plus.slice(0, 2).map(function (x) { return x[1]; }).join(', ') + '.' : '') +
+        (minus.length ? ' ' + B.name + ' wygrywa w: ' + minus.slice(0, 2).map(function (x) { return x[1]; }).join(', ') + '.' : '');
+    }
+    out.views = [['radar', 'Wykres diamentowy'], ['table', 'Tabela']].map(function (v) { return { label: v[1], cls: 'seg' + (s.view === v[0] ? ' on' : ''), sel: s.view === v[0] ? 'true' : 'false', pick: function () { self.setState({ view: v[0] }); } }; });
+    out.personas = Object.keys(PW).map(function (k) { return { label: PW[k][0], cls: 'chip' + (s.persona === k ? ' on' : ''), pick: function () { self.setState({ persona: k }); } }; });
+    out.places = Object.keys(P).map(function (id) {
+      var on = s.sel.indexOf(id) >= 0;
+      return { name: P[id][0], cls: 'chip' + (on ? ' on' : ''), pressed: on ? 'true' : 'false', pick: function () {
+        var sel = self.state.sel.slice(), i = sel.indexOf(id);
+        if (i >= 0) sel.splice(i, 1); else { sel.push(id); if (sel.length > 5) sel.shift(); }
+        self.setState({ sel: sel });
+      } };
+    });
+    out.isRadar = s.view === 'radar'; out.isTable = s.view === 'table';
+    return out;
+  }
+}
+</script>
+</body>
+</html>

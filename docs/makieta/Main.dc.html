@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<title>Frame Check: szukaj okolicy</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#1F5C46}a:hover{color:#163F31}
+.opt{background:#FFFFFF;border:1px solid #DDE1E4;color:#18202B;cursor:pointer;text-align:left;font:inherit}
+.opt:hover{border-color:#8BC0A3}
+.opt.on{background:#E3EFE8;border-color:#1F5C46;box-shadow:inset 0 0 0 1px #1F5C46}
+.seg{background:#FFFFFF;border:1px solid #DDE1E4;color:#3D4652;cursor:pointer;font:inherit}
+.seg:hover{border-color:#8BC0A3}
+.seg.on{background:#1F5C46;border-color:#1F5C46;color:#FFFFFF}
+.db{background:#FFFFFF;border:1px solid #DDE1E4;color:#3D4652;cursor:pointer;font:inherit}
+.db.on{background:#FBEBDD;border-color:#B25E12;color:#7A3E08}
+.grp{background:none;border:0;cursor:pointer;font:inherit;color:#18202B;text-align:left}
+@keyframes fcFadeA{from{opacity:.2;filter:saturate(.3)}to{opacity:1;filter:none}}
+@keyframes fcFadeB{from{opacity:.2;filter:saturate(.3)}to{opacity:1;filter:none}}
+</style>
+</helmet>
+<div style="min-height: 1400px; background: #F5F6F3; font-family: 'IBM Plex Sans', system-ui, sans-serif; color: #18202B">
+<header style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 32px; background: #FFFFFF; border-bottom: 1px solid #DDE1E4">
+<a href="Main.dc.html" style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: #18202B; font-weight: 700; font-size: 18px">
+<svg width="26" height="28" viewBox="0 0 26 28" fill="none" stroke="#1F5C46" stroke-width="2.2" aria-hidden="true"><path d="M13 2 L24 8 L24 20 L13 26 L2 20 L2 8 Z"></path><path d="M13 9 L18 12 L18 17 L13 20 L8 17 L8 12 Z" fill="#1F5C46"></path></svg>
+<span>Frame Check</span>
+<span style="font-family: 'IBM Plex Mono', monospace; font-weight: 400; font-size: 13px; color: #5B6470">Kraków</span>
+</a>
+<nav aria-label="Kroki" style="display: flex; flex-wrap: wrap; gap: 6px; font-size: 14px">
+<a href="Main.dc.html" aria-current="step" style="padding: 11px 16px; border-radius: 999px; background: #1F5C46; color: #FFFFFF; text-decoration: none">1 Szukaj</a>
+<a href="Okolica.dc.html" style="padding: 11px 16px; border-radius: 999px; border: 1px solid #DDE1E4; color: #3D4652; text-decoration: none">2 Okolica</a>
+<a href="Porownanie.dc.html" style="padding: 11px 16px; border-radius: 999px; border: 1px solid #DDE1E4; color: #3D4652; text-decoration: none">3 Porównanie</a>
+</nav>
+</header>
+
+<div style="display: flex; flex-wrap: wrap; align-items: flex-start">
+<aside aria-label="Filtry" style="flex: 1 1 440px; max-width: 100%; box-sizing: border-box; background: #FFFFFF; border-right: 1px solid #DDE1E4; padding: 24px; display: flex; flex-direction: column; gap: 24px">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<h1 style="margin: 0; font-size: 28px; line-height: 1.15; letter-spacing: -0.02em">Znajdź okolicę w Krakowie</h1>
+<p style="margin: 0; font-size: 15px; line-height: 1.5; color: #3D4652">Każda zmiana po lewej od razu przelicza kolory na mapie.</p>
+</div>
+
+<section aria-labelledby="h-mode" style="display: flex; flex-direction: column; gap: 10px">
+<h2 id="h-mode" style="margin: 0; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #5B6470">Czego szukasz</h2>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+<sc-for list="{{modes}}" as="m" hint-placeholder-count="2">
+<button type="button" class="{{m.cls}}" onClick="{{m.pick}}" style="padding: 12px 14px; border-radius: 12px; display: flex; flex-direction: column; gap: 2px; min-height: 64px">
+<span style="font-size: 17px; font-weight: 700">{{m.title}}</span>
+<span style="font-size: 12px; color: #3D4652">{{m.desc}}</span>
+</button>
+</sc-for>
+</div>
+</section>
+
+<section aria-labelledby="h-persona" style="display: flex; flex-direction: column; gap: 10px">
+<h2 id="h-persona" style="margin: 0; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #5B6470">Profil (ustawia wagi poniżej)</h2>
+<div style="display: flex; flex-wrap: wrap; gap: 6px">
+<sc-for list="{{personas}}" as="p" hint-placeholder-count="5">
+<button type="button" class="{{p.cls}}" onClick="{{p.pick}}" title="{{p.desc}}" style="padding: 0 14px; height: 44px; border-radius: 999px; font-size: 14px">{{p.title}}</button>
+</sc-for>
+</div>
+</section>
+
+<section aria-labelledby="h-commute" style="display: flex; flex-direction: column; gap: 10px">
+<h2 id="h-commute" style="margin: 0; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #5B6470">Codzienny dojazd</h2>
+<label for="addr1" style="font-size: 14px; font-weight: 500">Adres pracy lub uczelni</label>
+<input id="addr1" type="text" placeholder="np. ul. [ULICA] [NR], Kraków" style="font: inherit; font-size: 15px; padding: 10px 12px; border: 1px solid #B9C0C6; border-radius: 10px; min-height: 44px; box-sizing: border-box">
+<div role="group" aria-label="Środek transportu" style="display: flex; flex-wrap: wrap; gap: 6px">
+<sc-for list="{{modesT}}" as="t" hint-placeholder-count="4">
+<button type="button" class="{{t.cls}}" onClick="{{t.pick}}" style="padding: 0 12px; height: 40px; border-radius: 999px; font-size: 13px">{{t.label}}</button>
+</sc-for>
+</div>
+<span id="lbl-max" style="font-size: 14px; font-weight: 500">Maksymalnie (twardy filtr)</span>
+<div role="group" aria-labelledby="lbl-max" style="display: flex; flex-wrap: wrap; gap: 6px">
+<sc-for list="{{maxOpts}}" as="o" hint-placeholder-count="4">
+<button type="button" class="{{o.cls}}" onClick="{{o.pick}}" style="padding: 0 14px; height: 40px; border-radius: 999px; font-family: 'IBM Plex Mono', monospace; font-size: 13px">{{o.label}}</button>
+</sc-for>
+</div>
+</section>
+
+<section aria-labelledby="h-budget" style="display: flex; flex-direction: column; gap: 8px">
+<h2 id="h-budget" style="margin: 0; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #5B6470">Budżet</h2>
+<label for="budget" style="font-size: 14px; font-weight: 500">{{budgetLabel}}</label>
+<input id="budget" type="text" placeholder="[KWOTA] zł" style="font: inherit; font-size: 15px; padding: 10px 12px; border: 1px solid #B9C0C6; border-radius: 10px; min-height: 44px; box-sizing: border-box">
+</section>
+
+<section aria-labelledby="h-weights" style="display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px">
+<h2 id="h-weights" style="margin: 0; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #5B6470">Warstwy i wagi</h2>
+<span style="font-size: 13px; color: #3D4652">{{activeCount}} aktywnych</span>
+</div>
+<p style="margin: 0; font-size: 13px; line-height: 1.45; color: #3D4652">Waga 0–4. Strzałka: czy więcej to lepiej (↑), mniej lepiej (↓), czy szukasz środka (≈).</p>
+<sc-for list="{{groups}}" as="g" hint-placeholder-count="7">
+<div style="border: 1px solid #DDE1E4; border-radius: 12px; overflow: hidden">
+<button type="button" class="grp" onClick="{{g.toggle}}" aria-expanded="{{g.expanded}}" style="width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 12px 14px; min-height: 48px; background: #FAFBF9">
+<span style="font-size: 15px; font-weight: 600">{{g.title}}</span>
+<span style="display: flex; align-items: center; gap: 10px; font-size: 12px; color: #3D4652"><span>{{g.summary}}</span><span aria-hidden="true" style="font-size: 14px">{{g.chev}}</span></span>
+</button>
+<sc-if value="{{g.isOpen}}" hint-placeholder-val="{{false}}">
+<div style="padding: 0 14px 8px">
+<sc-for list="{{g.items}}" as="it" hint-placeholder-count="4">
+<div style="display: flex; flex-direction: column; gap: 8px; padding: 12px 0; border-top: 1px solid #EEF0F1">
+<div style="display: flex; justify-content: space-between; gap: 8px; align-items: baseline">
+<span style="font-size: 14px; font-weight: 500">{{it.name}}</span>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #5B6470; text-align: right">{{it.src}}</span>
+</div>
+<sc-if value="{{it.hasNote}}" hint-placeholder-val="{{false}}">
+<span style="font-size: 12px; line-height: 1.4; color: #7A3E08">{{it.note}}</span>
+</sc-if>
+<sc-if value="{{it.isInfo}}" hint-placeholder-val="{{false}}">
+<span style="font-size: 12px; padding: 6px 10px; border-radius: 8px; background: #F0F2EF; color: #3D4652">Tylko warstwa informacyjna, bez wpływu na wynik</span>
+</sc-if>
+<sc-if value="{{it.isScored}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center">
+<div role="group" aria-label="{{it.wAria}}" style="display: flex; gap: 3px">
+<sc-for list="{{it.segs}}" as="sg" hint-placeholder-count="5">
+<button type="button" class="{{sg.cls}}" onClick="{{sg.pick}}" aria-label="{{sg.aria}}" style="width: 38px; height: 38px; border-radius: 8px; font-family: 'IBM Plex Mono', monospace; font-size: 14px">{{sg.label}}</button>
+</sc-for>
+</div>
+<div role="group" aria-label="{{it.dAria}}" style="display: flex; gap: 3px">
+<sc-for list="{{it.dirs}}" as="d" hint-placeholder-count="3">
+<button type="button" class="{{d.cls}}" onClick="{{d.pick}}" aria-label="{{d.aria}}" title="{{d.aria}}" style="width: 38px; height: 38px; border-radius: 8px; font-size: 16px">{{d.label}}</button>
+</sc-for>
+</div>
+<sc-if value="{{it.canDb}}" hint-placeholder-val="{{false}}">
+<button type="button" class="{{it.dbCls}}" onClick="{{it.dbPick}}" aria-pressed="{{it.dbOn}}" style="padding: 0 10px; height: 38px; border-radius: 8px; font-size: 12px">{{it.dbLabel}}</button>
+</sc-if>
+</div>
+</sc-if>
+</div>
+</sc-for>
+</div>
+</sc-if>
+</div>
+</sc-for>
+</section>
+
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<a href="Porownanie.dc.html" style="display: inline-flex; align-items: center; padding: 0 16px; height: 46px; border-radius: 12px; background: #1F5C46; color: #FFFFFF; text-decoration: none; font-weight: 600">Porównaj okolice</a>
+<button type="button" class="seg" style="padding: 0 16px; height: 46px; border-radius: 12px; font-size: 14px">Zapisz wyszukiwanie</button>
+</div>
+</aside>
+
+<section aria-label="Mapa Krakowa" style="flex: 999 1 640px; min-width: 0; box-sizing: border-box; padding: 20px 24px; position: sticky; top: 0; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; align-items: center">
+<div role="group" aria-label="Co pokazuje mapa" style="display: flex; flex-wrap: wrap; gap: 6px">
+<sc-for list="{{layers}}" as="l" hint-placeholder-count="4">
+<button type="button" class="{{l.cls}}" onClick="{{l.pick}}" style="padding: 0 14px; height: 40px; border-radius: 999px; font-size: 13px">{{l.label}}</button>
+</sc-for>
+</div>
+<button type="button" class="{{offersCls}}" onClick="{{toggleOffers}}" aria-pressed="{{offersOn}}" style="padding: 0 14px; height: 40px; border-radius: 999px; font-size: 13px">Oferty mieszkań</button>
+</div>
+<div style="overflow-x: auto">
+<dc-import name="KrakowMap" weights="{{weights}}" dirs="{{dirs}}" maxmin="{{maxmin}}" flood-db="{{floodDb}}" mode="{{mode}}" layer="{{layer}}" offers="{{offers}}" show-rank="{{true}}" width="{{mapW}}" cols="{{mapCols}}" hint-size="760px,720px"></dc-import>
+</div>
+</section>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":1400}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    var preset = this.preset('family', 'buy');
+    var d = {};
+    this.model().forEach(function (g) { g.items.forEach(function (it) { d[it.id] = it.dir; }); });
+    this.state = { mode: 'buy', persona: 'family', transport: 'transit', maxmin: 30, w: preset, d: d, floodDb: false, open: { 'Dojazdy i transport': true, 'Środowisko': true }, layer: 'score', offers: false };
+  }
+  model() {
+    return [
+      { title: 'Ceny', items: [
+        { id: 'price', name: 'Cena m² (transakcje)', src: 'RCN', dir: 'down' },
+        { id: 'rent', name: 'Czynsz za m²', src: 'Otodom, OLX', dir: 'down' } ] },
+      { title: 'Dojazdy i transport', items: [
+        { id: 'commute', name: 'Czas dojazdu do pracy', src: 'GTFS ZTP + OTP', dir: 'down' },
+        { id: 'stops', name: 'Przystanki i linie', src: 'GTFS ZTP', dir: 'up' },
+        { id: 'airport', name: 'Dojazd na Balice', src: 'OSRM, GTFS', dir: 'down' },
+        { id: 'bike', name: 'Drogi rowerowe', src: 'ZTP', dir: 'up' },
+        { id: 'parking', name: 'Strefa płatnego parkowania', src: 'MSIP', dir: 'down' } ] },
+      { title: 'Edukacja i zdrowie', items: [
+        { id: 'schools', name: 'Szkoły: wyniki egzaminów', src: 'CKE', dir: 'up' },
+        { id: 'kinder', name: 'Przedszkola i żłobki', src: 'Otwarte Dane', dir: 'up' },
+        { id: 'clinics', name: 'Przychodnie POZ', src: 'NFZ', dir: 'up' },
+        { id: 'queues', name: 'Kolejki do specjalistów', src: 'API NFZ', dir: 'down' } ] },
+      { title: 'Środowisko', items: [
+        { id: 'air', name: 'Zanieczyszczenie powietrza', src: 'GIOŚ, Airly', dir: 'down' },
+        { id: 'noise', name: 'Hałas', src: 'MSIP 2022', dir: 'down' },
+        { id: 'green', name: 'Zieleń i parki', src: 'ZZM, OSM', dir: 'up' },
+        { id: 'flood', name: 'Ryzyko powodzi', src: 'ISOK', dir: 'down', canDb: true } ] },
+      { title: 'Bezpieczeństwo', items: [
+        { id: 'safety', name: 'Zgłoszenia zagrożeń', src: 'KMZB', dir: 'down', note: 'Zgłoszenia mieszkańców, nie statystyka przestępstw.' } ] },
+      { title: 'Okolica na co dzień', items: [
+        { id: 'shops', name: 'Sklepy, apteki, gastronomia', src: 'OSM', dir: 'up' },
+        { id: 'culture', name: 'Sport i kultura', src: 'ZIS, OSM', dir: 'up' },
+        { id: 'buildings', name: 'Wiek zabudowy', src: 'MSIP EGiB', dir: 'opt' },
+        { id: 'plans', name: 'Planowana zabudowa obok', src: 'MPZP', dir: 'down' },
+        { id: 'roads', name: 'Świeżość dróg', src: 'BIP ZDMK', dir: 'up' },
+        { id: 'fiber', name: 'Światłowód', src: 'UKE', dir: 'up' } ] },
+      { title: 'Ludzie i demografia', items: [
+        { id: 'growth', name: 'Trend zameldowań', src: 'MSIP heksy 100 m', dir: 'up' },
+        { id: 'density', name: 'Gęstość zaludnienia', src: 'GUS NSP 2021', dir: 'opt' },
+        { id: 'foreign', name: 'Obcokrajowcy', src: 'UdSC, GUP', dir: null, note: 'Dane dla całego miasta: nie zmienią kolorów wewnątrz Krakowa.' },
+        { id: 'votes', name: 'Wyniki wyborów', src: 'PKW', info: true } ] }
+    ];
+  }
+  preset(persona, mode) {
+    var ids = ['price','rent','commute','stops','airport','bike','parking','schools','kinder','clinics','queues','air','noise','green','flood','safety','shops','culture','buildings','plans','roads','fiber','growth','density','foreign'];
+    var P = {
+      family:   [3,0,4,3,1,1,1,4,4,2,1,3,3,4,2,3,2,2,1,1,0,1,1,1,0],
+      single:   [2,0,3,4,2,3,0,0,0,1,1,2,1,2,1,2,4,4,1,0,0,3,1,2,0],
+      senior:   [2,0,0,3,0,0,1,0,0,4,4,4,4,3,2,4,3,2,1,1,1,0,0,2,0],
+      investor: [4,0,1,4,2,1,1,1,0,1,0,1,1,1,2,2,3,2,1,2,0,2,4,2,0],
+      custom:   [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    }[persona];
+    var w = {};
+    ids.forEach(function (id, i) { w[id] = P[i]; });
+    if (mode === 'rent') { w.rent = w.price; w.price = 0; }
+    return w;
+  }
+  renderVals() {
+    var self = this, s = this.state;
+    function set(patch) { self.setState(patch); }
+    var modes = [
+      { id: 'buy', title: 'Kupuję', desc: 'Ceny transakcyjne z RCN' },
+      { id: 'rent', title: 'Wynajmuję', desc: 'Czynsze z ogłoszeń' }
+    ].map(function (m) { return Object.assign({}, m, { cls: 'opt' + (s.mode === m.id ? ' on' : ''), pick: function () {
+      if (self.state.mode === m.id) return;
+      var w = Object.assign({}, self.state.w); var t = w.price; w.price = w.rent; w.rent = t;
+      set({ mode: m.id, w: w }); } }); });
+    var personas = [
+      { id: 'family', title: 'Rodzina z dziećmi', desc: 'Szkoły, żłobki, zieleń, cisza' },
+      { id: 'single', title: 'Singiel', desc: 'Komunikacja, gastronomia, kultura' },
+      { id: 'senior', title: 'Senior', desc: 'Przychodnie, kolejki NFZ, cisza' },
+      { id: 'investor', title: 'Inwestor', desc: 'Cena, rozwój okolicy, komunikacja' },
+      { id: 'custom', title: 'Od zera', desc: 'Wszystkie wagi na 0' }
+    ].map(function (p) { return Object.assign({}, p, { cls: 'seg' + (s.persona === p.id ? ' on' : ''), pick: function () { set({ persona: p.id, w: self.preset(p.id, self.state.mode) }); } }); });
+    var modesT = [['transit', 'Komunikacja'], ['car', 'Auto'], ['bike', 'Rower'], ['walk', 'Pieszo']]
+      .map(function (t) { return { label: t[1], cls: 'seg' + (s.transport === t[0] ? ' on' : ''), pick: function () { set({ transport: t[0] }); } }; });
+    var maxOpts = [20, 30, 45, 60].map(function (n) { return { label: n + ' min', cls: 'seg' + (s.maxmin === n ? ' on' : ''), pick: function () { set({ maxmin: n }); } }; });
+    var dirDefs = [['up', '↑', 'Więcej lepiej'], ['down', '↓', 'Mniej lepiej'], ['opt', '≈', 'Optimum, środek skali']];
+    var active = 0;
+    var groups = this.model().map(function (g) {
+      var sum = 0, cnt = 0;
+      var items = g.items.map(function (it) {
+        var w = s.w[it.id] || 0;
+        if (!it.info) { sum += w; if (w > 0) { cnt++; active++; } }
+        return {
+          name: it.name, src: it.src, note: it.note || '', hasNote: !!it.note, isInfo: !!it.info, isScored: !it.info,
+          wAria: 'Waga: ' + it.name, dAria: 'Kierunek: ' + it.name, canDb: !!it.canDb,
+          segs: [0, 1, 2, 3, 4].map(function (n) { return { label: String(n), aria: 'Waga ' + n, cls: 'seg' + (w === n ? ' on' : ''),
+            pick: function () { var nw = Object.assign({}, self.state.w); nw[it.id] = n; set({ w: nw, persona: 'custom-edited' }); } }; }),
+          dirs: dirDefs.map(function (dd) { return { label: dd[1], aria: dd[2], cls: 'seg' + (s.d[it.id] === dd[0] ? ' on' : ''),
+            pick: function () { var nd = Object.assign({}, self.state.d); nd[it.id] = dd[0]; set({ d: nd }); } }; }),
+          dbOn: s.floodDb ? 'true' : 'false', dbCls: 'db' + (s.floodDb ? ' on' : ''),
+          dbLabel: s.floodDb ? 'Wyklucz strefę: tak' : 'Wyklucz strefę',
+          dbPick: function () { set({ floodDb: !self.state.floodDb }); }
+        };
+      });
+      var isOpen = !!s.open[g.title];
+      return { title: g.title, items: items, isOpen: isOpen, expanded: isOpen ? 'true' : 'false', chev: isOpen ? '▴' : '▾',
+        summary: cnt + ' z ' + g.items.filter(function (x) { return !x.info; }).length + ' · suma wag ' + sum,
+        toggle: function () { var o = Object.assign({}, self.state.open); o[g.title] = !o[g.title]; set({ open: o }); } };
+    });
+    var layers = [['score', 'Twój wynik'], ['commute', 'Dojazd'], ['noise', 'Hałas'], ['green', 'Zieleń']]
+      .map(function (l) { return { label: l[1], cls: 'seg' + (s.layer === l[0] ? ' on' : ''), pick: function () { set({ layer: l[0] }); } }; });
+    var dirs = {};
+    Object.keys(s.d).forEach(function (k) { if (s.d[k]) dirs[k] = s.d[k]; });
+    return {
+      modes: modes, personas: personas, modesT: modesT, maxOpts: maxOpts, groups: groups, layers: layers, activeCount: active,
+      weights: s.w, dirs: dirs, maxmin: s.maxmin, floodDb: s.floodDb, mode: s.mode, layer: s.layer, offers: s.offers,
+      offersCls: 'seg' + (s.offers ? ' on' : ''), offersOn: s.offers ? 'true' : 'false',
+      toggleOffers: function () { set({ offers: !self.state.offers }); },
+      mapW: 760, mapCols: 42,
+      budgetLabel: s.mode === 'buy' ? 'Cena mieszkania do' : 'Czynsz miesięcznie do'
+    };
+  }
+}
+</script>
+</body>
+</html>

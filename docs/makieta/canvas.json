@@ -1,0 +1,67 @@
+{
+  "v": 3,
+  "attachments": {},
+  "boards": {
+    "Main.dc.html": {
+      "expand": "fill",
+      "h": 1500,
+      "is_interactive": true,
+      "title": "1. Szukaj: filtry po lewej, mapa po prawej",
+      "w": 1280,
+      "x": 0,
+      "y": 0
+    },
+    "Okolica.dc.html": {
+      "expand": "fill",
+      "h": 1260,
+      "is_interactive": true,
+      "title": "2. Okolica: dlaczego taki wynik",
+      "w": 1280,
+      "x": 1360,
+      "y": 0
+    },
+    "Porownanie.dc.html": {
+      "expand": "fill",
+      "h": 1350,
+      "is_interactive": true,
+      "title": "3. Porównanie do 5 okolic: wykres diamentowy",
+      "w": 1280,
+      "x": 2720,
+      "y": 0
+    },
+    "KrakowMap.dc.html": {
+      "h": 760,
+      "is_interactive": true,
+      "title": "Komponent: mapa Krakowa z warstwami",
+      "w": 820,
+      "x": 0,
+      "y": 1620
+    }
+  },
+  "createdOnFiles": {
+    "at": "2026-10-03T09:50:00Z",
+    "v": 1
+  },
+  "designSystems": [],
+  "launch": {
+    "view": "canvas"
+  },
+  "notes": {
+    "flowtitle": {
+      "kind": "title1",
+      "maxW": 4000,
+      "text": "Frame Check: flow użytkownika (Kraków)",
+      "w": 240,
+      "x": 0,
+      "y": -300
+    }
+  },
+  "order": [
+    "Main.dc.html",
+    "Okolica.dc.html",
+    "Porownanie.dc.html",
+    "KrakowMap.dc.html"
+  ],
+  "pages": [],
+  "title": "Frame Check – frontend i flow"
+}

@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<title>Frame Check: okolica Ruczaj</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#1F5C46}a:hover{color:#163F31}
+.seg{background:#FFFFFF;border:1px solid #DDE1E4;color:#3D4652;cursor:pointer;font:inherit}
+.seg.on{background:#1F5C46;border-color:#1F5C46;color:#FFFFFF}
+</style>
+</helmet>
+<div style="min-height: 1260px; background: #F5F6F3; font-family: 'IBM Plex Sans', system-ui, sans-serif; color: #18202B">
+<header style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 32px; background: #FFFFFF; border-bottom: 1px solid #DDE1E4">
+<a href="Main.dc.html" style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: #18202B; font-weight: 700; font-size: 18px">
+<svg width="26" height="28" viewBox="0 0 26 28" fill="none" stroke="#1F5C46" stroke-width="2.2" aria-hidden="true"><path d="M13 2 L24 8 L24 20 L13 26 L2 20 L2 8 Z"></path><path d="M13 9 L18 12 L18 17 L13 20 L8 17 L8 12 Z" fill="#1F5C46"></path></svg>
+<span>Frame Check</span>
+<span style="font-family: 'IBM Plex Mono', monospace; font-weight: 400; font-size: 13px; color: #5B6470">Kraków</span>
+</a>
+<nav aria-label="Kroki" style="display: flex; flex-wrap: wrap; gap: 6px; font-size: 14px">
+<a href="Main.dc.html" style="padding: 11px 16px; border-radius: 999px; border: 1px solid #DDE1E4; color: #3D4652; text-decoration: none">1 Szukaj</a>
+<a href="Okolica.dc.html" aria-current="step" style="padding: 11px 16px; border-radius: 999px; background: #1F5C46; color: #FFFFFF; text-decoration: none">2 Okolica</a>
+<a href="Porownanie.dc.html" style="padding: 11px 16px; border-radius: 999px; border: 1px solid #DDE1E4; color: #3D4652; text-decoration: none">3 Porównanie</a>
+</nav>
+</header>
+
+<main style="max-width: 1240px; margin: 0 auto; padding: 28px 32px 48px; display: flex; flex-direction: column; gap: 24px">
+<a href="Main.dc.html" style="align-self: flex-start; padding: 10px 0; font-size: 15px">Wróć do mapy</a>
+
+<section style="display: flex; flex-wrap: wrap; gap: 24px; align-items: center; justify-content: space-between; background: #FFFFFF; border: 1px solid #DDE1E4; border-radius: 16px; padding: 24px">
+<div style="display: flex; gap: 24px; align-items: center; flex-wrap: wrap">
+<div aria-label="Wynik 82 na 100" style="width: 120px; height: 120px; border-radius: 50%; background: conic-gradient(#1F5C46 0 82%, #E3E7E9 82% 100%); display: flex; align-items: center; justify-content: center">
+<div style="width: 92px; height: 92px; border-radius: 50%; background: #FFFFFF; display: flex; flex-direction: column; align-items: center; justify-content: center">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 34px; font-weight: 500; line-height: 1">82</span>
+<span style="font-size: 12px; color: #5B6470">na 100</span>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<h1 style="margin: 0; font-size: 36px; letter-spacing: -0.02em">Ruczaj</h1>
+<span style="font-size: 15px; color: #3D4652">Dzielnica VIII Dębniki · heks ok. 4 ha · 2. miejsce dla Twojego profilu</span>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #5B6470">dane przykładowe</span>
+</div>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<a href="Porownanie.dc.html" style="display: inline-flex; align-items: center; padding: 0 18px; height: 48px; border-radius: 12px; background: #1F5C46; color: #FFFFFF; text-decoration: none; font-weight: 600">Porównaj z Bronowicami Małymi</a>
+<button type="button" class="seg" style="padding: 0 18px; height: 48px; border-radius: 12px; font-size: 15px">Zapisz</button>
+<button type="button" class="seg" style="padding: 0 18px; height: 48px; border-radius: 12px; font-size: 15px">Udostępnij</button>
+</div>
+</section>
+
+<section aria-labelledby="h-why" style="display: flex; flex-direction: column; gap: 12px">
+<h2 id="h-why" style="margin: 0; font-size: 22px">Dlaczego taki wynik</h2>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px">
+<div style="background: #FFFFFF; border: 1px solid #DDE1E4; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 14px">
+<h3 style="margin: 0; font-size: 15px; color: #1F5C46; text-transform: uppercase; letter-spacing: 0.06em">Najmocniejsze strony</h3>
+<sc-for list="{{pros}}" as="p" hint-placeholder-count="3">
+<div style="display: flex; gap: 12px; align-items: flex-start">
+<span style="flex: none; font-family: 'IBM Plex Mono', monospace; font-size: 14px; padding: 4px 8px; border-radius: 6px; background: #E3EFE8; color: #1F5C46">{{p.pts}}</span>
+<div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 16px; font-weight: 500">{{p.title}}</span><span style="font-size: 14px; color: #3D4652">{{p.detail}}</span></div>
+</div>
+</sc-for>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #DDE1E4; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 14px">
+<h3 style="margin: 0; font-size: 15px; color: #7A3E08; text-transform: uppercase; letter-spacing: 0.06em">Co obniża wynik</h3>
+<sc-for list="{{cons}}" as="p" hint-placeholder-count="3">
+<div style="display: flex; gap: 12px; align-items: flex-start">
+<span style="flex: none; font-family: 'IBM Plex Mono', monospace; font-size: 14px; padding: 4px 8px; border-radius: 6px; background: #FBEBDD; color: #7A3E08">{{p.pts}}</span>
+<div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 16px; font-weight: 500">{{p.title}}</span><span style="font-size: 14px; color: #3D4652">{{p.detail}}</span></div>
+</div>
+</sc-for>
+</div>
+</div>
+</section>
+
+<section aria-labelledby="h-break" style="background: #FFFFFF; border: 1px solid #DDE1E4; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 4px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: baseline; padding-bottom: 8px">
+<h2 id="h-break" style="margin: 0; font-size: 22px">Rozbicie na warstwy</h2>
+<span style="font-size: 14px; color: #3D4652">Wartość warstwy w tym miejscu × Twoja waga</span>
+</div>
+<div style="overflow-x: auto">
+<div style="min-width: 640px">
+<div style="display: grid; grid-template-columns: minmax(200px, 2fr) 80px minmax(200px, 3fr) 70px; gap: 12px; padding: 8px 0; font-size: 12px; font-weight: 600; color: #5B6470; text-transform: uppercase; letter-spacing: 0.05em">
+<span>Warstwa</span><span>Waga</span><span>Wartość tutaj (0–100)</span><span style="text-align: right">Wkład</span>
+</div>
+<sc-for list="{{layers}}" as="l" hint-placeholder-count="9">
+<div style="display: grid; grid-template-columns: minmax(200px, 2fr) 80px minmax(200px, 3fr) 70px; gap: 12px; padding: 10px 0; border-top: 1px solid #EEF0F1; align-items: center; font-size: 14px">
+<span style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">{{l.name}}</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #5B6470">{{l.src}}</span></span>
+<span style="font-family: 'IBM Plex Mono', monospace; color: #3D4652">{{l.w}}/4</span>
+<span style="height: 10px; border-radius: 5px; background: #EEF0F1"><span style="display: block; height: 10px; border-radius: 5px; background: {{l.fill}}; width: {{l.v}}%"></span></span>
+<span style="font-family: 'IBM Plex Mono', monospace; text-align: right">{{l.contrib}}</span>
+</div>
+</sc-for>
+</div>
+</div>
+</section>
+
+<div style="display: flex; flex-wrap: wrap; gap: 16px">
+<section aria-labelledby="h-daily" style="flex: 1 1 340px; background: #FFFFFF; border: 1px solid #DDE1E4; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 12px">
+<h2 id="h-daily" style="margin: 0; font-size: 22px">Na co dzień</h2>
+<sc-for list="{{daily}}" as="d" hint-placeholder-count="5">
+<div style="display: flex; justify-content: space-between; gap: 12px; font-size: 15px; padding: 6px 0; border-top: 1px solid #EEF0F1"><span style="color: #3D4652">{{d.k}}</span><span style="font-weight: 500; text-align: right">{{d.v}}</span></div>
+</sc-for>
+</section>
+<section aria-labelledby="h-offers" style="flex: 2 1 520px; background: #FFFFFF; border: 1px solid #DDE1E4; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: baseline">
+<h2 id="h-offers" style="margin: 0; font-size: 22px">Mieszkania w tej okolicy</h2>
+<span style="font-size: 14px; color: #3D4652">Mediana transakcji RCN, 12 mies.: [CENA] zł/m²</span>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px">
+<sc-for list="{{offers}}" as="o" hint-placeholder-count="3">
+<div style="border: 1px solid #DDE1E4; border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 6px">
+<div aria-hidden="true" style="height: 90px; border-radius: 8px; background: #EEF0F1; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #5B6470">[ZDJĘCIE]</div>
+<span style="font-size: 18px; font-weight: 600">[CENA] zł</span>
+<span style="font-size: 14px; color: #3D4652">{{o.desc}}</span>
+<span style="font-size: 13px; color: {{o.tone}}">{{o.vs}}</span>
+<a href="#" style="font-size: 14px; padding: 6px 0">Otwórz ogłoszenie</a>
+</div>
+</sc-for>
+</div>
+</section>
+</div>
+
+<p style="margin: 0; font-size: 13px; line-height: 1.5; color: #5B6470">Źródła: RCN (Geoportal), GTFS ZTP Kraków, MSIP Kraków (hałas 2022, MPZP, zameldowania), GIOŚ, ISOK, NFZ, CKE, KMZB, OSM. Przy każdej warstwie pokazujemy datę aktualizacji: [DATA].</p>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":1260}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var layers = [
+      ['Czas dojazdu do pracy', 'GTFS ZTP + OTP', 4, 88], ['Przedszkola i żłobki', 'Otwarte Dane Kraków', 4, 91],
+      ['Szkoły: wyniki egzaminów', 'CKE', 4, 74], ['Zieleń i parki', 'ZZM, OSM', 4, 80],
+      ['Przystanki i linie', 'GTFS ZTP', 3, 86], ['Cena m²', 'RCN', 3, 62],
+      ['Hałas', 'MSIP 2022', 3, 48], ['Powietrze', 'GIOŚ, Airly', 3, 58], ['Zgłoszenia zagrożeń', 'KMZB', 3, 70]
+    ];
+    var tw = layers.reduce(function (a, l) { return a + l[2]; }, 0);
+    return {
+      pros: [
+        { pts: '+14', title: 'Dojazd do pracy 22 min tramwajem', detail: 'Bez przesiadki, kursy co 6 min w szczycie.' },
+        { pts: '+12', title: '3 przedszkola i żłobek w 10 min pieszo', detail: 'Otwarte Dane Kraków, RSPO.' },
+        { pts: '+10', title: 'Zakrzówek i park Ruczaj blisko', detail: 'Ponad 30% terenu w promieniu 1 km to zieleń.' }
+      ],
+      cons: [
+        { pts: '−7', title: 'Hałas przy ul. Grota-Roweckiego', detail: 'Strefa przekroczeń na mapie hałasu 2022.' },
+        { pts: '−5', title: 'Cena m² powyżej mediany miasta', detail: 'Transakcje z RCN z ostatnich 12 miesięcy.' },
+        { pts: '−3', title: 'Dużo planowanej zabudowy obok', detail: 'Dwa sporządzane MPZP w promieniu 500 m.' }
+      ],
+      layers: layers.map(function (l) {
+        return { name: l[0], src: l[1], w: l[2], v: l[3], fill: l[3] >= 60 ? '#1F5C46' : '#B25E12', contrib: (l[2] * l[3] / tw).toFixed(1) };
+      }),
+      daily: [
+        { k: 'Do pracy', v: '22 min, tramwaj' }, { k: 'Najbliższa szkoła podstawowa', v: '650 m' },
+        { k: 'Najbliższe przedszkole', v: '300 m' }, { k: 'Przychodnia POZ (NFZ)', v: '900 m' },
+        { k: 'Lotnisko Balice', v: '28 min autem' }, { k: 'Ryzyko powodzi', v: 'Poza strefą Q100' }
+      ],
+      offers: [
+        { desc: '3 pokoje · [M²] m² · 2. piętro', vs: 'Poniżej mediany RCN', tone: '#1F5C46' },
+        { desc: '2 pokoje · [M²] m² · parter', vs: 'Blisko mediany RCN', tone: '#3D4652' },
+        { desc: '4 pokoje · [M²] m² · 5. piętro', vs: 'Powyżej mediany RCN', tone: '#7A3E08' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>
