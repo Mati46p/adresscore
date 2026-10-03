@@ -21,6 +21,10 @@
 //                           # (dokumentacja TypeSafe), więc to sparowane porównanie za 1/3 ceny.
 //   … --tylko-pisane        # bez pozycji naśladujących mowę (MOWIONE niżej) – przekrój pomocniczy
 //   … --z-pliku wynik.json  # bez sieci: przelicza zapisany przebieg (--wyjscie) od nowa
+//   … --z-pliku wynik.json --przelicz  # #187: A od nowa BIEŻĄCYM kodem z zapisanych odpowiedzi
+//                           # (`jev.oceny`, zapis od #184): tylko pytania bieżącego zapytania,
+//                           # reguły też bieżące. JEV ocenia pytania niezależnie, więc usunięte
+//                           # pytanie nie zmienia odpowiedzi na pozostałe.
 //
 // Na żywo każda pozycja to JEDNO wywołanie JEV (ok. 58 na przebieg – to kosztuje). Idzie
 // tą samą ścieżką co aplikacja: klient (jev.ts, timeout 1,5 s) → pośrednik (api/_jev.js,
@@ -1513,6 +1517,75 @@ function zapisanyAPoWycofaniu(w: WynikA): WynikA {
   return { ...w, systemy }
 }
 
+/**
+ * #187: `--przelicz` – część A zapisanego przebiegu przetworzona od nowa bieżącym kodem
+ * (`przetworzOdpowiedzi`, reguły, zapas jak w `zJevem`), bez sieci. Odpowiedzi bierzemy
+ * z `jev.oceny` tylko dla pytań, które zadaje bieżące zapytanie. Zapis nie ma pewności
+ * poziomów kategorii, więc odtwarzamy ją z wyniku zapisanego przebiegu: poziom przyjęty
+ * (jest w `jev_surowy.kategorie`) = pewny, inaczej pod progiem. To daje ten sam wynik
+ * kategorii co w przebiegu, o ile kod kategorii się nie zmienił (od #180 się nie zmienia).
+ */
+function przeliczA(w: WynikA): WynikA {
+  const tekst = w.tekst
+  const reguly = zZrozumienia(zRegul(tekst))
+  if (!w.jev?.oceny) return { ...w, systemy: { reguly } }
+  const { oceny, profil } = w.jev
+  const zapytanie = opiszTeraz.zapytanieOpiszSiebie(tekst)
+  const zapisaneKategorie = w.systemy.jev_surowy?.kategorie ?? {}
+  const odp: Record<string, OdpowiedzJev | null> = {}
+  for (const id of Object.keys(zapytanie.pytania)) {
+    const x = oceny[id]
+    if (x === null || x === undefined) odp[id] = null
+    else if (id === opiszTeraz.ID_PROFILU)
+      odp[id] = profil
+        ? {
+            typ: 'choice',
+            wybor: profil.wybor,
+            pewnosc: profil.pewnosc,
+            ...(profil.prawdopodobienstwa && { prawdopodobienstwa: profil.prawdopodobienstwa }),
+          }
+        : null
+    else if (id.startsWith('kat_') && typeof x === 'number') {
+      const k = id.slice(4) as KategoriaOceniana
+      const poziom = Math.min(Math.max(Math.round(x), 0), 4)
+      odp[id] = { typ: 'score', ocena: x, pewnosc: zapisaneKategorie[k] === poziom ? null : 0 }
+    } else if (typeof x === 'number') odp[id] = { typ: 'noul', noul: x }
+    else odp[id] = null
+  }
+  const przetworz = (t?: string) => {
+    try {
+      return opiszTeraz.przetworzOdpowiedzi(odp, t)
+    } catch {
+      return null
+    }
+  }
+  // Jak `zJevem`: odpowiedź była (zrodlo jev albo zapas „nieczytelne”) → przetworzenie, a przy
+  // null reguły; błąd sieci (inny powód zapasu) → reguły.
+  const byla = w.jev.zrodlo === 'jev' || w.jev.powod === 'nieczytelne'
+  const r = byla ? przetworz(tekst) : null
+  return {
+    ...w,
+    systemy: {
+      reguly,
+      jev_surowy: zZrozumienia(przetworz() ?? PUSTE_ZROZUMIENIE),
+      jev_z_zapasem: r ? zZrozumienia(r) : reguly,
+    },
+    jev: {
+      ...w.jev,
+      zrodlo: r ? 'jev' : 'zapas',
+      powod: r ? null : byla ? 'nieczytelne' : w.jev.powod,
+      oceny: Object.fromEntries(
+        Object.keys(zapytanie.pytania).map((id) => [id, oceny[id] ?? null]),
+      ),
+      zapytanie: {
+        pytan: Object.keys(zapytanie.pytania).length,
+        znakow: JSON.stringify(zapytanie.pytania).length,
+      },
+    },
+  }
+}
+const przelicz = argv.includes('--przelicz')
+
 const zapisz = (plik: string | undefined, a: WynikA[], b: WynikB[], podsumowanie: unknown) => {
   if (!plik) return
   writeFileSync(
@@ -1555,7 +1628,10 @@ if (commitPrzed && naZywo) {
   const klient = naZywo ? await klientNaZywo() : null
   // --tylko a|b: drugi zbiór liczy się bez sieci (same reguły) – oszczędza wywołania JEV.
   const a = zapisany
-    ? zapisany.a.filter((w) => idsA.has(w.id)).map(zapisanyAPoWycofaniu)
+    ? zapisany.a
+        .filter((w) => idsA.has(w.id))
+        .map(zapisanyAPoWycofaniu)
+        .map((w) => (przelicz ? przeliczA(w) : w))
     : await biegA(tylko === 'b' ? null : klient)
   const b = zapisany
     ? zapisany.b.filter((w) => idsB.has(w.id)).map(zapisanyBPoWycofaniu)

@@ -20,9 +20,7 @@ function tekstPozycji(p: PozycjaZrozumienia): string {
       ? `profil: ${p.etykieta}`
       : p.rodzaj === 'na_nie'
         ? `nie chcę: ${p.etykieta}`
-        : p.opis
-          ? `${p.etykieta} (${p.opis})`
-          : p.etykieta
+        : p.etykieta
   return p.procent === null ? nazwa : `${nazwa} ${p.procent}%`
 }
 

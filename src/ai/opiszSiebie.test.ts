@@ -10,7 +10,6 @@ import {
   BRAMKA,
   bramkaZamknieta,
   ETYKIETY_KATEGORII,
-  GRUPY_SILY,
   ID_PROFILU,
   KATEGORIE_JEV,
   NA_NIE,
@@ -71,21 +70,20 @@ describe('zapytanieOpiszSiebie', () => {
   const z = zapytanieOpiszSiebie('Mam psa')
   const ids = Object.keys(z.pytania)
 
-  it('stała kolejność: profil, 3 kategorie, potrzeby, „nie chcę”, siła (#182), bramka', () => {
+  it('stała kolejność: profil, 3 kategorie, potrzeby, „nie chcę” (#182), bramka – bez siły (#187)', () => {
     const potrzebyJev = POTRZEBY.filter((p) => p.twierdzenie).map((p) => `p_${p.id}`)
     assert.deepEqual(ids, [
       ID_PROFILU,
       ...KATEGORIE_JEV.map((k) => `kat_${k}`),
       ...potrzebyJev,
       ...NA_NIE.map((n) => `n_${n.id}`),
-      ...GRUPY_SILY.map((g) => g.id),
       NIKT,
       NIEAKTUALNA,
     ])
     assert.equal(z.stan, 'Mam psa')
   })
 
-  it('#147/#153/#183/#182: 32 pytania (limit pośrednika 32) – bez „Przyszłości” i „Codzienności”', async () => {
+  it('#147/#153/#183/#182/#187: 29 pytań (limit pośrednika 32) – bez „Przyszłości” i „Codzienności”', async () => {
     // Plik JS pośrednika bez typów – import dynamiczny, jak w pomiar.ts.
     const sciezka = new URL('../../api/_jev.js', import.meta.url).href
     const { LIMITY, sprawdzZapytanie } = (await import(sciezka)) as {
@@ -93,9 +91,9 @@ describe('zapytanieOpiszSiebie', () => {
       sprawdzZapytanie: (c: unknown) => { blad?: string }
     }
     assert.ok(ids.length <= LIMITY.pytan, `${ids.length} pytań`)
-    // #183: 22 pytania; #182: + 7 „nie chcę” + 3 o siłę = 32, czyli cały limit pośrednika.
+    // #183: 22 pytania; #182: + 7 „nie chcę” = 29 (#187: 3 pytania o siłę cofnięte). Limit 32.
     assert.equal(LIMITY.pytan, 32)
-    assert.equal(ids.length, 32)
+    assert.equal(ids.length, 29)
     assert.ok(!ids.includes('kat_przyszlosc'))
     assert.ok(!ids.includes('kat_codziennosc'))
     for (const b of BRAMKA)
@@ -992,11 +990,11 @@ describe('#183: nowe potrzeby – auto, wózek, praca zdalna, życie nocne, spor
     assert.deepEqual(potrzeba('student').kierunki, { akademik_odleglosc: 'mniej-lepiej' })
   })
 
-  it('zapytanie: 32 pytania, nowe twierdzenia po starych, przed „nie chcę” (#182), z kryteriami w pośredniku', async () => {
+  it('zapytanie: 29 pytań, nowe twierdzenia po starych, przed „nie chcę” (#182), z kryteriami w pośredniku', async () => {
     const z = zapytanieOpiszSiebie('Mam auto i psa')
     const ids = Object.keys(z.pytania)
-    // 22 z #183 + 7 „nie chcę” + 3 o siłę (#182).
-    assert.equal(ids.length, 32)
+    // 22 z #183 + 7 „nie chcę” (#182); bez 3 pytań o siłę (#187).
+    assert.equal(ids.length, 29)
     const pierwszeNie = ids.indexOf(`n_${NA_NIE[0]?.id}`)
     assert.deepEqual(
       ids.slice(pierwszeNie - 6, pierwszeNie),

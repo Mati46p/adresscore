@@ -1,9 +1,12 @@
 # Pomiar JEV po polsku (#18)
 
-> **Najnowszy wynik jest w sekcji „Duża walidacja (#170)”.** To **zbiór kontrolny nr 6**
-> (150 opisów i 150 pytań, pisany na ślepo, mierzony raz) z 95% przedziałami ufności. Ta sama
+**JEV zamrożony 2026-10-04 (#187) – dalsze strojenie dopiero po hackathonie.**
+
+> **Wersja końcowa i jej liczby: sekcje „Zamrożenie (#187)” i „Na slajd” na końcu pliku.**
+> Największy zbiór z przedziałami ufności to **zbiór kontrolny nr 6** w „Duża walidacja (#170)”
+> (150 opisów i 150 pytań, pisany na ślepo, mierzony raz). Ta sama
 > sekcja zawiera też osobne przebiegi zbioru nr 5 przed i po #163 oraz A/A i opóźnienie na
-> końcowym zapytaniu. Zdania „Na slajd” pochodzą ze zbioru nr 6. Przed i po na zbiorze nr 5
+> końcowym zapytaniu. Przed i po na zbiorze nr 5
 > (wspólne zapytanie) opisuje sekcja „Opisy strukturalne (#163)”. Runda #154–#156 na zbiorze nr 4 i test A/A (szum JEV na
 > przypiętym modelu) są w sekcji „Pomiar rundy (#154–#157)”. Zbiór nr 3 mierzyliśmy w „Trzy błędy (#153)”, nr 2 w „Wersja końcowa (#152)”,
 > a nr 1 w „Poprawki trafności (#147)” i „Druga runda (#150)”. Liczby z #18 niżej dotyczą zbioru,
@@ -2995,6 +2998,10 @@ Bez sieci, do powtórzenia: `node src/ai/pomiar/spelnienie.ts --syntetyczne`.
 
 ## Siła i „nie chcę” (#182)
 
+> **#187: siła potrzeby cofnięta** (pytania o siłę, `wagaZSily`, słowa siły w regułach) – patrz
+> „Zamrożenie (#187)”. „Nie chcę” i reguła sprzecznych kierunków zostają; przy dwóch potrzebach
+> na tak wygrywa znów wcześniejsza w tabeli. Opis siły niżej to historia.
+
 Przed #182 potrzeba była zero-jedynkowa, a „nie chcę knajp pod oknem” niczego nie zmieniało.
 Silnik się nie zmienił. JEV dalej wybiera tylko z zamkniętych list: ocenia twierdzenia (noul)
 i wybiera poziom na skali (score). Słownik jest wspólny ze zbiorem nr 8: siła 1 = „byłoby miło”,
@@ -3427,6 +3434,8 @@ cofnięcia części o sile. „Nie chcę” ma dowody za.**
 
   Decyzja należy do właściciela – tu niczego nie cofałem.
 
+  **Decyzja (#187):** siła cofnięta, „nie chcę” i #183 zostają – patrz „Zamrożenie (#187)”.
+
 ### Bez sieci, do powtórzenia
 
 Przebiegi leżą w `przebiegi/k8-r0-184.json`, `k8-r1-184.json`, `k8-r2-184.json`,
@@ -3441,7 +3450,284 @@ Poza repo (scratchpad), jak w #170 i #174, zostały:
 - A/A;
 - `mapa8.ts`: spełnienie na mapie, uruchamiane w każdym drzewie.
 
+## Zamrożenie (#187)
+
+Decyzja z 2026-10-04, po #184: JEV zostaje zamrożony. Z #182 cofamy tylko siłę potrzeby, tak
+jak rekomendował #184. Reszta zostaje. Dalsze strojenie dopiero po hackathonie.
+
+### Co jest w wersji zamrożonej
+
+- **„Opisz siebie” – 29 pytań** (limit pośrednika zostaje 32):
+  - profil (z #155 i #162);
+  - 3 poziomy kategorii (#180: zaokrąglona ocena przy pewności ≥ 0,6);
+  - 16 potrzeb z twierdzeniem, w tym 6 z #183;
+  - 7 twierdzeń „nie chcę” (#182);
+  - 2 twierdzenia bramki.
+- **Wagi:** składanie z #177, tabela POTRZEBY z #177 i #183. Warstwy potrzeby mają wagę z tabeli.
+  „Nie chcę” przejmuje swoje warstwy i ich kierunek.
+- **Reguła sprzecznych kierunków:** „nie chcę” wygrywa kierunek swojej warstwy z profilem,
+  z bieżącymi ustawieniami i z potrzebą na tak. Przy dwóch potrzebach na tak wygrywa
+  wcześniejsza w POTRZEBY, jak przed #182 („cisza” przed „życiem nocnym”).
+- **Reguły zapasowe:** wzorce z #183 i odmowy „nie chcę” z #182.
+- **„Zapytaj o adres”** – bez zmian od #174:
+  - próg tematu 0,7 (#173);
+  - dwie propozycje przy pewności 0,25–0,5 i granica propozycji 0,86 (część B #172);
+  - dostosowanie do #171 (#176);
+  - opisy warstw: krok 0 z #182 i SOR z #186 (nowe warstwy na liście, logika ta sama).
+
+### Co cofnięte i dlaczego
+
+Cofnięte ręcznie (nie `git revert`), tylko część o sile z #182 (`81b6602`):
+
+- 3 pytania score o siłę (`s_dom`, `s_otoczenie`, `s_dojazd`): zapytanie ma 29 pytań zamiast 32;
+- `wagaZSily` i skalowanie wag siłą w `zloz`: waga warstwy potrzeby to znów waga z tabeli
+  POTRZEBY, jak przed #182;
+- słowa siły w regułach zapasowych (`silaZRegul`), pole `sily` w `Zrozumienie` i dopisek siły na
+  chipie potrzeby (`PoleOpiszSiebie.tsx`);
+- w `kierunkiPotrzeb` zasada „wygrywa silniejsza”. Teraz rozstrzyga kolejność tabeli, co daje to
+  samo co dawny remis i zachowanie przed #182;
+- tabela 5 (siła 1 / 2 / 3) w `spelnienie.ts --182`.
+
+Dowody z #184 (sekcja „Pomiar #182 i #183 na zbiorze nr 8 (#184)”):
+
+- **Siła z JEV przegrywa ze stałą.** Stała 2 trafia poziom w 71% rozpoznanych potrzeb, JEV
+  w 53% (R1). Korelacja z wzorcem w R3 to 0,12.
+- **Siła jest niestabilna.** W A/A zmienia się w 17 ze 150 opisów i to największe źródło
+  przeskoków.
+- **Siła psuje stare potrzeby na mapie** (silnik z #184). Przy wzorcowych etykietach daje
+  +60 / −105 par (p < 0,001). Potrzebom o sile 3 nic nie daje (+12 / −10). Na silniku po #188
+  ten argument słabnie – patrz niżej „Mapa”.
+
+Zostaje „nie chcę” (cel +34 / −4, p < 0,001), krok 0 z opisami warstw oraz całe #183, #177,
+#173, #176 i #180. Testy: `silaINieChce.test.ts` → `nieChce.test.ts`.
+
+- Testy siły usunięte.
+- Testy „nie chcę” i sprzecznych kierunków zostają. Sprzeczność sprawdza teraz kolejność tabeli.
+- Nowe testy: zapytanie nie ma pytań o siłę, wagi każdej potrzeby są równe wagom z tabeli, a słowa
+  „byłoby miło” i „koniecznie” nie zmieniają wag.
+
+### Zbiór nr 8 – odtworzenie wersji zamrożonej bez sieci
+
+`node src/ai/pomiar/pomiar.ts --zbior kontrolny8 --z-pliku src/ai/pomiar/przebiegi/k8-r3-184.json --przelicz`
+
+- Nowa flaga `--przelicz` przetwarza część A od nowa **bieżącym kodem** z zapisanych odpowiedzi
+  JEV (`jev.oceny`, zapisywane od #184). Bierze tylko pytania zamrożonego zapytania (29), a reguły
+  liczy też bieżącym kodem. Samo `--z-pliku` liczy tylko miary z zapisanego zrozumienia.
+- Usunięcie pytań zmienia żądanie, ale odpowiedzi na pozostałe pytania można wziąć z zapisu. JEV
+  ocenia pytania niezależnie: tak mówi dokumentacja TypeSafe, a #163 i #170 to sprawdziły (wspólne
+  zapytanie dało te same wybory i oceny noul w granicach szumu A/A).
+- Zapis nie ma pewności poziomów kategorii. Odtwarzam ją z wyniku przebiegu: poziom przyjęty =
+  pewny, inaczej pod progiem. Kod kategorii od #180 się nie zmienia.
+- Odtworzenie R3 i R3b z #184. **Rozpoznanie jest identyczne z R3 w 150 na 150 opisów:** profil,
+  potrzeby, kategorie, „nie chcę”, „nic” i źródło odpowiedzi. Siła zmieniała tylko wagi, a nie to,
+  co JEV rozpoznaje. Inne są wagi w 54 opisach (JEV) i w 2 (reguły).
+
+| | Reguły (bieżące) | R0 (#184) | R2 = #183 (#184) | R3 z siłą (#184) | **Zamrożony (odtw. R3)** | Zamrożony (odtw. R3b) |
+|---|---|---|---|---|---|---|
+| Profil | 82% [75–87%] (123) | 77% [69–83%] | 75% [68–82%] | 75% [67–81%] | **75% [67–81%] (112)** | 78% [71–84%] (117) |
+| Dokładnie (stare potrzeby) | 59% [51–66%] (88) | 55% | 57% | 59% | **59% [51–67%] (89)** | 61% (92) |
+| Dokładnie (21 potrzeb) | 49% [41–57%] (74) | 25% | 41% | 42% | **42% [34–50%] (63)** | 44% (66) |
+| Dokładnie (21 + „nie chcę”) | 41% [33–49%] (61) | 17% | 32% | 40% | **40% [33–48%] (60)** | 42% (63) |
+| Nowe potrzeby P / R | 97 / 80% | – / 0 | 100 / 86% | 99 / 86% | **99 / 86%** | 100 / 86% |
+| „Nie chcę” P / R | 96 / 52% | – / 0 | – / 0 | 85 / 89% | **85 / 89%** | 86 / 91% |
+| Siła: poziom dokładnie | – | stała 3 | stała 3 | 40% | stała 3: 24% (jak przed #182) | 24% |
+| A/A: odpowiedź inna (R3 / R3b) | – | – | – | 25/150 | **17/150** | – |
+
+- **Wersja zamrożona = R2 + „nie chcę”.** „Dokładnie (21 + „nie chcę”)” wynosi 40% wobec 32%
+  w R2. Sparowane z R0 liczby są te same co R3: +36 / −1, profil +1 / −4 (p = 0,38), nowe
+  potrzeby +68 / −0, „nie chcę” +32 / −4.
+- **A/A stabilniejsze.** Te same dwa przebiegi przetworzone kodem zamrożonym różnią się
+  w 17 ze 150 opisów zamiast 25, bo znikają przeskoki siły (17 opisów). Pozostałe różnice to
+  potrzeby (11) i kategorie (9), tak jak w #174.
+
+### Mapa: czy strata starych potrzeb z #184 zniknęła
+
+`node src/ai/pomiar/spelnienie.ts --k8` (nowa opcja, ok. 30 s, bez sieci) liczy top 100 adresów
+z **wzorcowych** etykiet zbioru nr 8. Z `--jev` bierze zamiast nich zrozumienie JEV z przebiegów
+#184. Porównuje trzy wersje `opiszSiebie.ts` na tych samych danych i tym samym silniku:
+
+- R0 – `a78589d`;
+- R3 – `81b6602`, z siłą ze wzorca;
+- zamrożona.
+
+Z wzorcem dochodzi rozkład wersji zamrożonej:
+
+- „bez »nie chcę«” to sam #183;
+- „bez #183” to R0 + „nie chcę”.
+
+**W trakcie zadania na `main` weszła zmiana silnika wyniku** (#188, `e3adfae`: kraniec rozkładu,
+norma na brzegu, gminy liniowo). Dlatego są dwa pomiary.
+
+**(a) Silnik z #184 (przed #188, wzorcowe etykiety).** Tu skrypt odtwarza #184 co do pary:
+R0 186 / 56 / 38, R3 161 / 75 / 44, R0 → R3 +62 / −125.
+
+| Grupa | R0 → R3 z siłą | **R0 → zamrożony** | R3 → zamrożony |
+|---|---|---|---|
+| stare potrzeby (n = 280) | +62 / −125, p < 0,001 | **+57 / −80, p = 0,060** | +103 / −69, p = 0,012 |
+| – siła 1 we wzorcu (n = 19) | +0 / −15, p < 0,001 | +3 / −6, p = 0,51 | +11 / −4, p = 0,12 |
+| – siła 2 (n = 201) | +47 / −97, p < 0,001 | +39 / −61, p = 0,035 | +84 / −55, p = 0,017 |
+| nowe potrzeby (n = 192) | +137 / −24, p < 0,001 | +136 / −32, p < 0,001 | +83 / −41, p < 0,001 |
+| „nie chcę” (n = 46) | +34 / −0, p < 0,001 | +33 / −1, p < 0,001 | +7 / −8, p = 1 |
+
+Na tym silniku **istotna strata z #184 znika.** Stare potrzeby wychodzą +57 / −80 (p = 0,060)
+zamiast +62 / −125. Wprost wersja zamrożona jest lepsza od R3: +103 / −69 (p = 0,012). Zostaje
+cena „samego »nie chcę«” z #184 (+57 / −80 to dokładnie ta liczba). Etykiety JEV (`mapa8.ts`
+z #184, poza repo): stare potrzeby R0 → zamrożony +80 / −77 (p = 0,87).
+
+**(b) Silnik po #188 (`main`, z którym wersja zamrożona wchodzi).**
+
+| Grupa | R0 → R3 z siłą | **R0 → zamrożony** | R3 → zamrożony | R0 → sam #183 | R0 → sam „nie chcę” |
+|---|---|---|---|---|---|
+| *wzorcowe etykiety* | | | | | |
+| stare potrzeby (n = 280) | +71 / −107, p = 0,009 | **+45 / −86, p < 0,001** | +77 / −81, p = 0,81 | +35 / −44, p = 0,37 | +10 / −42, p < 0,001 |
+| – siła 1 we wzorcu (n = 19) | +0 / −15, p < 0,001 | +2 / −7, p = 0,18 | +11 / −4, p = 0,12 | +1 / −5 | +1 / −2 |
+| – siła 2 (n = 201) | +51 / −83, p = 0,007 | +30 / −65, p < 0,001 | +63 / −63, p = 1 | +25 / −28 | +5 / −37, p < 0,001 |
+| – siła 3 (n = 60) | +20 / −9, p = 0,061 | +13 / −14, p = 1 | +3 / −14, p = 0,013 | +9 / −11 | +4 / −3 |
+| nowe potrzeby (n = 192) | +136 / −23, p < 0,001 | **+136 / −24, p < 0,001** | +75 / −32, p < 0,001 | +139 / −22 | +2 / −10 |
+| „nie chcę” (n = 46) | +30 / −0, p < 0,001 | **+30 / −0, p < 0,001** | +7 / −4, p = 0,55 | +2 / −2 | +30 / −0 |
+| *etykiety JEV (`--jev`)* | | | | | |
+| stare potrzeby | +81 / −91, p = 0,49 | **+63 / −76, p = 0,31** | +51 / −60, p = 0,45 | – | – |
+| nowe potrzeby | +119 / −35, p < 0,001 | **+123 / −29, p < 0,001** | +37 / −27, p = 0,26 | – | – |
+| „nie chcę” | +30 / −4, p < 0,001 | **+29 / −4, p < 0,001** | +7 / −2, p = 0,18 | – | – |
+
+Wynik na nowym silniku trzeba opisać uczciwie:
+
+- **Strata z siły 1 znika, ale cofnięcie siły nie poprawia starych potrzeb łącznie.** R3 →
+  zamrożony daje +77 / −81 (p = 0,81).
+  - Przy sile 1 we wzorcu nadal pomaga: z −15 do +2 / −7.
+  - Przy sile 3 lekko szkodzi: +3 / −14 (p = 0,013). W R3 potrzeba z siłą 3 ważyła więcej niż
+    reszta, a teraz wszystkie ważą tyle co w tabeli.
+- **Strata starych potrzeb przy wzorcu (+45 / −86) bierze się z „nie chcę”, a nie z siły.**
+  - Sam „nie chcę” daje +10 / −42 (p < 0,001), na 40 opisach z „nie chcę”. Na starym silniku
+    w #184 dawał +17 / −34.
+  - Sam #183 daje +35 / −44 (p = 0,37).
+  - To ta sama wymiana co w #184. Warstwy „nie chcę” z wagą 4 rozcieńczają resztę opisu, a cel
+    rośnie +30 / −0.
+- **Przy etykietach JEV, czyli tym, co widzi użytkownik, żadna wersja nie traci istotnie na
+  starych potrzebach** (zamrożona +63 / −76, p = 0,31). Nowe potrzeby i „nie chcę” zyskują
+  wyraźnie (oba p < 0,001).
+- **Siłę cofamy mimo to.** Decyzja #187 opiera się na rozpoznaniu: siła przegrywa ze stałą i jest
+  niestabilna. Na nowym silniku mapa jej nie broni ani nie potępia (+77 / −81).
+- **Do zrobienia po hackathonie:** waga „nie chcę” (dziś 4 na głównej warstwie) na nowym
+  silniku. Teraz jej nie stroję, bo JEV jest zamrożony.
+
+**Przykłady** (silnik po #188, wzorcowe etykiety, mediana po opisach w top 100; profil →
+zamrożony):
+
+- turyści – odsetek top z noclegami w 300 m: 62% → 0%;
+- imprezy – odsetek top z dniami imprez w 500 m: 6% → 0%;
+- szkoła obok – odległość do szkoły: 181 → 280 m;
+- przemysł – odległość do zakładu PRTR: 4,0 → 5,4 km;
+- sport – obiekt sportowy: 897 → 391 m;
+- wózek – przychodnia bez barier: 390 → 259 m.
+
+Względem samego profilu „nie chcę” przy wzorcu daje 34 opisy lepiej, 0 gorzej i 12 bez zmiany,
+a przy etykietach JEV 29 / 4 / 13.
+
+`spelnienie.ts` bez opcji (zbiory nr 1–7, efekt krańcowy z #177) na nowym silniku z wersją
+zamrożoną:
+
+- pies – weterynarz −75,5 m (40 opisów lepiej, 1 gorzej);
+- rower – droga rowerowa −21,5 m (37 / 0);
+- cisza – bary w 300 m: −13 pp top (66 / 0);
+- zieleń – udział zieleni +7,3 pp (72 / 0).
+
+### Próba na żywo zamrożonym zapytaniem (tylko czas i rozmiar)
+
+31 wywołań przez pośrednika (timeout 800 ms), `pomiar.ts --na-zywo --zbior-wlasny`: 15
+pierwszych opisów i 15 pierwszych pytań ze starych zbiorów do strojenia (`zbior-opisz.json`,
+`zbior-zapytaj.json`). Jedno pytanie miało drugie wywołanie. **Z tej próby nie wyciągamy wniosków
+o trafności**, bo te zbiory są zużyte do strojenia.
+
+| Wywołanie | n | p50 | p95 | max | > 800 ms |
+|---|---|---|---|---|---|
+| Opisz siebie (29 pytań) | 15 | 288 ms | 467 ms | 566 ms | 0 |
+| Zapytaj o adres (czas pytania) | 15 (16 wywołań) | 343 ms | – | 619 ms | 0 |
+
+- Pytanie z dwoma wywołaniami trwało 589 ms. Najdłuższe pojedyncze wywołanie to 619 ms. Przy
+  n = 15 p95 pytania jest równe max, więc go nie podaję.
+- **Rozmiar:** 29 pytań, 11 117 znaków pytań. W R3 było 32 pytania i 11 951 znaków, czyli
+  ubyło 7%.
+- **Tokeny (`usage`) na tych tekstach:** wejście ok. 4,4 tys. (mediana 4 389), wyjście 605.
+  W R3 na zbiorze nr 8 było 4 685 i 652.
+- Zapas do 800 ms jest większy niż w #184. Tam max wynosił 773 ms przy 32 pytaniach na 150
+  wywołaniach. To jednak tylko 15 opisów i pomiar lokalny, a nie z produkcji.
+
+Wywołania na żywo w #187: **31** (budżet 40), bez ponowień.
+
 ## Na slajd
+
+**Wersja finalna (JEV zamrożony, #187).** Przy każdej liczbie jest zbiór, z którego pochodzi,
+jego liczebność (n) i 95% przedział ufności (Wilson), gdy da się go policzyć.
+
+**Metoda w jednym zdaniu:** zbiory kontrolne napisały na ślepo osobne agenty AI bez dostępu do
+kodu, każdy zmierzyliśmy raz, z etykietami zapisanymi przed pierwszym wywołaniem, a szum JEV
+sprawdziliśmy testem A/A (dwa identyczne przebiegi).
+
+- **Pytanie o adres.** Na pytanie o adres JEV od razu wskazuje właściwe dane w **97%** pytań
+  [93–99%], a reguły słów kluczowych w 37% [29–45%] (zbiór nr 6, n = 150 pytań; razem
+  z opisami 150 + 150, #170).
+- **Wersja końcowa pytań** (zbiór nr 7, n = 149 pytań, #174):
+  - właściwe dane od razu w **95%** [90–97%];
+  - gdy JEV nie jest pewny, pokazuje dwie propozycje. Z nimi właściwe dane są w **99%** pytań
+    [95–100%];
+  - zbędną warstwę JEV dokłada do prostego pytania tylko w **4%** [1–9%] (4 ze 112). Przed
+    #173 było to 12%.
+- **Nowe potrzeby.** Sześć potrzeb dodanych w #183 (auto, wózek, praca zdalna, życie
+  nocne, sport, student) JEV rozpoznaje z pełnością **86%** i precyzją **99%** (zbiór nr 8,
+  96 wystąpień w zbiorze 150 opisów, #184).
+- **„Nie chcę”.** Rzeczy, których ktoś nie chce mieć pod oknem (knajpy, turyści, ruchliwa ulica,
+  przemysł, imprezy, budowy, szkoła tuż obok), JEV wyłapuje w **ok. 90%**: pełność 89% i 91%
+  w dwóch przebiegach, precyzja 85–86% (zbiór nr 8, 46 wystąpień, #184). Reguły słów
+  kluczowych wyłapują 52%.
+- **Mapa odsuwa się od tego, czego nie chcesz.** Przy wzorcowych etykietach zbioru nr 8 top 100
+  adresów jest dalej od rzeczy niechcianej niż przy samym profilu w 34 z 46 przypadków, a bliżej
+  w żadnym. Przy tym, co rozpoznał JEV, jest to 29 lepiej i 4 gorzej (#184, #187). Przykłady:
+  - odsetek top z noclegami w 300 m: 62% → 0%;
+  - odległość do szkoły: 181 → 280 m;
+  - odległość do zakładu przemysłowego: 4,0 → 5,4 km.
+- **Mapa przesuwa się też do tego, czego chcesz** (miara z #177, zbiory nr 1–7, 420 opisów,
+  wersja zamrożona). Ten sam opis z potrzebą i bez niej:
+  - „mam psa” – weterynarz bliżej o 76 m (40 opisów lepiej, 1 gorzej);
+  - „rower” – droga rowerowa bliżej o 22 m (37 / 0);
+  - „cisza” – o 13 pp mniej adresów z top z barem w 300 m (66 / 0).
+- **Szybkość.** Odpowiedź przychodzi zwykle po **ok. 0,3 s**: mediana 295 ms dla opisu (zbiór
+  nr 8) i ok. 350 ms dla pytania (zbiór nr 7). W 95% przypadków przed 0,4 s (opis) i 0,65 s
+  (pytanie). Z ok. 3000 wywołań w pomiarach od #170 dwa przekroczyły limit 0,8 s i poszły
+  ponownie.
+
+**Czego nie twierdzimy.** Na najnowszym zbiorze (nr 8) JEV nie jest wyraźnie lepszy od reguł
+słów kluczowych w rozpoznaniu profilu ani w zrozumieniu całego opisu:
+
+- profil: JEV 75% [67–81%], reguły 82% [75–87%], p = 0,11;
+- cały opis: JEV 42% [34–50%], reguły 49% [41–57%], p = 0,22.
+
+Na zbiorze nr 6 JEV wygrywał (profil 85% wobec 72%), więc wynik zależy od zbioru. Dlatego tych
+dwóch liczb nie dajemy na slajd jako przewagi JEV.
+
+### Znane ograniczenia
+
+- **Pytania złożone.** O kilka rzeczy naraz: komplet tematów JEV daje tylko w 36% pytań
+  złożonych [20–55%] (zbiór nr 7, n = 25). Odpowiedź ma najwyżej 3 warstwy.
+- **Bramka „czy ktoś naprawdę szuka”.** Na tekstach bez „szukam” (sam opis siebie albo
+  czynności) potrafi się zamknąć. Wtedy zostają tylko bardzo pewne potrzeby (5 z 16 takich tekstów
+  w #183).
+- **Potrzeby bez twierdzeń JEV.** JEV nie ma twierdzeń dla ciszy, sklepów, bezpieczeństwa
+  i „mieszkam sam”. Te potrzeby czytają tylko reguły słów kluczowych i poziom kategorii.
+- **Zbiory pisane przez AI.** Zbiory i etykiety pisały agenty AI, a nie ludzie. Poziom wyniku
+  zależy od autora zbioru: „dokładnie” wyniosło 33–75% na zbiorach nr 4–7.
+- **Czas tylko lokalny.** Czas mierzyliśmy lokalnie (Mac → JEV), a nie z produkcji. Nie ma w nim
+  zimnego startu, regionu funkcji Vercel ani sieci przeglądarki.
+- **„Nie chcę” kosztuje część starych potrzeb.** Na mapie, przy wzorcowych etykietach i silniku
+  po #188, opisy z „nie chcę” gorzej spełniają pozostałe potrzeby: +10 / −42 par. Przy etykietach
+  JEV wersja zamrożona nie traci istotnie (+63 / −76, p = 0,31). Wagę „nie chcę” sprawdzimy po
+  hackathonie.
+- **Szum JEV.** Między dwoma identycznymi przebiegami ok. 8–11% odpowiedzi różni się szczegółem,
+  głównie potrzebą albo poziomem kategorii przy progu (zbiory nr 7 i 8).
+
+### Wcześniej (historia, zastąpione zdaniami wyżej)
+
+**Wersja z #174 (zbiór kontrolny nr 7, przed #182, #183 i #187):**
 
 **Zbiór kontrolny nr 7 (#174).** To 120 opisów i 150 pytań, które napisały na ślepo osobne
 agenty AI, bez dostępu do kodu. Wersję końcową (po #172 i #173) zmierzyliśmy na nim w dwóch
@@ -3467,8 +3753,6 @@ osobnych przebiegach (liczby z pierwszego, drugi różni się o 0–2 pozycje). 
 
 Zbiory pisały agenty AI, a nie ludzie. Wynik zależy od zbioru: „dokładnie” wyniosło 33%, 75%,
 61% i 58% na zbiorach nr 4–7. Dlatego zawsze podajemy go z nazwą zbioru.
-
-### Wcześniej (historia, zastąpione zdaniami wyżej)
 
 **Wersja z #170 (zbiór kontrolny nr 6, 150 opisów i 150 pytań, przed #172 i #173):**
 
@@ -3521,6 +3805,9 @@ bez nowych wywołań:
 | `przebiegi/k8-r2-184.json` | zbiór kontrolny nr 8 (150 opisów), BASE + #183 (`8ff0e0c`) | #184 |
 | `przebiegi/k8-r3-184.json` | zbiór kontrolny nr 8 (150 opisów), `main` z #182 i #183 (`81b6602`), wynik nagłówkowy | #184 |
 | `przebiegi/k8-r3b-184.json` | zbiór kontrolny nr 8 (150 opisów), powtórka R3 (A/A wersji końcowej) | #184 |
+
+Wersji zamrożonej (#187) nie zapisujemy osobno: `pomiar.ts --zbior kontrolny8 --z-pliku
+przebiegi/k8-r3-184.json --przelicz` (i to samo z `k8-r3b-184.json`) odtwarza ją bez sieci.
 
 Przebiegów zbioru nr 1 (#147, #150) nie zapisywaliśmy pozycja po pozycji – są tylko liczby
 zbiorcze powyżej. Raport z przeglądu projektu JEV (nazwy warstw, prawdopodobieństwa, profil,

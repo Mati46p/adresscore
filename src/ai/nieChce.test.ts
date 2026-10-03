@@ -1,23 +1,20 @@
 // Uruchom: node --test src/ai/
-// #182: siła potrzeby (1–3) i potrzeby „na nie” w „opisz siebie” – bez sieci (JEV atrapą).
+// #182: potrzeby „na nie” w „opisz siebie” – bez sieci (JEV atrapą).
+// #187: siła potrzeby z #182 cofnięta (zamrożenie JEV) – testy pilnują, że jej nie ma.
 import assert from 'node:assert/strict'
 import { readdirSync, readFileSync } from 'node:fs'
 import { describe, it } from 'node:test'
 import type { PlikWskaznika, WskaznikMeta } from '../kontrakty/index.ts'
 import { kierunekEfektywny } from '../wynik/silnik.ts'
 import type { OdpowiedzJev } from './jev.ts'
+import * as opisz from './opiszSiebie.ts'
 import {
-  GRUPY_SILY,
   kierunkiPotrzeb,
   NA_NIE,
   nicNieZrozumiano,
-  OPISY_SILY,
   POTRZEBY,
   PROG_NA_NIE,
   przetworzOdpowiedzi,
-  SKALA_SILY,
-  silaZRegul,
-  wagaZSily,
   wagiZeZrozumienia,
   type Zrozumienie,
   zapytanieOpiszSiebie,
@@ -51,67 +48,62 @@ const zr = (z: Partial<Zrozumienie>): Zrozumienie => ({
   ...z,
 })
 
-describe('siła potrzeby (#182)', () => {
-  it('wagaZSily: 3 = tabela, 2 = −1, 1 = −2, najmniej 1; brak siły = tabela', () => {
-    assert.deepEqual(
-      [4, 3, 2, 1].map((w) => [3, 2, 1].map((s) => wagaZSily(w, s as 1 | 2 | 3))),
-      [
-        [4, 3, 2],
-        [3, 2, 1],
-        [2, 1, 1],
-        [1, 1, 1],
-      ],
-    )
-    assert.equal(wagaZSily(4, undefined), 4)
+describe('zamrożenie (#187): bez siły potrzeby', () => {
+  it('zapytanie: 29 pytań, żadnego pytania o siłę (s_dom, s_otoczenie, s_dojazd)', () => {
+    const ids = Object.keys(zapytanieOpiszSiebie('Mam psa, park byłoby miło').pytania)
+    assert.equal(ids.length, 29)
+    for (const id of ['s_dom', 's_otoczenie', 's_dojazd']) assert.ok(!ids.includes(id), id)
+    // Jedyne pytania score to poziomy kategorii.
+    const z = zapytanieOpiszSiebie('x')
+    for (const [id, p] of Object.entries(z.pytania))
+      if ((p as { typ: string }).typ === 'score') assert.match(id, /^kat_/)
+    // Z modułu zniknęło wszystko, co liczyło siłę.
+    for (const nazwa of ['wagaZSily', 'GRUPY_SILY', 'SKALA_SILY', 'OPISY_SILY', 'silaZRegul'])
+      assert.equal((opisz as Record<string, unknown>)[nazwa], undefined, nazwa)
   })
 
-  it('siła z oceny grupy: dzieci 3, zieleń 1; minimalne wagi skalowane', () => {
-    const z = przetworzOdpowiedzi(
-      odp({ p_dzieci: noul(0.98), p_zielen: noul(0.7), s_dom: score(2.6), s_otoczenie: score(1) }),
-    )
-    assert.ok(z)
-    assert.deepEqual(z.sily, { dzieci: 3, zielen: 1 })
-    assert.equal(z.wskazniki.przedszkole_odleglosc, 4) // dzieci, tabela 4, siła 3
-    assert.equal(z.wskazniki.zielen_worldcover_100m, 2) // zieleń, tabela 4, siła 1
-    assert.equal(z.wskazniki.przyroda_chroniona_odleglosc, 1) // tabela 2, siła 1 → min. 1
-    const chip = z.zrozumialem.find((p) => p.etykieta === 'zieleń')
-    assert.equal(chip?.opis, OPISY_SILY[1])
-  })
-
-  it('ocena grupy 0 („nie mówi”) albo brak odpowiedzi = brak siły (waga z tabeli)', () => {
-    const z = przetworzOdpowiedzi(odp({ p_pies: noul(0.95), s_dom: score(0.2) }))
-    assert.equal(z?.sily, undefined)
-    assert.equal(z?.wskazniki.wybieg_psy_odleglosc, 3)
-  })
-
-  it('siła 3 daje w wynikowych wagach więcej niż siła 1 (ta sama potrzeba, ten sam profil)', () => {
-    const wagi = (s: 1 | 3) =>
-      wagiZeZrozumienia(
-        przetworzOdpowiedzi(odp({ p_zielen: noul(0.95), s_otoczenie: score(s) })) as Zrozumienie,
-        'kupuje',
-        METAS,
-        BIEZACE,
-      ).wagi
-    assert.ok((wagi(3).zielen_udzial ?? 0) > (wagi(1).zielen_udzial ?? 0))
-  })
-
-  it('każda potrzeba w GRUPY_SILY istnieje i jest w jednej grupie; skala 0–3', () => {
-    const ids = GRUPY_SILY.flatMap((g) => g.potrzeby)
-    assert.equal(new Set(ids).size, ids.length)
-    for (const id of ids)
-      assert.ok(
-        POTRZEBY.some((p) => p.id === id),
-        id,
+  it('JEV: wagi każdej potrzeby z twierdzeniem = wagi z tabeli POTRZEBY; oceny „siły” bez wpływu', () => {
+    for (const p of POTRZEBY) {
+      if (!p.twierdzenie) continue
+      const z = przetworzOdpowiedzi(
+        odp({
+          [`p_${p.id}`]: noul(0.95),
+          // Stare pytania o siłę – gdyby przyszły, nie zmieniają niczego.
+          s_dom: score(1),
+          s_otoczenie: score(1),
+          s_dojazd: score(1),
+        }),
       )
-    assert.equal(SKALA_SILY.length, 4)
+      assert.ok(z, p.id)
+      assert.deepEqual(z.wskazniki, { ...p.wskazniki }, p.id)
+      assert.equal((z as unknown as Record<string, unknown>).sily, undefined, p.id)
+      const chip = z.zrozumialem.find((x) => x.rodzaj === 'potrzeba')
+      assert.equal(chip?.opis, undefined, p.id)
+    }
   })
 
-  it('reguły: „koniecznie” = 3, „byłoby miło” = 1, bez słów siły = brak', () => {
-    assert.equal(silaZRegul('Park koniecznie blisko'), 3)
-    assert.equal(silaZRegul('Byłoby miło mieć park'), 1)
-    assert.equal(silaZRegul('Mam psa'), undefined)
-    assert.deepEqual(zRegul('Mam psa, park byłoby miło').sily, { pies: 1, zielen: 1 })
-    assert.equal(zRegul('Mam psa').sily, undefined)
+  it('reguły: „byłoby miło” i „koniecznie” nie zmieniają wag – maksimum z tabeli', () => {
+    const tabela = (ids: string[]) => {
+      const w: Record<string, number> = {}
+      for (const p of POTRZEBY.filter((x) => ids.includes(x.id)))
+        for (const [id, v] of Object.entries(p.wskazniki)) w[id] = Math.max(w[id] ?? 0, v)
+      return w
+    }
+    for (const tekst of [
+      'Mam psa, park byłoby miło',
+      'Mam psa, park koniecznie',
+      'Mam psa i park',
+    ]) {
+      const z = zRegul(tekst)
+      assert.deepEqual(z.potrzeby, ['pies', 'zielen'], tekst)
+      assert.deepEqual(z.wskazniki, tabela(['pies', 'zielen']), tekst)
+      assert.equal((z as unknown as Record<string, unknown>).sily, undefined, tekst)
+    }
+  })
+
+  it('wagi w wyniku: zieleń waży tak samo bez względu na słowa siły', () => {
+    const wagi = (tekst: string) => wagiZeZrozumienia(zRegul(tekst), 'kupuje', METAS, BIEZACE).wagi
+    assert.deepEqual(wagi('Park byłoby miło'), wagi('Park koniecznie'))
   })
 })
 
@@ -242,7 +234,7 @@ describe('reguła sprzecznych kierunków (#182)', () => {
     assert.equal(u.kierunki.halas_ldwn, undefined)
   })
 
-  it('dwie potrzeby na tak z przeciwnymi kierunkami: silniejsza wygrywa, remis = wcześniejsza', () => {
+  it('dwie potrzeby na tak z przeciwnymi kierunkami: wygrywa wcześniejsza w tabeli (#187)', () => {
     // Syntetyczna tabela: „cisza” chce mniej barów, „nocne” (jak zycie_nocne z #183) więcej.
     const tabela = [
       {
@@ -262,16 +254,16 @@ describe('reguła sprzecznych kierunków (#182)', () => {
         kierunki: { zycie_nocne_300m: 'wiecej-lepiej' },
       },
     ] as const satisfies readonly (typeof POTRZEBY)[number][]
-    const k = (sily: Record<string, 1 | 2 | 3>) =>
-      kierunkiPotrzeb({ potrzeby: ['cisza', 'nocne'], sily }, tabela).naTak.zycie_nocne_300m
-    assert.equal(k({ cisza: 1, nocne: 3 }), 'wiecej-lepiej')
-    assert.equal(k({ cisza: 3, nocne: 2 }), 'mniej-lepiej')
-    assert.equal(k({ cisza: 2, nocne: 2 }), 'mniej-lepiej') // remis: wcześniejsza w tabeli
-    assert.equal(k({}), 'mniej-lepiej') // brak siły = 3 dla obu, remis
-    assert.equal(k({ cisza: 2 }), 'wiecej-lepiej') // brak siły „nocne” = 3 > 2
+    const k = (potrzeby: string[], t: readonly (typeof POTRZEBY)[number][] = tabela) =>
+      kierunkiPotrzeb({ potrzeby }, t).naTak.zycie_nocne_300m
+    assert.equal(k(['cisza', 'nocne']), 'mniej-lepiej')
+    // Kolejność w rozpoznaniu nie ma znaczenia – liczy się kolejność tabeli.
+    assert.equal(k(['nocne', 'cisza']), 'mniej-lepiej')
+    assert.equal(k(['nocne', 'cisza'], [...tabela].reverse()), 'wiecej-lepiej')
+    assert.equal(k(['nocne']), 'wiecej-lepiej')
   })
 
-  it('„nie chcę” wygrywa z silną potrzebą na tak o przeciwnym kierunku (syntetycznie)', () => {
+  it('„nie chcę” wygrywa z potrzebą na tak o przeciwnym kierunku (syntetycznie)', () => {
     const tabela = [
       {
         id: 'nocne',
@@ -282,10 +274,7 @@ describe('reguła sprzecznych kierunków (#182)', () => {
         kierunki: { zycie_nocne_300m: 'wiecej-lepiej' },
       },
     ] as const satisfies readonly (typeof POTRZEBY)[number][]
-    const k = kierunkiPotrzeb(
-      { potrzeby: ['nocne'], sily: { nocne: 3 }, nieChce: ['zycie_nocne_obok'] },
-      tabela,
-    )
+    const k = kierunkiPotrzeb({ potrzeby: ['nocne'], nieChce: ['zycie_nocne_obok'] }, tabela)
     assert.equal(k.naTak.zycie_nocne_300m, 'wiecej-lepiej')
     assert.equal(k.naNie.zycie_nocne_300m?.kierunek, 'mniej-lepiej')
     // wagiZeZrozumienia stosuje naNie po naTak – sprawdzone niżej na prawdziwej tabeli.
@@ -320,7 +309,7 @@ describe('reguła sprzecznych kierunków (#182)', () => {
     assert.equal(bez.kierunki.zycie_nocne_300m, 'wiecej-lepiej')
   })
 
-  it('pełne zapytanie: ≤ 32 pytań i przechodzi przez pośrednika', async () => {
+  it('pełne zapytanie: 29 pytań (≤ 32) i przechodzi przez pośrednika', async () => {
     const sciezka = new URL('../../api/_jev.js', import.meta.url).href
     const { LIMITY, sprawdzZapytanie } = (await import(sciezka)) as {
       LIMITY: { pytan: number; pytaniaZnakow: number }
@@ -328,6 +317,7 @@ describe('reguła sprzecznych kierunków (#182)', () => {
     }
     const z = zapytanieOpiszSiebie('Nie chcę knajp pod oknem, park bardzo ważny')
     assert.ok(Object.keys(z.pytania).length <= LIMITY.pytan)
+    assert.equal(Object.keys(z.pytania).length, 29)
     const api = sprawdzZapytanie(z)
     assert.equal(api.blad, undefined)
     assert.ok(JSON.stringify(api.pytania).length < LIMITY.pytaniaZnakow)

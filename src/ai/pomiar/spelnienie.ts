@@ -4,7 +4,9 @@
 //   node src/ai/pomiar/spelnienie.ts            # tabele markdown na stdout (do WYNIKI.md)
 //   node src/ai/pomiar/spelnienie.ts --top 300  # inny rozmiar „najlepszych adresów” (domyślnie 100)
 //   node src/ai/pomiar/spelnienie.ts --syntetyczne  # #183: nowe potrzeby na przypadkach syntetycznych
-//   node src/ai/pomiar/spelnienie.ts --182      # tylko tabele 4–5: siła i „nie chcę” (#182), ok. 6 s
+//   node src/ai/pomiar/spelnienie.ts --182      # tylko tabela 4: „nie chcę” (#182), ok. 6 s
+//   node src/ai/pomiar/spelnienie.ts --k8 [--jev]  # #187: zbiór nr 8, etykiety wzorcowe (albo JEV) – kod R0 (#184),
+//                                               # R3 z siłą (#182) i bieżący (zamrożony)
 //
 // Dla opisów ze zbioru wzorcowego i zbiorów kontrolnych nr 1–7 bierzemy WZORCOWY profil
 // i WZORCOWE potrzeby (etykiety, nie odpowiedź JEV) i liczymy wagi na kilka sposobów:
@@ -323,12 +325,12 @@ const jednostka = (m: Miara) =>
     ? (PO_ID.get(m.id)?.meta.jednostka ?? '')
     : `% top z > ${String(m.powyzej).replace('.', ',')}`
 
-// ── #182: siła potrzeby i „nie chcę” – przypadki syntetyczne ─────────────────────────────
+// ── #182: „nie chcę” – przypadki syntetyczne ─────────────────────────────────────────────
 //
-// W starych zbiorach złota prawie nie ma siły ani „nie chcę”, więc mierzymy na własnych
-// przypadkach: (a) 7 „nie chcę” × 3 konteksty (profil + typowa potrzeba) – czy top adresów
-// odsuwa się od rzeczy niechcianej; (b) 8 potrzeb × siła 1 / 2 / 3 – czy siła 3 przesuwa top
-// mocniej niż 1. Bez JEV, deterministycznie. Tylko ta część: `--182` (bez historii git).
+// W starych zbiorach złota nie ma „nie chcę”, więc mierzymy na własnych przypadkach: 7 „nie
+// chcę” × 3 konteksty (profil + typowa potrzeba) – czy top adresów odsuwa się od rzeczy
+// niechcianej. Bez JEV, deterministycznie. Tylko ta część: `--182` (bez historii git).
+// #187: tabela 5 (siła 1 / 2 / 3) usunięta razem z siłą potrzeby.
 
 const MIARY_NIE: Readonly<Record<string, Miara>> = {
   zycie_nocne_obok: { id: 'zycie_nocne_300m', lepiej: 'mniej', powyzej: 0 },
@@ -344,32 +346,14 @@ const KONTEKSTY_182: readonly { persona: PersonaId | null; potrzeby: string[] }[
   { persona: 'singiel', potrzeby: ['bez_samochodu'] },
   { persona: 'senior', potrzeby: ['zdrowie'] },
 ]
-const SILY_182: readonly { persona: PersonaId | null; potrzeba: string }[] = [
-  { persona: 'rodzina', potrzeba: 'dzieci' },
-  { persona: null, potrzeba: 'pies' },
-  { persona: null, potrzeba: 'zielen' },
-  { persona: null, potrzeba: 'powietrze' },
-  { persona: 'singiel', potrzeba: 'bez_samochodu' },
-  { persona: 'senior', potrzeba: 'zdrowie' },
-  { persona: 'singiel', potrzeba: 'rower' },
-  { persona: null, potrzeba: 'cisza' },
-]
-
-/** Jak `zloz` w opiszSiebie.ts: wagi potrzeb przez siłę, „nie chcę” osobno. */
+/** Jak `zloz` w opiszSiebie.ts: wagi potrzeb z tabeli, „nie chcę” osobno. */
 function przebieg182(
   persona: PersonaId | null,
   ids: readonly string[],
-  sily: Readonly<Record<string, nowa.Sila>> = {},
   nieChce: readonly string[] = [],
 ): Przebieg {
   const z = zrozumienie(nowa, persona, ids)
-  for (const id of Object.keys(z.wskazniki)) delete z.wskazniki[id]
-  for (const id of ids) {
-    const p = nowa.POTRZEBY.find((x) => x.id === id)
-    for (const [w, waga] of Object.entries(p?.wskazniki ?? {}))
-      z.wskazniki[w] = Math.max(z.wskazniki[w] ?? 0, nowa.wagaZSily(waga, sily[id]))
-  }
-  return przebieg(nowa.wagiZeZrozumienia({ ...z, sily, nieChce }, TRYB, METAS, baza(null)))
+  return przebieg(nowa.wagiZeZrozumienia({ ...z, nieChce }, TRYB, METAS, baza(null)))
 }
 
 function sekcja182() {
@@ -386,7 +370,7 @@ function sekcja182() {
   for (const [nie, m] of Object.entries(MIARY_NIE))
     for (const k of KONTEKSTY_182) {
       const bez = przebieg182(k.persona, k.potrzeby)
-      const z = przebieg182(k.persona, k.potrzeby, {}, [nie])
+      const z = przebieg182(k.persona, k.potrzeby, [nie])
       const a = miaraTop(bez.top, m)
       const b = miaraTop(z.top, m)
       if (Math.abs(b - a) > 1e-9) lepsze(m, b - a) ? lepiej++ : gorzej++
@@ -397,35 +381,269 @@ function sekcja182() {
   console.log(
     `\nPrzypadków: ${Object.keys(MIARY_NIE).length * KONTEKSTY_182.length}; lepiej ${lepiej}, gorzej ${gorzej}, bez zmiany reszta.\n`,
   )
-
-  console.log(
-    '**5. #182 siła: profil → profil + potrzeba z siłą 1 / 2 / 3** (zmiana wskaźnika względem samego profilu)\n',
-  )
-  console.log('| Potrzeba | Wskaźnik | Profil | Siła 1 | Siła 2 | Siła 3 | 3 mocniej niż 1? |')
-  console.log('|---|---|---|---|---|---|---|')
-  let mocniej = 0
-  let wszystkie = 0
-  for (const s of SILY_182)
-    for (const m of MIARY[s.potrzeba] ?? []) {
-      const profil = miaraTop(przebieg182(s.persona, []).top, m)
-      const d = ([1, 2, 3] as const).map(
-        (sila) =>
-          miaraTop(przebieg182(s.persona, [s.potrzeba], { [s.potrzeba]: sila }).top, m) - profil,
-      ) as [number, number, number]
-      // „Mocniej” = siła 3 przesuwa we właściwą stronę co najmniej tyle, co siła 1.
-      const dobrze = (x: number) => (m.lepiej === 'mniej' ? -x : x)
-      const ok = dobrze(d[2]) >= dobrze(d[0]) - 1e-9
-      wszystkie++
-      if (ok) mocniej++
-      console.log(
-        `| ${s.potrzeba} | ${m.id} (${jednostka(m)}) | ${s.persona ?? PERSONA_DOMYSLNA} | ${znak(m, d[0])} ${fm(d[0])} | ${znak(m, d[1])} ${fm(d[1])} | ${znak(m, d[2])} ${fm(d[2])} | ${ok ? 'tak' : 'nie'} |`,
-      )
-    }
-  console.log(`\nSiła 3 co najmniej tak mocno jak 1: ${mocniej} / ${wszystkie}.`)
 }
 const tylko182 = argv.includes('--182')
 if (tylko182) {
   sekcja182()
+  process.exit(0)
+}
+
+// ── #187: zbiór nr 8 – wzorcowe etykiety, trzy wersje kodu ──────────────────────────────────
+//
+// Czy strata starych potrzeb na mapie z #184 (+53 / −114 przy wzorcu, z czego +60 / −105 daje
+// sama siła) znika po cofnięciu siły? Dla każdego opisu zbioru nr 8 z potrzebą albo „nie chcę”
+// liczymy top adresów z WZORCOWYCH etykiet trzema wersjami `opiszSiebie.ts` na tych samych
+// danych i tym samym silniku:
+//   R0 – `a78589d` (BASE z #184: bez #182 i #183; „nie chcę” i nowych potrzeb nie zna),
+//   R3 – `81b6602` (#182 z siłą i „nie chcę” + #183; siła ze wzorca przez `wagaZSily`),
+//   F  – bieżący kod (zamrożony, #187: #183 + „nie chcę”, bez siły).
+// Wskaźniki spełnienia: MIARY i MIARY_NIE (stała miarka). Pary opis × wskaźnik: lepiej / gorzej
+// niż sam profil, a sparowanie wersji pokazuje, która na tej samej parze wypada lepiej
+// (dokładny test McNemara). Na silniku sprzed #188 odtwarza co do pary tabelę „Spełnienie na
+// mapie” z #184 (wtedy skrypt poza repo, `mapa8.ts`); silnik po #188 daje inne liczby
+// (WYNIKI.md, „Zamrożenie (#187)”). `--jev`: etykiety JEV z przebiegów #184 zamiast wzorca.
+
+interface PozycjaK8 {
+  id: string
+  persona: PersonaId | null
+  potrzeby: string[]
+  sila: Record<string, number>
+  nie_chce: string[]
+}
+type ModulK8 = Modul & {
+  /** Tylko w R3 (#182, cofnięte w #187). */
+  wagaZSily?: (waga: number, sila: number | undefined) => number
+  NA_NIE?: readonly { id: string }[]
+}
+const NOWE_183 = new Set(['auto', 'wozek', 'praca_zdalna', 'zycie_nocne', 'sport', 'student'])
+
+async function modulZ(commit: string, nazwa: string): Promise<ModulK8> {
+  const plik = new URL(`_spelnienie_${nazwa}_opiszSiebie.ts`, AI)
+  writeFileSync(
+    plik,
+    execFileSync('git', ['show', `${commit}:src/ai/opiszSiebie.ts`], {
+      cwd: KORZEN,
+      encoding: 'utf8',
+    }),
+  )
+  try {
+    return (await import(plik.href)) as ModulK8
+  } finally {
+    rmSync(plik)
+  }
+}
+
+/** Zrozumienie ze wzorca tak, jak złożyłby je `zloz` danej wersji (bez chipów). */
+function zWzorca(
+  m: ModulK8,
+  p: PozycjaK8,
+  { bezNie = false, bez183 = false }: { bezNie?: boolean; bez183?: boolean } = {},
+): nowa.Zrozumienie {
+  const znane = p.potrzeby.filter(
+    (id) => m.POTRZEBY.some((x) => x.id === id) && !(bez183 && NOWE_183.has(id)),
+  )
+  const z: nowa.Zrozumienie & { sily?: Record<string, number> } = zrozumienie(m, p.persona, znane)
+  const wagaZSily = m.wagaZSily
+  if (wagaZSily) {
+    for (const id of Object.keys(z.wskazniki)) delete z.wskazniki[id]
+    for (const id of znane)
+      for (const [w, waga] of Object.entries(m.POTRZEBY.find((x) => x.id === id)?.wskazniki ?? {}))
+        z.wskazniki[w] = Math.max(z.wskazniki[w] ?? 0, wagaZSily(waga, p.sila[id]))
+    z.sily = Object.fromEntries(znane.map((id) => [id, p.sila[id] as number]))
+  }
+  if (m.NA_NIE && !bezNie) z.nieChce = p.nie_chce.filter((id) => m.NA_NIE?.some((n) => n.id === id))
+  return z
+}
+
+function mcnemar(b: number, c: number): number {
+  const n = b + c
+  if (!n) return 1
+  let suma = 0
+  let lp = -n * Math.LN2
+  for (let i = 0; i <= Math.min(b, c); i++) {
+    suma += Math.exp(lp)
+    lp += Math.log((n - i) / (i + 1))
+  }
+  return Math.min(1, 2 * suma)
+}
+const fp = (x: number) => (x < 0.001 ? '< 0,001' : x.toFixed(3).replace('.', ','))
+
+async function sekcjaK8() {
+  const pozycje = (
+    JSON.parse(readFileSync(new URL('kontrolny8-opisz.json', POMIAR), 'utf8'))
+      .pozycje as PozycjaK8[]
+  ).filter((p) => p.potrzeby.length || p.nie_chce.length)
+  const r0 = await modulZ('a78589d', 'r0')
+  const r3 = await modulZ('81b6602', 'r3')
+  const zamrozony = nowa as ModulK8
+  type Zr = (p: PozycjaK8) => nowa.Zrozumienie
+  const zJev = argv.includes('--jev')
+  /**
+   * `--jev`: zamiast wzorca zrozumienie JEV z przebiegów #184 (to, co widział użytkownik).
+   * R0 i R3 z ich plików; zamrożony z pliku R3 bez siły, z wagami z tabeli – odtworzenie
+   * `--przelicz` daje dokładnie to (rozpoznanie identyczne, różnią się tylko `sily` i wagi).
+   */
+  const zPliku = (plik: string) => {
+    const a = JSON.parse(readFileSync(new URL(`przebiegi/${plik}`, POMIAR), 'utf8')).a as {
+      id: string
+      systemy: { jev_z_zapasem: nowa.Zrozumienie }
+    }[]
+    const mapa = new Map(a.map((w) => [w.id, w.systemy.jev_z_zapasem]))
+    return (p: PozycjaK8) => ({ ...(mapa.get(p.id) as nowa.Zrozumienie), zrozumialem: [] })
+  }
+  const bezSily =
+    (zr: Zr): Zr =>
+    (p) => {
+      const { sily: _sily, ...z } = zr(p) as nowa.Zrozumienie & { sily?: unknown }
+      return { ...z, wskazniki: zrozumienie(zamrozony, null, z.potrzeby).wskazniki }
+    }
+  // Rozkład wersji zamrożonej (tylko wzorzec): F bez „nie chcę” (= sam #183) i F bez nowych
+  // potrzeb (= R0 + „nie chcę”) – ten sam kod i te same dane, inne etykiety.
+  const WERSJE: Record<string, { m: ModulK8; zr: Zr }> = zJev
+    ? {
+        R0: { m: r0, zr: zPliku('k8-r0-184.json') },
+        R3: { m: r3, zr: zPliku('k8-r3-184.json') },
+        F: { m: zamrozony, zr: bezSily(zPliku('k8-r3-184.json')) },
+      }
+    : {
+        R0: { m: r0, zr: (p) => zWzorca(r0, p) },
+        R3: { m: r3, zr: (p) => zWzorca(r3, p) },
+        F: { m: zamrozony, zr: (p) => zWzorca(zamrozony, p) },
+        'F bez „nie chcę”': { m: zamrozony, zr: (p) => zWzorca(zamrozony, p, { bezNie: true }) },
+        'F bez #183': { m: zamrozony, zr: (p) => zWzorca(zamrozony, p, { bez183: true }) },
+      }
+  type Wersja = string
+  const nazwy = Object.keys(WERSJE) as Wersja[]
+  interface Para {
+    id: string
+    grupa: 'stare' | 'nowe' | 'nie'
+    sila: number | null
+    miara: Miara
+    profil: number
+    w: Record<Wersja, number>
+  }
+  const pary: Para[] = []
+  const topProfilu = new Map<string, Uint32Array>()
+  for (const p of pozycje) {
+    const kp = String(p.persona)
+    if (!topProfilu.has(kp)) topProfilu.set(kp, przebieg(baza(p.persona)).top)
+    const tp = topProfilu.get(kp) as Uint32Array
+    const topy = Object.fromEntries(
+      nazwy.map((v) => [
+        v,
+        przebieg(
+          (WERSJE[v] as { m: ModulK8; zr: Zr }).m.wagiZeZrozumienia(
+            (WERSJE[v] as { m: ModulK8; zr: Zr }).zr(p),
+            TRYB,
+            METAS,
+            baza(null),
+          ) as Ustawienia,
+        ).top,
+      ]),
+    ) as Record<Wersja, Uint32Array>
+    const dodaj = (id: string, grupa: Para['grupa'], sila: number | null, m: Miara) =>
+      pary.push({
+        id,
+        grupa,
+        sila,
+        miara: m,
+        profil: miaraTop(tp, m),
+        w: Object.fromEntries(nazwy.map((v) => [v, miaraTop(topy[v] as Uint32Array, m)])) as Record<
+          Wersja,
+          number
+        >,
+      })
+    for (const id of p.potrzeby)
+      for (const m of MIARY[id] ?? [])
+        dodaj(id, NOWE_183.has(id) ? 'nowe' : 'stare', p.sila[id] ?? null, m)
+    for (const id of p.nie_chce) {
+      const m = MIARY_NIE[id]
+      if (m) dodaj(id, 'nie', null, m)
+    }
+  }
+  const zle = (m: Miara, d: number) => Math.abs(d) > 1e-9 && !lepsze(m, d)
+  const dobre = (m: Miara, d: number) => Math.abs(d) > 1e-9 && lepsze(m, d)
+  const GRUPY = [
+    ['stare', 'stare potrzeby'],
+    ['nowe', 'nowe potrzeby (#183)'],
+    ['nie', '„nie chcę” (#182)'],
+  ] as const
+  const zbior = (xs: Para[]) => xs.filter((x) => !Number.isNaN(x.profil))
+
+  console.log(
+    `#187 – zbiór nr 8, etykiety ${zJev ? 'JEV (przebiegi #184)' : 'wzorcowe'}: ${pozycje.length} opisów z potrzebą albo „nie chcę”, adresy: ${N}, top: ${TOP}.\n`,
+  )
+  console.log('**Względem samego profilu** (pary opis × wskaźnik: lepiej / gorzej / bez zmiany)\n')
+  console.log(`| Grupa | n | ${nazwy.join(' | ')} |`)
+  console.log(`|---|---|${nazwy.map(() => '---').join('|')}|`)
+  for (const [g, opis] of GRUPY) {
+    const xs = zbior(pary.filter((x) => x.grupa === g))
+    const kol = (v: Wersja) => {
+      const ds = xs.map((x) => (x.w[v] ?? Number.NaN) - x.profil).filter((d) => !Number.isNaN(d))
+      const a = xs.filter((x) => dobre(x.miara, (x.w[v] ?? Number.NaN) - x.profil)).length
+      const b = xs.filter((x) => zle(x.miara, (x.w[v] ?? Number.NaN) - x.profil)).length
+      return `${a} / ${b} / ${ds.length - a - b}`
+    }
+    console.log(`| ${opis} | ${xs.length} | ${nazwy.map(kol).join(' | ')} |`)
+  }
+  const sparuj = (xs: Para[], a: Wersja, b: Wersja) => {
+    let plus = 0
+    let minus = 0
+    for (const x of xs) {
+      const d = (x.w[b] ?? Number.NaN) - (x.w[a] ?? Number.NaN)
+      if (Number.isNaN(d)) continue
+      if (dobre(x.miara, d)) plus++
+      else if (zle(x.miara, d)) minus++
+    }
+    return `+${plus} / −${minus}, p = ${fp(mcnemar(plus, minus))}`
+  }
+  const POROWNANIA = (
+    [
+      ['R0', 'R3'],
+      ['R0', 'F'],
+      ['R3', 'F'],
+      ['R0', 'F bez „nie chcę”'],
+      ['R0', 'F bez #183'],
+    ] as const
+  ).filter(([a, b]) => a in WERSJE && b in WERSJE)
+  console.log(
+    '\n**Sparowane** (ta sama para opis × wskaźnik: druga wersja lepiej / gorzej niż pierwsza)\n',
+  )
+  console.log(`| Grupa | ${POROWNANIA.map(([a, b]) => `${a} → ${b}`).join(' | ')} |`)
+  console.log(`|---|${POROWNANIA.map(() => '---').join('|')}|`)
+  for (const [g, opis] of GRUPY) {
+    const xs = pary.filter((x) => x.grupa === g)
+    console.log(`| ${opis} | ${POROWNANIA.map(([a, b]) => sparuj(xs, a, b)).join(' | ')} |`)
+  }
+  console.log('\n**Stare potrzeby wg siły we wzorcu** (sparowane jak wyżej)\n')
+  console.log(`| Siła we wzorcu | n | ${POROWNANIA.map(([a, b]) => `${a} → ${b}`).join(' | ')} |`)
+  console.log(`|---|---|${POROWNANIA.map(() => '---').join('|')}|`)
+  for (const sila of [1, 2, 3]) {
+    const xs = pary.filter((x) => x.grupa === 'stare' && x.sila === sila)
+    console.log(
+      `| ${sila} | ${xs.length} | ${POROWNANIA.map(([a, b]) => sparuj(xs, a, b)).join(' | ')} |`,
+    )
+  }
+  console.log(
+    '\n**Mediana wskaźnika w top po opisach** („nie chcę” i nowe potrzeby; profil i wersje)\n',
+  )
+  console.log(`| Etykieta | Wskaźnik | Opisów | Profil | ${nazwy.join(' | ')} |`)
+  console.log(`|---|---|---|---|${nazwy.map(() => '---').join('|')}|`)
+  const klucze = [
+    ...new Set(pary.filter((x) => x.grupa !== 'stare').map((x) => `${x.id}|${x.miara.id}`)),
+  ]
+  for (const k of klucze) {
+    const xs = pary.filter((x) => `${x.id}|${x.miara.id}` === k)
+    const m = (xs[0] as Para).miara
+    const [id] = k.split('|')
+    const kol = (fn: (x: Para) => number) => f(mediana(xs.map(fn)))
+    console.log(
+      `| ${xs[0]?.grupa === 'nie' ? 'nie chcę: ' : ''}${id} | ${m.id} (${jednostka(m)}) | ${xs.length} | ${kol((x) => x.profil)} | ${nazwy.map((v) => kol((x) => x.w[v] ?? Number.NaN)).join(' | ')} |`,
+    )
+  }
+}
+if (argv.includes('--k8')) {
+  await sekcjaK8()
   process.exit(0)
 }
 
@@ -515,7 +733,9 @@ for (const [potrzeba, miary] of Object.entries(MIARY)) {
   const moje = wiersze.filter((x) => x.p.potrzeby.includes(potrzeba))
   if (moje.length === 0) continue // #183: nowe potrzeby nie mają jeszcze złota w zbiorach 1–7
   for (const m of miary) {
-    const [a, b, s, c] = WARIANTY.map((v) => mediana(moje.map((x) => miaraTop(x.w[v].top, m))))
+    const [a, b, s, c] = WARIANTY.map((v) =>
+      mediana(moje.map((x) => miaraTop((x.w[v] ?? Number.NaN).top, m))),
+    )
     console.log(
       `| ${potrzeba} | ${moje.length} | ${m.id} (${jednostka(m)}) | ${f(a as number)} | ${f(b as number)} | ${f(s as number)} | ${f(c as number)} | ${znak(m, (b as number) - (a as number))} ${f((b as number) - (a as number))} | ${znak(m, (c as number) - (a as number))} ${f((c as number) - (a as number))} |`,
     )
@@ -552,7 +772,7 @@ console.log('\n**3. Skutki uboczne** (mediana po opisach z potrzebami)\n')
 console.log('| | Profil | Stara | Stara tabela, nowe składanie | Nowa |')
 console.log('|---|---|---|---|---|')
 const kol = (fn: (p: Przebieg, x: (typeof wiersze)[number]) => number, c = 1) =>
-  WARIANTY.map((v) => f(mediana(wiersze.map((x) => fn(x.w[v], x))), c)).join(' | ')
+  WARIANTY.map((v) => f(mediana(wiersze.map((x) => fn(x.w[v] ?? Number.NaN, x))), c)).join(' | ')
 console.log(`| Warstwy liczone w wyniku | ${kol((p) => p.warstwy, 0)} |`)
 console.log(`| Rozrzut wyników adresów (p90 − p10, pkt) | ${kol((p) => p.rozrzut)} |`)
 console.log(

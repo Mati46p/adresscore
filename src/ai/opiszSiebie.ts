@@ -784,26 +784,12 @@ export const PIERWSZENSTWO_PERSON: readonly PersonaId[] = [
   'singiel',
 ]
 
-// ── Siła potrzeby i potrzeby „na nie” (#182) ────────────────────────────────────────────────
-
-/** Siła potrzeby – słownik zbioru nr 8: 1 = „byłoby miło”, 2 = „wyraźnie ważne”, 3 = warunek. */
-export type Sila = 1 | 2 | 3
-export const OPISY_SILY: Readonly<Record<Sila, string>> = {
-  1: 'byłoby miło',
-  2: 'wyraźnie ważne',
-  3: 'bardzo ważne',
-}
-
-/**
- * Waga warstwy potrzeby przy danej sile: 3 = waga z tabeli POTRZEBY, 2 = o 1 mniej, 1 = o 2
- * mniej, najmniej 1 (potrzeba rozpoznana zawsze coś waży). Brak siły (reguły bez słów
- * siły, JEV bez odpowiedzi) = waga z tabeli, czyli dokładnie jak przed #182 – tabela była
- * strojona w #177 na potrzebach bez siły.
- */
-export function wagaZSily(wagaTabeli: number, sila: Sila | undefined): number {
-  if (sila === undefined || wagaTabeli <= 0) return wagaTabeli
-  return Math.max(1, wagaTabeli - (3 - sila))
-}
+// ── Potrzeby „na nie” (#182) ─────────────────────────────────────────────────────────────────
+//
+// #187: siła potrzeby z #182 (3 pytania score na grupę potrzeb, `wagaZSily`, słowa siły
+// w regułach) cofnięta – na zbiorze nr 8 (#184) przegrała ze stałą i psuła stare potrzeby
+// na mapie (WYNIKI.md, „Zamrożenie (#187)”). Warstwy potrzeby mają wagę z tabeli POTRZEBY,
+// jak przed #182. „Nie chcę” zostaje.
 
 export interface PotrzebaNaNie {
   /** Id ze słownika zbioru nr 8 – nie zmieniaj (etykiety złota). */
@@ -966,44 +952,6 @@ export const NA_NIE: readonly PotrzebaNaNie[] = [
   },
 ]
 
-/**
- * Siła z JEV: jedno pytanie score na grupę potrzeb (3 pytania zamiast osobnego na każdą
- * potrzebę). Siła potrzeby = zaokrąglona ocena jej grupy (1–3); ocena 0 („tekst o tym nie
- * mówi”) przy rozpoznanej potrzebie = brak siły (waga z tabeli). Bez progu pewności – próg
- * 0,5 pogorszył trafność. Wybór z próby na żywo przy pełnym żądaniu (31 pytań, 2 przebiegi,
- * 24 zdania celowane): grupy 73% trafnych siły (śr. błąd 0,31), jedno pytanie o całość 62%,
- * pasma noul twierdzeń potrzeb 58%, stała 2 38% (WYNIKI.md, „Siła i «nie chcę» (#182)”).
- * Potrzeba spoza grup nie ma siły z JEV (waga z tabeli): reguły-tylko i z #183 praca zdalna,
- * życie nocne, sport – żadne z 3 pytań ich nie obejmuje (wózek, auto, student – tak).
- */
-export const SKALA_SILY = [
-  'Tekst nie mówi o takich potrzebach',
-  'Byłoby miło – wspomniane lekko, bez nacisku',
-  'Wyraźnie ważne',
-  'Bardzo ważne – warunek konieczny',
-] as const
-export const GRUPY_SILY: readonly { id: string; polecenie: string; potrzeby: readonly string[] }[] =
-  [
-    {
-      id: 's_dom',
-      polecenie:
-        'Jak ważne są dla osoby dzieci, zdrowie, lekarz, pies i sprawy załatwiane pieszo blisko domu?',
-      potrzeby: ['dzieci', 'pies', 'senior', 'zdrowie', 'sklepy', 'wozek'],
-    },
-    {
-      id: 's_otoczenie',
-      polecenie:
-        'Jak ważne są dla osoby zieleń, park, czyste powietrze, cisza i bezpieczeństwo okolicy?',
-      potrzeby: ['zielen', 'powietrze', 'cisza', 'bezpieczenstwo'],
-    },
-    {
-      id: 's_dojazd',
-      polecenie:
-        'Jak ważne są dla osoby dojazdy: komunikacja, rower, praca w centrum, pociąg, lotnisko?',
-      potrzeby: ['rower', 'bez_samochodu', 'praca_centrum', 'lotnisko', 'kolej', 'auto', 'student'],
-    },
-  ]
-
 /** Od tej oceny twierdzenia „nie chcę” (noul) JEV uznaje potrzebę „na nie”. */
 export const PROG_NA_NIE = 0.6
 
@@ -1035,18 +983,6 @@ function bezOdmowy(tekst: string, slowa: RegExp): string {
   return t
 }
 
-/** Reguły: siła z jawnych słów w całym tekście (jedna dla wszystkich potrzeb); brak = undefined. */
-const SILA_3 =
-  /\b(koniecznie|musi\w*|warunek|bardzo wazn\w*|najwazniejsz\w*|absolutnie|niezbedn\w*|kluczow\w*)/
-const SILA_1 =
-  /\b(byloby milo|byloby fajnie|fajnie by\w*|mile widzian\w*|opcjonaln\w*|niekoniecznie|przydal\w* by|nie musi|ewentualnie)/
-export function silaZRegul(tekst: string): Sila | undefined {
-  const t = normalizuj(tekst)
-  if (SILA_3.test(t)) return 3
-  if (SILA_1.test(t)) return 1
-  return undefined
-}
-
 /**
  * #155: opisy opcji profilu dla JEV mówią, KIM jest osoba, a nie, co ceni. Opisy z UI
  * („Komunikacja i sklepy pod ręką”) pasowały do każdego, kto chce mieć blisko tramwaj, więc
@@ -1075,7 +1011,7 @@ export interface PozycjaZrozumienia {
    * Kategoria: ważność 0–100 % (waga 0–4 × 25).
    */
   procent: number | null
-  /** Kategoria: słowny poziom ważności, np. „Bardzo ważne”. Potrzeba: siła (#182). */
+  /** Kategoria: słowny poziom ważności, np. „Bardzo ważne”. */
   opis?: string
 }
 
@@ -1089,8 +1025,6 @@ export interface Zrozumienie {
   /** Id rozpoznanych potrzeb w kolejności POTRZEBY. */
   potrzeby: string[]
   zrozumialem: PozycjaZrozumienia[]
-  /** #182: siła rozpoznanych potrzeb (id → 1–3); brak klucza = waga z tabeli, jak przed #182. */
-  sily?: Readonly<Record<string, Sila>>
   /** #182: id rozpoznanych potrzeb „na nie” (NA_NIE), w kolejności tabeli. */
   nieChce?: readonly string[]
 }
@@ -1122,7 +1056,7 @@ export const idNaNie = (n: PotrzebaNaNie) => `n_${n.id}`
 
 /**
  * Zapytanie w stałej kolejności: profil, 3 kategorie, potrzeby z twierdzeniem, potrzeby
- * „na nie” i 3 pytania o siłę (#182), bramka.
+ * „na nie” (#182), bramka. #187: bez 3 pytań o siłę – 29 pytań.
  */
 export function zapytanieOpiszSiebie(tekst: string): ZapytanieJev {
   const pytania: ZapytanieJev['pytania'] = {}
@@ -1141,7 +1075,6 @@ export function zapytanieOpiszSiebie(tekst: string): ZapytanieJev {
   for (const p of POTRZEBY)
     if (p.twierdzenie) pytania[idPotrzeby(p)] = takNie(p.twierdzenie, p.kryteria)
   for (const n of NA_NIE) pytania[idNaNie(n)] = takNie(n.twierdzenie, n.kryteria)
-  for (const g of GRUPY_SILY) pytania[g.id] = ocena(g.polecenie, SKALA_SILY)
   for (const b of BRAMKA) pytania[b.id] = takNie(b.twierdzenie, b.kryteria)
   return { stan: tekst, pytania }
 }
@@ -1158,22 +1091,20 @@ function personaZPotrzeb(ids: readonly string[]): PersonaId | null {
 function zloz(
   persona: PersonaId | null,
   pewnoscPersony: number | null,
-  potrzeby: readonly { id: string; procent: number | null; sila?: Sila }[],
+  potrzeby: readonly { id: string; procent: number | null }[],
   poziomyJev: Partial<Record<KategoriaOceniana, number>>,
   nieChce: readonly { id: string; procent: number | null }[] = [],
 ): Zrozumienie {
   const kategorie: Partial<Record<KategoriaOceniana, number>> = {}
   const wskazniki: Record<string, number> = {}
-  const sily: Record<string, Sila> = {}
-  for (const { id, sila } of potrzeby) {
+  for (const { id } of potrzeby) {
     const p = POTRZEBY.find((x) => x.id === id)
     if (!p) continue
-    if (sila !== undefined) sily[id] = sila
     for (const [k, w] of Object.entries(p.kategorie) as [KategoriaOceniana, number][])
       kategorie[k] = Math.max(kategorie[k] ?? 0, w)
-    // #182: waga warstwy potrzeby zależy od jej siły (3 = tabela, 2 = −1, 1 = −2, min. 1).
+    // #187: waga z tabeli POTRZEBY, jak przed #182 (siła potrzeby cofnięta).
     for (const [id, w] of Object.entries(p.wskazniki))
-      wskazniki[id] = Math.max(wskazniki[id] ?? 0, wagaZSily(w, sila))
+      wskazniki[id] = Math.max(wskazniki[id] ?? 0, w)
   }
   // Jawny poziom od JEV wygrywa z tym, co wynika z potrzeb – także „mało ważne”.
   Object.assign(kategorie, poziomyJev)
@@ -1181,15 +1112,9 @@ function zloz(
   const zrozumialem: PozycjaZrozumienia[] = []
   const p = znajdzPersone(persona)
   if (p) zrozumialem.push({ rodzaj: 'profil', etykieta: p.nazwa, procent: pewnoscPersony })
-  for (const { id, procent, sila } of potrzeby) {
+  for (const { id, procent } of potrzeby) {
     const potrzeba = POTRZEBY.find((x) => x.id === id)
-    if (potrzeba)
-      zrozumialem.push({
-        rodzaj: 'potrzeba',
-        etykieta: potrzeba.etykieta,
-        procent,
-        ...(sila === undefined ? {} : { opis: OPISY_SILY[sila] }),
-      })
+    if (potrzeba) zrozumialem.push({ rodzaj: 'potrzeba', etykieta: potrzeba.etykieta, procent })
   }
   const naNie = NA_NIE.filter((n) => nieChce.some((x) => x.id === n.id))
   for (const n of naNie)
@@ -1214,7 +1139,6 @@ function zloz(
     wskazniki,
     potrzeby: potrzeby.map((x) => x.id),
     zrozumialem,
-    ...(Object.keys(sily).length ? { sily } : {}),
     ...(naNie.length ? { nieChce: naNie.map((n) => n.id) } : {}),
   }
 }
@@ -1296,13 +1220,12 @@ export function przetworzOdpowiedzi(
   tekst = '',
   progi: ProgiProfilu = PROGI_PROFILU,
 ): Zrozumienie | null {
-  const sila = silyZJev(odpowiedzi)
   if (bramkaZamknieta(odpowiedzi)) {
-    const potrzeby: { id: string; procent: number; sila?: Sila }[] = []
+    const potrzeby: { id: string; procent: number }[] = []
     for (const p of POTRZEBY) {
       const o = p.twierdzenie ? odpowiedzi[idPotrzeby(p)] : null
       if (o?.typ === 'noul' && o.noul >= PROG_POTRZEBY_PEWNEJ)
-        potrzeby.push({ id: p.id, procent: procent(o.noul), ...sila(p.id) })
+        potrzeby.push({ id: p.id, procent: procent(o.noul) })
     }
     const nie = nieChceZJev(odpowiedzi, PROG_POTRZEBY_PEWNEJ)
     return potrzeby.length || nie.length ? zloz(null, null, potrzeby, {}, nie) : PUSTE_ZROZUMIENIE
@@ -1327,12 +1250,12 @@ export function przetworzOdpowiedzi(
     if (poziom !== POZIOM_NEUTRALNY) poziomy[k] = poziom
   }
 
-  const potrzeby: { id: string; procent: number | null; sila?: Sila }[] = []
+  const potrzeby: { id: string; procent: number | null }[] = []
   for (const p of POTRZEBY) {
     if (!p.twierdzenie) continue
     const o = odpowiedzi[idPotrzeby(p)]
     if (o?.typ === 'noul' && o.noul >= PROG_POTRZEBY)
-      potrzeby.push({ id: p.id, procent: procent(o.noul), ...sila(p.id) })
+      potrzeby.push({ id: p.id, procent: procent(o.noul) })
   }
   const nie = nieChceZJev(odpowiedzi, PROG_NA_NIE)
   // Nic pewnego od JEV → reguły (one i tak czytają te same słowa, co zapas profilu niżej).
@@ -1350,17 +1273,6 @@ export function przetworzOdpowiedzi(
   // POTRZEBY, bez liczby od JEV).
   if (persona === 'inwestor') potrzeby.push({ id: 'inwestycja', procent: null })
   return zloz(persona, pewnoscPersony, potrzeby, poziomy, nie)
-}
-
-/** #182: siła potrzeby z oceny jej grupy (GRUPY_SILY); `{}` = brak siły (waga z tabeli). */
-function silyZJev(odpowiedzi: Record<string, OdpowiedzJev | null>) {
-  return (id: string): { sila?: Sila } => {
-    const g = GRUPY_SILY.find((x) => x.potrzeby.includes(id))
-    const o = g ? odpowiedzi[g.id] : null
-    if (o?.typ !== 'score') return {}
-    const s = Math.min(Math.round(o.ocena), 3)
-    return s >= 1 ? { sila: s as Sila } : {}
-  }
 }
 
 /** #182: potrzeby „na nie” z noul ≥ progu, w kolejności NA_NIE. */
@@ -1407,11 +1319,10 @@ export function zRegul(tekst: string): Zrozumienie {
   const nie = NA_NIE.filter((n) => odmowaPrzed(t, n.slowa))
   const naTak = nie.reduce((s, n) => bezOdmowy(s, n.slowa), t)
   const ids = POTRZEBY.filter((p) => p.wzorce.some((w) => wystepuje(naTak, w))).map((p) => p.id)
-  const sila = silaZRegul(tekst)
   return zloz(
     personaZPotrzeb(ids),
     null,
-    ids.map((id) => ({ id, procent: null, ...(sila === undefined ? {} : { sila }) })),
+    ids.map((id) => ({ id, procent: null })),
     {},
     nie.map((n) => ({ id: n.id, procent: null })),
   )
@@ -1448,12 +1359,12 @@ const przytnij = (w: number) => Math.min(Math.max(Math.round(w), 0), 4)
  *    i z potrzebą na tak („mamy dzieci, ale nie pod samą szkołą” → szkoła dalej = lepiej).
  *    Użytkownik powiedział to wprost o tej jednej rzeczy, a potrzeba na tak mówi o całej grupie
  *    warstw. Dwa „nie chcę” nie mają sprzecznych kierunków (pilnuje test tabeli NA_NIE).
- * 2. Dwie potrzeby na tak z przeciwnymi kierunkami na tej samej warstwie: wygrywa silniejsza
- *    (brak siły = 3, jak waga z tabeli), przy remisie wcześniejsza w POTRZEBY.
+ * 2. Dwie potrzeby na tak z przeciwnymi kierunkami na tej samej warstwie: wygrywa wcześniejsza
+ *    w POTRZEBY, jak przed #182 (#187: bez siły potrzeby; „cisza” przed „życiem nocnym”).
  * 3. Kierunek z profilu albo bieżących ustawień wygrywa z potrzebą na tak (#177, bez zmian).
  */
 export function kierunkiPotrzeb(
-  z: Pick<Zrozumienie, 'potrzeby' | 'sily' | 'nieChce'>,
+  z: Pick<Zrozumienie, 'potrzeby' | 'nieChce'>,
   /** Tabela potrzeb – parametr tylko dla testów reguły (dziś żadne dwie nie są sprzeczne). */
   tabela: readonly Potrzeba[] = POTRZEBY,
 ): {
@@ -1461,15 +1372,10 @@ export function kierunkiPotrzeb(
   naNie: Record<string, { waga: number; kierunek: KierunekOceny }>
 } {
   const naTak: Record<string, KierunekOceny> = {}
-  const silaKierunku: Record<string, number> = {}
   for (const p of tabela) {
     if (!z.potrzeby.includes(p.id)) continue
-    const s = z.sily?.[p.id] ?? 3
-    for (const [warstwa, k] of Object.entries(p.kierunki ?? {})) {
-      if ((silaKierunku[warstwa] ?? 0) >= s) continue
-      naTak[warstwa] = k
-      silaKierunku[warstwa] = s
-    }
+    for (const [warstwa, k] of Object.entries(p.kierunki ?? {}))
+      if (naTak[warstwa] === undefined) naTak[warstwa] = k
   }
   const naNie: Record<string, { waga: number; kierunek: KierunekOceny }> = {}
   for (const n of NA_NIE) {
@@ -1500,8 +1406,8 @@ export function kierunkiPotrzeb(
  *   Poziom od JEV wyższy (albo niższy) niż z potrzeb działa jak dotąd. Poziomy w zrozumieniu
  *   (chipy, pomiar kategorii) się nie zmieniają.
  *
- * #182: minimalne wagi potrzeb są już przeliczone przez siłę (`wagaZSily` w `zloz`), a „nie
- * chcę” przejmuje swoje warstwy – kierunek i waga według `kierunkiPotrzeb`.
+ * #182: „nie chcę” przejmuje swoje warstwy – kierunek i waga według `kierunkiPotrzeb`.
+ * Minimalne wagi potrzeb to wagi z tabeli POTRZEBY (#187: siła potrzeby cofnięta).
  */
 export function wagiZeZrozumienia(
   z: Zrozumienie,

@@ -24,8 +24,9 @@ export const TIMEOUT_MS = 800
 export const LIMITY = {
   stan: 2000,
   /**
-   * #183/#182: 32 (było 16) – „opisz siebie” ma 32 pytania: 22 z #183, 7 „nie chcę” i 3 o siłę
-   * (#182). To nasz limit; JEV ma tylko 64k tokenów (opóźnienie przy 32 – WYNIKI.md, #182).
+   * #183/#182: 32 (było 16) – „opisz siebie” ma 29 pytań: 22 z #183 i 7 „nie chcę” (#182;
+   * 3 pytania o siłę cofnięte w #187). To nasz limit; JEV ma tylko 64k tokenów (opóźnienie przy
+   * 32 i 29 – WYNIKI.md, #184 i #187).
    */
   pytan: 32,
   idPytania: 40,
