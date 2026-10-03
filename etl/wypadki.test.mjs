@@ -352,6 +352,9 @@ test('warstwaAdresow: średnia roczna waga heksu, zero zamiast braku, słownik e
   assert.ok(w.wartosci.every((v) => v !== null))
 })
 
+// Pauza (em-dash) zapisana kodem, żeby w pliku nie było literalnego znaku: w polskim tekście obowiązuje półpauza
+const PAUZA = String.fromCharCode(0x2014)
+
 test('wagaZdarzenia i opis warstwy', () => {
   assert.equal(wagaZdarzenia({ zabity: 0, ciezko: 0, lekko: 0 }), 1)
   assert.equal(wagaZdarzenia({ zabity: 2, ciezko: 1, lekko: 3 }), 1 + 20 + 4 + 3)
@@ -361,8 +364,8 @@ test('wagaZdarzenia i opis warstwy', () => {
   const wGminach = { ...stat, wGminach: 91388, bezPunktuWGminach: 463 }
   assert.match(opisWarstwy('wszystkie', wGminach), /463 z 91\s388 zdarzeń \(0,5%\)/)
   for (const r of ['wszystkie', 'niechronieni']) {
-    assert.ok(!opisWarstwy(r, stat).includes('—'))
-    assert.ok(!opisWarstwy(r, wGminach).includes('—'))
+    assert.ok(!opisWarstwy(r, stat).includes(PAUZA))
+    assert.ok(!opisWarstwy(r, wGminach).includes(PAUZA))
   }
 })
 
