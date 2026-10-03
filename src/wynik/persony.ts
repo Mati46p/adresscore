@@ -12,6 +12,20 @@ export const BIZNESY = [
   { id: 'gastronomia', nazwa: 'Gastronomia', konkurencja: 'gastronomia_odleglosc' },
   { id: 'apteka', nazwa: 'Apteka', konkurencja: 'apteka_odleglosc' },
   { id: 'weterynarz', nazwa: 'Gabinet weterynaryjny', konkurencja: 'weterynarz_odleglosc' },
+  { id: 'kwiaciarnia', nazwa: 'Kwiaciarnia', konkurencja: 'kwiaciarnia_odleglosc' },
+  { id: 'kosmetyczka', nazwa: 'Salon kosmetyczny', konkurencja: 'kosmetyczka_odleglosc' },
+  { id: 'silownia', nazwa: 'Siłownia lub fitness', konkurencja: 'silownia_odleglosc' },
+  { id: 'restauracja', nazwa: 'Restauracja lub fast food', konkurencja: 'restauracja_odleglosc' },
+  { id: 'dentysta', nazwa: 'Gabinet stomatologiczny', konkurencja: 'dentysta_odleglosc' },
+  { id: 'optyk', nazwa: 'Optyk', konkurencja: 'optyk_odleglosc' },
+  { id: 'drogeria', nazwa: 'Drogeria', konkurencja: 'drogeria_odleglosc' },
+  { id: 'cukiernia', nazwa: 'Cukiernia', konkurencja: 'cukiernia_odleglosc' },
+  { id: 'mieso', nazwa: 'Sklep mięsny', konkurencja: 'mieso_odleglosc' },
+  { id: 'warzywniak', nazwa: 'Warzywniak', konkurencja: 'warzywniak_odleglosc' },
+  { id: 'pralnia', nazwa: 'Pralnia', konkurencja: 'pralnia_odleglosc' },
+  { id: 'zoologiczny', nazwa: 'Sklep zoologiczny', konkurencja: 'zoologiczny_odleglosc' },
+  { id: 'bar', nazwa: 'Bar lub pub', konkurencja: 'bar_odleglosc' },
+  { id: 'lodziarnia', nazwa: 'Lodziarnia', konkurencja: 'lodziarnia_odleglosc' },
 ] as const
 export type RodzajBiznesu = (typeof BIZNESY)[number]['id']
 export const RODZAJ_BIZNESU_DOMYSLNY: RodzajBiznesu = 'sklep'
