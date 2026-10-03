@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 import type { Adres, WskaznikMeta } from '../kontrakty/index.ts'
 import { policzLuki, progLuki, stanLuki } from './luki.ts'
+import { plikOkolic } from './okoliceTestowe.ts'
 import {
   grupujHeksy,
   literaZWyniku,
@@ -343,6 +344,101 @@ describe('bilans domyka się (#98)', () => {
   it('okolice poza Krakowem liczą się jako gmina', () => {
     const w = symuluj(b, scenariusze[1] as Obiekt[])
     assert.ok(w.okolice.every((o) => o.id === `${o.typ}:${o.nazwa}`))
+  })
+})
+
+// Okolice z okolice.json (#185): bilans liczy się na jednostkach SIM i miejscowościach,
+// a przy nazwie stoi liczba adresów okolicy.
+describe('bilans na okolicach z okolice.json (#185)', () => {
+  const bok = 40
+  const m = miasto(bok, 45, 3)
+  // Pasy jak w `miasto()`: dwie jednostki SIM w Krakowie, trzeci pas to miejscowość w gminie.
+  const kolumna = m.adresy.map((_, i) => {
+    const x = i % bok
+    return x < bok / 3 ? 'sim-1002' : x < (2 * bok) / 3 ? 'sim-101' : 'm-1219053-wieliczka'
+  })
+  const okolice = plikOkolic(kolumna)
+  const b = przygotujBaze({
+    adresy: m.adresy,
+    grupy: grupujHeksy(m.adresy.map((a) => a.h3)),
+    wskazniki: m.wskazniki,
+    wagi: m.wagi,
+    okolice,
+  })
+  const obiekty: Obiekt[] = [
+    { typ: 'przedszkole', lon: RYNEK.lon - 400 * M_LON, lat: RYNEK.lat + 100 * M_LAT },
+    { typ: 'przystanek', lon: RYNEK.lon + 300 * M_LON, lat: RYNEK.lat - 200 * M_LAT },
+    { typ: 'przystanek', lon: RYNEK.lon + 700 * M_LON, lat: RYNEK.lat + 500 * M_LAT },
+  ]
+
+  it('baza ma okolice z pliku, każda z liczbą swoich adresów (suma = wszystkie adresy)', () => {
+    assert.deepEqual(b.okolice.map((o) => o.id).sort(), [
+      'm-1219053-wieliczka',
+      'sim-1002',
+      'sim-101',
+    ])
+    for (const o of b.okolice) {
+      assert.equal(o.liczbaAdresow, kolumna.filter((id) => id === o.id).length, o.id)
+    }
+    assert.equal(
+      b.okolice.reduce((s, o) => s + o.liczbaAdresow, 0),
+      m.adresy.length,
+    )
+    assert.equal(b.okolice.find((o) => o.id === 'sim-101')?.numer, 'I.1')
+    assert.equal(b.okolice.find((o) => o.id === 'm-1219053-wieliczka')?.typ, 'miejscowosc')
+  })
+
+  it('suma okolic = nagłówek, a bilans okolicy niesie jej liczbę adresów', () => {
+    const w = symuluj(b, obiekty)
+    assert.ok(w.okolice.length > 0)
+    assert.equal(
+      w.okolice.reduce((s, o) => s + o.awans, 0),
+      w.awans,
+    )
+    assert.equal(
+      w.okolice.reduce((s, o) => s + o.spadek, 0),
+      w.spadek,
+    )
+    for (const l of w.luki) {
+      assert.equal(
+        w.okolice.reduce((s, o) => s + (o.wychodzi[l.warstwa] ?? 0), 0),
+        l.wychodzi,
+        `wyjście z luki ${l.warstwa}`,
+      )
+    }
+    for (const o of w.okolice) {
+      assert.equal(o.liczbaAdresow, b.okolice.find((x) => x.id === o.id)?.liczbaAdresow, o.id)
+      assert.ok(o.awans <= o.liczbaAdresow, `${o.id}: awans nie może przekroczyć liczby adresów`)
+    }
+  })
+
+  it('bez pliku okolic zapas: dzielnice i gminy, nadal z liczbą adresów', () => {
+    const zapas = przygotujBaze({
+      adresy: m.adresy,
+      grupy: grupujHeksy(m.adresy.map((a) => a.h3)),
+      wskazniki: m.wskazniki,
+      wagi: m.wagi,
+    })
+    assert.ok(zapas.okolice.every((o) => o.id === `${o.typ}:${o.nazwa}`))
+    assert.equal(
+      zapas.okolice.reduce((s, o) => s + o.liczbaAdresow, 0),
+      m.adresy.length,
+    )
+  })
+
+  it('okolice z pliku nie zmieniają wyniku symulacji, tylko jego podział na okolice', () => {
+    const zapas = przygotujBaze({
+      adresy: m.adresy,
+      grupy: grupujHeksy(m.adresy.map((a) => a.h3)),
+      wskazniki: m.wskazniki,
+      wagi: m.wagi,
+    })
+    const zPliku = symuluj(b, obiekty)
+    const bez = symuluj(zapas, obiekty)
+    assert.equal(zPliku.awans, bez.awans)
+    assert.equal(zPliku.spadek, bez.spadek)
+    assert.equal(zPliku.zasieg, bez.zasieg)
+    assert.deepEqual(zPliku.luki, bez.luki)
   })
 })
 

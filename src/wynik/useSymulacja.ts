@@ -41,6 +41,7 @@ function bazaDla(dane: Dane, wagi: Readonly<Record<string, number>>, kierunki: K
     wskazniki: dane.wskazniki,
     wagi,
     kierunki,
+    okolice: dane.okolice,
   })
   ostatniaBaza = { dane, wagi, kierunki, baza }
   return baza

@@ -2,12 +2,22 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { describe, it } from 'node:test'
-import type { Adres, PlikAdresow, PlikWskaznika, WskaznikMeta } from '../kontrakty/index.ts'
+import type {
+  Adres,
+  PlikAdresow,
+  PlikOkolic,
+  PlikWskaznika,
+  WskaznikMeta,
+} from '../kontrakty/index.ts'
 import { type LukaOkolicy, PROGI_LUK, policzLuki, type WynikLuk } from './luki.ts'
+import { plikOkolic } from './okoliceTestowe.ts'
 import {
   kierunekRankingu,
+  liczbaAdresowOkolicy,
   odmianaAdresow,
+  opisOkolicy,
   pasekLuki,
+  podpisOkolicy,
   podstawaUdzialu,
   posortujOkolice,
   procentUdzialu,
@@ -108,6 +118,77 @@ describe('rankingLuk – suma i nagłówek', () => {
   it('bez myślnika-pauzy w tekstach', () => {
     const r = rankingLuk(w, 'udzial')
     assert.doesNotMatch(`${r.kierunek} ${r.naglowek.podpis} ${r.naglowek.podstawa}`, /—/)
+  })
+})
+
+// Okolice z okolice.json (#185): rodzaj podpisany, liczba adresów przy nazwie.
+describe('okolice w rankingu: podpis rodzaju i liczba adresów', () => {
+  const sim = { typ: 'sim', numer: 'VIII.3', dzielnica: 'VIII Dębniki' } as const
+  const miejscowosc = { typ: 'miejscowosc', gmina: 'Wieliczka' } as const
+
+  it('liczba adresów z odmianą i pełnym zapisem', () => {
+    assert.equal(liczbaAdresowOkolicy(1), '1 adres')
+    assert.equal(liczbaAdresowOkolicy(10), '10 adresów')
+    assert.equal(liczbaAdresowOkolicy(447), '447 adresów')
+    assert.match(liczbaAdresowOkolicy(2323), /^2\s?323 adresy$/)
+    assert.match(liczbaAdresowOkolicy(70217), /^70\s217 adresów$/)
+  })
+
+  it('podpis: jednostka SIM z numerem i dzielnicą, miejscowość z gminą', () => {
+    assert.equal(podpisOkolicy(sim), 'jednostka SIM VIII.3, dzielnica VIII Dębniki')
+    assert.equal(podpisOkolicy(miejscowosc), 'miejscowość, gmina Wieliczka')
+    assert.equal(podpisOkolicy({ typ: 'gmina' }), 'gmina')
+    // Dzielnica z zapasu i okolica „brak”: nazwa mówi sama za siebie.
+    assert.equal(podpisOkolicy({ typ: 'dzielnica' }), null)
+    assert.equal(podpisOkolicy({ typ: 'brak' }), null)
+  })
+
+  it('opis pod nazwą = podpis rodzaju i liczba adresów, także bez podpisu', () => {
+    assert.equal(
+      opisOkolicy(sim, 447),
+      'jednostka SIM VIII.3, dzielnica VIII Dębniki · 447 adresów',
+    )
+    assert.equal(opisOkolicy(miejscowosc, 1), 'miejscowość, gmina Wieliczka · 1 adres')
+    assert.equal(opisOkolicy({ typ: 'dzielnica' }, 5), '5 adresów')
+    assert.doesNotMatch(opisOkolicy(sim, 447), /—/)
+  })
+
+  it('wiersze rankingu z okolice.json niosą opis z liczbą adresów okolicy', () => {
+    const okolice = plikOkolic([
+      'sim-101',
+      'sim-101',
+      'sim-102',
+      'sim-1002',
+      'sim-1002',
+      'm-1206063-liszki',
+      'm-1206063-kaszow',
+      null,
+    ])
+    const w = policzLuki(przystanek, adresy, undefined, okolice) as WynikLuk
+    sprawdzSumeNaglowka(w)
+    const wiersze = rankingLuk(w, 'liczba').wiersze
+    const opis = (id: string) => wiersze.find((o) => o.id === id)?.opis
+    assert.equal(opis('sim-101'), 'jednostka SIM I.1, dzielnica I Stare Miasto · 2 adresy')
+    assert.equal(opis('sim-1002'), 'jednostka SIM X.2, dzielnica X Swoszowice · 2 adresy')
+    assert.equal(opis('m-1206063-liszki'), 'miejscowość, gmina Liszki · 1 adres')
+    assert.equal(opis('brak'), '1 adres')
+    for (const o of wiersze) {
+      const okolica = w.okolice.find((x) => x.id === o.id) as LukaOkolicy
+      assert.ok(o.opis.endsWith(liczbaAdresowOkolicy(okolica.wszystkie)), o.id)
+    }
+  })
+
+  it('jednostek SIM i miejscowości nie da się pomylić: każdy wiersz ma podpis rodzaju', () => {
+    const okolice = plikOkolic(['sim-101', 'sim-1002', 'm-1206063-liszki', 'm-1219053-wieliczka'])
+    const w = policzLuki(
+      { meta: meta('przystanek_odleglosc'), wartosci: [100, 600, 700, 900] },
+      adresy.slice(0, 4),
+      undefined,
+      okolice,
+    ) as WynikLuk
+    for (const o of rankingLuk(w, 'udzial').wiersze) {
+      assert.match(o.opis, /^(jednostka SIM|miejscowość)/, o.id)
+    }
   })
 })
 
@@ -212,8 +293,23 @@ describe('rankingLuk na prawdziwych danych', () => {
     h3: k.h3[i] ?? '',
   }))
   const grupy = grupujHeksy(k.h3)
+  const okolice = czytaj<PlikOkolic>('okolice.json')
 
   for (const id of Object.keys(PROGI_LUK)) {
+    it(`${id}: z okolice.json suma „w luce” = liczba w nagłówku, każdy wiersz z liczbą adresów`, () => {
+      const plik = czytaj<PlikWskaznika>(`wskazniki/${id}.json`)
+      const w = policzLuki(plik, prawdziwe, grupy, okolice)
+      if (plik.meta.atrapa) {
+        assert.equal(w, null)
+        return
+      }
+      assert.ok(w)
+      sprawdzSumeNaglowka(w)
+      for (const o of rankingLuk(w, 'liczba').wiersze) {
+        assert.match(o.opis, /^(jednostka SIM|miejscowość, gmina) .*\d+ adres/, o.id)
+      }
+    })
+
     it(`${id}: suma „w luce” = liczba w nagłówku`, () => {
       const plik = czytaj<PlikWskaznika>(`wskazniki/${id}.json`)
       const w = policzLuki(plik, prawdziwe, grupy)

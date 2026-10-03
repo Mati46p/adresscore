@@ -1,5 +1,5 @@
 import type { JSX } from 'react'
-import { liczbaPelna, odmianaAdresow } from '@/wynik/rankingLuk'
+import { liczbaPelna, odmianaAdresow, opisOkolicy } from '@/wynik/rankingLuk'
 import type { WynikSymulacji } from '@/wynik/symulacja'
 
 export interface BilansSymulacjiProps {
@@ -105,7 +105,7 @@ export function BilansSymulacji({ tytul, wynik, aktywny }: BilansSymulacjiProps)
               <tr key={o.id}>
                 <th scope="row">
                   {o.nazwa}
-                  {o.typ === 'gmina' && <span className="bilans__typ"> gmina</span>}
+                  <span className="bilans__typ">{opisOkolicy(o, o.liczbaAdresow)}</span>
                 </th>
                 <td className="bilans__num">{liczbaPelna(o.awans)}</td>
                 <td className="bilans__num">{liczbaPelna(sumaWyjsc(o.wychodzi))}</td>

@@ -9,7 +9,9 @@
 // - Podstawa udziału = wszystkie adresy jednostki (w luce + bez luki + brak danych).
 // - Warstwa z `meta.atrapa` nie daje wyniku: luka na wymyślonych danych to fałszywy wniosek.
 // - Liczymy adresy, nie mieszkańców – podpis „adresy”, dopóki nie wejdzie #74 albo #40.
-import type { Adres, WskaznikMeta } from '../kontrakty/index.ts'
+// - Adres bez okolicy (null w `okolice.json`) idzie do osobnej szarej okolicy `brak`, nie znika:
+//   suma okolic ma się równać liczbie w nagłówku.
+import type { Adres, PlikOkolic, WskaznikMeta } from '../kontrakty/index.ts'
 import type { GrupyHeksow, WskaznikPrzygotowany } from './silnik.ts'
 
 /** Podpis jednostki liczenia. Zmienić na „mieszkańcy” dopiero z #74 (zameldowania) albo #40 (GUS). */
@@ -161,18 +163,69 @@ export function progLuki(meta: WskaznikMeta): ProgLuki | null {
 
 // ── Okolice ──────────────────────────────────────────────────────────────────────────────
 
+/**
+ * Rodzaj okolicy. `sim` i `miejscowosc` to okolice z `okolice.json` (#75): jednostka SIM w Krakowie
+ * i miejscowość poza nim. `dzielnica` i `gmina` to zapas, gdy pliku nie ma. `brak` = adres bez okolicy.
+ */
+export type TypOkolicy = 'sim' | 'miejscowosc' | 'dzielnica' | 'gmina' | 'brak'
+
 export interface Okolica {
-  /** Klucz jednostki, np. „dzielnica:VI Bronowice” albo „gmina:Zabierzów”. */
+  /**
+   * Klucz okolicy: „sim-803”, „m-1219064-grabowki”; w zapasie „dzielnica:VI Bronowice” albo
+   * „gmina:Zabierzów”; „brak” dla adresu bez okolicy.
+   */
   id: string
   nazwa: string
-  typ: 'dzielnica' | 'gmina'
+  typ: TypOkolicy
+  /** Tylko `sim`: numer jednostki, np. „VIII.3”. */
+  numer?: string
+  /** Tylko `sim`: dzielnica Krakowa jak w adresy.json, np. „VIII Dębniki”. */
+  dzielnica?: string
+  /** Tylko `miejscowosc`: gmina, bo nazwy miejscowości powtarzają się między gminami. */
+  gmina?: string
+}
+
+/** Adres bez okolicy w `okolice.json` (null w kolumnie): szara okolica, nie „zero” i nie pominięcie. */
+const BRAK_OKOLICY: Okolica = Object.freeze({
+  id: 'brak',
+  nazwa: 'Bez przypisanej okolicy',
+  typ: 'brak',
+})
+
+function widokOkolicy(id: string, o: PlikOkolic['okolice'][string] | undefined): Okolica {
+  if (!o) return BRAK_OKOLICY
+  return o.rodzaj === 'sim'
+    ? { id, nazwa: o.nazwa, typ: 'sim', numer: o.numer, dzielnica: o.dzielnica }
+    : { id, nazwa: o.nazwa, typ: 'miejscowosc', gmina: o.gmina }
+}
+
+// Widoki okolic liczymy raz na plik: `okolicaAdresu` woła się dla każdego z 176 tys. adresów.
+const WIDOKI_OKOLIC = new WeakMap<PlikOkolic, readonly Okolica[]>()
+
+function widokiOkolic(plik: PlikOkolic): readonly Okolica[] {
+  let widoki = WIDOKI_OKOLIC.get(plik)
+  if (!widoki) {
+    widoki = plik.idOkolic.map((id) => widokOkolicy(id, plik.okolice[id]))
+    WIDOKI_OKOLIC.set(plik, widoki)
+  }
+  return widoki
 }
 
 /**
- * Okolica adresu. Docelowo jednostka SIM z #75; do tego czasu dzielnica Krakowa,
- * a poza Krakowem cała gmina obwarzanka.
+ * Okolica adresu. Z `okolice` (plik `okolice.json`) i indeksem `i` adresu w adresy.json to jednostka
+ * SIM w Krakowie albo miejscowość poza nim: `okolice.okolice[okolice.idOkolic[kolumna[i]]]`;
+ * null w kolumnie = `brak` (szara okolica). Bez pliku (nie wczytał się albo jest z innej wersji
+ * adresów) zapas, czyli dawne zachowanie: dzielnica Krakowa, a poza Krakowem cała gmina.
  */
-export function okolicaAdresu(a: Pick<Adres, 'dzielnica' | 'gmina'>): Okolica {
+export function okolicaAdresu(
+  a: Pick<Adres, 'dzielnica' | 'gmina'>,
+  i?: number,
+  okolice?: PlikOkolic | null,
+): Okolica {
+  if (okolice && i !== undefined) {
+    const p = okolice.kolumny.okolica[i]
+    return (p === null || p === undefined ? undefined : widokiOkolic(okolice)[p]) ?? BRAK_OKOLICY
+  }
   if (a.dzielnica) return { id: `dzielnica:${a.dzielnica}`, nazwa: a.dzielnica, typ: 'dzielnica' }
   return { id: `gmina:${a.gmina}`, nazwa: a.gmina, typ: 'gmina' }
 }
@@ -243,17 +296,20 @@ function zamknij(l: Licznik): LiczbyLuki {
  * Luki jednej warstwy w podziale na okolice i heksy. Null, gdy warstwa jest atrapą albo
  * nie ma progu luki (`progLuki`). Adresy poza długością `wartosci` liczą się jako brak danych.
  * `grupy` (z `useDane`) tylko przyspiesza grupowanie heksów; bez nich grupujemy po `adres.h3`.
+ * `okolice` (z `useDane`, #185) to jednostki SIM i miejscowości; bez nich okolicą jest dzielnica
+ * albo gmina (`okolicaAdresu`). Kolejność `adresy` musi być kolejnością z adresy.json.
  */
 export function policzLuki(
   wskaznik: Pick<WskaznikPrzygotowany, 'meta' | 'wartosci' | 'niedostepny'>,
   adresy: readonly Pick<Adres, 'dzielnica' | 'gmina' | 'h3'>[],
   grupy?: GrupyHeksow,
+  okolice?: PlikOkolic | null,
 ): WynikLuk | null {
   const prog = progLuki(wskaznik.meta)
   if (!prog) return null
 
   const razem = nowyLicznik()
-  const okolice = new Map<string, { okolica: Okolica; licznik: Licznik }>()
+  const licznikiOkolic = new Map<string, { okolica: Okolica; licznik: Licznik }>()
   const zGrup = grupy !== undefined && grupy.indeksHeksu.length === adresy.length
   const heksyLicznik: Licznik[] = zGrup ? grupy.heksy.map(nowyLicznik) : []
   const heksyMapa = new Map<string, Licznik>()
@@ -263,11 +319,11 @@ export function policzLuki(
     const s = stanLuki(wskaznik.wartosci[i], prog)
     dolicz(razem, s)
 
-    const o = okolicaAdresu(a)
-    let wpis = okolice.get(o.id)
+    const o = okolicaAdresu(a, i, okolice)
+    let wpis = licznikiOkolic.get(o.id)
     if (!wpis) {
       wpis = { okolica: o, licznik: nowyLicznik() }
-      okolice.set(o.id, wpis)
+      licznikiOkolic.set(o.id, wpis)
     }
     dolicz(wpis.licznik, s)
 
@@ -293,7 +349,7 @@ export function policzLuki(
     for (const [h3, l] of heksyMapa) heksy.set(h3, zamknij(l))
   }
 
-  const listaOkolic = [...okolice.values()]
+  const listaOkolic = [...licznikiOkolic.values()]
     .map(({ okolica, licznik }): LukaOkolicy => ({ ...okolica, ...zamknij(licznik) }))
     .sort((a, b) => b.wLuce - a.wLuce || a.nazwa.localeCompare(b.nazwa, 'pl'))
 

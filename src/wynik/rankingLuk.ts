@@ -6,8 +6,11 @@
 // - Pasek udziału = % adresów jednostki (podstawa = wszystkie jej adresy), nie % największej pozycji.
 // - Jednostka bez żadnych danych (`udzial: null`) jest szara i stoi na końcu przy obu sortowaniach.
 // - Suma kolumny „w luce” = liczba w nagłówku panelu (pilnuje tego rankingLuk.test.ts).
+// - Okolice mają różną skalę (jednostka SIM z 10 adresami, miejscowość z 1000), więc przy nazwie
+//   stoi liczba adresów, a rodzaj okolicy (SIM czy miejscowość) jest podpisany – nie mieszamy ich
+//   bez słowa wyjaśnienia (#185).
 import type { WskaznikMeta } from '../kontrakty/index.ts'
-import type { LukaOkolicy, ProgLuki, WynikLuk } from './luki.ts'
+import type { LukaOkolicy, Okolica, ProgLuki, WynikLuk } from './luki.ts'
 
 export type SortowanieLuk = 'liczba' | 'udzial'
 
@@ -29,6 +32,46 @@ export function odmianaAdresow(n: number): 'adres' | 'adresy' | 'adresów' {
 /** Podstawa udziału: „z 1 adresu”, „z 4210 adresów”. */
 export function podstawaUdzialu(wszystkie: number): string {
   return `z ${liczbaPelna(wszystkie)} ${wszystkie === 1 ? 'adresu' : 'adresów'}`
+}
+
+/** Liczba adresów okolicy przy jej nazwie: „1 adres”, „447 adresów”, „2 323 adresy”. */
+export function liczbaAdresowOkolicy(n: number): string {
+  return `${liczbaPelna(n)} ${odmianaAdresow(n)}`
+}
+
+/**
+ * Podpis rodzaju okolicy w rankingach: „jednostka SIM VIII.3, dzielnica VIII Dębniki” albo
+ * „miejscowość, gmina Wieliczka” (nazwy miejscowości powtarzają się między gminami). Null, gdy
+ * nazwa mówi sama za siebie: dzielnica z zapasu i okolica „brak”.
+ */
+export function podpisOkolicy(
+  o: Pick<Okolica, 'typ' | 'numer' | 'dzielnica' | 'gmina'>,
+): string | null {
+  switch (o.typ) {
+    case 'sim':
+      return [
+        o.numer ? `jednostka SIM ${o.numer}` : 'jednostka SIM',
+        o.dzielnica ? `dzielnica ${o.dzielnica}` : null,
+      ]
+        .filter((c) => c !== null)
+        .join(', ')
+    case 'miejscowosc':
+      return o.gmina ? `miejscowość, gmina ${o.gmina}` : 'miejscowość'
+    case 'gmina':
+      return 'gmina'
+    default:
+      return null
+  }
+}
+
+/** Całość pod nazwą okolicy w tabeli: „jednostka SIM VIII.3, dzielnica VIII Dębniki · 1 234 adresy”. */
+export function opisOkolicy(
+  o: Pick<Okolica, 'typ' | 'numer' | 'dzielnica' | 'gmina'>,
+  liczbaAdresow: number,
+): string {
+  return [podpisOkolicy(o), liczbaAdresowOkolicy(liczbaAdresow)]
+    .filter((c) => c !== null)
+    .join(' · ')
 }
 
 /**
@@ -93,10 +136,12 @@ export function posortujOkolice(
 }
 
 export interface WierszLuki {
-  /** `okolicaAdresu(...).id` – to samo id dostaje mapa (#90) jako `okolicaDoPokazania`. */
+  /** `okolicaAdresu(...).id` („sim-803”, „m-…”) – to samo id dostaje mapa (#90) jako `okolicaDoPokazania`. */
   id: string
   nazwa: string
   typ: LukaOkolicy['typ']
+  /** Pod nazwą: rodzaj okolicy i liczba jej adresów (`opisOkolicy`), np. „miejscowość, gmina Liszki · 589 adresów”. */
+  opis: string
   wLuce: number
   wszystkie: number
   brakDanych: number
@@ -148,6 +193,7 @@ export function rankingLuk(
       id: o.id,
       nazwa: o.nazwa,
       typ: o.typ,
+      opis: opisOkolicy(o, o.wszystkie),
       wLuce: o.wLuce,
       wszystkie: o.wszystkie,
       brakDanych: o.brakDanych,
