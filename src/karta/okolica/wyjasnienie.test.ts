@@ -92,6 +92,32 @@ test('wartość z etykietą i rozdzielczość', () => {
   assert.equal(opisRozdzielczosci({ rozdzielczosc: 'gmina', rozmiar: 'gmina' }), 'gmina')
 })
 
+test('status MPZP pokazuje opis zamiast kodu 0/1', () => {
+  const meta = { ...warstwa('mpzp_status', null, 0).meta, jednostka: 'status' }
+  assert.equal(
+    opisWartosci(
+      warstwa('mpzp_status', null, 0, {
+        meta,
+        wartosc: 1,
+        etykieta: 'Plan obowiązuje: Bronowice',
+      }),
+    ),
+    'Plan obowiązuje: Bronowice',
+  )
+  assert.equal(
+    opisWartosci(
+      warstwa('mpzp_status', null, 0, {
+        meta,
+        wartosc: 0,
+        etykieta: 'Brak obowiązującego planu w punkcie adresu',
+      }),
+    ),
+    'Brak obowiązującego planu w punkcie adresu',
+  )
+  assert.equal(opisWartosci(warstwa('mpzp_status', null, 0, { meta, wartosc: 0 })), 'Nie')
+  assert.equal(opisWartosci(warstwa('mpzp_status', null, 0, { meta, wartosc: 1 })), 'Tak')
+})
+
 test('punkty z prawdziwym minusem, liczba warstw', () => {
   assert.equal(znakowanePunkty(13.6), '+14')
   assert.equal(znakowanePunkty(-6.7), '−7')

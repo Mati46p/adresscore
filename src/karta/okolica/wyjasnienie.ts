@@ -12,6 +12,12 @@ export function liczbaPL(v: number): string {
 /** „240 m – Rondo Mogilskie"; sama liczba z jednostką, gdy warstwa nie ma etykiety. */
 export function opisWartosci(w: Pick<RozbicieWarstwy, 'wartosc' | 'etykieta' | 'meta'>): string {
   if (w.wartosc === null) return 'brak danych'
+  if (w.meta.jednostka === 'status') {
+    if (w.etykieta) return w.etykieta
+    if (w.wartosc === 1) return 'Tak'
+    if (w.wartosc === 0) return 'Nie'
+    return `Status: ${liczbaPL(w.wartosc)}`
+  }
   const baza = `${liczbaPL(w.wartosc)} ${w.meta.jednostka}`.trim()
   return w.etykieta ? `${baza} – ${w.etykieta}` : baza
 }
