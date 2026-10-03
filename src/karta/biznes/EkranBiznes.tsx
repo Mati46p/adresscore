@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
-import { type BialaPlama, type OcenaMiejsca, type PunktUslugi, progNasycenia } from '@/wynik/biznes'
+import { type BialaPlama, type OcenaMiejsca, type PunktUslugi, progSkaliPlam } from '@/wynik/biznes'
+import { opisHeksuBiznesu } from '@/wynik/biznesOpis'
 import { useStan, ustawBranze, ustawPunktBiznesu } from '@/wynik/stan'
 import './biznes.css'
 
@@ -73,7 +74,7 @@ export function EkranBiznes() {
         const plamy = d.plamy as BialaPlama[]
         setHeksy(new Map(plamy.map((p) => [p.h3, p.skala])))
         setOpisy(new Map(plamy.map((p) => [p.h3, p])))
-        const prog = progNasycenia(plamy.map((p) => p.adresyNaPunkt))
+        const prog = progSkaliPlam(plamy)
         setSkala(['0', String(Math.round(prog / 2)), `${Math.round(prog)}+`])
         const { punktA: a, punktB: b } = punktyRef.current
         if (a) w.postMessage({ typ: 'ocen', id: 'a', punkt: a, wersja: d.wersja })
@@ -182,25 +183,13 @@ export function EkranBiznes() {
               postawionePunkty={postawione}
               onPrzesunPunkt={(id, lon, lat) => ustawPunktBiznesu(id, { lon, lat })}
               onKlik={postaw}
-              opisHeksu={(heksyR10, res) => {
-                const p = res === 10 ? opisy.get(heksyR10[0] ?? '') : undefined
-                const wartosci = heksyR10
-                  .map((h) => heksy.get(h))
-                  .filter((w): w is number => w != null)
-                const wartosc = wartosci.length
-                  ? wartosci.reduce((a, b) => a + b, 0) / wartosci.length
-                  : null
-                if (!p && wartosc === null) return 'Brak danych'
-                return p
-                  ? Math.round(p.adresyNaPunkt) +
-                      ' adresów na punkt · ' +
-                      p.konkurenci +
-                      ' punktów · najbliżej: ' +
-                      (p.konkurenci === 0
-                        ? 'brak punktu w zasięgu'
-                        : (p.najblizszyKonkurent ?? 'punkt bez nazwy'))
-                  : 'Indeks luki: ' + Math.round(wartosc ?? 0) + '/100'
-              }}
+              opisHeksu={(heksyR10, res) =>
+                opisHeksuBiznesu(
+                  heksyR10.flatMap((h) => opisy.get(h) ?? []),
+                  res,
+                  meta?.zasiegM ?? 0,
+                )
+              }
               etykietySkali={skala}
             />
           </Suspense>
@@ -296,7 +285,7 @@ function Ocena({
       {ocena ? (
         <>
           <div className="biznes-glowna">
-            <strong>{ocena.percentyl}%</strong>
+            <strong>{ocena.percentyl === null ? 'brak' : ocena.percentyl + '%'}</strong>
             <span>percentyl indeksu popytu na tle istniejących punktów tej branży</span>
           </div>
           <dl>
@@ -326,7 +315,7 @@ function Ocena({
             </div>
           </dl>
           <p className="biznes-czynniki">
-            {ocena.percentyl >= 70
+            {(ocena.percentyl ?? 0) >= 70
               ? 'Za: wysoka pozycja na tle istniejących punktów.'
               : 'Przeciw: umiarkowana pozycja na tle istniejących punktów.'}{' '}
             {ocena.odlegloscKonkurenta !== null
