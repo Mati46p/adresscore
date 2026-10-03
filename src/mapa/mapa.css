@@ -13,27 +13,23 @@
 .mapa-ustawienia {
   position: absolute;
   z-index: 2;
-  top: 12px;
-  left: 12px;
+  top: 8px;
+  left: 8px;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px 12px;
-  max-width: calc(100% - 24px);
-  padding: 7px 10px;
+  gap: 4px 7px;
+  max-width: calc(100% - 16px);
+  padding: 4px 7px;
   border: 1px solid #dde1e4;
   border-radius: 10px;
   background: rgb(255 255 255 / 0.96);
   box-shadow: 0 2px 8px rgb(24 32 43 / 0.1);
-  font-size: 13px;
-}
-.mapa-ustawienia__tytul {
-  font-weight: 700;
-  white-space: nowrap;
+  font-size: 12px;
 }
 .mapa-ustawienia__suwak {
-  width: clamp(120px, 18vw, 220px);
-  height: 44px;
+  width: clamp(90px, 13vw, 150px);
+  height: 36px;
   margin: 0;
   accent-color: #1f5c46;
   cursor: pointer;
@@ -43,7 +39,7 @@
   outline-offset: 2px;
 }
 .mapa-ustawienia__wartosc {
-  min-width: 4ch;
+  min-width: 3.5ch;
   text-align: right;
   font-variant-numeric: tabular-nums;
   font-weight: 600;
@@ -54,8 +50,8 @@
 .mapa-ustawienia__warstwy > summary {
   display: flex;
   align-items: center;
-  min-height: 44px;
-  padding: 0 10px;
+  min-height: 36px;
+  padding: 0 8px;
   border: 1px solid #929da5;
   border-radius: 7px;
   background: #fff;

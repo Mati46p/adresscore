@@ -535,7 +535,6 @@ export function MapaKrakowa({
       />
       {etap === 'miasto' && (
         <div className="mapa-ustawienia" role="group" aria-label="Ustawienia mapy">
-          <span className="mapa-ustawienia__tytul">Ustawienia mapy</span>
           <label htmlFor={idKrycia}>Krycie heksów</label>
           <input
             id={idKrycia}
@@ -552,7 +551,7 @@ export function MapaKrakowa({
             {krycieHeksow}%
           </output>
           <details className="mapa-ustawienia__warstwy">
-            <summary>Warstwy podkładu</summary>
+            <summary title="Warstwy podkładu">Warstwy</summary>
             <div className="mapa-ustawienia__warstwy-lista">
               {GRUPY_PODKLADU.map(({ id, etykieta }) => (
                 <button
