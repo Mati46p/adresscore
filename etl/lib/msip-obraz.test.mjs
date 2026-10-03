@@ -22,7 +22,10 @@ test('czyBladCertyfikatu: rozpoznaje odrzucony certyfikat, nie zwykłe awarie si
     czyBladCertyfikatu({ message: 'fetch failed', cause: { code: 'ECONNRESET' } }),
     false,
   )
+  assert.equal(czyBladCertyfikatu({ code: 'DEPTH_ZERO_SELF_SIGNED_CERT' }), true)
   assert.equal(czyBladCertyfikatu({ message: 'https://msip.um.krakow.pl/x → 503' }), false)
+  // w komunikacie bywa cały URL: przypadkowe „cert” czy „ssl” w adresie nie jest błędem certyfikatu
+  assert.equal(czyBladCertyfikatu({ message: 'https://msip.um.krakow.pl/ssl/cert → 503' }), false)
   assert.equal(czyBladCertyfikatu(new Error('The operation was aborted due to timeout')), false)
 })
 

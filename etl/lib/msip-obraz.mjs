@@ -10,11 +10,12 @@ const NAGLOWKI = { 'User-Agent': 'adresscore-etl/1.0 (HackYeah 2026; https://adr
 const BLEDY_CERTYFIKATU = /CERT|SSL|SELF[_-]SIGNED|UNABLE_TO_VERIFY|ISSUER/i
 const agentBezWeryfikacji = new https.Agent({ rejectUnauthorized: false })
 
-/** Czy błąd z `fetch` to odrzucony certyfikat (a nie np. zerwane połączenie albo HTTP 5xx). */
+/**
+ * Czy błąd z `fetch` to odrzucony certyfikat (a nie np. zerwane połączenie albo HTTP 5xx). Powód
+ * siedzi w `cause`; `message` pomijamy, bo bywa w nim cały URL, a ten mógłby przypadkiem pasować.
+ */
 export const czyBladCertyfikatu = (blad) =>
-  BLEDY_CERTYFIKATU.test(
-    `${blad?.cause?.code ?? ''} ${blad?.cause?.message ?? ''} ${blad?.message}`,
-  )
+  BLEDY_CERTYFIKATU.test(`${blad?.cause?.code ?? blad?.code ?? ''} ${blad?.cause?.message ?? ''}`)
 
 function pobierzBezWeryfikacji(url, limitMs) {
   return new Promise((resolve, reject) => {
@@ -37,12 +38,13 @@ function pobierzBezWeryfikacji(url, limitMs) {
 export async function pobierzBajtyMsip(url, limitMs = 180_000) {
   if (new URL(url).hostname !== HOST_MSIP)
     throw new Error(`Pobieranie dozwolone tylko z ${HOST_MSIP}: ${url}`)
+  let odp
   try {
-    const odp = await fetch(url, { headers: NAGLOWKI, signal: AbortSignal.timeout(limitMs) })
-    if (!odp.ok) throw new Error(`${url} → ${odp.status}`)
-    return Buffer.from(await odp.arrayBuffer())
+    odp = await fetch(url, { headers: NAGLOWKI, signal: AbortSignal.timeout(limitMs) })
   } catch (blad) {
     if (!czyBladCertyfikatu(blad)) throw blad
     return pobierzBezWeryfikacji(url, limitMs)
   }
+  if (!odp.ok) throw new Error(`${url} → ${odp.status}`)
+  return Buffer.from(await odp.arrayBuffer())
 }
