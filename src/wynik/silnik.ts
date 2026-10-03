@@ -94,9 +94,26 @@ export function zbudujSkale(meta: WskaznikMeta, wartosci: readonly (number | nul
 
 /** Kierunek, który faktycznie liczy ocenę; null = wskaźnik nie wchodzi do wyniku. */
 export function kierunekEfektywny(meta: WskaznikMeta, kierunki?: Kierunki): KierunekOceny | null {
-  if (meta.kategoria === 'kontekst') return null
+  if (meta.kategoria === 'kontekst' && !KONTEKST_DO_WYNIKU[meta.id]) return null
+  // Atrapa ceny nie może zmienić prawdziwego wyniku, nawet przez stare ustawienia w URL.
+  if (meta.id === 'cena_m2_mediana' && meta.atrapa) return null
   const k = kierunki?.[meta.id] ?? meta.kierunek
+  if (
+    k === 'optimum' &&
+    (meta.id === 'sct_w_strefie' || meta.id === 'spp_podstrefa' || KONTEKST_DO_WYNIKU[meta.id])
+  )
+    return null
   return k === 'neutralny' ? null : k
+}
+
+/** Jedynie te fakty z kontekstu mogą być dobrowolnie oceniane. */
+export const KONTEKST_DO_WYNIKU: Readonly<Record<string, KategoriaId>> = {
+  cena_m2_mediana: 'przyszlosc',
+  drzewa_100m: 'codziennosc',
+}
+
+function kategoriaWarstwy(meta: WskaznikMeta, liczona: boolean): KategoriaId {
+  return liczona ? (KONTEKST_DO_WYNIKU[meta.id] ?? meta.kategoria) : meta.kategoria
 }
 
 /** Ocena 0–100, gdzie 100 = najlepiej. Brak danych albo brak kierunku → null, nigdy 0. */
@@ -236,10 +253,11 @@ export function wynikAdresu(
   let sumaWszystkich = 0
   let sumaZDanymi = 0
   const surowe = wskazniki.map((w) => {
-    const kierunek = kierunekEfektywny(w.meta, kierunki)
+    const wu = wagaUzytkownika(wagi, w.meta.id)
+    const kierunek =
+      w.meta.kategoria === 'kontekst' && wu === 0 ? null : kierunekEfektywny(w.meta, kierunki)
     const wartosc = w.wartosci[i] ?? null
     const ocena = kierunek ? ocenyWskaznika(w, kierunek)[i] : Number.NaN
-    const wu = wagaUzytkownika(wagi, w.meta.id)
     const liczona = kierunek !== null && wu > 0
     const maDane = ocena !== undefined && !Number.isNaN(ocena)
     if (liczona) {
@@ -254,7 +272,7 @@ export function wynikAdresu(
     return {
       id: s.w.meta.id,
       meta: s.w.meta,
-      kategoria: s.w.meta.kategoria,
+      kategoria: kategoriaWarstwy(s.w.meta, s.liczona),
       wartosc: s.wartosc,
       etykieta: s.w.etykiety?.[i] ?? null,
       ocena: s.ocena,
