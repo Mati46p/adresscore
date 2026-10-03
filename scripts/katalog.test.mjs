@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 import { gunzipSync } from 'node:zlib'
 import handler from '../api/seo.js'
+import { odczytajPreferencje, polaczPreferencje, zapiszPreferencje } from '../src/wynik/sesja.ts'
 import { czytajHash } from '../src/wynik/url.ts'
 
 const indeks = JSON.parse(
@@ -65,4 +66,32 @@ test('stary link hash nadal rozpoznaje adres i ustawienia', () => {
   assert.equal(url.ekran, 'okolica')
   assert.equal(url.idAdresu, id)
   assert.equal(url.tryb, 'kupuje')
+})
+
+test('preferencje sesji przeżywają czysty link, a parametry starego linku wygrywają', () => {
+  const mapa = new Map()
+  const poprzedni = globalThis.sessionStorage
+  globalThis.sessionStorage = {
+    getItem: (klucz) => mapa.get(klucz) ?? null,
+    setItem: (klucz, wartosc) => mapa.set(klucz, wartosc),
+  }
+  try {
+    const zapis = czytajHash(
+      '#/?t=wynajmuje&u=%7B%22v%22%3A1%2C%22w%22%3A%7B%22test%22%3A4%7D%2C%22k%22%3A%7B%7D%7D',
+    )
+    zapiszPreferencje(zapis)
+    const odczyt = odczytajPreferencje()
+    assert.ok(odczyt)
+    const czysty = polaczPreferencje(czytajHash(''), '', odczyt)
+    assert.equal(czysty.tryb, 'wynajmuje')
+    assert.equal(czysty.ustawienia.wagi.test, 4)
+    const staryHash = '#/adres/1?p=senior&t=kupuje&f='
+    const stary = polaczPreferencje(czytajHash(staryHash), staryHash, odczyt)
+    assert.equal(stary.persona, 'senior')
+    assert.equal(stary.tryb, 'kupuje')
+    assert.equal(stary.ustawienia, null)
+    assert.deepEqual(stary.filtry, [])
+  } finally {
+    globalThis.sessionStorage = poprzedni
+  }
 })

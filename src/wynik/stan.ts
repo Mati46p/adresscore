@@ -1,7 +1,6 @@
 // Stan aplikacji bez biblioteki: jeden obiekt niemutowalny + subskrybenci, czytany przez
 // useSyncExternalStore. Wystarcza na kilka pól, a równoległe okna nie dokładają zależności.
-// Hash URL trzyma to, co warto udostępnić linkiem: ekran, wybrany adres, persona, tryb, porównanie,
-// twarde filtry.
+// Kanoniczne ścieżki trzymają adres i katalog; preferencje pozostają w sesji przeglądarki.
 
 import { useSyncExternalStore } from 'react'
 import type { Adres, WskaznikMeta } from '@/kontrakty'
@@ -13,6 +12,7 @@ import {
   type Tryb,
   ustawieniaPersony,
 } from './persony.ts'
+import { odczytajPreferencje, polaczPreferencje, zapiszPreferencje } from './sesja.ts'
 import type { KierunekOceny, Kierunki } from './silnik.ts'
 import { hashAdresu, hashZeSluga, slugAdresu } from './slug.ts'
 import { czytajHash, type Ekran, MAKS_POROWNANIE, type StanUrl, zapiszHash } from './url.ts'
@@ -79,6 +79,7 @@ export function subskrybuj(sluchacz: () => void): () => void {
 function zmien(latka: Partial<StanAplikacji>) {
   const poprzedni = stan
   stan = { ...stan, ...latka }
+  if (idAdresow) zapiszPreferencje(doUrl(stan))
   zapiszDoUrl(poprzedni)
   for (const s of sluchacze) s()
 }
@@ -285,7 +286,7 @@ function doUrl(s: StanAplikacji): StanUrl {
 }
 
 function czytajBiezacyUrl(): StanUrl {
-  const url = czytajHash(location.hash)
+  const url = polaczPreferencje(czytajHash(location.hash), location.hash, odczytajPreferencje())
   const sciezka = location.pathname
   if (sciezka === '/katalog' || sciezka.startsWith('/katalog/')) {
     return { ...url, ekran: 'katalog', idAdresu: null }
