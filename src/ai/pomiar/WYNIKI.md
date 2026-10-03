@@ -680,6 +680,49 @@ Jak to czytać – wprost:
 - Przeliczenie progu tematu z tych samych odpowiedzi (bez nowych wywołań): 0,5 – pokrycie 69%
   i 2 fałszywe dodatki; 0,9 – pokrycie 60% i 0 fałszywych dodatków. Progu nie zmieniałem.
 
+### Przekrój pomocniczy: tylko pisane
+
+Pole w aplikacji jest **pisane**, nie dyktowane, więc pułapki, które są zjawiskiem mowy
+(poprawianie się w pół zdania), są w nim mało realne. Przekrój „tylko pisane” pomija takie
+pozycje; **wynik nagłówkowy to nadal pełny zbiór wyżej**. Bez nowych wywołań i bez zmian
+w zbiorach ani etykietach: `pomiar.ts --zbior kontrolny2 --z-pliku <zapisany przebieg>
+--tylko-pisane` przelicza ten sam zapisany przebieg (przeliczenie pełnego zbioru z pliku daje
+dokładnie liczby wyżej). Lista pominiętych: `MOWIONE` w `pomiar.ts`.
+
+Jak wybrałem pozycje: z cech zbioru pasuje tylko `sprzecznosc` (zbiór nr 2: K2-A10, K2-A29;
+zbiór nr 1: K-A13, K-A24) – przeczytałem tylko te cztery teksty, a w pozostałych tekstach
+szukałem automatycznie znaczników samokorekty („no dobra”, „to znaczy”, „właściwie”, „albo nie”…),
+wypisując tylko trafienia.
+
+| Pozycja | Decyzja | Dlaczego |
+|---|---|---|
+| K2-A10 | **pominięta** | samokorekta w pół zdania: „nie potrzebuję auta… no dobra, auto mamy” |
+| K2-A29 | zostaje | dwie potrzeby naraz (dziecko lubi park, ja mam astmę), „wiem wiem” – da się tak napisać |
+| K-A13 | zostaje | sprzeczne życzenia (centrum i cisza) – da się tak napisać |
+| K-A24 | zostaje | sprzeczne życzenia (lotnisko blisko, bez hałasu samolotów) – da się tak napisać |
+| K2-A04 | zostaje | fałszywe trafienie wyszukiwania („…mnie nie obchodzi”), nie samokorekta |
+
+Cechy typowe dla pisania (bez polskich znaków, literówki, slang, cudza sytuacja, hipoteza,
+przeszłość) zostają w obu przekrojach. W pytaniach B (oba zbiory) i w zbiorze nr 1 nic nie
+pominąłem, więc tam „tylko pisane” = pełny zbiór.
+
+Zbiór nr 2, A – „opisz siebie”, pełny (30) vs tylko pisane (29):
+
+| | Reguły – pełny | Reguły – pisane | **JEV – pełny** | **JEV – pisane** |
+|---|---|---|---|---|
+| Profil trafiony | 67% | 66% | 67% | 66% |
+| Potrzeby (10) – P / R / F1 | 77 / 57 / 66% | 76 / 58 / 66% | 84 / 79 / 81% | 83 / 78 / 80% |
+| Potrzeby – F1 na wszystkich 15 | 64% | 64% | 71% | 70% |
+| Kategorie ważne – F1 | 75% | 75% | 81% | 81% |
+| Cały opis zrozumiany dokładnie | 27% (8/30) | 28% (8/29) | 47% (14/30) | 45% (13/29) |
+
+Zbiór nr 2, B – bez zmian (nic nie pominięte): reguły 60% / JEV 96% warstwy głównej, pokrycie
+złożonych 69% / 69%, precyzja 94% / 93%.
+
+Wniosek: pominięcie jedynej pozycji „mówionej” niczego nie zmienia – K2-A10 JEV zrozumiał
+dokładnie, reguły nie, więc bez niej JEV wypada o włos gorzej, a nie lepiej. Wynik na zbiorze nr 2
+nie wisi na pułapkach mowy.
+
 ### Zbiór kontrolny nr 1 – dla odniesienia (użyty do wyboru części)
 
 Na tym zbiorze wybierałem części, więc to nie jest dowód. JEV: wynik z #147 przeniesiony (patrz
@@ -735,7 +778,8 @@ było; sprawdzenie zgodności z #147 i liczby reguł są bez sieci.
 Liczby ze **zbioru kontrolnego nr 2**: napisał go na ślepo osobny agent AI, bez dostępu do kodu
 i poleceń, a wersję końcową zmierzyliśmy na nim raz, bez poprawek po pomiarze. To 30 opisów
 i 25 pytań, więc to wynik orientacyjny. Zdania z #18, #147 i #150 dotyczyły zbiorów, na których
-już coś wybieraliśmy; zastępuje je ta wersja.
+już coś wybieraliśmy; zastępuje je ta wersja. Zdania mówią o pełnym zbiorze; bez jedynej
+pozycji naśladującej mowę („tylko pisane”) liczby są prawie te same (8 z 10, 45%, 96%).
 
 - Na nowych opisach JEV wyłapuje 8 z 10 wymienionych potrzeb, a reguły słów kluczowych 6 z 10.
 - Cały opis (profil i komplet potrzeb) JEV rozumie dokładnie w prawie połowie przypadków (47%),

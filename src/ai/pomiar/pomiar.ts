@@ -6,6 +6,8 @@
 //   node --env-file=.env.local src/ai/pomiar/pomiar.ts --na-zywo [--tylko a|b] [--wyjscie plik.json]
 //   … --zbior kontrolny     # zbiór pisany na ślepo (#147): tylko liczby zbiorcze, bez błędów
 //   … --zbior kontrolny2    # drugi zbiór na ślepo (#152), mierzony raz: tak samo, tylko liczby
+//   … --tylko-pisane        # bez pozycji naśladujących mowę (MOWIONE niżej) – przekrój pomocniczy
+//   … --z-pliku wynik.json  # bez sieci: przelicza zapisany przebieg (--wyjscie) od nowa
 //
 // Na żywo każda pozycja to JEDNO wywołanie JEV (ok. 58 na przebieg – to kosztuje). Idzie
 // tą samą ścieżką co aplikacja: klient (jev.ts, timeout 1,5 s) → pośrednik (api/_jev.js,
@@ -98,18 +100,33 @@ const czytaj = (plik: string) => JSON.parse(readFileSync(new URL(plik, KATALOG),
  * Zbiór kontrolny ma ten sam schemat z dwiema różnicami: „spoza zakresu” to `[["nie_wiem"]]`
  * (u nas `[]`), a „nic” nie jest jawne – to profil null i brak potrzeb.
  */
-const ZBIOR_A: PozycjaOpisz[] = KONTROLNY
+const ZBIOR_A_PELNY: PozycjaOpisz[] = KONTROLNY
   ? (czytaj(PLIKI.opisz).pozycje as PozycjaOpisz[]).map((p) => ({
       ...p,
       nic: p.nic ?? (p.persona === null && p.potrzeby.length === 0),
     }))
   : czytaj('zbior-opisz.json').pozycje
-const ZBIOR_B: PozycjaZapytaj[] = KONTROLNY
+const ZBIOR_B_PELNY: PozycjaZapytaj[] = KONTROLNY
   ? (czytaj(PLIKI.zapytaj).pozycje as PozycjaZapytaj[]).map((p) => ({
       ...p,
       tematy: p.tematy.filter((t) => !(t.length === 1 && t[0] === NIE_WIEM)),
     }))
   : czytaj('zbior-zapytaj.json').pozycje
+
+/**
+ * #152: pole w aplikacji jest PISANE, nie dyktowane. Pozycje, których pułapka to zjawisko
+ * mowy (poprawianie się w pół zdania), są w przekroju „tylko pisane” pomijane. Wybór z cech
+ * `sprzecznosc` po przeczytaniu tych pozycji: sprzeczne życzenia („centrum, ale cisza”) da się
+ * napisać, więc zostają; zostaje też wszystko, co typowe dla pisania (bez polskich znaków,
+ * literówki, slang, cudza sytuacja, hipoteza). Wynik nagłówkowy to zawsze pełny zbiór.
+ */
+export const MOWIONE: Readonly<Record<string, string>> = {
+  'K2-A10': 'samokorekta w pół zdania („nie potrzebuję auta… no dobra, auto mamy”)',
+}
+const TYLKO_PISANE = argv.includes('--tylko-pisane')
+const pisane = (id: string) => !TYLKO_PISANE || !(id in MOWIONE)
+const ZBIOR_A = ZBIOR_A_PELNY.filter((p) => pisane(p.id))
+const ZBIOR_B = ZBIOR_B_PELNY.filter((p) => pisane(p.id))
 
 const KORZEN = new URL('../../../', import.meta.url)
 const katalogWskaznikow = new URL('public/dane/wskazniki/', KORZEN)
@@ -530,7 +547,16 @@ function raport(a: WynikA[], b: WynikB[], naZywo: boolean) {
   const systemyB = wszystkie.filter((s) => b.some((w) => s in w.systemy))
   const out: string[] = []
   out.push(
-    `# Zbiór: ${KONTROLNY ? `${NAZWA_ZBIORU} (na ślepo)` : 'wzorcowy (do strojenia)'}`,
+    `# Zbiór: ${KONTROLNY ? `${NAZWA_ZBIORU} (na ślepo)` : 'wzorcowy (do strojenia)'}${
+      TYLKO_PISANE
+        ? `, tylko pisane (bez: ${
+            [...ZBIOR_A_PELNY, ...ZBIOR_B_PELNY]
+              .filter((p) => !pisane(p.id))
+              .map((p) => p.id)
+              .join(', ') || '–'
+          })`
+        : ''
+    }`,
     '',
     `## A – opisz siebie (${a.length} pozycji)`,
     '',
@@ -691,7 +717,9 @@ function raport(a: WynikA[], b: WynikB[], naZywo: boolean) {
 
 // ── Start ─────────────────────────────────────────────────────────────────────────────────
 
-const naZywo = argv.includes('--na-zywo')
+const iZPliku = argv.indexOf('--z-pliku')
+const zPliku = iZPliku >= 0 ? argv[iZPliku + 1] : undefined
+const naZywo = argv.includes('--na-zywo') && !zPliku
 const iWyjscie = argv.indexOf('--wyjscie')
 const wyjscie = iWyjscie >= 0 ? argv[iWyjscie + 1] : undefined
 
@@ -704,10 +732,24 @@ if (naZywo && !process.env.JEV_API_KEY) {
 const iTylko = argv.indexOf('--tylko')
 const tylko = iTylko >= 0 ? argv[iTylko + 1] : undefined
 const klient = naZywo ? await klientNaZywo() : null
+// --z-pliku: zapisany przebieg (bez sieci), tylko pozycje bieżącego zbioru (np. tylko pisane).
+const zapisany = zPliku
+  ? (JSON.parse(readFileSync(zPliku, 'utf8')) as { a: WynikA[]; b: WynikB[] })
+  : null
+const idsA = new Set(ZBIOR_A.map((p) => p.id))
+const idsB = new Set(ZBIOR_B.map((p) => p.id))
 // --tylko a|b: drugi zbiór liczy się bez sieci (same reguły) – oszczędza wywołania JEV.
-const a = await biegA(tylko === 'b' ? null : klient)
-const b = await biegB(tylko === 'a' ? null : klient)
-const { tekst, podsumowanie } = raport(a, b, naZywo)
+const a = zapisany
+  ? zapisany.a.filter((w) => idsA.has(w.id))
+  : await biegA(tylko === 'b' ? null : klient)
+const b = zapisany
+  ? zapisany.b.filter((w) => idsB.has(w.id))
+  : await biegB(tylko === 'a' ? null : klient)
+const { tekst, podsumowanie } = raport(
+  a,
+  b,
+  naZywo || Boolean(zapisany?.a.some((w) => w.jev) || zapisany?.b.some((w) => w.jev)),
+)
 console.log(tekst)
 if (wyjscie) {
   writeFileSync(
