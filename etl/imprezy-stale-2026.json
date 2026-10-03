@@ -1,0 +1,77 @@
+{
+  "zrodlo": "https://bip.krakow.pl/zarzadzenia/2025/3080/X19BS19fOTQ1ODM%3D/3080_2025.pdf",
+  "sha256Pdf": "7cf001344fb29e5e2af96800451ea27778a5375dc36cd48c28fd082421e18e9c",
+  "rok": 2026,
+  "lokalizacje": [
+    {
+      "nazwa": "Rynek Główny",
+      "wpisy": 28,
+      "lat": 50.0614956,
+      "lon": 19.9371133,
+      "osm": "https://www.openstreetmap.org/way/201133718"
+    },
+    {
+      "nazwa": "Mały Rynek",
+      "wpisy": 16,
+      "lat": 50.0612143,
+      "lon": 19.9403232,
+      "osm": "https://www.openstreetmap.org/way/238530360"
+    },
+    {
+      "nazwa": "Plac Szczepański",
+      "wpisy": 4,
+      "lat": 50.0637878,
+      "lon": 19.935453,
+      "osm": "https://www.openstreetmap.org/relation/4045594"
+    },
+    {
+      "nazwa": "Plac Jana Matejki",
+      "wpisy": 8,
+      "lat": 50.0665495,
+      "lon": 19.9422424,
+      "osm": "https://www.openstreetmap.org/relation/3953714"
+    },
+    {
+      "nazwa": "Plac Wolnica",
+      "wpisy": 6,
+      "lat": 50.0487989,
+      "lon": 19.9441129,
+      "osm": "https://www.openstreetmap.org/way/25526694"
+    },
+    {
+      "nazwa": "Błonia Krakowskie",
+      "wpisy": 7,
+      "lat": 50.0596746,
+      "lon": 19.911439,
+      "osm": "https://www.openstreetmap.org/way/25113592"
+    },
+    {
+      "nazwa": "Plac Wielkiej Armii Napoleona",
+      "wpisy": 5,
+      "lat": 50.0551775,
+      "lon": 19.9321552,
+      "osm": "https://www.openstreetmap.org/way/262667394"
+    },
+    {
+      "nazwa": "Rynek Podgórski",
+      "wpisy": 5,
+      "lat": 50.0442195,
+      "lon": 19.9492063,
+      "osm": "https://www.openstreetmap.org/way/137273921"
+    },
+    {
+      "nazwa": "Plac przy Nowohuckim Centrum Kultury",
+      "wpisy": 2,
+      "lat": 50.0707685,
+      "lon": 20.0348413,
+      "osm": "https://www.openstreetmap.org/way/39449013"
+    }
+  ],
+  "pominiete": [
+    {
+      "nazwa": "Bulwary Wisły",
+      "wpisy": 11,
+      "powod": "Wykaz nie wskazuje odcinka bulwarów; jeden punkt nad Wisłą dawałby pozorną dokładność."
+    }
+  ]
+}
