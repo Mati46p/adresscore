@@ -11,7 +11,8 @@ import {
 import { PathLayer, SolidPolygonLayer } from '@deck.gl/layers'
 import { MapboxOverlay } from '@deck.gl/mapbox'
 import { AttributionControl, Map as MapaLibre, NavigationControl } from 'maplibre-gl'
-import { useEffect, useRef, useState } from 'react'
+import { type ReactNode, useEffect, useRef, useState } from 'react'
+import { ograniczonyRuch, PAUZA_PRZED_LOTEM } from '@/mapa/lot'
 import { POLSKIE_NAPISY, STYL } from '@/mapa/MapaKrakowa'
 import { useDane } from '@/wynik/dane'
 import { useStan } from '@/wynik/stan'
@@ -91,9 +92,25 @@ type Stan =
   | { stan: 'gotowe'; dane: BudynkiOkolicy }
   | { stan: 'blad'; blad: string }
 
-export default function Okolica3D() {
+/** Kadr startowy pokazu: cała Polska z góry, jak na mapie głównej. */
+const KADR_POLSKI = { center: [19.4, 52.0] as [number, number], zoom: 5.2, pitch: 0, bearing: 0 }
+const KADR_ADRESU = { zoom: 16.4, pitch: 55, bearing: -20 }
+
+export default function Okolica3D({
+  adresI,
+  pokaz = false,
+  naglowek,
+}: {
+  /** Indeks adresu; domyślnie wybrany w stanie (karta). */
+  adresI?: number | null
+  /** Pełny ekran z lotem Polska → adres (link `?pokaz`). */
+  pokaz?: boolean
+  /** Treść nad panelami w trybie pokazu (adres, klasa, linki). */
+  naglowek?: ReactNode
+} = {}) {
   const dane = useDane()
-  const wybrany = useStan((s) => s.wybrany)
+  const wybranyStan = useStan((s) => s.wybrany)
+  const wybrany = adresI === undefined ? wybranyStan : adresI
   const wagi = useStan((s) => s.wagi)
   const kierunki = useStan((s) => s.kierunki)
   const adres = dane.stan === 'gotowe' && wybrany !== null ? dane.adresy[wybrany] : null
@@ -138,16 +155,19 @@ export default function Okolica3D() {
   const brakDanych = budynkiStan.stan === 'gotowe' && budynki.length === 0
   const zWynikiem = budynki.filter((b) => b.wynik !== null).length
 
-  return (
-    <div className="m3d">
-      <Scena
-        lon={lon}
-        lat={lat}
-        budynki={budynki}
-        wybrany={wybranyBudynek}
-        swiatlo={swiatlo.swiatlo}
-        pozwolenia={pokazPozwolenia && pozwolenia.stan === 'gotowe' ? pozwolenia.lista : []}
-      />
+  const scena = (
+    <Scena
+      lon={lon}
+      lat={lat}
+      budynki={budynki}
+      wybrany={wybranyBudynek}
+      swiatlo={swiatlo.swiatlo}
+      pozwolenia={pokazPozwolenia && pozwolenia.stan === 'gotowe' ? pozwolenia.lista : []}
+      pokaz={pokaz}
+    />
+  )
+  const panele = (
+    <>
       {budynki.length > 0 && <PanelCienia {...swiatlo} />}
       <PanelPozwolen
         stan={pozwolenia}
@@ -172,6 +192,24 @@ export default function Okolica3D() {
           zrodla={budynkiStan.stan === 'gotowe' ? budynkiStan.dane.zrodla : []}
         />
       )}
+    </>
+  )
+
+  if (pokaz) {
+    return (
+      <div className="m3d m3d-pokaz">
+        {scena}
+        <aside className="m3d-pokaz-panel" aria-label="Adres i ustawienia widoku">
+          {naglowek}
+          {panele}
+        </aside>
+      </div>
+    )
+  }
+  return (
+    <div className="m3d">
+      {scena}
+      {panele}
     </div>
   )
 }
@@ -183,6 +221,7 @@ function Scena({
   wybrany,
   swiatlo,
   pozwolenia,
+  pokaz,
 }: {
   lon: number
   lat: number
@@ -191,6 +230,7 @@ function Scena({
   /** null = tryb lekki: stałe światło, bez cienia. */
   swiatlo: Swiatlo | null
   pozwolenia: Pozwolenie[]
+  pokaz: boolean
 }) {
   const kontener = useRef<HTMLDivElement>(null)
   const mapaRef = useRef<MapaLibre | null>(null)
@@ -202,15 +242,13 @@ function Scena({
     const mapa = new MapaLibre({
       container: kontener.current,
       style: STYL,
-      center: [lon, lat],
-      zoom: 16.4,
-      pitch: 55,
-      bearing: -20,
+      ...(pokaz ? KADR_POLSKI : { center: [lon, lat] as [number, number], ...KADR_ADRESU }),
       maxPitch: 70,
       attributionControl: false,
       locale: NAPISY,
       // Karta przewija się kółkiem; mapa przejmuje kółko dopiero z Ctrl, na dotyku dwoma palcami.
-      cooperativeGestures: true,
+      // Pokaz jest pełnoekranowy – tam nie ma czego przewijać.
+      cooperativeGestures: !pokaz,
     })
     mapa.addControl(new AttributionControl({ compact: true }), 'bottom-right')
     mapa.addControl(new NavigationControl({ visualizePitch: true }), 'top-right')
@@ -218,14 +256,43 @@ function Scena({
     mapa.addControl(nakladka)
     mapaRef.current = mapa
     nakladkaRef.current = nakladka
+    // Pokaz: chwila na obejrzenie Polski, potem lot do adresu (przy ograniczonym ruchu skok).
+    let czasomierz: ReturnType<typeof setTimeout> | undefined
+    if (pokaz) {
+      mapa.once('load', () => {
+        // Panel przykrywa lewy pas (komputer) albo dół (telefon) – adres ląduje w wolnej części.
+        const waski = window.matchMedia('(max-width: 860px)').matches
+        const cel = {
+          center: [lon, lat] as [number, number],
+          ...KADR_ADRESU,
+          padding: waski
+            ? { top: 0, right: 0, left: 0, bottom: Math.round(window.innerHeight * 0.42) }
+            : { top: 0, right: 0, bottom: 0, left: 412 },
+        }
+        if (ograniczonyRuch()) {
+          mapa.jumpTo(cel)
+          return
+        }
+        czasomierz = setTimeout(
+          () => mapa.flyTo({ ...cel, curve: 1.42, speed: 0.6, maxDuration: 9000, essential: true }),
+          PAUZA_PRZED_LOTEM,
+        )
+      })
+    }
     return () => {
+      clearTimeout(czasomierz)
       nakladkaRef.current = null
       mapaRef.current = null
       mapa.remove()
     }
   }, [])
 
+  // Tylko przy zmianie adresu: przy montowaniu kamera ma już kadr startowy (w pokazie – Polskę).
+  const poprzedni = useRef(`${lon},${lat}`)
   useEffect(() => {
+    const klucz = `${lon},${lat}`
+    if (poprzedni.current === klucz) return
+    poprzedni.current = klucz
     mapaRef.current?.jumpTo({ center: [lon, lat] })
   }, [lon, lat])
 

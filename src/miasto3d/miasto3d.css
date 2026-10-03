@@ -122,3 +122,87 @@
 .m3d-dymek {
   max-width: 320px;
 }
+/* ── Pokaz (?pokaz): pełny ekran ───────────────────────────────────────────── */
+.m3d-pokaz-ekran {
+  position: fixed;
+  inset: 0;
+  background: var(--tlo);
+}
+.m3d-pokaz {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+}
+.m3d-pokaz .m3d-mapa {
+  position: absolute;
+  inset: 0;
+  height: auto;
+  border: 0;
+  border-radius: 0;
+}
+.m3d-pokaz-panel {
+  position: absolute;
+  /* Nad płótnem deck.gl, które leży w kontenerze mapy. */
+  z-index: 2;
+  top: 16px;
+  left: 16px;
+  bottom: 16px;
+  width: min(380px, calc(100% - 32px));
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  overflow-y: auto;
+  border: 1px solid var(--ramka);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--powierzchnia) 94%, transparent);
+  box-shadow: 0 8px 28px rgb(0 0 0 / 0.18);
+}
+.m3d-pokaz-panel .m3d-cien {
+  background: var(--powierzchnia);
+}
+.m3d-pokaz-h1 {
+  margin: 0;
+  font-size: 22px;
+}
+.m3d-pokaz-wynik {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0 0;
+  color: var(--tekst-2);
+}
+.m3d-pokaz-litera {
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  font-size: 22px;
+  font-weight: 700;
+}
+.m3d-pokaz-brak {
+  background: var(--ramka);
+  color: var(--tekst-2);
+}
+.m3d-pokaz-linki {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 8px 0 0;
+  font-size: 14px;
+}
+@media (max-width: 860px) {
+  .m3d-pokaz-panel {
+    top: auto;
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    width: auto;
+    max-height: 42vh;
+  }
+  /* Przypis licencji danych musi zostać widoczny nad panelem. */
+  .m3d-pokaz .maplibregl-ctrl-bottom-right {
+    bottom: calc(42vh + 12px);
+  }
+}

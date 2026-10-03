@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { Pokaz3D, parametrPokazu } from '@/miasto3d/Pokaz3D'
 import { Metoda } from '@/strony/Metoda'
 import { useDane } from '@/wynik/dane'
 import { useStan } from '@/wynik/stan'
@@ -10,6 +11,13 @@ import { EkranPorownanie } from './porownanie/EkranPorownanie'
 
 /** Powłoka: nagłówek z krokami i ekran wybrany przez hash (#/, #/adres/<id>, #/porownanie). */
 export function Aplikacja() {
+  // Link do prezentacji: pełny ekran 3D zamiast powłoki (#130).
+  const pokaz = parametrPokazu()
+  if (pokaz !== null) return <Pokaz3D id={pokaz} />
+  return <Powloka />
+}
+
+function Powloka() {
   const ekran = useStan((s) => s.ekran)
   const wybrany = useStan((s) => s.wybrany)
   const dane = useDane()
