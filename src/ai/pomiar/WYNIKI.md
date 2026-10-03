@@ -141,7 +141,8 @@ Powtórzenie: `node src/ai/pomiar/pomiar.ts` (same reguły) albo
 
 Ludzie pytają o kilka rzeczy naraz („Czy jest zielono, cicho i bezpiecznie wieczorem?”).
 `zapytajOAdres` robi jeden `choice`, więc odpowiada na jeden temat: pokrycie pytań złożonych to
-40–45% i z tą architekturą nie przekroczy 1/n. Tego #18 nie zmienia.
+40–45% i z tą architekturą nie przekroczy 1/n. Tego #18 nie zmienia (wariant 1 wdrożony
+w #146 – sekcja „Pytania złożone (#146)” niżej).
 
 Propozycja (do osobnego zadania), w granicy 16 pytań pośrednika:
 
@@ -158,6 +159,87 @@ Propozycja (do osobnego zadania), w granicy 16 pytań pośrednika:
 - **Wariant 3 – choice, potem noul na krótkiej liście.** Pierwsze wywołanie wybiera warstwę,
   drugie ocenia twierdzeniami 8–15 kandydatów (z reguł + sąsiedzi w kategorii). 2 wywołania,
   ok. 600 ms – lepiej celuje niż wariant 2, ale też podwaja czas.
+
+## Pytania złożone (#146)
+
+Wariant 1 z sekcji wyżej, wdrożony 2026-10-03: w tym samym wywołaniu JEV obok `choice`
+(warstwa główna) 15 twierdzeń `noul`, po jednym na temat (`TEMATY` w `zapytajOAdres.ts`:
+hałas, powietrze, zieleń, powódź, komunikacja, szkoły i przedszkola, zdrowie, sklepy i usługi,
+ceny mieszkań, bezpieczeństwo, parkowanie, rower, demografia, plan i inwestycje, przemysł
+i grunt) – razem 16 pytań, limit pośrednika. Temat z noul ≥ 0,6 dokłada jedną warstwę ze swojej
+grupy (wskazaną przez reguły słów kluczowych, a bez nich domyślną), chyba że warstwa główna już
+w niego trafiła. Karta pokazuje do 3 odpowiedzi: główna, potem tematy malejąco po noul, bez
+duplikatów i najwyżej jedna warstwa na temat. Pewne `nie_wiem` → „nie wiem” bez dodatków.
+Reguła zapasowa zbiera wszystkie pasujące grupy reguł, jedną na temat, w kolejności w pytaniu.
+
+Ten sam zbiór B (28 pytań), dwa przebiegi na żywo na tej samej liście warstw (84, nie 60 jak
+w #18 – dlatego „przed” powtórzone, a nie wzięte z tabel wyżej): **przed** = `main` przed
+zmianą, **po** = ta zmiana. Pokrycie złożonych = średnio, jaka część tematów pytania dostała
+warstwę z wzorca. Precyzja = pokazane warstwy, które są w którymś temacie wzorca, do wszystkich
+pokazanych (pytania w zakresie).
+
+| B, JEV z zapasem (to, co widzi użytkownik) | Przed | Po |
+|---|---|---|
+| **Pokrycie pytań złożonych** | 40% | **74%** |
+| Złożone z kompletem tematów | 0/7 | 3/7 |
+| Pytania pojedyncze – warstwa główna trafna | 14/17 | 16/17 |
+| Spoza zakresu → „nie wiem” bez dodatkowych warstw | 4/4 | 4/4 |
+| Precyzja warstw | 91% (20/22) | 85% (28/33) |
+| Fałszywe dodatki na pytaniach pojedynczych | – | 2 na 17 pytań |
+| Średnio warstw na odpowiedź (w zakresie) | 0,92 | 1,38 |
+| Zapas (JEV pod progiem pewności → reguły) | 3/28 | 4/28 |
+| Opóźnienie p50 / p95 / max | 288 / 398 / 458 ms | 308 / 409 / 445 ms |
+
+| B, reguły (bez AI) | Przed | Po |
+|---|---|---|
+| Pokrycie pytań złożonych | 38% | 79% |
+| Złożone z kompletem tematów | 0/7 | 4/7 |
+| Pytania pojedyncze | 8/17 | 9/17 |
+| Spoza zakresu → „nie wiem” | 4/4 | 4/4 |
+| Precyzja warstw | 82% | 88% |
+
+Jak to czytać – uczciwie:
+
+- **Pojedyncze 14 → 16 to nie zasługa tej zmiany.** Obie różnice to pewność wyboru głównego
+  tuż przy progu 0,5: B02 („w nocy słychać tramwaje”) 0,48 → 0,50 – przeszedł JEV z trafnym
+  hałasem zamiast reguły z przystankiem; B19 („skwer albo park”) `nie_wiem` 0,53 → 0,46 – spadł
+  do reguły, która trafia zieleń. Wniosek, którego wymaga zadanie: pojedyncze nie tracą.
+  Pewność `choice` z 15 dodatkowymi pytaniami w tym samym zapytaniu jest średnio o ok. 0,02
+  niższa (największy spadek: B05 0,84 → 0,74, B23 0,59 → 0,49).
+- **Fałszywe dodatki (2 na 17 pojedynczych):** B02 „słychać tramwaje” dokłada komunikację
+  (0,93), B13 „wjadę dieslem” dokłada powietrze (0,79). Na złożonych: B26 „apteka i przychodnia”
+  dokłada sklep (0,89), B28 „bezpiecznie rowerem” dokłada miejscowe zagrożenia (0,78). To błędy
+  znaczenia, nie szum – JEV jest ich pewny.
+- **Sufit z definicji tematów:** B24 (przedszkole + żłobek), B26 (apteka + przychodnia) i B28
+  (trasa rowerowa + stojaki) pytają o dwie warstwy z jednego tematu, a temat dokłada najwyżej
+  jedną – te trzy mają z góry pokrycie ≤ 50%. B27 trafia hałas i drzewa, ale warstwą główną jest
+  `przewietrzanie_klasa` (grupa „powietrze”, spoza wzorca), więc powietrze się nie liczy.
+- **B23 poszło regułami:** pewność `choice` 0,49 → zapas; reguły też dały komplet 3/3. Oceny
+  tematów JEV z tego wywołania przepadają razem z wyborem głównym – możliwa poprawka na później.
+- **Reguły:** dodane wzorce dla tematów, które nie miały żadnej reguły (rower, stojaki, policja,
+  osuwiska, azbest) – bez nich zapas nie umiał dołożyć ich warstwy. Spośród nich tylko rower
+  i stojaki dotyczą zbioru (B28: 6/7 → 7/7 złożonych z trafionym tematem w regule pojedynczej).
+  Znanych pomyłek reguł z #18 („zalać”, „słońce”, „ogrzewanie”, „pociąg”) celowo nie poprawiałem,
+  żeby nie stroić pod zbiór.
+
+**Próg 0,6** – ten sam co `PROG_POTRZEBY` w „opisz siebie”: w #18 noul dla potrzeb z wzorca miał
+średnio 0,82, dla pozostałych 0,21. Po przebiegu przeliczyłem progi z tych samych odpowiedzi
+(bez nowych wywołań):
+
+| próg | 0,5 | 0,6 | 0,7 | 0,8 | 0,9 |
+|---|---|---|---|---|---|
+| Pokrycie złożonych | 74% | 74% | 74% | 74% | 74% |
+| Precyzja warstw | 82% | 85% | 85% | 90% | 93% |
+| Fałszywe dodatki na pojedynczych | 2 | 2 | 2 | 1 | 1 |
+
+Na tym zbiorze 0,8 dałby lepszą precyzję bez straty pokrycia, ale prawdziwy temat potrafi mieć
+0,68 (zieleń w B23), a fałszywe dodatki mają 0,78–0,93 – próg ich nie odróżnia, a 7 pytań
+złożonych to za mało, żeby stroić. **Zostawiony 0,6, nie stroiłem po wynikach.**
+
+Koszt: 1 wywołanie na pytanie jak dotąd (16 pytań w jednym zapytaniu); czas +20 ms p50, w granicy
+powtórzeń z #18. Pomiar: 56 płatnych wywołań (28 przed + 28 po).
+Powtórzenie: `node --env-file=.env.local src/ai/pomiar/pomiar.ts --na-zywo --tylko b`
+(sekcja „pytania złożone” i przeliczenie progów są w wyniku skryptu).
 
 ## Na slajd
 

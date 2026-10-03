@@ -6,14 +6,23 @@ import type { PlikWskaznika, WskaznikMeta } from '../kontrakty/index.ts'
 import {
   BRAK_DANYCH,
   ID_PYTANIA,
+  idTematu,
   listaWarstw,
+  MAKS_ODPOWIEDZI,
   NIE_WIEM,
   odpowiedz,
+  odpowiedzi,
   PROG_PEWNOSCI,
+  PROG_TEMATU,
   przetworz,
+  przetworzWiele,
   regula,
+  regulaWiele,
+  TEMATY,
+  tematWarstwy,
   type WarstwaDanych,
   zapytajOAdres,
+  zapytajOAdresWiele,
   zapytanieJev,
 } from './zapytajOAdres.ts'
 
@@ -288,5 +297,237 @@ describe('zapytajOAdres – całość z wstrzykniętym fetch', () => {
     assert.equal(o.wartosc, plik.wartosci[i])
     assert.equal(o.jednostka, plik.meta.jednostka)
     assert.equal(o.rozdzielczosc, plik.meta.rozdzielczosc)
+  })
+})
+
+// --- Pytania złożone (#146) ---------------------------------------------------------------
+
+type OdpTestowa = Record<
+  string,
+  { typ: 'choice'; wybor: string; pewnosc: number } | { typ: 'noul'; noul: number }
+>
+
+describe('tematy – pytania złożone (#146)', () => {
+  const metas = metasZDanych()
+  const pelna = listaWarstw(metas)
+  const ids = new Set(pelna.map((p) => p.id))
+  const temat = (id: string) => TEMATY.find((t) => t.id === id) as (typeof TEMATY)[number]
+
+  /** Odpowiedź JEV: choice + noul tematów (brakujące tematy = brak odpowiedzi). */
+  const odp = (wybor: string, pewnosc: number, tematy: Record<string, number> = {}) => {
+    const o: OdpTestowa = { [ID_PYTANIA]: { typ: 'choice', wybor, pewnosc } }
+    for (const [t, noul] of Object.entries(tematy)) o[idTematu(temat(t))] = { typ: 'noul', noul }
+    return o
+  }
+
+  it('każda warstwa domyślna i każda warstwa tematu jest na liście (bez atrap)', () => {
+    assert.ok(TEMATY.length >= 2 && TEMATY.length <= 15)
+    for (const t of TEMATY) {
+      assert.ok(ids.has(t.domyslna), `${t.id}: domyślnej ${t.domyslna} nie ma na liście`)
+      assert.ok(t.warstwy.includes(t.domyslna), `${t.id}: domyślna spoza grupy`)
+      for (const w of t.warstwy) assert.ok(ids.has(w), `${t.id}: warstwy ${w} nie ma na liście`)
+      assert.ok(t.twierdzenie.length > 0 && t.twierdzenie.length <= 300)
+      assert.match(idTematu(t), /^[a-z0-9_-]{1,40}$/i)
+      assert.ok(!t.twierdzenie.includes('\u2014'), 'pauza zamiast półpauzy')
+    }
+  })
+
+  it('warstwa należy najwyżej do jednego tematu, id tematów unikalne', () => {
+    const wszystkie = TEMATY.flatMap((t) => t.warstwy)
+    assert.equal(new Set(wszystkie).size, wszystkie.length)
+    assert.equal(new Set(TEMATY.map((t) => t.id)).size, TEMATY.length)
+  })
+
+  it('zapytanie ma ≤ 16 pytań: choice + noul na każdy temat', () => {
+    const z = zapytanieJev('Jak głośno i daleko do tramwaju?', pelna)
+    const klucze = Object.keys(z.pytania)
+    assert.ok(klucze.length <= 16, `${klucze.length} pytań`)
+    assert.equal(klucze[0], ID_PYTANIA)
+    assert.equal(klucze.length, 1 + TEMATY.length)
+    for (const t of TEMATY) assert.equal(z.pytania[idTematu(t)]?.typ, 'noul')
+  })
+
+  it('temat bez warstwy na liście nie trafia do zapytania', () => {
+    const z = zapytanieJev('cokolwiek', LISTA)
+    const tematy = Object.keys(z.pytania).filter((k) => k !== ID_PYTANIA)
+    // LISTA testowa: apteka (zdrowie), przystanek (komunikacja), hałas, cena.
+    assert.deepEqual(tematy.sort(), [
+      'temat_ceny',
+      'temat_halas',
+      'temat_komunikacja',
+      'temat_zdrowie',
+    ])
+  })
+
+  it('warstwa główna pierwsza, potem tematy malejąco po noul; ≤ 3, bez duplikatów, temat raz', () => {
+    const w = przetworzWiele(
+      odp('halas_ldwn', 0.9, { halas: 0.95, zielen: 0.7, komunikacja: 0.9, powietrze: 0.8 }),
+      pelna,
+      'Jak głośno, zielono, z powietrzem i daleko do tramwaju?',
+    )
+    assert.ok(w)
+    assert.deepEqual(w.warstwy, ['halas_ldwn', 'przystanek_odleglosc', 'pm25_srednia'])
+    assert.ok(w.warstwy.length <= MAKS_ODPOWIEDZI)
+    assert.equal(new Set(w.warstwy).size, w.warstwy.length)
+    assert.equal(new Set(w.warstwy.map(tematWarstwy)).size, w.warstwy.length)
+  })
+
+  it('temat poniżej progu jest pomijany; dokładnie na progu – wchodzi', () => {
+    const pod = przetworzWiele(
+      odp('halas_ldwn', 0.9, { komunikacja: PROG_TEMATU - 0.01 }),
+      pelna,
+      'jak głośno',
+    )
+    assert.deepEqual(pod?.warstwy, ['halas_ldwn'])
+    const na = przetworzWiele(odp('halas_ldwn', 0.9, { komunikacja: PROG_TEMATU }), pelna, 'x')
+    assert.deepEqual(na?.warstwy, ['halas_ldwn', 'przystanek_odleglosc'])
+  })
+
+  it('temat warstwy głównej nic nie dokłada; reguły wskazują lepszą warstwę z grupy', () => {
+    const w = przetworzWiele(
+      odp('pm25_srednia', 0.9, { powietrze: 0.99, zielen: 0.9 }),
+      pelna,
+      'Jak tu z powietrzem i czy są drzewa pod oknem?',
+    )
+    // „drzew” → reguła drzewa_100m zamiast domyślnej zieleni z WorldCover.
+    assert.deepEqual(w?.warstwy, ['pm25_srednia', 'drzewa_100m'])
+  })
+
+  it('pewne nie_wiem → „nie wiem” bez dodatków, nawet gdy tematy są wysoko', () => {
+    assert.deepEqual(
+      przetworzWiele(odp(NIE_WIEM, 0.9, { ceny: 0.9, halas: 0.8 }), pelna, 'czynsz?'),
+      { warstwy: [] },
+    )
+  })
+
+  it('niepewny wybór główny albo spoza listy → reguła (null)', () => {
+    assert.equal(przetworzWiele(odp('halas_ldwn', 0.3, { halas: 0.99 }), pelna, 'x'), null)
+    assert.equal(przetworzWiele(odp('sklep_atrapa', 0.99, { sklepy: 0.99 }), LISTA, 'x'), null)
+  })
+
+  it('atrapy nigdy: ani jako warstwa główna, ani jako dodatek', () => {
+    const atrapa = meta('halas_ldwn', 'spokoj', { atrapa: true })
+    const lista = listaWarstw([...metas.filter((m) => m.id !== 'halas_ldwn'), atrapa])
+    // halas_ldwn jest atrapą → temat bierze inną warstwę z grupy, nigdy atrapę.
+    const w = przetworzWiele(odp('przystanek_odleglosc', 0.9, { halas: 0.9 }), lista, 'x')
+    assert.deepEqual(w?.warstwy, ['przystanek_odleglosc', 'halas_obwarzanek_lden'])
+    const o = odpowiedzi({ warstwy: ['sklep_atrapa', 'halas_ldwn'] }, WSKAZNIKI, 0, 'jev')
+    assert.deepEqual(
+      o.map((x) => (x.rodzaj === 'warstwa' ? x.warstwa : x.rodzaj)),
+      ['halas_ldwn'],
+    )
+  })
+})
+
+describe('regulaWiele – reguła zapasowa z kilkoma tematami', () => {
+  const pelna = listaWarstw(metasZDanych())
+  const PRZYPADKI: [string, string[]][] = [
+    ['Jak głośno i daleko do tramwaju?', ['halas_ldwn', 'przystanek_odleglosc']],
+    ['Daleko do tramwaju i jak głośno?', ['przystanek_odleglosc', 'halas_ldwn']],
+    ['Ile kosztuje metr i czy nie zalewa?', ['cena_m2_mediana', 'powodz_1proc']],
+    [
+      'Czy jest zielono, cicho i bezpiecznie wieczorem?',
+      ['zielen_worldcover_100m', 'halas_ldwn', 'miejscowe_zagrozenia_gmina_2025'],
+    ],
+    // Dwie reguły z jednego tematu (powietrze) → jedna warstwa; remis – wyżej w REGULY.
+    ['Jaki smog i ile NO2?', ['no2_srednia']],
+    ['Jak głośno tu jest?', ['halas_ldwn']],
+    ['Jaki jest kolor nieba?', []],
+  ]
+  for (const [pytanie, oczekiwane] of PRZYPADKI) {
+    it(`„${pytanie}” → ${oczekiwane.join(' + ') || 'nie wiem'}`, () => {
+      assert.deepEqual(regulaWiele(pytanie, pelna).warstwy, oczekiwane)
+    })
+  }
+
+  it('najwyżej 3 warstwy, bez duplikatów, jedna na temat', () => {
+    const w = regulaWiele(
+      'Głośno? Przystanek? Zielono? Smog? Zalewa? Sklep? Apteka? Cena metra?',
+      pelna,
+    ).warstwy
+    assert.equal(w.length, MAKS_ODPOWIEDZI)
+    assert.deepEqual(w, ['halas_ldwn', 'przystanek_odleglosc', 'zielen_worldcover_100m'])
+    assert.equal(new Set(w.map(tematWarstwy)).size, w.length)
+  })
+
+  it('pytanie o jedno: ta sama warstwa co reguła pojedyncza', () => {
+    for (const p of [
+      'Jak głośno tu jest?',
+      'Daleko do przystanku?',
+      'Czy zalewa?',
+      'Ile kosztuje metr?',
+    ])
+      assert.deepEqual(regulaWiele(p, pelna).warstwy, [regula(p, pelna).warstwa])
+  })
+})
+
+describe('zapytajOAdresWiele – całość z wstrzykniętym fetch', () => {
+  it('jedno wywołanie, kilka odpowiedzi z danych w kolejności, każda ze źródłem', async () => {
+    const { f, wywolania } = fetchZ({
+      odpowiedzi: {
+        [ID_PYTANIA]: { typ: 'choice', wybor: 'halas_ldwn', pewnosc: 0.9 },
+        temat_komunikacja: { typ: 'noul', noul: 0.93 },
+        temat_ceny: { typ: 'noul', noul: 0.71 },
+        temat_zdrowie: { typ: 'noul', noul: 0.2 },
+      },
+      powod: null,
+    })
+    const o = await zapytajOAdresWiele(
+      'Jak głośno, daleko do tramwaju i ile za metr?',
+      WSKAZNIKI,
+      2,
+      { fetch: f },
+    )
+    assert.equal(wywolania.length, 1)
+    assert.deepEqual(
+      o.map((x) => (x.rodzaj === 'warstwa' ? [x.warstwa, x.tekstWartosci] : x.rodzaj)),
+      [
+        ['halas_ldwn', '57,5 dB'],
+        ['przystanek_odleglosc', '1200 m'],
+        ['cena_m2_mediana', '9000 zł/m²'],
+      ],
+    )
+    for (const x of o) assert.ok(x.rodzaj === 'warstwa' && x.zrodlo && x.rozdzielczosc)
+  })
+
+  it('brak danych pod adresem dla dodatku → „brak danych”, nie zero', async () => {
+    const { f } = fetchZ({
+      odpowiedzi: {
+        [ID_PYTANIA]: { typ: 'choice', wybor: 'przystanek_odleglosc', pewnosc: 0.9 },
+        temat_ceny: { typ: 'noul', noul: 0.9 },
+      },
+      powod: null,
+    })
+    const o = await zapytajOAdresWiele('przystanek i ceny', WSKAZNIKI, 0, { fetch: f })
+    const c = o[1]
+    assert.ok(c?.rodzaj === 'warstwa' && c.warstwa === 'cena_m2_mediana')
+    assert.equal(c.wartosc, null)
+    assert.equal(c.tekstWartosci, BRAK_DANYCH)
+  })
+
+  it('brak JEV → reguła z kilkoma tematami', async () => {
+    const { f } = fetchZ({ odpowiedzi: null, powod: 'brak-klucza' })
+    const o = await zapytajOAdresWiele('Jak głośno i daleko do tramwaju?', WSKAZNIKI, 0, {
+      fetch: f,
+    })
+    assert.deepEqual(
+      o.map((x) => (x.rodzaj === 'warstwa' ? `${x.warstwa}/${x.zrodloOdpowiedzi}` : x.rodzaj)),
+      ['halas_ldwn/reguly', 'przystanek_odleglosc/reguly'],
+    )
+  })
+
+  it('pytanie o jedno = jedna odpowiedź, ta sama co zapytajOAdres', async () => {
+    const { f } = jevWybral('halas_ldwn', 0.9)
+    const wiele = await zapytajOAdresWiele('Jak głośno?', WSKAZNIKI, 0, { fetch: f })
+    const jedna = await zapytajOAdres('Jak głośno?', WSKAZNIKI, 0, { fetch: f })
+    assert.equal(wiele.length, 1)
+    assert.deepEqual(wiele[0], jedna)
+  })
+
+  it('nie wiem → jedna odpowiedź „nie wiem”', async () => {
+    const { f } = jevWybral(NIE_WIEM, 0.9)
+    const o = await zapytajOAdresWiele('Jaka będzie pogoda?', WSKAZNIKI, 0, { fetch: f })
+    assert.equal(o.length, 1)
+    assert.equal(o[0]?.rodzaj, 'nie-wiem')
   })
 })

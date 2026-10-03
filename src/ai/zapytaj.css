@@ -51,6 +51,22 @@
   margin: 0;
   color: var(--tekst-3);
 }
+/* Kilka odpowiedzi naraz (#146): te same karty jedna pod drugą, podpis raz pod listą. */
+.zap-wiele {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.zap-lista {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
 .zap-odp {
   display: flex;
   flex-direction: column;

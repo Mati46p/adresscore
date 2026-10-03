@@ -1,19 +1,20 @@
 // Pole „Zapytaj o ten adres” (#17) dla karty okolicy. JEV (albo reguła zapasowa) wybiera tylko
-// warstwę; liczbę, źródło i rozdzielczość bierzemy z danych tego adresu. Montaż: tor `karta`.
+// warstwy; liczbę, źródło i rozdzielczość bierzemy z danych tego adresu. Montaż: tor `karta`.
+// Pytanie o kilka rzeczy naraz (#146) → do 3 odpowiedzi; pytanie o jedną wygląda jak dawniej.
 import { useId, useRef, useState } from 'react'
 import { useDane } from '@/wynik/dane'
 import {
   listaWarstw,
   type Odpowiedz,
   podpowiedzi as podpowiedziListy,
-  zapytajOAdres,
+  zapytajOAdresWiele,
 } from './zapytajOAdres.ts'
 import './zapytaj.css'
 
 type Stan =
   | { stan: 'pusty' }
   | { stan: 'pytam'; pytanie: string }
-  | { stan: 'gotowe'; pytanie: string; odpowiedz: Odpowiedz }
+  | { stan: 'gotowe'; pytanie: string; odpowiedzi: Odpowiedz[] }
 
 /** `indeks` – indeks adresu w danych (ten sam co `stan.wybrany` w src/wynik/stan.ts). */
 export function PoleZapytajOAdres({ indeks }: { indeks: number }) {
@@ -33,9 +34,9 @@ export function PoleZapytajOAdres({ indeks }: { indeks: number }) {
     if (!p) return
     const numer = ++licznik.current
     setStan({ stan: 'pytam', pytanie: p })
-    const odpowiedz = await zapytajOAdres(p, wskazniki, indeks)
+    const odpowiedzi = await zapytajOAdresWiele(p, wskazniki, indeks)
     // Starsze pytanie, które wróciło po nowszym, nie nadpisuje odpowiedzi.
-    if (numer === licznik.current) setStan({ stan: 'gotowe', pytanie: p, odpowiedz })
+    if (numer === licznik.current) setStan({ stan: 'gotowe', pytanie: p, odpowiedzi })
   }
 
   function przyklad(p: string) {
@@ -85,7 +86,7 @@ export function PoleZapytajOAdres({ indeks }: { indeks: number }) {
 
       <div aria-live="polite" className="zap-wynik">
         {stan.stan === 'pytam' && <p className="zap-czekam">Szukam w danych…</p>}
-        {stan.stan === 'gotowe' && <Linia odpowiedz={stan.odpowiedz} />}
+        {stan.stan === 'gotowe' && <Odpowiedzi odpowiedzi={stan.odpowiedzi} />}
       </div>
 
       <p className="zap-przypis">
@@ -106,7 +107,26 @@ function KtoWybral({ zrodlo }: { zrodlo: Odpowiedz['zrodloOdpowiedzi'] }) {
   )
 }
 
-function Linia({ odpowiedz: o }: { odpowiedz: Odpowiedz }) {
+/** Jedna odpowiedź – dokładnie jak przed #146; kilka – lista kart i jeden podpis „kto wybrał”. */
+function Odpowiedzi({ odpowiedzi }: { odpowiedzi: Odpowiedz[] }) {
+  const [pierwsza] = odpowiedzi
+  if (!pierwsza) return null
+  if (odpowiedzi.length === 1) return <Linia odpowiedz={pierwsza} />
+  return (
+    <div className="zap-wiele">
+      <ol className="zap-lista" aria-label={`${odpowiedzi.length} odpowiedzi z danych`}>
+        {odpowiedzi.map((o) => (
+          <li key={o.rodzaj === 'warstwa' ? o.warstwa : o.rodzaj}>
+            <Linia odpowiedz={o} bezKto />
+          </li>
+        ))}
+      </ol>
+      <KtoWybral zrodlo={pierwsza.zrodloOdpowiedzi} />
+    </div>
+  )
+}
+
+function Linia({ odpowiedz: o, bezKto = false }: { odpowiedz: Odpowiedz; bezKto?: boolean }) {
   if (o.rodzaj === 'nie-wiem') {
     return (
       <div className="zap-odp">
@@ -144,7 +164,7 @@ function Linia({ odpowiedz: o }: { odpowiedz: Odpowiedz }) {
           Rozdzielczość: {o.rozdzielczosc}
           {o.dataDanych && ` – stan danych ${o.dataDanych}`}
         </span>
-        <KtoWybral zrodlo={o.zrodloOdpowiedzi} />
+        {!bezKto && <KtoWybral zrodlo={o.zrodloOdpowiedzi} />}
       </p>
     </div>
   )

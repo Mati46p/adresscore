@@ -11,6 +11,8 @@
 //   reguly       – zRegul / regula (bez AI),
 //   jev_surowy   – sama odpowiedź JEV (B: wybór bez progu pewności; A: bez reguł zapasowych),
 //   jev_z_zapasem – to, co naprawdę widzi użytkownik (JEV z progiem, poniżej progu reguły).
+// B liczy też pytania złożone (#146): do 3 warstw na odpowiedź (`wiele`), a z zapisanych ocen
+// tematów (noul) przelicza inne progi bez nowych wywołań.
 // Klucz czyta tylko pośrednik z process.env; skrypt go nie wypisuje ani nie zapisuje.
 // Do pliku wyjścia trafiają wyłącznie wyniki po przetworzeniu (bez surowych odpowiedzi API).
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs'
@@ -30,10 +32,15 @@ import {
 } from '../opiszSiebie.ts'
 import {
   ID_PYTANIA,
+  idTematu,
   listaWarstw,
   NIE_WIEM,
-  przetworz,
+  PROG_TEMATU,
+  przetworzWiele,
   regula,
+  regulaWiele,
+  TEMATY,
+  type WyborWarstw,
   zapytanieJev,
 } from '../zapytajOAdres.ts'
 
@@ -313,12 +320,16 @@ interface WynikB {
   pytanie: string
   tematy: string[][]
   systemy: Record<string, string | null>
+  /** Pytania złożone (#146): wszystkie pokazane warstwy, w kolejności; [] = „nie wiem”. */
+  wiele: Record<string, string[]>
   jev?: {
     ms: number
     zrodlo: string
     powod: string | null
     wybor: string | null
     pewnosc: number | null
+    /** Ocena twierdzeń tematów (noul 0–1) – do strojenia progu bez nowych wywołań. */
+    tematy: Record<string, number | null>
   }
 }
 
@@ -330,26 +341,34 @@ async function biegB(naZywo: Awaited<ReturnType<typeof klientNaZywo>> | null): P
       pytanie: p.pytanie,
       tematy: p.tematy,
       systemy: { reguly: regula(p.pytanie, LISTA).warstwa },
+      wiele: { reguly: regulaWiele(p.pytanie, LISTA).warstwy },
     }
     if (naZywo) {
-      // Ta sama ścieżka co zapytajOAdres(), bez wczytywania wartości warstw.
+      // Ta sama ścieżka co zapytajOAdresWiele(), bez wczytywania wartości warstw.
       const r = await zJevem(
         zapytanieJev(p.pytanie, LISTA),
-        (odp) => przetworz(odp, LISTA),
-        () => regula(p.pytanie, LISTA),
+        (odp) => przetworzWiele(odp, LISTA, p.pytanie),
+        () => regulaWiele(p.pytanie, LISTA),
         naZywo.opcje(),
       )
       const o = naZywo.ostatnie()
       const x = o.odpowiedzi?.[ID_PYTANIA]
       const surowy = x?.typ === 'choice' ? x : null
       w.systemy.jev_surowy = surowy && surowy.wybor !== NIE_WIEM ? surowy.wybor : null
-      w.systemy.jev_z_zapasem = r.wynik.warstwa
+      w.systemy.jev_z_zapasem = r.wynik.warstwy[0] ?? null
+      w.wiele.jev_z_zapasem = r.wynik.warstwy
+      const tematy: Record<string, number | null> = {}
+      for (const t of TEMATY) {
+        const n = o.odpowiedzi?.[idTematu(t)]
+        tematy[t.id] = n?.typ === 'noul' ? n.noul : null
+      }
       w.jev = {
         ms: o.ms,
         zrodlo: r.zrodlo,
         powod: r.powod,
         wybor: surowy?.wybor ?? null,
         pewnosc: surowy?.pewnosc ?? null,
+        tematy,
       }
       process.stderr.write(`B ${p.id} ${o.ms} ms ${r.zrodlo}\n`)
     }
@@ -394,6 +413,67 @@ function ocenB(wyniki: readonly WynikB[], system: string) {
   }
 }
 
+/**
+ * Pytania złożone (#146) na liście warstw: pokrycie tematów złożonych, trafność warstwy
+ * głównej na pojedynczych, „nie wiem” bez dodatków spoza zakresu, precyzja dodatków.
+ */
+export function ocenWiele(
+  wyniki: readonly { tematy: string[][]; wiele: Record<string, string[]> }[],
+  system: string,
+) {
+  const w = wyniki.filter((x) => x.wiele[system] !== undefined)
+  const wTemacie = (tematy: string[][], warstwa: string) => tematy.some((t) => t.includes(warstwa))
+  const pojedyncze = w.filter((x) => x.tematy.length === 1)
+  const zlozone = w.filter((x) => x.tematy.length > 1)
+  const spoza = w.filter((x) => x.tematy.length === 0)
+  const glowna = (x: (typeof w)[number]) => x.wiele[system]?.[0]
+  const pokrycia = zlozone.map(
+    (x) =>
+      x.tematy.filter((t) => (x.wiele[system] ?? []).some((l) => t.includes(l))).length /
+      x.tematy.length,
+  )
+  const zakres = w.filter((x) => x.tematy.length > 0)
+  const warstwy = zakres.flatMap((x) => (x.wiele[system] ?? []).map((l) => wTemacie(x.tematy, l)))
+  const dodatkiPojedyncze = pojedyncze.flatMap((x) =>
+    (x.wiele[system] ?? []).slice(1).map((l) => wTemacie(x.tematy, l)),
+  )
+  return {
+    pojedyncze: [
+      pojedyncze.filter((x) => {
+        const g = glowna(x)
+        return g !== undefined && wTemacie(x.tematy, g)
+      }).length,
+      pojedyncze.length,
+    ],
+    pokrycie: srednia(pokrycia),
+    zlozoneKomplet: [pokrycia.filter((x) => x === 1).length, zlozone.length],
+    spoza: [spoza.filter((x) => (x.wiele[system] ?? []).length === 0).length, spoza.length],
+    precyzja: warstwy.length ? warstwy.filter(Boolean).length / warstwy.length : Number.NaN,
+    falszyweDodatkiPojedyncze: dodatkiPojedyncze.filter((x) => !x).length,
+    pojedynczeZFalszywymDodatkiem: pojedyncze.filter((x) =>
+      (x.wiele[system] ?? []).slice(1).some((l) => !wTemacie(x.tematy, l)),
+    ).length,
+    srednioWarstw: srednia(zakres.map((x) => (x.wiele[system] ?? []).length)),
+  }
+}
+
+/** Strojenie progu bez nowych wywołań: składa wynik od nowa z zapisanych ocen JEV. */
+function przeliczProg(w: WynikB, prog: number): string[] {
+  const j = w.jev
+  if (!j) return []
+  const odp: Record<string, OdpowiedzJev | null> = {
+    [ID_PYTANIA]: j.wybor === null ? null : { typ: 'choice', wybor: j.wybor, pewnosc: j.pewnosc },
+  }
+  for (const t of TEMATY) {
+    const n = j.tematy[t.id]
+    odp[idTematu(t)] = n === null || n === undefined ? null : { typ: 'noul', noul: n }
+  }
+  // Pośrednik nie odpowiedział wcale (błąd, timeout) → zapas, jak w aplikacji.
+  if (j.powod !== null && j.powod !== 'nieczytelne') return regulaWiele(w.pytanie, LISTA).warstwy
+  const r: WyborWarstw | null = przetworzWiele(odp, LISTA, w.pytanie, prog)
+  return (r ?? regulaWiele(w.pytanie, LISTA)).warstwy
+}
+
 // ── Raport ────────────────────────────────────────────────────────────────────────────────
 
 function raport(a: WynikA[], b: WynikB[], naZywo: boolean) {
@@ -427,7 +507,45 @@ function raport(a: WynikA[], b: WynikB[], naZywo: boolean) {
     )
   }
 
-  let podsumowanie: Record<string, unknown> = { oceny: { a: ocenyA, b: ocenyB } }
+  out.push(
+    '',
+    `## B – pytania złożone (#146): do 3 warstw, próg tematu ${PROG_TEMATU}`,
+    '',
+    '| system | pojedyncze (warstwa główna) | pokrycie złożonych | złożone w komplecie | spoza → „nie wiem” bez dodatków | precyzja warstw | fałszywe dodatki na pojedynczych (pytań) | średnio warstw |',
+    '|---|---|---|---|---|---|---|---|',
+  )
+  const ocenyWiele: Record<string, ReturnType<typeof ocenWiele>> = {}
+  const wierszWiele = (nazwa: string, o: ReturnType<typeof ocenWiele>) =>
+    `| ${nazwa} | ${o.pojedyncze[0]}/${o.pojedyncze[1]} | ${pct(o.pokrycie)} | ${o.zlozoneKomplet[0]}/${o.zlozoneKomplet[1]} | ${o.spoza[0]}/${o.spoza[1]} | ${pct(o.precyzja)} | ${o.falszyweDodatkiPojedyncze} (${o.pojedynczeZFalszywymDodatkiem}) | ${o.srednioWarstw.toFixed(2)} |`
+  for (const s of ['reguly', 'jev_z_zapasem']) {
+    if (!b.some((w) => s in w.wiele)) continue
+    const o = ocenWiele(b, s)
+    ocenyWiele[s] = o
+    out.push(wierszWiele(s, o))
+  }
+  if (naZywo) {
+    out.push('', 'Strojenie progu tematu z tych samych odpowiedzi JEV (bez nowych wywołań):', '')
+    out.push(
+      '| próg | pojedyncze | pokrycie złożonych | złożone w komplecie | spoza | precyzja | fałszywe dodatki (pytań) | średnio warstw |',
+      '|---|---|---|---|---|---|---|---|',
+    )
+    for (const prog of [0.5, 0.6, 0.7, 0.8, 0.9]) {
+      const przeliczone = b.map((w) => ({ tematy: w.tematy, wiele: { x: przeliczProg(w, prog) } }))
+      out.push(wierszWiele(String(prog), ocenWiele(przeliczone, 'x')))
+    }
+    out.push('', 'Oceny tematów ≥ 0,3 (noul):', '')
+    for (const w of b) {
+      const t = Object.entries(w.jev?.tematy ?? {})
+        .filter(([, v]) => v !== null && v >= 0.3)
+        .sort((x, y) => (y[1] ?? 0) - (x[1] ?? 0))
+        .map(([k, v]) => `${k} ${v?.toFixed(2)}`)
+      out.push(
+        `- ${w.id} [${(w.wiele.jev_z_zapasem ?? []).join(', ') || 'nie wiem'}] ${t.join(', ') || '–'}`,
+      )
+    }
+  }
+
+  let podsumowanie: Record<string, unknown> = { oceny: { a: ocenyA, b: ocenyB, wiele: ocenyWiele } }
   if (naZywo) {
     const msA = a.flatMap((w) => (w.jev ? [w.jev.ms] : []))
     const msB = b.flatMap((w) => (w.jev ? [w.jev.ms] : []))

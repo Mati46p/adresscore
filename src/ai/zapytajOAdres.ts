@@ -7,7 +7,14 @@
 // Brak klucza, błąd, wybór spoza listy albo niska pewność → reguła słów kluczowych poniżej.
 import type { WskaznikMeta, Zrodlo } from '../kontrakty/index.ts'
 import { KOLEJNOSC_KATEGORII } from '../wynik/silnik.ts'
-import { type OdpowiedzJev, type OpcjeKlienta, wybor, type ZapytanieJev, zJevem } from './jev.ts'
+import {
+  type OdpowiedzJev,
+  type OpcjeKlienta,
+  takNie,
+  wybor,
+  type ZapytanieJev,
+  zJevem,
+} from './jev.ts'
 
 /** Id pytania w zapytaniu do pośrednika. */
 export const ID_PYTANIA = 'warstwa'
@@ -104,11 +111,219 @@ export function kryteria(lista: readonly PozycjaListy[]): Record<string, string>
   return k
 }
 
+// --- Tematy: pytania złożone (#146) ------------------------------------------------------
+
+/**
+ * Temat = grupa warstw odpowiadających na tę samą potrzebę. JEV ocenia twierdzenie tematu
+ * (noul 0–1) w tym samym wywołaniu co `choice`; temat z oceną ≥ PROG_TEMATU dokłada jedną
+ * warstwę z grupy. Każda warstwa należy najwyżej do jednego tematu.
+ */
+export interface Temat {
+  id: string
+  nazwa: string
+  /** Twierdzenie dla JEV (≤ 300 znaków), „Pytanie (choćby w części) dotyczy …”. */
+  twierdzenie: string
+  /** Warstwy tematu (id z public/dane/wskazniki). */
+  warstwy: readonly string[]
+  /** Warstwa, którą temat dokłada, gdy reguły nie wskażą lepszej z grupy. */
+  domyslna: string
+}
+
+const O = 'Pytanie (choćby w części) dotyczy'
+
+/** Stała kolejność – JEV widzi ją w zapytaniu, a remis noul rozstrzyga pozycja na liście. */
+export const TEMATY: readonly Temat[] = [
+  {
+    id: 'halas',
+    nazwa: 'hałas',
+    twierdzenie: `${O} hałasu, ciszy albo tego, czy w nocy jest spokojnie.`,
+    warstwy: ['halas_ldwn', 'halas_obwarzanek_lden'],
+    domyslna: 'halas_ldwn',
+  },
+  {
+    id: 'powietrze',
+    nazwa: 'powietrze',
+    twierdzenie: `${O} jakości powietrza, smogu, spalin albo palenia w piecach.`,
+    warstwy: [
+      'pm25_srednia',
+      'pm10_srednia',
+      'no2_srednia',
+      'bap_srednia',
+      'paleniska_200m',
+      'przewietrzanie_klasa',
+    ],
+    domyslna: 'pm25_srednia',
+  },
+  {
+    id: 'zielen',
+    nazwa: 'zieleń',
+    twierdzenie: `${O} zieleni, parków, drzew, skwerów albo przyrody w okolicy.`,
+    warstwy: [
+      'zielen_worldcover_100m',
+      'zielen_udzial',
+      'drzewa_100m',
+      'przyroda_chroniona_odleglosc',
+      'rod_odleglosc',
+      'woda_odleglosc',
+    ],
+    domyslna: 'zielen_worldcover_100m',
+  },
+  {
+    id: 'powodz',
+    nazwa: 'powódź',
+    twierdzenie: `${O} powodzi, zalewania, podtopień albo wysokiej wody.`,
+    warstwy: ['powodz_1proc', 'powodz_10proc', 'powodz_02proc', 'gmina_powodz_powierzchnia_pct'],
+    domyslna: 'powodz_1proc',
+  },
+  {
+    id: 'komunikacja',
+    nazwa: 'komunikacja',
+    twierdzenie: `${O} komunikacji publicznej: przystanków, tramwajów, autobusów, pociągów albo czasu dojazdu.`,
+    warstwy: [
+      'przystanek_odleglosc',
+      'kursy_szczyt_h',
+      'rynek_czas_min',
+      'kolej_odleglosc',
+      'kolej_kursy_szczyt_h',
+      'bus_mld_odleglosc',
+      'bus_mld_kursy_szczyt_h',
+      'lotnisko_czas_min',
+    ],
+    domyslna: 'przystanek_odleglosc',
+  },
+  {
+    id: 'szkoly',
+    nazwa: 'szkoły i przedszkola',
+    twierdzenie: `${O} szkół, przedszkoli, żłobków albo placów zabaw dla dzieci.`,
+    warstwy: [
+      'szkola_podst_odleglosc',
+      'przedszkole_odleglosc',
+      'zlobek_odleglosc',
+      'liceum_odleglosc',
+      'szkola_podst_wynik_e8',
+      'plac_zabaw_odleglosc',
+    ],
+    domyslna: 'szkola_podst_odleglosc',
+  },
+  {
+    id: 'zdrowie',
+    nazwa: 'zdrowie',
+    twierdzenie: `${O} lekarza, przychodni, apteki albo pomocy medycznej w pobliżu.`,
+    warstwy: [
+      'przychodnia_odleglosc',
+      'przychodnia_bez_barier_odleglosc',
+      'apteka_odleglosc',
+      'defibrylator_odleglosc',
+    ],
+    domyslna: 'przychodnia_odleglosc',
+  },
+  {
+    id: 'sklepy',
+    nazwa: 'sklepy i usługi',
+    twierdzenie: `${O} sklepów, zakupów, usług, poczty, bankomatu albo paczkomatu w pobliżu.`,
+    warstwy: [
+      'sklep_odleglosc',
+      'uslugi_15min',
+      'bankomat_poczta_odleglosc',
+      'paczkomat_odleglosc',
+      'weterynarz_odleglosc',
+    ],
+    domyslna: 'sklep_odleglosc',
+  },
+  {
+    id: 'ceny',
+    nazwa: 'ceny mieszkań',
+    twierdzenie: `${O} cen mieszkań, kosztu metra kwadratowego albo wartości nieruchomości.`,
+    warstwy: ['cena_m2_mediana'],
+    domyslna: 'cena_m2_mediana',
+  },
+  {
+    id: 'bezpieczenstwo',
+    nazwa: 'bezpieczeństwo',
+    twierdzenie: `${O} bezpieczeństwa na ulicy, oświetlenia wieczorem, policji albo przestępczości.`,
+    warstwy: [
+      'oswietlenie_100m',
+      'policja_odleglosc',
+      'miejscowe_zagrozenia_gmina_2025',
+      'pozary_gmina_2025',
+      'punkt_schronienia_odleglosc',
+    ],
+    domyslna: 'oswietlenie_100m',
+  },
+  {
+    id: 'parkowanie',
+    nazwa: 'parkowanie',
+    twierdzenie: `${O} parkowania samochodu, płatnej strefy parkowania albo wjazdu autem do strefy.`,
+    warstwy: ['spp_podstrefa', 'sct_w_strefie', 'pr_odleglosc'],
+    domyslna: 'spp_podstrefa',
+  },
+  {
+    id: 'rower',
+    nazwa: 'rower',
+    twierdzenie: `${O} jazdy rowerem, dróg rowerowych albo stojaków na rowery.`,
+    warstwy: ['rower_infrastruktura_odleglosc', 'droga_rowerowa_odleglosc', 'stojaki_300m'],
+    domyslna: 'rower_infrastruktura_odleglosc',
+  },
+  {
+    id: 'demografia',
+    nazwa: 'demografia',
+    twierdzenie: `${O} tego, kto mieszka w okolicy: ilu jest tu ludzi, rodzin z dziećmi albo seniorów.`,
+    warstwy: ['ludnosc_1km', 'udzial_0_14', 'udzial_65plus'],
+    domyslna: 'ludnosc_1km',
+  },
+  {
+    id: 'plan',
+    nazwa: 'plan miejscowy i inwestycje',
+    twierdzenie: `${O} planu miejscowego, nowych budów, inwestycji albo tego, co powstanie w okolicy.`,
+    warstwy: [
+      'inwestycje_500m',
+      'mpzp_status',
+      'gmina_mpzp_pokrycie_pct',
+      'bo_projekty_1km',
+      'przetargi_dzielnica',
+      'gmina_inwestycje_pc',
+    ],
+    domyslna: 'inwestycje_500m',
+  },
+  {
+    id: 'przemysl_grunt',
+    nazwa: 'przemysł i grunt',
+    twierdzenie: `${O} zakładów przemysłowych, azbestu, osuwisk albo ruchów gruntu.`,
+    warstwy: [
+      'emitent_odleglosc',
+      'seveso_odleglosc',
+      'azbest_budynki_100m',
+      'osuwisko_odleglosc',
+      'teren_osuwiskowy',
+      'osiadanie_mm_rok',
+    ],
+    domyslna: 'emitent_odleglosc',
+  },
+]
+
+/**
+ * Od tej oceny twierdzenia temat dokłada warstwę. 0,6 jak PROG_POTRZEBY w „opisz siebie”:
+ * w pomiarze #18 noul dla potrzeb, o które tekst pyta, miał średnio 0,82, a dla pozostałych
+ * 0,21 – próg tuż nad środkiem skali odcina szum, a nie gubi tematów wyraźnie nazwanych.
+ */
+export const PROG_TEMATU = 0.6
+/** Karta pokazuje najwyżej tyle odpowiedzi naraz. */
+export const MAKS_ODPOWIEDZI = 3
+
+/** Id pytania noul tematu w zapytaniu do pośrednika. */
+export const idTematu = (t: Pick<Temat, 'id'>) => `temat_${t.id}`
+
+const TEMAT_WARSTWY = new Map(TEMATY.flatMap((t) => t.warstwy.map((w) => [w, t.id] as const)))
+/** Temat warstwy; warstwa spoza tematów jest sama dla siebie tematem. */
+export const tematWarstwy = (warstwa: string) => TEMAT_WARSTWY.get(warstwa) ?? `warstwa:${warstwa}`
+
 export function zapytanieJev(pytanie: string, lista: readonly PozycjaListy[]): ZapytanieJev {
-  return {
-    stan: pytanie.slice(0, 2000),
-    pytania: { [ID_PYTANIA]: wybor(POLECENIE, kryteria(lista)) },
-  }
+  const ids = new Set(lista.map((p) => p.id))
+  const pytania: ZapytanieJev['pytania'] = { [ID_PYTANIA]: wybor(POLECENIE, kryteria(lista)) }
+  // Temat bez żadnej warstwy na liście nic by nie dołożył – nie pytamy o niego.
+  for (const t of TEMATY)
+    if (t.warstwy.some((w) => ids.has(w))) pytania[idTematu(t)] = takNie(t.twierdzenie)
+  return { stan: pytanie.slice(0, 2000), pytania }
 }
 
 /** Wybór warstwy: id z listy albo null = „nie wiem”. */
@@ -129,6 +344,66 @@ export function przetworz(
   if (o.pewnosc === null || !(o.pewnosc >= PROG_PEWNOSCI)) return null
   if (o.wybor === NIE_WIEM) return { warstwa: null }
   return lista.some((p) => p.id === o.wybor) ? { warstwa: o.wybor } : null
+}
+
+/** Wybór kilku warstw (#146): id z listy w kolejności pokazywania; [] = „nie wiem”. */
+export interface WyborWarstw {
+  warstwy: string[]
+}
+
+/**
+ * Odpowiedź JEV → do 3 warstw. Pierwsza to `choice` (warstwa główna, te same zasady co
+ * `przetworz`), potem tematy z noul ≥ progu malejąco. Temat, w który trafiła już wybrana
+ * warstwa, nic nie dokłada; inaczej dokłada warstwę z grupy, którą wskazują reguły słów
+ * kluczowych, a bez nich – domyślną. Pewne `nie_wiem` → „nie wiem” bez dodatków.
+ */
+export function przetworzWiele(
+  odpowiedzi: Record<string, OdpowiedzJev | null>,
+  lista: readonly PozycjaListy[],
+  pytanie: string,
+  prog: number = PROG_TEMATU,
+): WyborWarstw | null {
+  const glowny = przetworz(odpowiedzi, lista)
+  if (!glowny) return null
+  if (glowny.warstwa === null) return { warstwy: [] }
+  const ids = new Set(lista.map((p) => p.id))
+  const wskazane = trafieniaRegul(pytanie, lista).map((t) => t.warstwa)
+  const tematy = TEMATY.map((t) => {
+    const o = odpowiedzi[idTematu(t)]
+    return { t, noul: o?.typ === 'noul' ? o.noul : null }
+  })
+    .filter((x): x is { t: Temat; noul: number } => x.noul !== null && x.noul >= prog)
+    .sort((a, b) => b.noul - a.noul) // sort stabilny: remis = kolejność TEMATY
+  return {
+    warstwy: dobierz(
+      [glowny.warstwa],
+      tematy.map((x) => x.t),
+      wskazane,
+      ids,
+    ),
+  }
+}
+
+/** Dokłada po jednej warstwie z kolejnych tematów, aż do MAKS_ODPOWIEDZI. */
+function dobierz(
+  start: readonly string[],
+  tematy: readonly Temat[],
+  wskazane: readonly string[],
+  ids: ReadonlySet<string>,
+): string[] {
+  const wynik = [...start]
+  const zajete = new Set(wynik.map(tematWarstwy))
+  for (const t of tematy) {
+    if (wynik.length >= MAKS_ODPOWIEDZI) break
+    if (zajete.has(t.id)) continue
+    const warstwa =
+      wskazane.find((w) => tematWarstwy(w) === t.id && ids.has(w)) ??
+      (ids.has(t.domyslna) ? t.domyslna : t.warstwy.find((w) => ids.has(w)))
+    if (!warstwa) continue
+    wynik.push(warstwa)
+    zajete.add(t.id)
+  }
+  return wynik
 }
 
 // --- Reguła zapasowa: słowa kluczowe po polsku -------------------------------------------
@@ -208,6 +483,16 @@ export const REGULY: readonly { warstwy: readonly string[]; wzorce: readonly Reg
   { warstwy: ['lawki_300m'], wzorce: [/lawk/, /usiasc/] },
   { warstwy: ['obnizone_krawezniki_300m'], wzorce: [/kraweznik/, /wozk/, /niepelnospraw/] },
   { warstwy: ['oswietlenie_100m'], wzorce: [/latarn/, /oswietl/, /ciemno/] },
+  // #146: tematy rower, bezpieczeństwo i przemysł/grunt nie miały reguł – bez nich zapas
+  // nie umiał dołożyć ich warstwy.
+  { warstwy: ['policja_odleglosc'], wzorce: [/policj/, /komisariat/] },
+  { warstwy: ['stojaki_300m'], wzorce: [/stojak/, /przypi/] },
+  {
+    warstwy: ['rower_infrastruktura_odleglosc', 'droga_rowerowa_odleglosc'],
+    wzorce: [/rower/, /sciezk/],
+  },
+  { warstwy: ['teren_osuwiskowy', 'osuwisko_odleglosc'], wzorce: [/osuw/, /osiada/] },
+  { warstwy: ['azbest_budynki_100m'], wzorce: [/azbest/, /eternit/] },
   { warstwy: ['sct_w_strefie'], wzorce: [/\bsct\b/, /czystego transportu/, /diesl/] },
   { warstwy: ['spp_podstrefa'], wzorce: [/parkow/, /parkuj/, /parking/, /strefa platn/] },
   { warstwy: ['bo_projekty_1km'], wzorce: [/budzet\w* obywatel/, /projekt\w* (bo|obywatel)/] },
@@ -240,20 +525,67 @@ export function podpowiedzi(lista: readonly PozycjaListy[]): string[] {
 
 /** Reguła bez AI: pytanie → id warstwy z listy albo null („nie wiem”). Deterministyczna. */
 export function regula(pytanie: string, lista: readonly PozycjaListy[]): WyborWarstwy {
-  const tekst = normalizuj(pytanie)
-  const ids = new Set(lista.map((p) => p.id))
   let najlepsza: string | null = null
   let trafien = 0
-  for (const r of REGULY) {
-    const warstwa = r.warstwy.find((w) => ids.has(w))
-    if (!warstwa) continue
-    const n = r.wzorce.filter((w) => w.test(tekst)).length
-    if (n > trafien) {
-      trafien = n
-      najlepsza = warstwa
+  for (const t of trafieniaRegul(pytanie, lista)) {
+    if (t.n > trafien) {
+      trafien = t.n
+      najlepsza = t.warstwa
     }
   }
   return { warstwa: najlepsza }
+}
+
+interface TrafienieReguly {
+  warstwa: string
+  /** Liczba trafionych wzorców. */
+  n: number
+  /** Pozycja pierwszego trafienia w znormalizowanym pytaniu. */
+  poz: number
+}
+
+/** Wszystkie reguły, które coś trafiły, w kolejności REGULY (pierwszeństwa). */
+function trafieniaRegul(pytanie: string, lista: readonly PozycjaListy[]): TrafienieReguly[] {
+  const tekst = normalizuj(pytanie)
+  const ids = new Set(lista.map((p) => p.id))
+  const wynik: TrafienieReguly[] = []
+  for (const r of REGULY) {
+    const warstwa = r.warstwy.find((w) => ids.has(w))
+    if (!warstwa) continue
+    let n = 0
+    let poz = Number.POSITIVE_INFINITY
+    for (const w of r.wzorce) {
+      const m = w.exec(tekst)
+      if (!m) continue
+      n++
+      poz = Math.min(poz, m.index)
+    }
+    if (n > 0) wynik.push({ warstwa, n, poz })
+  }
+  return wynik
+}
+
+/**
+ * Reguła zapasowa dla pytań złożonych (#146): wszystkie pasujące grupy reguł, po jednej na
+ * temat, w kolejności, w jakiej temat pada w pytaniu – do MAKS_ODPOWIEDZI. W obrębie tematu
+ * wygrywa reguła jak w `regula` (więcej trafionych wzorców, remis – wyżej na liście).
+ */
+export function regulaWiele(pytanie: string, lista: readonly PozycjaListy[]): WyborWarstw {
+  const tematy = new Map<string, TrafienieReguly & { pozTematu: number }>()
+  for (const t of trafieniaRegul(pytanie, lista)) {
+    const id = tematWarstwy(t.warstwa)
+    const byla = tematy.get(id)
+    if (!byla) tematy.set(id, { ...t, pozTematu: t.poz })
+    else {
+      const pozTematu = Math.min(byla.pozTematu, t.poz)
+      tematy.set(id, t.n > byla.n ? { ...t, pozTematu } : { ...byla, pozTematu })
+    }
+  }
+  const warstwy = [...tematy.values()]
+    .sort((a, b) => a.pozTematu - b.pozTematu)
+    .slice(0, MAKS_ODPOWIEDZI)
+    .map((t) => t.warstwa)
+  return { warstwy }
 }
 
 // --- Odpowiedź z danych ------------------------------------------------------------------
@@ -362,21 +694,52 @@ export function odpowiedz(
 }
 
 /**
- * Całość: JEV wybiera warstwę z listy (przez pośrednika #15), a gdy nie może – reguła.
- * Nigdy nie rzuca. `zrodloOdpowiedzi` mówi, kto wybrał warstwę; liczba zawsze z danych.
+ * Kilka warstw → kilka odpowiedzi z danych, w tej samej kolejności. Warstwa, której nie da się
+ * pokazać (nie ma jej w danych albo to atrapa), przepada; gdy nie zostanie żadna – „nie wiem”.
  */
+export function odpowiedzi(
+  wybor: WyborWarstw,
+  wskazniki: readonly WarstwaDanych[],
+  i: number,
+  zrodloOdpowiedzi: ZrodloOdpowiedzi,
+): Odpowiedz[] {
+  const warstwy = [...new Set(wybor.warstwy)]
+    .slice(0, MAKS_ODPOWIEDZI)
+    .map((warstwa) => odpowiedz({ warstwa }, wskazniki, i, zrodloOdpowiedzi))
+    .filter((o) => o.rodzaj === 'warstwa')
+  return warstwy.length > 0
+    ? warstwy
+    : [odpowiedz({ warstwa: null }, wskazniki, i, zrodloOdpowiedzi)]
+}
+
+/**
+ * Całość (#146): jedno wywołanie JEV wybiera warstwę główną i ocenia tematy, a gdy nie może –
+ * reguła z kilkoma tematami. Zwraca 1–3 odpowiedzi (albo jedno „nie wiem”), nigdy nie rzuca.
+ * `zrodloOdpowiedzi` mówi, kto wybrał warstwy; liczby zawsze z danych.
+ */
+export async function zapytajOAdresWiele(
+  pytanie: string,
+  wskazniki: readonly WarstwaDanych[],
+  i: number,
+  opcje: OpcjeKlienta = {},
+): Promise<Odpowiedz[]> {
+  const lista = listaWarstw(wskazniki.map((w) => w.meta))
+  const { wynik, zrodlo } = await zJevem(
+    zapytanieJev(pytanie, lista),
+    (odp) => przetworzWiele(odp, lista, pytanie),
+    () => regulaWiele(pytanie, lista),
+    opcje,
+  )
+  return odpowiedzi(wynik, wskazniki, i, zrodlo === 'jev' ? 'jev' : 'reguly')
+}
+
+/** Zgodność wstecz (#17): tylko pierwsza odpowiedź z `zapytajOAdresWiele`. */
 export async function zapytajOAdres(
   pytanie: string,
   wskazniki: readonly WarstwaDanych[],
   i: number,
   opcje: OpcjeKlienta = {},
 ): Promise<Odpowiedz> {
-  const lista = listaWarstw(wskazniki.map((w) => w.meta))
-  const { wynik, zrodlo } = await zJevem(
-    zapytanieJev(pytanie, lista),
-    (odp) => przetworz(odp, lista),
-    () => regula(pytanie, lista),
-    opcje,
-  )
-  return odpowiedz(wynik, wskazniki, i, zrodlo === 'jev' ? 'jev' : 'reguly')
+  const [pierwsza] = await zapytajOAdresWiele(pytanie, wskazniki, i, opcje)
+  return pierwsza ?? odpowiedz({ warstwa: null }, wskazniki, i, 'reguly')
 }
