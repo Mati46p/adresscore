@@ -1,8 +1,9 @@
 # Pomiar JEV po polsku (#18)
 
-> Najnowszy wynik – na zbiorze kontrolnym pisanym na ślepo – jest w sekcji
-> „Druga runda (#150)” (drugi pomiar na tym zbiorze), pierwszy – w „Poprawki trafności (#147)”.
-> Liczby z #18 niżej dotyczą zbioru, na którym potem stroiliśmy.
+> Najnowszy wynik – wersja końcowa na **zbiorze kontrolnym nr 2**, pisanym na ślepo i mierzonym
+> raz – jest w sekcji „Wersja końcowa (#152)”. Zbiór kontrolny nr 1 mierzyliśmy w „Poprawki
+> trafności (#147)” i „Druga runda (#150)”. Liczby z #18 niżej dotyczą zbioru, na którym potem
+> stroiliśmy.
 
 Pomiar z 2026-10-03: JEV (TypeSafe, `jev-latest`) kontra reguły słów kluczowych na złożonych,
 potocznych opisach i pytaniach. Zbiory: `zbior-opisz.json` (30 opisów), `zbior-zapytaj.json`
@@ -565,17 +566,179 @@ Bez zmian: jedno wywołanie na tekst, ok. 0,3 s.
 9 + 6 + 4 + 5 zdań (kilka brzmień w jednym wywołaniu) i tematy – 11 pytań (stare i nowe
 twierdzenia obok siebie w jednym wywołaniu).
 
+## Wersja końcowa (#152)
+
+Składamy najlepsze części z #147 i #150 – każdą wybraną na podstawie zbioru kontrolnego nr 1 –
+i mierzymy je raz na **nowym zbiorze kontrolnym nr 2** (`kontrolny2-opisz.json`, 30 opisów;
+`kontrolny2-zapytaj.json`, 25 pytań: 15 pojedynczych, 7 złożonych, 3 spoza zakresu). Zbiór nr 2
+napisał na ślepo osobny agent AI, bez dostępu do kodu, poleceń, opisów warstw dla JEV i zbioru
+nr 1. Wszedł do repo bajt w bajt osobnym commitem, zanim zmieniłem kod; etykiet nie ruszałem,
+tekstów nie czytałem. Nic tu nie stroiłem: jedyny przebieg na żywo to końcowy pomiar zbioru nr 2.
+
+### Wybór części – z dowodami (zbiór kontrolny nr 1)
+
+| Część | Wersja | Dowód (kontrolny nr 1) |
+|---|---|---|
+| „Opisz siebie”: twierdzenia potrzeb, brzmienie bramki „własna sytuacja”, progi | **#147** (`5a8e872`) | Bramka z #150 odcinała 10 z 30 opisów; pełność potrzeb 88% → 71%, F1 77% → 73%; „dokładnie” 37% w obu |
+| „Zapytaj o adres”, części dla JEV: twierdzenia `TEMATY`, `DOPISKI_WARSTW`, polecenie | **#147** | Z #150 warstwa główna 92% → 88%, precyzja 92% → 88%, zapas 1 → 3, fałszywe dodatki 2 → 3 |
+| „Zapytaj o adres”, reguły: `ogolne`, rower → stojaki, druga warstwa z tematu tylko z nazwanych obiektów | **#150** | Reguły: precyzja 89% → 94%, fałszywe dodatki 1 → 0; pokrycie bez zmian (67%) |
+
+Kawałki diffu `5a8e872..e25ffe9` w `src/ai`:
+
+| Plik | Kawałek | Decyzja |
+|---|---|---|
+| `opiszSiebie.ts` | nowe brzmienie `TWIERDZENIE_WLASNEJ_SYTUACJI` i komentarze | odrzucony – cały plik z `5a8e872` (+ komentarz #152) |
+| `zapytajOAdres.ts` | dopisek `zielen_worldcover_100m` („pobiegać, także na spacer z psem”) | odrzucony – JEV go widzi |
+| `zapytajOAdres.ts` | stała `P` („Pytanie (choćby w części) dotyczy”) | odrzucony |
+| `zapytajOAdres.ts` | 7 twierdzeń `TEMATY` (hałas, powietrze, zieleń z „Samo posiadanie psa to nie to”, komunikacja, sklepy, bezpieczeństwo, rower) | odrzucone – brzmienie z #147 |
+| `zapytajOAdres.ts` | `REGULY`: pole `ogolne`; reguła trasy `sciezk`, `tras`, `rowerem`, `na rowerze` + `ogolne: rower` | zostaje |
+| `zapytajOAdres.ts` | `TrafienieReguly.nazwany`, `nazwane()`, pętla po `wzorce` + `ogolne` w `trafieniaRegul` | zostaje |
+| `zapytajOAdres.ts` | `drugieZTematu(…, nazwane(trafienia))` w `regulaWiele` i `przetworzWiele` (+ komentarz) | zostaje – logika reguł; w ścieżce JEV działa dopiero po odpowiedzi, zapytania nie zmienia |
+| `pomiar.ts` | komentarz „brzmienie z #150” przy `wlasna` | odrzucony (komentarz z #147) |
+| `opiszSiebie.test.ts` | import `TWIERDZENIE_WLASNEJ_SYTUACJI` | zostaje |
+| `opiszSiebie.test.ts` | test „mama z nami zamieszka” (asercje brzmienia z #150, noul jak dla nowego brzmienia) | zastąpiony testem #152: twierdzenie z #147 jest w zapytaniu, ≤ 16 pytań |
+| `opiszSiebie.test.ts` | test „wysoka pewność profilu nie otwiera bramki” | zostaje – logika bramki jest ta sama w #147 |
+| `zapytajOAdres.test.ts` | „przypiąć rower” → stojaki, „rowerem” → obie warstwy | zostaje bez zmian |
+| `zapytajOAdres.test.ts` | „z psem do weterynarza” → bez zieleni | zostają asercje przetwarzania i reguł; usunięte asercje brzmienia dopisku i twierdzenia zieleni |
+| `zapytajOAdres.test.ts` | twierdzenia tematów „Pytanie (choćby w części)…” z wykluczeniami | usunięty – sprawdzał brzmienie z #150 |
+| `WYNIKI.md` | sekcja „Druga runda (#150)” | zostaje jako historia |
+
+Uwaga do „weterynarza”: poprawka z #150 była w całości po stronie JEV (dopisek i twierdzenie
+zieleni); reguły nigdy nie dokładały tu zieleni (test przechodzi w obu wersjach). Wracając do
+tekstów z #147, wraca więc znana wada #147: JEV może dołożyć zieleń do „z psem do weta”.
+
+### Czy zapytania do JEV są takie jak w #147?
+
+`node src/ai/pomiar/zgodnosc147.ts` (bez sieci) wyciąga `opiszSiebie.ts` i `zapytajOAdres.ts`
+z `5a8e872`, buduje zapytania dla wszystkich tekstów ze wszystkich zbiorów i porównuje je bajt
+w bajt:
+
+| | Wzorcowy | Kontrolny nr 1 | Kontrolny nr 2 |
+|---|---|---|---|
+| „Opisz siebie” – całe zapytanie | 30/30 identycznych | 30/30 | 30/30 |
+| „Zapytaj o adres” – kod, ta sama lista warstw | 28/28 identycznych | 25/25 | 25/25 |
+| „Zapytaj o adres” – całe zapytanie z listą warstw z `5a8e872` | 0/28 | 0/25 | 0/25 |
+
+**Kod zapytań jest identyczny z #147, ale lista warstw nie.** Po `5a8e872` doszło 7 warstw
+„Sejm 2023 · …” (`sejm2023_lista_1…7`, commit `40ff16a`, #134): lista dla JEV ma 93 warstwy
+zamiast 86 (opisy pozostałych bez zmian). To 7 dodatkowych opcji w wyborze warstwy głównej.
+Wniosek:
+
+- „opisz siebie” nie używa listy warstw, więc zapytanie i przetwarzanie są identyczne z #147 –
+  wynik JEV z #147 na zbiorze nr 1 przenosi się wprost (z dokładnością do niedeterminizmu JEV);
+- w „zapytaj o adres” wynik #147 przenosi się tylko w przybliżeniu: zapytanie ma 7 opcji więcej,
+  a przetwarzanie ma reguły z #150. Nie wiadomo, czy pomiar #150 widział te warstwy (`40ff16a`
+  weszło 10 minut przed scaleniem #150), więc porównanie #147 z #150 w B może je mieszać
+  z brzmieniem tematów;
+- warstw Sejmu nie wyłączyłem z listy JEV – to dane i funkcja z #134, a nie część tego zadania.
+  Zbiór nr 2 ich nie używa (piszący nie znał tych warstw), więc w pomiarze są tylko
+  dodatkowymi opcjami do pomylenia; w aplikacji też są.
+
+### Wynik nagłówkowy – zbiór kontrolny nr 2 (świeży, na ślepo, mierzony raz)
+
+`pomiar.ts --na-zywo --zbior kontrolny2`, jeden przebieg; po nim nic w kodzie nie zmieniłem.
+JEV = to, co widzi użytkownik (JEV, a pod progiem reguły).
+
+**A – „opisz siebie”** (30 opisów):
+
+| | Reguły | **JEV** |
+|---|---|---|
+| Profil trafiony | 67% | **67%** |
+| Potrzeby (10 z twierdzeniem) – P / R / F1 | 77 / 57 / 66% | **84 / 79 / 81%** |
+| Potrzeby – F1 na wszystkich 15 | 64% | **71%** |
+| Kategorie ważne – P / R / F1 | 83 / 68 / 75% | **90 / 75 / 81%** |
+| Cały opis zrozumiany dokładnie | 27% | **47%** |
+| Puste teksty → „nic nie zrozumiano” | 2/2 | 2/2 |
+| Bramka „własna sytuacja” poniżej 0,5 | – | 3 z 30 (średnio 0,82) |
+| Zapas (reguły zamiast JEV) | – | 1/30 (nieczytelna odpowiedź) |
+
+**B – „zapytaj o adres”** (25 pytań):
+
+| | Reguły | **JEV** |
+|---|---|---|
+| Trafna warstwa główna (albo „nie wiem”) | 60% | **96%** |
+| Pytania pojedyncze – warstwa główna trafna | 5/15 | **14/15** |
+| Pokrycie pytań złożonych (do 3 warstw) | 69% | **69%** |
+| Złożone z kompletem tematów | 2/7 | 2/7 |
+| Spoza zakresu → „nie wiem” bez dodatków | 3/3 | 3/3 |
+| Precyzja warstw | 94% | **93%** |
+| Fałszywe dodatki na pojedynczych (pytań) | 0 | 1 |
+| Średnio warstw na odpowiedź | 0,77 | 1,27 |
+| Zapas (reguły zamiast JEV) | – | 2/25 (nieczytelne odpowiedzi) |
+
+Jak to czytać – wprost:
+
+- **JEV wyraźnie wygrywa w wyborze jednej warstwy** (96% vs 60%) i w potrzebach z opisu
+  (F1 81% vs 66%, pełność 79% vs 57%). Cały opis dokładnie: 47% vs 27%.
+- **Profil – remis** (67% w obu). Pewność JEV przy trafnym profilu średnio 0,95, przy błędnym 0,73.
+- **Pytania złożone – remis** (pokrycie 69% w obu, komplet 2/7 w obu). JEV pokazuje więcej warstw
+  (1,27 vs 0,77), ale nie trafia w drugi temat częściej niż reguły; ma jeden fałszywy dodatek na
+  pojedynczym pytaniu.
+- Na zbiorze nr 2 oba systemy wypadają lepiej niż na zbiorze nr 1 (np. reguły „dokładnie” 27% vs
+  20%), więc część różnicy względem #147 to inny, być może łatwiejszy zbiór, a nie lepszy kod.
+- To 30 + 25 pozycji: 1 opis = 3 pp, 1 pytanie = 4 pp. Różnice rzędu jednej pozycji to szum.
+- Przeliczenie progu tematu z tych samych odpowiedzi (bez nowych wywołań): 0,5 – pokrycie 69%
+  i 2 fałszywe dodatki; 0,9 – pokrycie 60% i 0 fałszywych dodatków. Progu nie zmieniałem.
+
+### Zbiór kontrolny nr 1 – dla odniesienia (użyty do wyboru części)
+
+Na tym zbiorze wybierałem części, więc to nie jest dowód. JEV: wynik z #147 przeniesiony (patrz
+zastrzeżenie o liście warstw wyżej, „≈” = tylko w przybliżeniu); reguły: przeliczone teraz bez
+sieci.
+
+| | Reguły (wersja końcowa) | JEV (pomiar #147) |
+|---|---|---|
+| A: profil | 57% | 63% |
+| A: potrzeby P / R / F1 | 59 / 49 / 53% | 69 / 88 / 77% |
+| A: kategorie F1 | 68% | 79% |
+| A: dokładnie | 20% | 37% |
+| B: trafna warstwa główna | 64% | ≈ 92% |
+| B: pokrycie złożonych (do 3 warstw) | 67% | ≈ 52% |
+| B: precyzja warstw | 94% | ≈ 92% |
+| B: fałszywe dodatki na pojedynczych | 0 | ≈ 2 |
+
+### Same reguły – bez sieci, wersja końcowa
+
+`pomiar.ts` bez `--na-zywo` (z `--zbior kontrolny` / `kontrolny2` albo bez) – zero wywołań,
+wynik deterministyczny.
+
+| | Wzorcowy (strojenie) | Kontrolny nr 1 | Kontrolny nr 2 |
+|---|---|---|---|
+| A: profil | 73% | 57% | 67% |
+| A: potrzeby P / R / F1 | 75 / 68 / 71% | 59 / 49 / 53% | 77 / 57 / 66% |
+| A: kategorie F1 | 88% | 68% | 75% |
+| A: dokładnie | 30% | 20% | 27% |
+| B: trafna warstwa główna | 68% | 64% | 60% |
+| B: pojedyncze | 9/17 | 6/15 | 5/15 |
+| B: pokrycie złożonych (do 3 warstw) | 100% | 67% | 69% |
+| B: złożone w komplecie | 7/7 | 2/7 | 2/7 |
+| B: precyzja warstw | 89% | 94% | 94% |
+| B: fałszywe dodatki na pojedynczych | 1 | 0 | 0 |
+
+Wzorcowy i kontrolny nr 1 zgadzają się z liczbami reguł po #150 – reguły to wersja z #150.
+
+### Opóźnienie (p50 / p95 / max, pośrednik → api.typesafe.ai)
+
+| Przebieg | A | B | Razem |
+|---|---|---|---|
+| Kontrolny nr 2, wersja końcowa | 285 / 416 / 468 ms | 352 / 424 / 484 ms | 307 / 424 / 484 ms |
+
+Bez zmian: jedno wywołanie na tekst, ok. 0,3 s.
+
+### Wywołania na żywo
+
+**55 płatnych wywołań** (budżet 60): tylko końcowy pomiar zbioru nr 2 (30 + 25). Strojenia nie
+było; sprawdzenie zgodności z #147 i liczby reguł są bez sieci.
+
 ## Na slajd
 
-Liczby ze zbioru kontrolnego, pisanego na ślepo przez osobnego agenta AI. Po #150 to **drugi
-pomiar** na tym zbiorze (wady poprawiane w #150 znaliśmy z pierwszego), więc liczby są lekko
-optymistyczne. Zdania z #18 (67%, 9 z 10, 93%, 86%) dotyczyły zbioru, na którym stroiliśmy,
-i na slajd się nie nadają. Zdanie z #147 „prawie 9 z 10 potrzeb” po #150 nie jest już prawdziwe
-(pełność 71%), więc je zastąpiłem.
+Liczby ze **zbioru kontrolnego nr 2**: napisał go na ślepo osobny agent AI, bez dostępu do kodu
+i poleceń, a wersję końcową zmierzyliśmy na nim raz, bez poprawek po pomiarze. To 30 opisów
+i 25 pytań, więc to wynik orientacyjny. Zdania z #18, #147 i #150 dotyczyły zbiorów, na których
+już coś wybieraliśmy; zastępuje je ta wersja.
 
-- Na opisach, których nie widział nikt, kto stroił aplikację, JEV wyłapuje 7 z 10 wymienionych
-  potrzeb, a reguły słów kluczowych – 5 z 10.
-- Cały opis (profil i komplet potrzeb) JEV rozumie dokładnie w 37% przypadków, reguły w 20% –
-  złożone, potoczne opisy są trudne dla obu.
-- Na pytanie o adres JEV wskazuje właściwe dane w 88% przypadków (reguły 64%) i odpowiada
-  w 0,3 sekundy.
+- Na nowych opisach JEV wyłapuje 8 z 10 wymienionych potrzeb, a reguły słów kluczowych 6 z 10.
+- Cały opis (profil i komplet potrzeb) JEV rozumie dokładnie w prawie połowie przypadków (47%),
+  reguły w co czwartym (27%); sam profil oba systemy trafiają równie często (67%).
+- Na pytanie o adres JEV wskazuje właściwe dane w 96% przypadków (reguły 60%) i odpowiada
+  w 0,3 sekundy; przy pytaniach o kilka rzeczy naraz nie jest lepszy od reguł.

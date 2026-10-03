@@ -5,6 +5,7 @@
 //   node src/ai/pomiar/pomiar.ts                      # tylko reguły, bez sieci i bez klucza
 //   node --env-file=.env.local src/ai/pomiar/pomiar.ts --na-zywo [--tylko a|b] [--wyjscie plik.json]
 //   … --zbior kontrolny     # zbiór pisany na ślepo (#147): tylko liczby zbiorcze, bez błędów
+//   … --zbior kontrolny2    # drugi zbiór na ślepo (#152), mierzony raz: tak samo, tylko liczby
 //
 // Na żywo każda pozycja to JEDNO wywołanie JEV (ok. 58 na przebieg – to kosztuje). Idzie
 // tą samą ścieżką co aplikacja: klient (jev.ts, timeout 1,5 s) → pośrednik (api/_jev.js,
@@ -72,7 +73,24 @@ const iZbior = argv.indexOf('--zbior')
  * do kodu. Na nim nic nie stroimy – raport pokazuje tylko liczby zbiorcze (bez tekstów i bez
  * błędów pozycja po pozycji), żeby strojenie go nie widziało.
  */
-const KONTROLNY = iZbior >= 0 && argv[iZbior + 1] === 'kontrolny'
+const NAZWA_ZBIORU = iZbior >= 0 ? argv[iZbior + 1] : undefined
+/**
+ * `--zbior kontrolny2` (#152): drugi zbiór na ślepo – pisał go inny agent, bez dostępu do kodu,
+ * poleceń i zbioru nr 1. Wybór części wersji końcowej patrzył na zbiór nr 1, więc wynik
+ * nagłówkowy daje zbiór nr 2, mierzony raz. Raport jak dla `kontrolny`: tylko liczby zbiorcze.
+ */
+const PLIKI_KONTROLNE: Record<string, { opisz: string; zapytaj: string }> = {
+  kontrolny: { opisz: 'kontrolny-opisz.json', zapytaj: 'kontrolny-zapytaj.json' },
+  kontrolny2: { opisz: 'kontrolny2-opisz.json', zapytaj: 'kontrolny2-zapytaj.json' },
+}
+if (NAZWA_ZBIORU !== undefined && !PLIKI_KONTROLNE[NAZWA_ZBIORU]) {
+  console.error(
+    `Nieznany zbiór: ${NAZWA_ZBIORU} (znane: ${Object.keys(PLIKI_KONTROLNE).join(', ')})`,
+  )
+  process.exit(2)
+}
+const PLIKI = NAZWA_ZBIORU === undefined ? undefined : PLIKI_KONTROLNE[NAZWA_ZBIORU]
+const KONTROLNY = PLIKI !== undefined
 
 const KATALOG = new URL('./', import.meta.url)
 const czytaj = (plik: string) => JSON.parse(readFileSync(new URL(plik, KATALOG), 'utf8'))
@@ -81,13 +99,13 @@ const czytaj = (plik: string) => JSON.parse(readFileSync(new URL(plik, KATALOG),
  * (u nas `[]`), a „nic” nie jest jawne – to profil null i brak potrzeb.
  */
 const ZBIOR_A: PozycjaOpisz[] = KONTROLNY
-  ? (czytaj('kontrolny-opisz.json').pozycje as PozycjaOpisz[]).map((p) => ({
+  ? (czytaj(PLIKI.opisz).pozycje as PozycjaOpisz[]).map((p) => ({
       ...p,
       nic: p.nic ?? (p.persona === null && p.potrzeby.length === 0),
     }))
   : czytaj('zbior-opisz.json').pozycje
 const ZBIOR_B: PozycjaZapytaj[] = KONTROLNY
-  ? (czytaj('kontrolny-zapytaj.json').pozycje as PozycjaZapytaj[]).map((p) => ({
+  ? (czytaj(PLIKI.zapytaj).pozycje as PozycjaZapytaj[]).map((p) => ({
       ...p,
       tematy: p.tematy.filter((t) => !(t.length === 1 && t[0] === NIE_WIEM)),
     }))
@@ -220,7 +238,7 @@ interface WynikA {
     /** Ocena twierdzeń (noul 0–1) dla potrzeb z twierdzeniem. */
     noul: Record<string, number | null>
     poziomy: Record<string, number | null>
-    /** #147: ocena twierdzenia o własnej sytuacji (noul 0–1, brzmienie z #150). */
+    /** #147: ocena twierdzenia „opisuje własną obecną sytuację” (noul 0–1). */
     wlasna: number | null
   }
 }
@@ -512,7 +530,7 @@ function raport(a: WynikA[], b: WynikB[], naZywo: boolean) {
   const systemyB = wszystkie.filter((s) => b.some((w) => s in w.systemy))
   const out: string[] = []
   out.push(
-    `# Zbiór: ${KONTROLNY ? 'kontrolny (na ślepo)' : 'wzorcowy (do strojenia)'}`,
+    `# Zbiór: ${KONTROLNY ? `${NAZWA_ZBIORU} (na ślepo)` : 'wzorcowy (do strojenia)'}`,
     '',
     `## A – opisz siebie (${a.length} pozycji)`,
     '',

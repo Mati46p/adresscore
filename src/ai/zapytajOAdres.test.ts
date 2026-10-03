@@ -440,7 +440,7 @@ describe('tematy – pytania złożone (#146)', () => {
     )
   })
 
-  it('#150: „z psem do weterynarza” → bez zieleni; dopisek zieleni mówi o psie tylko przy spacerze', () => {
+  it('#150: „z psem do weterynarza” → bez zieleni (reguły i przetwarzanie)', () => {
     const pytanie = 'Daleko z psem do weterynarza?'
     // noul jak na żywo dla nowych twierdzeń: sklepy (usługi) 0,97, zieleń 0,03.
     const w = przetworzWiele(
@@ -450,29 +450,8 @@ describe('tematy – pytania złożone (#146)', () => {
     )
     assert.deepEqual(w?.warstwy, ['weterynarz_odleglosc'])
     assert.ok(!regulaWiele(pytanie, pelna).warstwy.some((x) => tematWarstwy(x) === 'zielen'))
-    const zielen = pelna.find((p) => p.id === 'zielen_worldcover_100m')?.opis ?? ''
-    assert.match(zielen, /spacer z psem/)
-    assert.doesNotMatch(zielen.replace('spacer z psem', ''), /psem|psa\b/)
-    const temat = TEMATY.find((t) => t.id === 'zielen')?.twierdzenie ?? ''
-    assert.match(temat, /Samo posiadanie psa to nie to/)
-  })
-
-  it('#150: tematy obejmują prawdziwe pytania, ale zachowują wykluczenia znanych fałszywych dodatków', () => {
-    const tw = (id: string) => TEMATY.find((t) => t.id === id)?.twierdzenie ?? ''
-    assert.match(tw('komunikacja'), /wyłącznie o hałas tramwajów to nie to/)
-    assert.match(tw('sklepy'), /wyłącznie o aptekę albo lekarza to nie to/)
-    assert.match(tw('powietrze'), /wyłącznie o przepisy dla aut/)
-    assert.match(tw('bezpieczenstwo'), /wyłącznie o bezpieczną jazdę rowerem to nie to/)
-    for (const id of [
-      'halas',
-      'powietrze',
-      'zielen',
-      'komunikacja',
-      'sklepy',
-      'bezpieczenstwo',
-      'rower',
-    ])
-      assert.match(tw(id), /^Pytanie \(choćby w części\) dotyczy/, id)
+    // #152: dopisek zieleni i twierdzenie tematu (to, co widzi JEV) wróciły do #147, więc
+    // asercje o ich brzmieniu z #150 są usunięte; zostaje przetwarzanie i reguły.
   })
 
   it('#147: druga warstwa z tematu tylko w wolne miejsce, bez duplikatów, ≤ 3', () => {

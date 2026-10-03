@@ -46,7 +46,7 @@ const DOPISKI_WARSTW: Readonly<Record<string, string>> = {
   powodz_10proc: 'Tylko gdy pytanie wprost dotyczy częstych zalań (co kilka lat).',
   powodz_02proc: 'Tylko gdy pytanie wprost dotyczy najgorszego, skrajnie rzadkiego scenariusza.',
   zielen_worldcover_100m:
-    'Domyślna odpowiedź na pytania o zieleń: park, skwer, trawnik, czy jest zielono, gdzie wyjść na spacer albo pobiegać, także na spacer z psem.',
+    'Domyślna odpowiedź na pytania o zieleń: park, skwer, trawnik, czy jest zielono, gdzie wyjść na spacer albo z psem.',
   drzewa_100m: 'Odpowiedź na pytania o drzewa przy ulicy i pod oknem.',
   pm25_srednia:
     'Domyślna odpowiedź na pytania o smog, czyste powietrze i czym się tu oddycha (astma, alergia).',
@@ -165,27 +165,24 @@ export interface Temat {
 // (choćby w części) dotyczy …” łapało samo słowo: „słychać tramwaje” → komunikacja, „apteka”
 // → sklepy, „dieslem” → powietrze, „bezpiecznie rowerem” → zagrożenia (pomiar #146).
 const O = 'Użytkownik chce się dowiedzieć'
-// #150: ostre „Użytkownik chce się dowiedzieć” obniżało też prawdziwe tematy (sklepy 0,96 →
-// 0,56 na zbiorze kontrolnym). Siedem tematów wraca do formy obejmującej („choćby w części”),
-// ale z zawężonymi wykluczeniami („pytanie wyłącznie o …”) – cztery znane fałszywe dodatki
-// zostają pod progiem (0,07 / 0,17 / 0,13 / 0,33), a prawdziwe tematy rosną (hałas 0,77 → 0,94,
-// bezpieczeństwo wieczorem 0,47 → 0,91, powietrze 0,71 → 0,91, sklepy 0,69 → 0,91; WYNIKI.md,
-// „Druga runda (#150)”). Tematy, których nie sprawdziłem na żywo, mają brzmienie z #147.
-const P = 'Pytanie (choćby w części) dotyczy'
+// #152: twierdzenia tematów i dopiski warstw (wszystko, co widzi JEV) są z #147. Wersja z #150
+// („Pytanie (choćby w części) dotyczy …”) na zbiorze kontrolnym nr 1 obniżyła trafność warstwy
+// głównej z 92% do 88% i precyzję z 92% do 88%, a zapas wzrósł z 1 do 3 (WYNIKI.md, „Wersja
+// końcowa (#152)”). Reguły słów kluczowych (`ogolne`, rower → stojaki) zostają z #150.
 
 /** Stała kolejność – JEV widzi ją w zapytaniu, a remis noul rozstrzyga pozycja na liście. */
 export const TEMATY: readonly Temat[] = [
   {
     id: 'halas',
     nazwa: 'hałas',
-    twierdzenie: `${P} hałasu: czy jest głośno albo cicho, słychać ulicę, tramwaje, pociągi, samoloty, spokój w nocy.`,
+    twierdzenie: `${O}, czy jest tu głośno albo cicho: hałas ulicy, tramwajów, pociągów, samolotów, spokój w nocy.`,
     warstwy: ['halas_ldwn', 'halas_obwarzanek_lden'],
     domyslna: 'halas_ldwn',
   },
   {
     id: 'powietrze',
     nazwa: 'powietrze',
-    twierdzenie: `${P} jakości powietrza: smog, pyły, spaliny, dym z pieców, czym się tu oddycha. Pytanie wyłącznie o przepisy dla aut (wjazd do strefy, mandat) to nie to.`,
+    twierdzenie: `${O}, jakim powietrzem się tu oddycha: smog, pyły, spaliny, dym z pieców. Pytanie o przepisy dla aut (wjazd do strefy, mandat) to nie to.`,
     warstwy: [
       'pm25_srednia',
       'pm10_srednia',
@@ -199,7 +196,7 @@ export const TEMATY: readonly Temat[] = [
   {
     id: 'zielen',
     nazwa: 'zieleń',
-    twierdzenie: `${P} zieleni w okolicy: parki, skwery, drzewa, las, przyroda, gdzie wyjść na spacer. Samo posiadanie psa to nie to.`,
+    twierdzenie: `${O}, czy w okolicy jest zieleń: parki, skwery, drzewa, las, przyroda, miejsce na spacer.`,
     warstwy: [
       'zielen_worldcover_100m',
       'zielen_udzial',
@@ -220,7 +217,7 @@ export const TEMATY: readonly Temat[] = [
   {
     id: 'komunikacja',
     nazwa: 'komunikacja',
-    twierdzenie: `${P} dojazdu komunikacją publiczną: przystanek, tramwaj, autobus, pociąg, jak często jeździ, ile trwa dojazd. Pytanie wyłącznie o hałas tramwajów to nie to.`,
+    twierdzenie: `${O}, jak stąd dojechać komunikacją publiczną: odległość do przystanku albo stacji, jak często jeździ, ile trwa dojazd. Hałas od tramwajów to nie to.`,
     warstwy: [
       'przystanek_odleglosc',
       'kursy_szczyt_h',
@@ -276,7 +273,7 @@ export const TEMATY: readonly Temat[] = [
   {
     id: 'sklepy',
     nazwa: 'sklepy i usługi',
-    twierdzenie: `${P} sklepów albo usług w pobliżu: zakupy, spożywczak, poczta, bankomat, paczkomat, weterynarz. Pytanie wyłącznie o aptekę albo lekarza to nie to.`,
+    twierdzenie: `${O}, czy blisko są sklepy albo usługi: zakupy, poczta, bankomat, paczkomat, weterynarz. Apteka i lekarz to nie sklepy.`,
     warstwy: [
       'sklep_odleglosc',
       'uslugi_15min',
@@ -302,7 +299,7 @@ export const TEMATY: readonly Temat[] = [
   {
     id: 'bezpieczenstwo',
     nazwa: 'bezpieczeństwo',
-    twierdzenie: `${P} bezpieczeństwa okolicy: czy jest bezpiecznie albo ciemno wieczorem, oświetlenie ulic, przestępstwa, policja, pożary. Pytanie wyłącznie o bezpieczną jazdę rowerem to nie to.`,
+    twierdzenie: `${O}, czy okolica jest bezpieczna od przestępstw i zdarzeń: oświetlenie ulic wieczorem, policja, interwencje służb, pożary. Bezpieczeństwo jazdy rowerem to nie to.`,
     warstwy: [
       'oswietlenie_100m',
       'policja_odleglosc',
@@ -322,7 +319,7 @@ export const TEMATY: readonly Temat[] = [
   {
     id: 'rower',
     nazwa: 'rower',
-    twierdzenie: `${P} roweru: drogi i trasy rowerowe, dojazd rowerem, stojaki, gdzie przypiąć rower.`,
+    twierdzenie: `${O}, jak tu jeździć rowerem: drogi i trasy rowerowe albo stojaki, gdzie przypiąć rower.`,
     warstwy: ['rower_infrastruktura_odleglosc', 'droga_rowerowa_odleglosc', 'stojaki_300m'],
     domyslna: 'rower_infrastruktura_odleglosc',
     obiekty: {

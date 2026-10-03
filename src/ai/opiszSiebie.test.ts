@@ -217,25 +217,10 @@ describe('przetworzOdpowiedzi (JEV → zrozumienie)', () => {
     }
   })
 
-  it('#150: domownik, który się wprowadza („mama z nami zamieszka”) to własna sytuacja – profil zostaje', () => {
-    // noul jak na żywo dla nowego brzmienia: domownicy i własne plany 0,92–0,95.
-    const z = przetworzOdpowiedzi({
-      profil: { typ: 'choice', wybor: 'senior', pewnosc: 0.9 },
-      p_senior: { typ: 'noul', noul: 0.97 },
-      p_zdrowie: { typ: 'noul', noul: 0.94 },
-      p_dzieci: { typ: 'noul', noul: 0.2 },
-      [ID_WLASNEJ_SYTUACJI]: { typ: 'noul', noul: 0.93 },
-    })
-    assert.equal(z?.persona, 'senior')
-    assert.deepEqual(z?.potrzeby, ['senior', 'zdrowie'])
-    // Twierdzenie obejmuje rodzinę i inwestora, a wyklucza znajomego, hipotezę i przeszłość.
-    for (const slowo of ['rodziny', 'inwestor', 'znajomy', 'wyobrażona', 'dawna'])
-      assert.ok(TWIERDZENIE_WLASNEJ_SYTUACJI.includes(slowo), slowo)
-    assert.ok(
-      !TWIERDZENIE_WLASNEJ_SYTUACJI.includes('obecną'),
-      'plany domowników to nie przeszłość',
-    )
-    // Nadal ≤ 16 pytań i twierdzenie w zapytaniu.
+  it('#152: twierdzenie bramki z #147 jest w zapytaniu, nadal ≤ 16 pytań', () => {
+    // #152 wraca do brzmienia bramki z #147 (wersja z #150 odcinała 10 z 30 opisów na zbiorze
+    // kontrolnym nr 1). Test #150 o „mama z nami zamieszka” sprawdzał brzmienie z #150 – usunięty.
+    assert.ok(TWIERDZENIE_WLASNEJ_SYTUACJI.startsWith('Osoba opisuje własną obecną sytuację'))
     const q = zapytanieOpiszSiebie('Mama z nami zamieszka, ma 80 lat.')
     assert.ok(Object.keys(q.pytania).length <= 16)
     assert.deepEqual(q.pytania[ID_WLASNEJ_SYTUACJI], {
