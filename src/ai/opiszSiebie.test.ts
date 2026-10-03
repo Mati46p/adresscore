@@ -1,7 +1,10 @@
 // Uruchom: node --test src/ai/
 import assert from 'node:assert/strict'
+import { closeSync, openSync, readdirSync, readFileSync, readSync } from 'node:fs'
 import { describe, it } from 'node:test'
+import type { WskaznikMeta } from '../kontrakty/index.ts'
 import { PERSONY } from '../wynik/persony.ts'
+import { kierunekEfektywny } from '../wynik/silnik.ts'
 import type { OdpowiedzJev } from './jev.ts'
 import {
   BRAMKA,
@@ -810,5 +813,135 @@ describe('wagiZeZrozumienia', () => {
     assert.equal(u.wagi.przystanek_odleglosc, 1)
     assert.equal(u.wagi.kursy_szczyt_h, 1)
     for (const w of Object.values(u.wagi)) assert.ok(w >= 0 && w <= 4)
+  })
+})
+
+// #177: tabela POTRZEBY a warstwy z manifestu – zmiana warstw ma dać czerwony test, a nie cichą
+// utratę wagi (nieznane id w `wagiZeZrozumienia` nic nie robi).
+const KATALOG_WARSTW = 'public/dane/wskazniki'
+/** Sam `meta` z początku pliku warstwy (pliki mają do kilku MB); w razie kłopotu – cały plik. */
+function metaWarstwy(plik: string): WskaznikMeta {
+  const sciezka = `${KATALOG_WARSTW}/${plik}`
+  const fd = openSync(sciezka, 'r')
+  const bufor = Buffer.alloc(64 * 1024)
+  const n = readSync(fd, bufor, 0, bufor.length, 0)
+  closeSync(fd)
+  const poczatek = bufor.toString('utf8', 0, n)
+  const koniec = poczatek.indexOf(',"wersjaAdresow"')
+  if (poczatek.startsWith('{"meta":') && koniec > 0) {
+    try {
+      return JSON.parse(poczatek.slice('{"meta":'.length, koniec)) as WskaznikMeta
+    } catch {}
+  }
+  return JSON.parse(readFileSync(sciezka, 'utf8')).meta as WskaznikMeta
+}
+const MANIFEST = new Map(
+  readdirSync(KATALOG_WARSTW)
+    .filter((f) => f.endsWith('.json'))
+    .map((f) => {
+      const m = metaWarstwy(f)
+      return [m.id, m] as const
+    }),
+)
+
+describe('#177: tabela POTRZEBY a manifest warstw', () => {
+  it('manifest jest wczytany (ponad 100 warstw)', () => {
+    assert.ok(MANIFEST.size > 100, `${MANIFEST.size}`)
+  })
+
+  it('każde id warstwy z POTRZEBY istnieje w public/dane/wskazniki', () => {
+    for (const p of POTRZEBY)
+      for (const id of [...Object.keys(p.wskazniki), ...Object.keys(p.kierunki ?? {})])
+        assert.ok(MANIFEST.has(id), `${p.id}: nieznana warstwa ${id}`)
+  })
+
+  it('wagi to liczby całkowite 1–4, kierunki to poprawne wartości i mają wagę w tej potrzebie', () => {
+    for (const p of POTRZEBY) {
+      for (const [id, w] of Object.entries(p.wskazniki))
+        assert.ok(Number.isInteger(w) && w >= 1 && w <= 4, `${p.id}: ${id} = ${w}`)
+      for (const [id, k] of Object.entries(p.kierunki ?? {})) {
+        assert.ok(k === 'mniej-lepiej' || k === 'wiecej-lepiej', `${p.id}: ${id} = ${k}`)
+        assert.ok(p.wskazniki[id] !== undefined, `${p.id}: kierunek ${id} bez wagi`)
+      }
+    }
+  })
+
+  it('każda warstwa potrzeby naprawdę liczy się w silniku (kierunek po nadpisaniu)', () => {
+    for (const p of POTRZEBY)
+      for (const id of Object.keys(p.wskazniki)) {
+        const meta = MANIFEST.get(id)
+        assert.ok(meta, id)
+        assert.notEqual(
+          kierunekEfektywny(meta, p.kierunki),
+          null,
+          `${p.id}: ${id} (${meta.kategoria}, ${meta.kierunek}) nie wchodzi do wyniku`,
+        )
+      }
+  })
+
+  it('dwie potrzeby nie dają tej samej warstwie sprzecznych kierunków', () => {
+    const kierunki = new Map<string, string>()
+    for (const p of POTRZEBY)
+      for (const [id, k] of Object.entries(p.kierunki ?? {})) {
+        assert.ok(!kierunki.has(id) || kierunki.get(id) === k, `${p.id}: ${id}`)
+        kierunki.set(id, k)
+      }
+  })
+})
+
+describe('#177: wagiZeZrozumienia – składanie z potrzeb', () => {
+  const WARSTWY = [
+    ...WSKAZNIKI,
+    { id: 'weterynarz_odleglosc', kategoria: 'codziennosc' },
+    { id: 'zycie_nocne_300m', kategoria: 'spokoj' },
+    { id: 'kapielisko_odleglosc', kategoria: 'spokoj' },
+    { id: 'teren_osuwiskowy', kategoria: 'bezpieczenstwo' },
+  ] as const
+
+  it('potrzeba nadaje kierunek warstwie neutralnej i daje „własne” ustawienia', () => {
+    const u = wagiZeZrozumienia(zRegul('Mamy psa'), 'kupuje', WARSTWY, BIEZACE)
+    assert.equal(u.wagi.weterynarz_odleglosc, 3)
+    assert.equal(u.kierunki.weterynarz_odleglosc, 'mniej-lepiej')
+    const z: Zrozumienie = { ...zRegul('Mamy psa'), persona: 'rodzina' }
+    assert.equal(wagiZeZrozumienia(z, 'kupuje', WARSTWY, BIEZACE).persona, 'wlasna')
+  })
+
+  it('kierunek z bieżących ustawień (albo profilu) wygrywa z kierunkiem potrzeby', () => {
+    const biezace = { wagi: {}, kierunki: { zycie_nocne_300m: 'wiecej-lepiej' as const } }
+    const u = wagiZeZrozumienia(zRegul('Szukam ciszy'), 'kupuje', WARSTWY, biezace)
+    assert.equal(u.wagi.zycie_nocne_300m, 3)
+    assert.equal(u.kierunki.zycie_nocne_300m, 'wiecej-lepiej')
+  })
+
+  it('kierunek tylko dla warstw z manifestu', () => {
+    const u = wagiZeZrozumienia(zRegul('Mamy psa'), 'kupuje', WSKAZNIKI, BIEZACE)
+    assert.equal(u.kierunki.weterynarz_odleglosc, undefined)
+  })
+
+  it('poziom kategorii z samych potrzeb nie zmienia wag profilu (potrzeba ma swoje warstwy)', () => {
+    // „zieleń” = spokój 4, ale hałas Singla (1) i PM2,5 (2) zostają; zieleń idzie na 4.
+    const z: Zrozumienie = { ...zRegul('Chcę mieć blisko park'), persona: 'singiel' }
+    const u = wagiZeZrozumienia(z, 'kupuje', WARSTWY, BIEZACE)
+    assert.equal(u.wagi.halas_ldwn, 1)
+    assert.equal(u.wagi.pm25_srednia, 2)
+    assert.equal(u.wagi.zielen_udzial, 4)
+    assert.equal(u.wagi.kapielisko_odleglosc, 0)
+  })
+
+  it('poziom od JEV ≥ 3 podnosi tylko warstwy, które profil już liczy', () => {
+    const z: Zrozumienie = {
+      persona: 'singiel',
+      kategorie: { spokoj: 4, bezpieczenstwo: 4 },
+      wskazniki: {},
+      potrzeby: [],
+      zrozumialem: [],
+    }
+    const u = wagiZeZrozumienia(z, 'kupuje', WARSTWY, BIEZACE)
+    assert.equal(u.wagi.halas_ldwn, 4)
+    assert.equal(u.wagi.pm25_srednia, 4)
+    assert.equal(u.wagi.powodz_10proc, 4)
+    assert.equal(u.wagi.kapielisko_odleglosc, 0)
+    assert.equal(u.wagi.zielen_udzial, 0)
+    assert.equal(u.wagi.teren_osuwiskowy, 0)
   })
 })

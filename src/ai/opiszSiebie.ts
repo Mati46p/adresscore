@@ -14,7 +14,7 @@ import {
   ustawieniaPersony,
   znajdzPersone,
 } from '../wynik/persony.ts'
-import type { Kierunki } from '../wynik/silnik.ts'
+import type { KierunekOceny, Kierunki } from '../wynik/silnik.ts'
 import {
   type KryteriaTakNie,
   type OdpowiedzJev,
@@ -265,8 +265,17 @@ export interface Potrzeba {
   persona?: PersonaId
   /** Minimalny poziom ważności kategorii (0–4). */
   kategorie: Partial<Record<KategoriaOceniana, number>>
-  /** Minimalna waga wskaźnika (id z manifestu; nieznane id nic nie robi). */
+  /**
+   * Minimalna waga wskaźnika – id z manifestu. #177: test pilnuje, że każde id istnieje
+   * w `public/dane/wskazniki`, więc zmiana warstw daje czerwony test, a nie cichą utratę wagi.
+   */
   wskazniki: Record<string, number>
+  /**
+   * #177: kierunek dla warstw, których domyślny kierunek nie pasuje do potrzeby – głównie
+   * neutralnych (weterynarz, życie nocne), które bez kierunku nie wchodzą do wyniku.
+   * Kierunek z profilu albo bieżących ustawień wygrywa (`wagiZeZrozumienia`).
+   */
+  kierunki?: Readonly<Record<string, KierunekOceny>>
 }
 
 // Kolejność = kolejność pytań do JEV i chipów „zrozumiałem”. Najwyżej 10 z twierdzeniem
@@ -297,11 +306,15 @@ export const POTRZEBY: readonly Potrzeba[] = [
     ],
     persona: 'rodzina',
     kategorie: { codziennosc: 4, spokoj: 3 },
+    // #177: plac zabaw to codzienność małych dzieci (4); biblioteka w 1,2 km to tylko 0/1 (2).
+    // Bez liceum: potrzeba nie zna wieku dzieci, a w opisach przeważają małe.
     wskazniki: {
       przedszkole_odleglosc: 4,
       szkola_podst_odleglosc: 4,
       zlobek_odleglosc: 3,
-      zielen_udzial: 4,
+      plac_zabaw_odleglosc: 4,
+      biblioteka_1200m: 2,
+      zielen_udzial: 2,
     },
   },
   {
@@ -310,7 +323,15 @@ export const POTRZEBY: readonly Potrzeba[] = [
     twierdzenie: 'Osoba ma psa albo chce go mieć.',
     wzorce: [{ re: /\b(pies|psa|psem|psy|psiak|piesk|psiny)\b/ }],
     kategorie: { spokoj: 3 },
-    wskazniki: { zielen_udzial: 4, zielen_worldcover_100m: 4 },
+    // #177: wybieg i weterynarz służą wprost psu. Obie warstwy są neutralne (bez kierunku nie
+    // liczą się), więc potrzeba nadaje „mniej = lepiej”. OSM ich nie zna wszędzie – waga 3.
+    wskazniki: {
+      zielen_udzial: 4,
+      zielen_worldcover_100m: 4,
+      wybieg_psy_odleglosc: 3,
+      weterynarz_odleglosc: 3,
+    },
+    kierunki: { wybieg_psy_odleglosc: 'mniej-lepiej', weterynarz_odleglosc: 'mniej-lepiej' },
   },
   {
     id: 'zielen',
@@ -322,7 +343,14 @@ export const POTRZEBY: readonly Potrzeba[] = [
       },
     ],
     kategorie: { spokoj: 4 },
-    wskazniki: { zielen_udzial: 4, zielen_worldcover_100m: 4 },
+    // #177: las, park krajobrazowy, Natura 2000 (2) i drzewa przy ulicy (2; tylko Kraków,
+    // ewidencja ZZM niepełna). Ogródki działkowe (ROD) nie – to nie zieleń dla wszystkich.
+    wskazniki: {
+      zielen_udzial: 4,
+      zielen_worldcover_100m: 4,
+      przyroda_chroniona_odleglosc: 2,
+      drzewa_100m: 2,
+    },
   },
   {
     id: 'powietrze',
@@ -330,16 +358,36 @@ export const POTRZEBY: readonly Potrzeba[] = [
     twierdzenie: 'Dla osoby ważne jest czyste powietrze (smog, astma, alergia).',
     wzorce: [{ re: /\b(smog|powietrz|astm|alergi|zanieczyszcz|pylow|pyly)/ }],
     kategorie: { spokoj: 4 },
-    wskazniki: { pm25_srednia: 4, pm10_srednia: 4, no2_srednia: 4, bap_srednia: 4 },
+    // #177: paleniska węglowe w 200 m (3, tylko Kraków) i przewietrzanie (2, model 2016).
+    // Zakład z rejestru PRTR (2): to lista zakładów, nie pomiar emisji. Bez wniosków „Czyste
+    // Powietrze” – to liczba dla całej gminy, nie powietrze pod adresem.
+    wskazniki: {
+      pm25_srednia: 4,
+      pm10_srednia: 4,
+      no2_srednia: 4,
+      bap_srednia: 4,
+      paleniska_200m: 3,
+      przewietrzanie_klasa: 2,
+      emitent_odleglosc: 2,
+    },
   },
   {
     id: 'rower',
     etykieta: 'rower',
     twierdzenie: 'Osoba jeździ na co dzień rowerem albo hulajnogą.',
     wzorce: [{ re: /\b(rower|hulajnog)/ }],
-    // Warstwy dróg rowerowych jeszcze nie ma – rower to krótkie dystanse do usług.
     kategorie: { codziennosc: 3 },
-    wskazniki: { sklep_odleglosc: 4, gastronomia_1200m: 3, poczta_1200m: 3 },
+    // #177: są już warstwy rowerowe – najbliższa droga dla rowerów (4) i stojaki (3). Główne
+    // trasy metropolii (2, neutralna, więc z kierunkiem) to tylko 448 km tras, nie cała sieć.
+    // Z dawnego zastępstwa („krótkie dystanse do usług”) zostaje sklep (2); gastronomia
+    // i poczta w 1,2 km (0/1, prawie wszędzie 1) odpadają. Bez ruchu z liczników (17 sztuk).
+    wskazniki: {
+      rower_infrastruktura_odleglosc: 4,
+      stojaki_300m: 3,
+      droga_rowerowa_odleglosc: 2,
+      sklep_odleglosc: 2,
+    },
+    kierunki: { droga_rowerowa_odleglosc: 'mniej-lepiej' },
   },
   {
     id: 'bez_samochodu',
@@ -364,7 +412,17 @@ export const POTRZEBY: readonly Potrzeba[] = [
       { re: /\b(komunikacj|tramwaj|autobus|mpk|przystan|metro|pociag)/ },
     ],
     kategorie: { transport: 4, codziennosc: 3 },
-    wskazniki: { przystanek_odleglosc: 4, kursy_szczyt_h: 4, sklep_odleglosc: 3 },
+    // #177: czas komunikacją do Rynku (3) to dojazd bez auta. Kolej (2 + 2) i busy MLD (1) to
+    // druga sieć, ważna głównie poza Krakowem; kursy z najbliższego przystanku ZTP zostają główne.
+    wskazniki: {
+      przystanek_odleglosc: 4,
+      kursy_szczyt_h: 4,
+      rynek_czas_min: 3,
+      kolej_odleglosc: 2,
+      kolej_kursy_szczyt_h: 2,
+      bus_mld_kursy_szczyt_h: 1,
+      sklep_odleglosc: 3,
+    },
   },
   {
     id: 'senior',
@@ -375,12 +433,20 @@ export const POTRZEBY: readonly Potrzeba[] = [
     ],
     persona: 'senior',
     kategorie: { codziennosc: 4, spokoj: 4 },
+    // #177: Centrum Aktywności Seniora (3) i przychodnia bez barier (3) służą wprost seniorowi;
+    // kolejki do specjalisty NFZ (2). Defibrylator (1, neutralny – z kierunkiem): rejestr OSM
+    // jest niepełny, więc tylko lekko.
     wskazniki: {
       przychodnia_odleglosc: 4,
       apteka_odleglosc: 4,
       lawki_300m: 4,
       obnizone_krawezniki_300m: 3,
+      przychodnia_bez_barier_odleglosc: 3,
+      cas_odleglosc: 3,
+      nfz_kolejki_dni: 2,
+      defibrylator_odleglosc: 1,
     },
+    kierunki: { defibrylator_odleglosc: 'mniej-lepiej' },
   },
   {
     id: 'praca_centrum',
@@ -394,6 +460,7 @@ export const POTRZEBY: readonly Potrzeba[] = [
       },
     ],
     kategorie: { transport: 4 },
+    // #177: bez zmian – czas do Rynku i kursy w szczycie to już cała ta potrzeba.
     wskazniki: { rynek_czas_min: 4, kursy_szczyt_h: 3 },
   },
   {
@@ -406,12 +473,17 @@ export const POTRZEBY: readonly Potrzeba[] = [
       },
     ],
     kategorie: { codziennosc: 4 },
+    // #177: kolejki do specjalisty NFZ w 3 km (3) – choroba przewlekła to wizyty u specjalisty.
+    // Defibrylator (1, neutralny – z kierunkiem) jak u seniora.
     wskazniki: {
       przychodnia_odleglosc: 4,
       apteka_odleglosc: 4,
       przychodnia_bez_barier_odleglosc: 3,
       obnizone_krawezniki_300m: 3,
+      nfz_kolejki_dni: 2,
+      defibrylator_odleglosc: 1,
     },
+    kierunki: { defibrylator_odleglosc: 'mniej-lepiej' },
   },
   {
     id: 'lotnisko',
@@ -419,6 +491,7 @@ export const POTRZEBY: readonly Potrzeba[] = [
     twierdzenie: 'Osoba często lata samolotem.',
     wzorce: [{ re: /\b(lotnisk|samolot|latam|balic|delegacj)/ }],
     kategorie: { transport: 3 },
+    // #177: bez zmian – czas do Balic komunikacją to jedyna warstwa o lotnisku.
     wskazniki: { lotnisko_czas_min: 4 },
   },
   // Tylko z reguł – po stronie JEV pokrywa je poziom kategorii albo wybór profilu.
@@ -427,21 +500,49 @@ export const POTRZEBY: readonly Potrzeba[] = [
     etykieta: 'cisza',
     wzorce: [{ re: /\b(cisz|cich|spokoj)/ }, { re: /\b(halas|glosn)/, negowalny: false }],
     kategorie: { spokoj: 4 },
-    wskazniki: { halas_ldwn: 4 },
+    // #177: imprezy w dużych obiektach i stałe imprezy plenerowe w 500 m (3 + 3), bary i kluby
+    // w 300 m (3) i miejsca noclegowe w 300 m (2, ruch turystyczny). Dwie ostatnie są neutralne –
+    // „cisza” nadaje im „mniej = lepiej”. Nocne światło (VIIRS) to nie hałas – bez niego.
+    wskazniki: {
+      halas_ldwn: 4,
+      imprezy_obiekty_dni_500m_2025_26: 3,
+      imprezy_stale_wpisy_500m_2026: 3,
+      zycie_nocne_300m: 3,
+      noclegi_lozka_300m: 2,
+    },
+    kierunki: { zycie_nocne_300m: 'mniej-lepiej', noclegi_lozka_300m: 'mniej-lepiej' },
   },
   {
     id: 'sklepy',
     etykieta: 'sklepy pod ręką',
     wzorce: [{ re: /\b(sklep|zakup|uslug|wszystko blisko|wszedzie blisko|pieszo|na piechote)/ }],
     kategorie: { codziennosc: 4 },
-    wskazniki: { sklep_odleglosc: 4, gastronomia_1200m: 2, poczta_1200m: 2 },
+    // #177: odległość do gastronomii (2) zamiast samego 0/1 w 1,2 km (prawie wszędzie 1);
+    // targowisko i paczkomat (2 + 2) to też zakupy na piechotę. Poczta w 1,2 km zostaje.
+    wskazniki: {
+      sklep_odleglosc: 4,
+      gastronomia_odleglosc: 2,
+      targowisko_odleglosc: 2,
+      paczkomat_odleglosc: 2,
+      poczta_1200m: 2,
+    },
   },
   {
     id: 'bezpieczenstwo',
     etykieta: 'bezpieczeństwo',
     wzorce: [{ re: /\b(bezpieczn|powodz|zalan|zalew|wylew|podtopi|ryzyk)/ }],
     kategorie: { bezpieczenstwo: 4 },
-    wskazniki: { powodz_10proc: 4 },
+    // #177: ryzyka w punkcie adresu – osuwisko (3), zakład Seveso (2). Latarnie z OSM (2): to
+    // „bezpiecznie wieczorem”, choć mapa latarni jest niepełna. Policja (1): dostępność, nie
+    // przestępczość. Bez przestępstw i wykrywalności na powiat: jedna liczba dla całego
+    // Krakowa – opis warstwy mówi wprost, że to informacja, nie ocena adresu.
+    wskazniki: {
+      powodz_10proc: 4,
+      teren_osuwiskowy: 3,
+      seveso_odleglosc: 2,
+      oswietlenie_100m: 2,
+      policja_odleglosc: 1,
+    },
   },
   {
     id: 'inwestycja',
@@ -451,6 +552,8 @@ export const POTRZEBY: readonly Potrzeba[] = [
     ],
     persona: 'inwestor',
     kategorie: { spolecznosc: 4 },
+    // #177: bez zmian. Kierunku pozwoleń nie nadajemy: Inwestor ma „więcej = lepiej” w profilu,
+    // a Rodzina „mniej = lepiej” (budowa obok) – o tym rozstrzyga profil, nie potrzeba.
     wskazniki: { inwestycje_500m: 4, bo_projekty_1km: 3 },
   },
   {
@@ -463,6 +566,7 @@ export const POTRZEBY: readonly Potrzeba[] = [
     ],
     persona: 'singiel',
     kategorie: { transport: 3, codziennosc: 3 },
+    // Wagi niesie profil Singiel (#177: bez zmian).
     wskazniki: {},
   },
 ]
@@ -801,9 +905,22 @@ export interface NoweUstawienia {
 const przytnij = (w: number) => Math.min(Math.max(Math.round(w), 0), 4)
 
 /**
- * Bazą są wagi rozpoznanego profilu (albo bieżące, gdy profilu nie ma). Kategoria na poziomie
- * ≥ 3 podnosi swoje warstwy do tego poziomu, ≤ 1 obniża je do niego; potrzeby podnoszą
- * konkretne warstwy. Kontekst zostaje bez zmian – liczy się tylko po ręcznym włączeniu.
+ * Bazą są wagi rozpoznanego profilu (albo bieżące, gdy profilu nie ma). Potrzeby podnoszą
+ * swoje warstwy z tabeli POTRZEBY (także te z wagą 0) i nadają kierunek warstwom neutralnym.
+ * Poziom kategorii od JEV ≥ 3 podnosi do tego poziomu te warstwy kategorii, które baza już
+ * liczy (waga > 0); ≤ 1 obniża je do niego. Kontekst zostaje bez zmian – liczy się tylko po
+ * ręcznym włączeniu.
+ *
+ * #177 – dwie zmiany składania, obie z pomiaru „czy mapa spełnia potrzebę” (WYNIKI.md,
+ * „Tabela potrzeb a silnik (#177)”):
+ * - Poziom ≥ 3 nie włącza już warstw z wagą 0. Wcześniej „pies” (spokój 3) dawał wagę 3
+ *   wszystkim 20 warstwom spokoju, od kąpieliska po słońce w grudniu: z 22 liczonych warstw
+ *   profilu robiło się 52, a w top 100 adresów „pies” miał mniej zieleni niż sam profil.
+ * - Poziom, który wynika TYLKO z potrzeb (`kategorie` w POTRZEBY, równy maksimum z potrzeb),
+ *   nie zmienia wag – potrzeba ma własne warstwy. Inaczej „dzieci” (codzienność 4) podnosiły
+ *   warstwy profilu z wagą 1 (wynik E8, kolejki NFZ) do 4 i przedszkole ginęło wśród nich.
+ *   Poziom od JEV wyższy (albo niższy) niż z potrzeb działa jak dotąd. Poziomy w zrozumieniu
+ *   (chipy, pomiar kategorii) się nie zmieniają.
  */
 export function wagiZeZrozumienia(
   z: Zrozumienie,
@@ -815,6 +932,11 @@ export function wagiZeZrozumienia(
   const baza = z.persona
     ? ustawieniaPersony(z.persona, tryb, wskazniki)
     : { wagi: { ...biezace.wagi }, kierunki: { ...biezace.kierunki } }
+  const potrzeby = z.potrzeby.flatMap((id) => POTRZEBY.filter((p) => p.id === id))
+  const zPotrzeb: Partial<Record<KategoriaOceniana, number>> = {}
+  for (const p of potrzeby)
+    for (const [k, w] of Object.entries(p.kategorie) as [KategoriaOceniana, number][])
+      zPotrzeb[k] = Math.max(zPotrzeb[k] ?? 0, w)
   const wagi: Record<string, number> = {}
   let zmiana = false
   for (const { id, kategoria } of wskazniki) {
@@ -823,7 +945,8 @@ export function wagiZeZrozumienia(
     // `przyszlosc` zostaje w kontrakcie tylko dla starych ustawień (#171) – nie ma wagi z JEV.
     if (kategoria !== 'kontekst' && kategoria !== 'przyszlosc') {
       const poziom = z.kategorie[kategoria]
-      if (poziom !== undefined) w = poziom <= 1 ? Math.min(w, poziom) : Math.max(w, poziom)
+      if (poziom !== undefined && poziom !== zPotrzeb[kategoria])
+        w = poziom <= 1 ? Math.min(w, poziom) : w > 0 ? Math.max(w, poziom) : 0
       const minimum = z.wskazniki[id]
       if (minimum !== undefined) w = Math.max(w, minimum)
     }
@@ -831,9 +954,19 @@ export function wagiZeZrozumienia(
     if (w !== przed) zmiana = true
     wagi[id] = w
   }
+  // Kierunek z potrzeby tylko tam, gdzie baza nie ma własnego (profil albo wybór użytkownika).
+  const kierunki: Record<string, KierunekOceny> = { ...baza.kierunki }
+  const zywe = new Set(wskazniki.map((w) => w.id))
+  for (const p of potrzeby) {
+    for (const [warstwa, k] of Object.entries(p.kierunki ?? {})) {
+      if (!zywe.has(warstwa) || kierunki[warstwa] !== undefined) continue
+      kierunki[warstwa] = k
+      zmiana = true
+    }
+  }
   return {
     persona: z.persona && !zmiana ? z.persona : 'wlasna',
     wagi,
-    kierunki: { ...baza.kierunki },
+    kierunki,
   }
 }

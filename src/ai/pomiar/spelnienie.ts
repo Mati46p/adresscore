@@ -1,0 +1,351 @@
+// #177: „czy mapa spełnia potrzebę” – miara bez JEV i bez sieci, deterministyczna.
+//
+// Użycie (z katalogu repo, potrzebna historia git z BAZA; ok. 40 s):
+//   node src/ai/pomiar/spelnienie.ts            # tabele markdown na stdout (do WYNIKI.md)
+//   node src/ai/pomiar/spelnienie.ts --top 300  # inny rozmiar „najlepszych adresów” (domyślnie 100)
+//
+// Dla opisów ze zbioru wzorcowego i zbiorów kontrolnych nr 1–7 bierzemy WZORCOWY profil
+// i WZORCOWE potrzeby (etykiety, nie odpowiedź JEV) i liczymy wagi na kilka sposobów:
+//   profil – sam profil (`ustawieniaPersony`); profil null = PERSONA_DOMYSLNA, jak u nowego
+//            użytkownika, który niczego nie zmieniał,
+//   stara  – profil + potrzeby: tabela POTRZEBY i `wagiZeZrozumienia` sprzed #177 (BAZA),
+//   skład  – stara tabela, ale bieżące `wagiZeZrozumienia` (#177: poziom kategorii podnosi
+//            tylko warstwy, które profil już liczy) – osobno widać, co daje samo składanie,
+//   nowa   – bieżąca tabela i bieżące `wagiZeZrozumienia`.
+// Silnik (`wynikiWszystkich`, tryb „kupuję”) liczy wynik wszystkich adresów, a my patrzymy na
+// TOP najlepszych. Każda potrzeba ma 1–2 wskaźniki spełnienia z surowych danych (MIARY, np.
+// pies → zieleń w 100 m i odległość do weterynarza).
+//
+// Tabela 1 (profil → profil + potrzeby): mediana wskaźnika w top adresów opisu, potem mediana
+// po opisach z tą potrzebą. Opis ma zwykle kilka potrzeb naraz, więc tu miesza się wpływ
+// wszystkich (np. senior + cisza + zieleń odsuwa top od przychodni).
+// Tabela 2 (efekt krańcowy): ten sam opis z potrzebą i bez niej (reszta potrzeb bez zmian) –
+// czy SAMA ta potrzeba przesuwa top we właściwą stronę. Mediana zmian po opisach i liczba
+// opisów, w których wskaźnik się poprawił / pogorszył.
+// Tabela 3 (skutki uboczne): warstwy liczone w wyniku, rozrzut wyników wszystkich adresów
+// (p90 − p10; czy rozkład się nie spłaszcza), „wynik samego profilu” w nowym top (ile kosztuje
+// dopasowanie do potrzeb) i wspólna część top z top samego profilu.
+//
+// Opisy bez wzorcowych potrzeb nic tu nie mierzą i są pomijane. Wynik dla tego samego zestawu
+// (tabela + profil + potrzeby) liczymy raz, a oceny warstw silnik trzyma w pamięci
+// (`ocenyWskaznika`), więc każdy przebieg to tylko suma ważona.
+import { execFileSync } from 'node:child_process'
+import { readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import type { PlikWskaznika, WskaznikMeta } from '../../kontrakty/index.ts'
+import { PERSONA_DOMYSLNA, type PersonaId, ustawieniaPersony } from '../../wynik/persony.ts'
+import {
+  type Kierunki,
+  kierunekEfektywny,
+  przygotujWskaznik,
+  type WskaznikPrzygotowany,
+  wynikiWszystkich,
+} from '../../wynik/silnik.ts'
+import * as nowa from '../opiszSiebie.ts'
+
+/** `main` przed #177 (z #171, #174 i #176) – stara tabela POTRZEBY. */
+const BAZA = '430153e'
+const TRYB = 'kupuje' as const
+const argv = process.argv.slice(2)
+const iTop = argv.indexOf('--top')
+const TOP = iTop >= 0 ? Number(argv[iTop + 1]) : 100
+
+const KORZEN = new URL('../../../', import.meta.url)
+const AI = new URL('../', import.meta.url)
+const POMIAR = new URL('./', import.meta.url)
+
+// ── Dane ──────────────────────────────────────────────────────────────────────────────────
+
+const katalog = new URL('public/dane/wskazniki/', KORZEN)
+const WSKAZNIKI: WskaznikPrzygotowany[] = readdirSync(katalog)
+  .filter((f) => f.endsWith('.json'))
+  .sort()
+  .map((f) =>
+    przygotujWskaznik(JSON.parse(readFileSync(new URL(f, katalog), 'utf8')) as PlikWskaznika),
+  )
+const METAS: WskaznikMeta[] = WSKAZNIKI.map((w) => w.meta)
+const N = Math.min(...WSKAZNIKI.map((w) => w.wartosci.length))
+const PO_ID = new Map(WSKAZNIKI.map((w) => [w.meta.id, w]))
+
+interface Pozycja {
+  id: string
+  persona: PersonaId | null
+  potrzeby: string[]
+}
+const ZBIORY = [
+  'zbior-opisz.json',
+  'kontrolny-opisz.json',
+  ...[2, 3, 4, 5, 6, 7].map((n) => `kontrolny${n}-opisz.json`),
+]
+const POZYCJE: Pozycja[] = ZBIORY.flatMap(
+  (f) => JSON.parse(readFileSync(new URL(f, POMIAR), 'utf8')).pozycje as Pozycja[],
+).filter((p) => p.potrzeby.length > 0)
+
+// ── Wskaźniki spełnienia ──────────────────────────────────────────────────────────────────
+
+interface Miara {
+  id: string
+  /** Kierunek „lepiej” dla tej potrzeby (nie zawsze kierunek warstwy). */
+  lepiej: 'mniej' | 'wiecej'
+  /**
+   * Odsetek top adresów (z danymi) z wartością > `powyzej` zamiast mediany – dla warstw, gdzie
+   * mediana stoi na dnie skali (hałas: najniższe pasmo 50 dB ma ¼ adresów z danymi).
+   */
+  powyzej?: number
+}
+export const MIARY: Readonly<Record<string, readonly Miara[]>> = {
+  dzieci: [
+    { id: 'przedszkole_odleglosc', lepiej: 'mniej' },
+    { id: 'plac_zabaw_odleglosc', lepiej: 'mniej' },
+  ],
+  pies: [
+    { id: 'zielen_worldcover_100m', lepiej: 'wiecej' },
+    { id: 'weterynarz_odleglosc', lepiej: 'mniej' },
+  ],
+  zielen: [
+    { id: 'zielen_worldcover_100m', lepiej: 'wiecej' },
+    { id: 'zielen_udzial', lepiej: 'wiecej' },
+  ],
+  powietrze: [
+    { id: 'pm25_srednia', lepiej: 'mniej' },
+    { id: 'no2_srednia', lepiej: 'mniej' },
+  ],
+  rower: [
+    { id: 'rower_infrastruktura_odleglosc', lepiej: 'mniej' },
+    { id: 'stojaki_300m', lepiej: 'wiecej' },
+  ],
+  bez_samochodu: [
+    { id: 'przystanek_odleglosc', lepiej: 'mniej' },
+    { id: 'kursy_szczyt_h', lepiej: 'wiecej' },
+  ],
+  senior: [
+    { id: 'przychodnia_odleglosc', lepiej: 'mniej' },
+    { id: 'lawki_300m', lepiej: 'wiecej' },
+  ],
+  praca_centrum: [{ id: 'rynek_czas_min', lepiej: 'mniej' }],
+  zdrowie: [
+    { id: 'przychodnia_odleglosc', lepiej: 'mniej' },
+    { id: 'apteka_odleglosc', lepiej: 'mniej' },
+  ],
+  lotnisko: [{ id: 'lotnisko_czas_min', lepiej: 'mniej' }],
+  cisza: [
+    { id: 'halas_ldwn', lepiej: 'mniej', powyzej: 50 },
+    { id: 'zycie_nocne_300m', lepiej: 'mniej', powyzej: 0 },
+  ],
+  sklepy: [
+    { id: 'sklep_odleglosc', lepiej: 'mniej' },
+    { id: 'gastronomia_odleglosc', lepiej: 'mniej' },
+  ],
+  // Powódź Q10 (> 0 m) ma 29 adresów – top 100 jej nie dotyka, więc mierzymy osuwiska.
+  bezpieczenstwo: [
+    { id: 'teren_osuwiskowy', lepiej: 'mniej', powyzej: 0 },
+    { id: 'oswietlenie_100m', lepiej: 'wiecej' },
+  ],
+  inwestycja: [{ id: 'inwestycje_500m', lepiej: 'wiecej' }],
+  singiel: [
+    { id: 'kursy_szczyt_h', lepiej: 'wiecej' },
+    { id: 'rynek_czas_min', lepiej: 'mniej' },
+  ],
+}
+
+// ── Wagi ──────────────────────────────────────────────────────────────────────────────────
+
+type Modul = Pick<typeof nowa, 'POTRZEBY' | 'wagiZeZrozumienia'>
+type Ustawienia = { wagi: Record<string, number>; kierunki: Kierunki }
+
+/** To samo co `zloz` w opiszSiebie.ts (bez chipów): maksimum po potrzebach. */
+function zrozumienie(
+  m: Modul,
+  persona: PersonaId | null,
+  ids: readonly string[],
+): nowa.Zrozumienie {
+  const kategorie: nowa.Zrozumienie['kategorie'] = {}
+  const wskazniki: Record<string, number> = {}
+  for (const id of ids) {
+    const p = m.POTRZEBY.find((x) => x.id === id)
+    if (!p) continue
+    for (const [k, w] of Object.entries(p.kategorie) as [nowa.KategoriaOceniana, number][])
+      kategorie[k] = Math.max(kategorie[k] ?? 0, w)
+    for (const [i, w] of Object.entries(p.wskazniki)) wskazniki[i] = Math.max(wskazniki[i] ?? 0, w)
+  }
+  return { persona, kategorie, wskazniki, potrzeby: [...ids], zrozumialem: [] }
+}
+
+/** Profil null = bieżące ustawienia nowego użytkownika, czyli profil domyślny. */
+const baza = (persona: PersonaId | null): Ustawienia =>
+  ustawieniaPersony(persona ?? PERSONA_DOMYSLNA, TRYB, METAS)
+
+// ── Silnik i top adresów ──────────────────────────────────────────────────────────────────
+
+interface Przebieg {
+  wynik: Float32Array
+  top: Uint32Array
+  /** Rozrzut wyników wszystkich adresów: p90 − p10. */
+  rozrzut: number
+  /** Warstwy, które naprawdę liczą się do wyniku (waga > 0 i jest kierunek). */
+  warstwy: number
+}
+
+function przebieg(u: Ustawienia): Przebieg {
+  const wynik = wynikiWszystkich(WSKAZNIKI, u.wagi, u.kierunki, N)
+  const liczby = Float32Array.from(wynik.filter((v) => v === v)).sort()
+  const p = (q: number) => liczby[Math.floor((liczby.length - 1) * q)] as number
+  // Próg TOP-tej wartości; remisy na progu bierzemy w kolejności indeksu (deterministycznie).
+  const prog = liczby[liczby.length - TOP] as number
+  const top: number[] = []
+  for (let i = 0; i < N; i++) if ((wynik[i] as number) > prog) top.push(i)
+  for (let i = 0; i < N && top.length < TOP; i++) if (wynik[i] === prog) top.push(i)
+  const warstwy = METAS.filter(
+    (m) => (u.wagi[m.id] ?? 0) > 0 && kierunekEfektywny(m, u.kierunki) !== null,
+  ).length
+  return { wynik, top: Uint32Array.from(top), rozrzut: p(0.9) - p(0.1), warstwy }
+}
+
+const pamiec = new Map<string, Przebieg>()
+/** Wynik dla tabeli (albo samego profilu przy braku potrzeb), z pamięci. */
+function licz(nazwa: string, m: Modul, persona: PersonaId | null, ids: readonly string[]) {
+  const klucz = ids.length ? `${nazwa}|${persona}|${[...ids].sort().join(',')}` : `-|${persona}`
+  let w = pamiec.get(klucz)
+  if (!w) {
+    w = przebieg(
+      ids.length
+        ? m.wagiZeZrozumienia(zrozumienie(m, persona, ids), TRYB, METAS, baza(null))
+        : baza(persona),
+    )
+    pamiec.set(klucz, w)
+  }
+  return w
+}
+
+function mediana(xs: readonly number[]): number {
+  const s = xs.filter((x) => !Number.isNaN(x)).sort((a, b) => a - b)
+  if (s.length === 0) return Number.NaN
+  const m = s.length >> 1
+  return s.length % 2 ? (s[m] as number) : ((s[m - 1] as number) + (s[m] as number)) / 2
+}
+
+function miaraTop(top: Uint32Array, m: Miara): number {
+  const w = PO_ID.get(m.id)
+  if (!w) return Number.NaN
+  const xs: number[] = []
+  for (const i of top) {
+    const v = w.wartosci[i]
+    if (v !== null && v !== undefined && !Number.isNaN(v)) xs.push(v)
+  }
+  if (m.powyzej === undefined) return mediana(xs)
+  const prog = m.powyzej
+  return xs.length ? (100 * xs.filter((x) => x > prog).length) / xs.length : Number.NaN
+}
+
+const sredniaTop = (wynik: Float32Array, top: Uint32Array) => {
+  let s = 0
+  for (const i of top) s += wynik[i] as number
+  return s / top.length
+}
+const wspolne = (a: Uint32Array, b: Uint32Array) => {
+  const z = new Set(a)
+  let n = 0
+  for (const i of b) if (z.has(i)) n++
+  return n / a.length
+}
+
+// ── Stara tabela z BAZA ───────────────────────────────────────────────────────────────────
+
+const tymczasowy = new URL('_spelnienie_stare_opiszSiebie.ts', AI)
+writeFileSync(
+  tymczasowy,
+  execFileSync('git', ['show', `${BAZA}:src/ai/opiszSiebie.ts`], {
+    cwd: KORZEN,
+    encoding: 'utf8',
+  }),
+)
+let stara: Modul
+try {
+  stara = (await import(tymczasowy.href)) as Modul
+} finally {
+  rmSync(tymczasowy)
+}
+/** Stara tabela, bieżące składanie (kierunki bieżącej tabeli przy wadze 0 nic nie robią). */
+const sklad: Modul = { POTRZEBY: stara.POTRZEBY, wagiZeZrozumienia: nowa.wagiZeZrozumienia }
+const TABELE = { stara, sklad, nowa } as const
+type Tabela = keyof typeof TABELE
+const WARIANTY = ['profil', 'stara', 'sklad', 'nowa'] as const
+type Wariant = (typeof WARIANTY)[number]
+
+// ── Pomiar ────────────────────────────────────────────────────────────────────────────────
+
+const f = (x: number, c = 1) => (Number.isNaN(x) ? '–' : x.toFixed(c).replace('.', ','))
+const lepsze = (m: Miara, d: number) => (m.lepiej === 'mniej' ? d < 0 : d > 0)
+const znak = (m: Miara, d: number) =>
+  Number.isNaN(d) || Math.abs(d) < 1e-9 ? '=' : lepsze(m, d) ? '↑' : '↓'
+const jednostka = (m: Miara) =>
+  m.powyzej === undefined
+    ? (PO_ID.get(m.id)?.meta.jednostka ?? '')
+    : `% top z > ${String(m.powyzej).replace('.', ',')}`
+
+const przebiegi = (p: Pozycja): Record<Wariant, Przebieg> => ({
+  profil: licz('-', nowa, p.persona, []),
+  stara: licz('stara', stara, p.persona, p.potrzeby),
+  sklad: licz('sklad', sklad, p.persona, p.potrzeby),
+  nowa: licz('nowa', nowa, p.persona, p.potrzeby),
+})
+
+const wiersze = POZYCJE.map((p) => ({ p, w: przebiegi(p) }))
+
+console.log(
+  `Opisy z potrzebami: ${POZYCJE.length} (zbiór wzorcowy + kontrolne nr 1–7), adresy: ${N}, top: ${TOP}. ` +
+    '↑ = lepiej dla potrzeby, ↓ = gorzej.\n',
+)
+console.log('**1. Profil → profil + wszystkie potrzeby opisu** (mediana po opisach z potrzebą)\n')
+console.log(
+  '| Potrzeba | Opisów | Wskaźnik | Profil | Stara | Stara tabela, nowe składanie | Nowa | Stara − profil | Nowa − profil |',
+)
+console.log('|---|---|---|---|---|---|---|---|---|')
+for (const [potrzeba, miary] of Object.entries(MIARY)) {
+  const moje = wiersze.filter((x) => x.p.potrzeby.includes(potrzeba))
+  for (const m of miary) {
+    const [a, b, s, c] = WARIANTY.map((v) => mediana(moje.map((x) => miaraTop(x.w[v].top, m))))
+    console.log(
+      `| ${potrzeba} | ${moje.length} | ${m.id} (${jednostka(m)}) | ${f(a as number)} | ${f(b as number)} | ${f(s as number)} | ${f(c as number)} | ${znak(m, (b as number) - (a as number))} ${f((b as number) - (a as number))} | ${znak(m, (c as number) - (a as number))} ${f((c as number) - (a as number))} |`,
+    )
+  }
+}
+
+console.log(
+  '\n**2. Efekt krańcowy: ten sam opis bez potrzeby → z potrzebą** (mediana zmiany; opisy lepiej / gorzej)\n',
+)
+console.log('| Potrzeba | Wskaźnik | Stara | Stara tabela, nowe składanie | Nowa |')
+console.log('|---|---|---|---|---|')
+for (const [potrzeba, miary] of Object.entries(MIARY)) {
+  const moje = POZYCJE.filter((p) => p.potrzeby.includes(potrzeba))
+  for (const m of miary) {
+    const kolumna = (t: Tabela) => {
+      const zmiany = moje.map((p) => {
+        const bez = p.potrzeby.filter((x) => x !== potrzeba)
+        const przed = miaraTop(licz(t, TABELE[t], p.persona, bez).top, m)
+        return miaraTop(licz(t, TABELE[t], p.persona, p.potrzeby).top, m) - przed
+      })
+      const d = mediana(zmiany)
+      const ok = zmiany.filter((z) => !Number.isNaN(z) && Math.abs(z) > 1e-9 && lepsze(m, z))
+      const zle = zmiany.filter((z) => !Number.isNaN(z) && Math.abs(z) > 1e-9 && !lepsze(m, z))
+      return `${znak(m, d)} ${f(d)} (${ok.length} / ${zle.length})`
+    }
+    console.log(
+      `| ${potrzeba} | ${m.id} (${jednostka(m)}) | ${kolumna('stara')} | ${kolumna('sklad')} | ${kolumna('nowa')} |`,
+    )
+  }
+}
+
+console.log('\n**3. Skutki uboczne** (mediana po opisach z potrzebami)\n')
+console.log('| | Profil | Stara | Stara tabela, nowe składanie | Nowa |')
+console.log('|---|---|---|---|---|')
+const kol = (fn: (p: Przebieg, x: (typeof wiersze)[number]) => number, c = 1) =>
+  WARIANTY.map((v) => f(mediana(wiersze.map((x) => fn(x.w[v], x))), c)).join(' | ')
+console.log(`| Warstwy liczone w wyniku | ${kol((p) => p.warstwy, 0)} |`)
+console.log(`| Rozrzut wyników adresów (p90 − p10, pkt) | ${kol((p) => p.rozrzut)} |`)
+console.log(
+  `| Wynik samego profilu w top ${TOP} (śr., pkt) | ${kol((p, x) => sredniaTop(x.w.profil.wynik, p.top))} |`,
+)
+console.log(
+  `| Top ${TOP} wspólne z top samego profilu (%) | ${kol((p, x) => 100 * wspolne(x.w.profil.top, p.top), 0)} |`,
+)
+console.log(`\nZestawy wag policzone: ${pamiec.size}.`)

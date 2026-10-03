@@ -2615,6 +2615,225 @@ zbiorcze, bez mapowania #171. Mapowanie #171, porównania sparowane, przeskoki A
 i przetworzenie odpowiedzi kodem innych wersji robiły skrypty poza repo (scratchpad), tak jak
 w #170.
 
+## Tabela potrzeb a silnik (#177)
+
+Pomiar z 2026-10-03, bez JEV i bez sieci: `node src/ai/pomiar/spelnienie.ts` (ok. 40 s).
+Pytania do JEV (twierdzenia, kryteria), bramka, wzorce reguł i poziomy kategorii w POTRZEBY
+są bez zmian. `pomiar.ts` nie czyta wag warstw, więc wszystkie liczby JEV wyżej zostają ważne.
+
+### Co sprawdzamy
+
+Tabela POTRZEBY powstała przy ok. 45 warstwach. Dziś jest ich 118. Pytanie brzmi: czy po
+dodaniu rozpoznanej potrzeby najlepsze adresy na mapie lepiej ją spełniają niż przy samym
+profilu?
+
+- Opisy: zbiór wzorcowy i zbiory kontrolne nr 1–7, 420 opisów z co najmniej jedną potrzebą.
+  Profil i potrzeby są WZORCOWE (etykiety, nie odpowiedź JEV). Profil null to profil domyślny
+  (Rodzina), jak u nowego użytkownika.
+- Wagi liczymy czterema sposobami:
+  - **profil**: sam profil;
+  - **stara**: tabela i `wagiZeZrozumienia` z `430153e`, czyli `main` przed #177;
+  - **stara tabela, nowe składanie**: osobno widać, co daje sama zmiana składania;
+  - **nowa**: nowa tabela i nowe składanie.
+- Silnik (`wynikiWszystkich`, tryb „kupuję”) ocenia 176 684 adresy. Bierzemy 100 najlepszych.
+- Każda potrzeba ma 1–2 wskaźniki spełnienia z surowych danych. Liczymy medianę w top 100
+  opisu, potem medianę po opisach z tą potrzebą. Hałas ma najniższe pasmo 50 dB, w którym jest
+  ¼ adresów z danymi. Dlatego przy hałasie, barach i osuwiskach liczymy odsetek top 100
+  powyżej progu.
+
+### Co było nie tak: poziom kategorii włączał całą kategorię
+
+W starym składaniu potrzeba z poziomem kategorii ≥ 3 (np. „pies” → spokój 3) dawała tę wagę
+**każdej** warstwie kategorii, także tym, których profil nie liczy: kąpielisku, słońcu
+w grudniu, gęstości zaludnienia. Z 22 warstw liczonych przez profil robiło się 52 (mediana).
+Konkretne warstwy potrzeby ginęły wśród reszty: przy „psie” top 100 miał mniej zieleni niż sam
+profil (59% zamiast 77%), a przy „seniorze” przychodnię 2,5 raza dalej (430 m zamiast 172 m).
+
+Nowe składanie (`wagiZeZrozumienia`):
+
+- Poziom kategorii od JEV ≥ 3 podnosi tylko warstwy, które baza już liczy (waga > 0).
+  Poziom ≤ 1 obniża je jak dotąd.
+- Poziom, który wynika **tylko** z potrzeb, nie zmienia wag, bo potrzeba ma własne warstwy.
+  Inaczej „dzieci” (codzienność 4) podnosiły warstwy Rodziny z wagą 1 (wynik E8, kolejki NFZ,
+  biblioteka) do 4, tyle co przedszkole. W pierwszej wersji (bez tej reguły) „dzieci” odsuwały
+  przedszkole o 13 m (15 opisów lepiej, 72 gorzej), a „zdrowie” przychodnię o 9 m.
+- Potrzeba może nadać kierunek warstwie neutralnej (weterynarz, wybieg dla psów, bary, noclegi,
+  defibrylator, główne trasy rowerowe). Kierunek z profilu albo z ustawień użytkownika wygrywa.
+
+Poziomy kategorii w samym zrozumieniu (chipy, pomiar kategorii F1) się nie zmieniają.
+
+### Tabela: warstwy przed → po
+
+Wagi 0–4. „↘” to kierunek „mniej = lepiej” nadany warstwie neutralnej.
+
+| Potrzeba | Przed (#176) | Po (#177) |
+|---|---|---|
+| dzieci | przedszkole 4, szkoła podst. 4, żłobek 3, udział zieleni 4 | przedszkole 4, szkoła podst. 4, **plac zabaw 4**, żłobek 3, **biblioteka 1,2 km 2**, udział zieleni **2** |
+| pies | udział zieleni 4, zieleń 100 m 4 | udział zieleni 4, zieleń 100 m 4, **wybieg dla psów 3 ↘**, **weterynarz 3 ↘** |
+| zieleń | udział zieleni 4, zieleń 100 m 4 | udział zieleni 4, zieleń 100 m 4, **chroniona przyroda 2**, **drzewa ZZM 100 m 2** |
+| powietrze | PM2,5 4, PM10 4, NO₂ 4, B(a)P 4 | PM2,5 4, PM10 4, NO₂ 4, B(a)P 4, **paleniska 200 m 3**, **przewietrzanie 2**, **zakład PRTR 2** |
+| rower | sklep 4, gastronomia 1,2 km 3, poczta 1,2 km 3 | **infrastruktura rowerowa 4**, **stojaki 3**, **główna trasa rowerowa 2 ↘**, sklep **2** |
+| bez samochodu | przystanek 4, kursy 4, sklep 3 | przystanek 4, kursy 4, **czas do Rynku 3**, **stacja kolejowa 2**, **pociągi w szczycie 2**, **busy MLD 1**, sklep 3 |
+| senior | przychodnia 4, apteka 4, ławki 4, krawężniki 3 | przychodnia 4, apteka 4, ławki 4, krawężniki 3, **POZ bez barier 3**, **Centrum Aktywności Seniora 3**, **kolejki NFZ 2**, **defibrylator 1 ↘** |
+| praca w centrum | czas do Rynku 4, kursy 3 | bez zmian |
+| lekarz blisko | przychodnia 4, apteka 4, POZ bez barier 3, krawężniki 3 | to samo + **kolejki NFZ 2**, **defibrylator 1 ↘** |
+| lotnisko | czas do Balic 4 | bez zmian |
+| cisza | hałas 4 | hałas 4, **imprezy w obiektach 3**, **imprezy stałe 3**, **bary i kluby 3 ↘**, **noclegi 2 ↘** |
+| sklepy | sklep 4, gastronomia 1,2 km 2, poczta 1,2 km 2 | sklep 4, **gastronomia (odległość) 2**, **targowisko 2**, **paczkomat 2**, poczta 1,2 km 2 |
+| bezpieczeństwo | powódź Q10 4 | powódź Q10 4, **teren osuwiskowy 3**, **zakład Seveso 2**, **latarnie 2**, **policja 1** |
+| inwestycja | pozwolenia 500 m 4, projekty BO 3 | bez zmian (kierunek pozwoleń zostaje przy profilu) |
+| mieszkam sam | – (wagi niesie profil) | bez zmian |
+
+Czego celowo nie ma:
+
+- przestępstwa i wykrywalność na powiat: jedna liczba dla całego Krakowa, a opis warstwy mówi
+  wprost, że to informacja, nie ocena adresu;
+- liceum: potrzeba nie zna wieku dzieci;
+- wnioski „Czyste Powietrze”: liczba dla całej gminy;
+- ROD, nocne światło, ruch z 17 liczników rowerowych.
+
+Uzasadnienie każdej pozycji jest w komentarzu w `opiszSiebie.ts`.
+
+Testy pilnują tabeli:
+
+- każde id istnieje w `public/dane/wskazniki`;
+- wagi są całkowite 1–4;
+- kierunki mają poprawne wartości i wagę w tej samej potrzebie;
+- każda warstwa potrzeby naprawdę wchodzi do wyniku (`kierunekEfektywny`);
+- dwie potrzeby nie dają tej samej warstwie sprzecznych kierunków.
+
+### Wynik 1: profil → profil + wszystkie potrzeby opisu
+
+Mediana po opisach z potrzebą. ↑ oznacza lepiej dla potrzeby, ↓ gorzej. Opis ma zwykle kilka
+potrzeb naraz, więc tu miesza się wpływ wszystkich (np. senior + cisza + zieleń odsuwa top od
+przychodni).
+
+| Potrzeba | Opisów | Wskaźnik | Profil | Stara | Stara tabela, nowe składanie | Nowa | Stara − profil | Nowa − profil |
+|---|---|---|---|---|---|---|---|---|
+| dzieci | 96 | przedszkole (m) | 112,0 | 141,0 | 124,5 | 120,0 | ↓ 29,0 | ↓ 8,0 |
+| dzieci | 96 | plac zabaw (m) | 89,5 | 126,0 | 108,0 | 94,0 | ↓ 36,5 | ↓ 4,5 |
+| pies | 41 | zieleń 100 m (%) | 77,0 | 59,0 | 82,0 | 78,5 | ↓ −18,0 | ↑ 1,5 |
+| pies | 41 | weterynarz (m) | 364,5 | 838,0 | 369,5 | 274,5 | ↓ 473,5 | ↑ −90,0 |
+| zieleń | 72 | zieleń 100 m (%) | 77,0 | 46,8 | 82,0 | 80,0 | ↓ −30,3 | ↑ 3,0 |
+| zieleń | 72 | udział zieleni (%) | 87,8 | 92,1 | 96,5 | 94,2 | ↑ 4,3 | ↑ 6,4 |
+| powietrze | 37 | PM2,5 (µg/m³) | 14,6 | 14,3 | 14,2 | 14,3 | ↑ −0,3 | ↑ −0,3 |
+| powietrze | 37 | NO₂ (µg/m³) | 16,6 | 18,7 | 16,4 | 16,4 | ↓ 2,1 | ↑ −0,2 |
+| rower | 37 | infrastruktura rowerowa (m) | 212,0 | 61,5 | 158,5 | 66,0 | ↑ −150,5 | ↑ −146,0 |
+| rower | 37 | stojaki 300 m (szt.) | 49,0 | 154,8 | 64,5 | 129,0 | ↑ 105,8 | ↑ 80,0 |
+| bez samochodu | 69 | przystanek (m) | 163,9 | 120,1 | 161,1 | 148,4 | ↑ −43,8 | ↑ −15,6 |
+| bez samochodu | 69 | kursy w szczycie (/h) | 12,0 | 24,0 | 15,5 | 15,0 | ↑ 12,0 | ↑ 3,0 |
+| senior | 73 | przychodnia (m) | 172,0 | 430,5 | 171,0 | 157,0 | ↓ 258,5 | ↑ −15,0 |
+| senior | 73 | ławki 300 m (szt.) | 116,5 | 81,0 | 118,5 | 128,5 | ↓ −35,5 | ↑ 12,0 |
+| praca w centrum | 83 | czas do Rynku (min) | 40,0 | 16,0 | 28,0 | 24,0 | ↑ −24,0 | ↑ −16,0 |
+| lekarz blisko | 52 | przychodnia (m) | 172,0 | 430,5 | 155,0 | 159,5 | ↓ 258,5 | ↑ −12,5 |
+| lekarz blisko | 52 | apteka (m) | 102,5 | 229,0 | 106,0 | 112,5 | ↓ 126,5 | ↓ 10,0 |
+| lotnisko | 28 | czas do Balic (min) | 70,0 | 40,0 | 40,0 | 40,0 | ↑ −30,0 | ↑ −30,0 |
+| cisza | 66 | hałas (% top > 50 dB) | 0,0 | 12,0 | 0,0 | 0,0 | ↓ 12,0 | = 0,0 |
+| cisza | 66 | bary i kluby (% top > 0) | 11,0 | 11,0 | 11,0 | 0,0 | = 0,0 | ↑ −11,0 |
+| sklepy | 45 | sklep (m) | 54,0 | 63,5 | 57,0 | 51,0 | ↓ 9,5 | ↑ −3,0 |
+| sklepy | 45 | gastronomia (m) | 79,0 | 37,5 | 92,0 | 69,0 | ↑ −41,5 | ↑ −10,0 |
+| bezpieczeństwo | 30 | teren osuwiskowy (% top) | 0,0 | 0,0 | 0,0 | 0,0 | = 0,0 | = 0,0 |
+| bezpieczeństwo | 30 | latarnie 100 m (szt.) | 2,0 | 5,0 | 2,0 | 4,0 | ↑ 3,0 | ↑ 2,0 |
+| inwestycja | 39 | pozwolenia 500 m (szt.) | 12,0 | 9,0 | 11,0 | 11,0 | ↓ −3,0 | ↓ −1,0 |
+| mieszkam sam | 81 | kursy w szczycie (/h) | 16,5 | 24,0 | 16,5 | 16,5 | ↑ 7,5 | = 0,0 |
+| mieszkam sam | 81 | czas do Rynku (min) | 13,0 | 14,0 | 13,0 | 13,0 | ↓ 1,0 | = 0,0 |
+
+### Wynik 2: efekt krańcowy
+
+Porównujemy ten sam opis bez potrzeby i z nią, przy tych samych pozostałych potrzebach.
+Podajemy medianę zmiany i liczbę opisów, w których wskaźnik się poprawił / pogorszył.
+
+| Potrzeba | Wskaźnik | Stara | Stara tabela, nowe składanie | Nowa |
+|---|---|---|---|---|
+| dzieci | przedszkole (m) | = 0,0 (43 / 44) | ↓ 12,5 (4 / 72) | ↓ 4,5 (20 / 74) |
+| dzieci | plac zabaw (m) | ↑ −0,8 (48 / 40) | ↓ 13,3 (3 / 73) | = 0,0 (42 / 46) |
+| pies | zieleń 100 m (%) | = 0,0 (12 / 1) | = 0,0 (18 / 0) | ↑ 1,5 (33 / 7) |
+| pies | weterynarz (m) | = 0,0 (10 / 3) | = 0,0 (5 / 13) | ↑ −79,0 (40 / 1) |
+| zieleń | zieleń 100 m (%) | = 0,0 (18 / 19) | ↑ 5,0 (42 / 0) | ↑ 3,0 (71 / 1) |
+| zieleń | udział zieleni (%) | = 0,0 (16 / 8) | ↑ 8,6 (42 / 0) | ↑ 5,2 (70 / 1) |
+| powietrze | PM2,5 (µg/m³) | ↑ −0,1 (25 / 3) | ↑ −0,3 (37 / 0) | ↑ −0,3 (37 / 0) |
+| powietrze | NO₂ (µg/m³) | = 0,0 (9 / 15) | ↑ −0,1 (37 / 0) | ↑ −0,1 (32 / 3) |
+| rower | infrastruktura rowerowa (m) | ↑ −2,0 (23 / 2) | = 0,0 (6 / 15) | ↑ −51,0 (37 / 0) |
+| rower | stojaki 300 m (szt.) | = 0,0 (14 / 10) | = 0,0 (14 / 0) | ↑ 20,5 (26 / 10) |
+| bez samochodu | przystanek (m) | = 0,0 (34 / 12) | ↑ −1,8 (40 / 11) | ↑ −9,7 (51 / 18) |
+| bez samochodu | kursy w szczycie (/h) | = 0,0 (30 / 4) | = 0,0 (32 / 6) | ↑ 1,8 (42 / 9) |
+| senior | przychodnia (m) | ↓ 64,0 (18 / 47) | ↑ −1,0 (51 / 5) | = 0,0 (31 / 20) |
+| senior | ławki 300 m (szt.) | ↑ 1,0 (44 / 21) | ↑ 4,5 (59 / 0) | ↑ 4,0 (51 / 8) |
+| praca w centrum | czas do Rynku (min) | ↑ −2,0 (43 / 0) | ↑ −3,0 (58 / 0) | = 0,0 (41 / 0) |
+| lekarz blisko | przychodnia (m) | = 0,0 (4 / 2) | ↑ −16,0 (52 / 0) | = 0,0 (12 / 0) |
+| lekarz blisko | apteka (m) | = 0,0 (5 / 1) | ↑ −2,0 (47 / 0) | = 0,0 (12 / 0) |
+| lotnisko | czas do Balic (min) | ↑ −20,0 (17 / 0) | ↑ −17,5 (20 / 0) | ↑ −10,0 (19 / 0) |
+| cisza | hałas (% top > 50 dB) | = 0,0 (7 / 14) | = 0,0 (16 / 0) | ↑ −1,0 (47 / 3) |
+| cisza | bary i kluby (% top > 0) | = 0,0 (28 / 7) | = 0,0 (2 / 4) | ↑ −11,0 (66 / 0) |
+| sklepy | sklep (m) | ↑ −3,5 (28 / 0) | ↑ −4,0 (26 / 0) | ↑ −6,5 (44 / 0) |
+| sklepy | gastronomia (m) | ↑ −0,5 (26 / 1) | = 0,0 (15 / 6) | ↑ −22,0 (41 / 4) |
+| bezpieczeństwo | teren osuwiskowy (% top) | = 0,0 (0 / 0) | = 0,0 (0 / 0) | = 0,0 (0 / 0) |
+| bezpieczeństwo | latarnie 100 m (szt.) | ↑ 0,8 (21 / 0) | = 0,0 (0 / 0) | ↑ 2,5 (29 / 0) |
+| inwestycja | pozwolenia 500 m (szt.) | ↓ −3,0 (4 / 32) | ↓ −1,0 (2 / 31) | ↓ −1,0 (2 / 32) |
+| mieszkam sam | kursy w szczycie (/h) | ↑ 1,8 (41 / 8) | = 0,0 (0 / 0) | = 0,0 (0 / 0) |
+| mieszkam sam | czas do Rynku (min) | = 0,0 (31 / 18) | = 0,0 (0 / 0) | = 0,0 (0 / 0) |
+
+### Wynik 3: skutki uboczne
+
+Mediana po 420 opisach.
+
+| | Profil | Stara | Stara tabela, nowe składanie | Nowa |
+|---|---|---|---|---|
+| Warstwy liczone w wyniku | 22 | 52 | 22 | 24 |
+| Rozrzut wyników adresów (p90 − p10, pkt) | 31,2 | 29,4 | 32,7 | 32,7 |
+| Wynik samego profilu w top 100 (śr., pkt) | 81,6 | 77,3 | 81,5 | 81,2 |
+| Top 100 wspólne z top samego profilu (%) | 100 | 8 | 72 | 58 |
+
+Rozkład wyników się nie spłaszcza: stara tabela zwężała go (31,2 → 29,4 pkt), nowa lekko
+poszerza (32,7). Stara wymieniała 92% top 100 i kosztowała 4,3 pkt dopasowania do profilu.
+Nowa wymienia 42% i kosztuje 0,4 pkt.
+
+### Wnioski
+
+- **Lepiej niż stara tabela** (nowa przesuwa top we właściwą stronę, stara w złą albo wcale):
+  - pies: weterynarz −90 m, zieleń bez strat; stara: −18 pp zieleni;
+  - zieleń: +3 pp; stara: −30 pp;
+  - senior: przychodnia −15 m, ławki +12; stara: +258 m do przychodni;
+  - lekarz blisko: przychodnia −12,5 m; stara: +258 m;
+  - powietrze: NO₂; stara: +2,1;
+  - cisza: 0% top przy barach, hałas bez pogorszenia; stara: 12% top powyżej 50 dB;
+  - sklepy: sklep −3 m, gastronomia −10 m;
+  - bezpieczeństwo: latarnie;
+  - inwestycja: −1 pozwolenie zamiast −3.
+- **Podobnie albo trochę słabiej, ale z mniejszą ceną**:
+  - rower: −146 m zamiast −150 m, stojaki +80 zamiast +106;
+  - bez samochodu: przystanek −16 m zamiast −44 m, kursy +3 zamiast +12;
+  - praca w centrum: −16 min zamiast −24 min.
+
+  Stara tabela osiągała tu więcej, bo włączała WSZYSTKIE warstwy transportu i codzienności
+  naraz. Płaciła za to zmianą 92% top i gorszym wynikiem w innych potrzebach tego samego opisu.
+  Efekt krańcowy samej potrzeby jest w nowej tabeli większy: rower −51 m wobec −2 m, przystanek
+  −9,7 m wobec 0.
+- **Gdzie nowa tabela wciąż pogarsza wskaźnik:**
+  - **dzieci → przedszkole** +8 m wobec profilu (stara +29 m). Efekt krańcowy to +4,5 m
+    (20 opisów lepiej, 74 gorzej). Rodzina waży już przedszkole na 4, a potrzeba dokłada plac
+    zabaw i bibliotekę. To wymiana między placówkami dla dzieci, a nie utrata: plac zabaw ma
+    medianę 0 (42 opisy lepiej, 46 gorzej), a przy top 300 69 lepiej i 4 gorzej.
+  - **lekarz blisko → apteka** +10 m wobec profilu. To wpływ innych potrzeb tych samych opisów:
+    efekt krańcowy samego „lekarza” to 12 opisów lepiej i 0 gorzej, a przy top 300 zmiana
+    wynosi 0.
+  - **inwestycja → pozwolenia** −1: projekty BO (3) rozcieńczają pozwolenia, które Inwestor
+    i tak waży na 4. Tabelę zostawiam (stara: −3).
+  - **mieszkam sam** nic już nie zmienia. Nie ma własnych warstw, a jej poziomy kategorii (z
+    samych potrzeb) wag nie ruszają. Wagi niesie profil Singiel. Stara tabela poprawiała kursy
+    (41 opisów lepiej, 8 gorzej), ale czas do Rynku przesuwała w obie strony (31 / 18).
+- Przy top 300 wnioski są te same. Wyjątek: przy „ciszy” hałas jest o 1,1 pp gorszy niż
+  profil (2,1% top powyżej 50 dB wobec 1,0%), przy starej tabeli o 17 pp.
+
+Ograniczenia:
+
+- Część wskaźników spełnienia to warstwy, które nowa tabela waży (weterynarz, stojaki,
+  latarnie), więc ich poprawa jest po części z definicji. Mierzy jednak to, czego chcieliśmy:
+  czy waga przebija się przez resztę wyniku. Stara tabela pokazuje, że nie musi.
+- Top 100 z 176 tys. adresów bywa skupione na kilku ulicach.
+- Etykiety zbiorów ułożyły agenty AI.
+- Persona null liczymy jako Rodzinę, czyli profil domyślny.
+
 ## Na slajd
 
 **Zbiór kontrolny nr 7 (#174).** To 120 opisów i 150 pytań, które napisały na ślepo osobne
