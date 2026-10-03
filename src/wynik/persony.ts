@@ -170,6 +170,8 @@ export const PERSONY: readonly Persona[] = [
       sport_odleglosc: 1,
       pm25_srednia: 1,
     },
+    // Warstwy `neutralny` bez kierunku persony nie liczą się do wyniku mimo wagi.
+    kierunki: { akademik_odleglosc: 'mniej-lepiej', zycie_nocne_300m: 'wiecej-lepiej' },
     wagaNowych: 0,
   },
   {
@@ -190,6 +192,11 @@ export const PERSONY: readonly Persona[] = [
       oswietlenie_100m: 2,
       przystanek_odleglosc: 2,
       powodz_10proc: 2,
+    },
+    kierunki: {
+      wybieg_psy_odleglosc: 'mniej-lepiej',
+      weterynarz_odleglosc: 'mniej-lepiej',
+      rod_odleglosc: 'mniej-lepiej',
     },
     wagaNowych: 0,
   },
@@ -212,6 +219,7 @@ export const PERSONY: readonly Persona[] = [
       sport_odleglosc: 2,
       halas_ldwn: 2,
     },
+    kierunki: { droga_rowerowa_odleglosc: 'mniej-lepiej' },
     wagaNowych: 0,
   },
   {
@@ -254,6 +262,7 @@ export const PERSONY: readonly Persona[] = [
       sklep_odleglosc: 2,
       przystanek_odleglosc: 2,
     },
+    kierunki: { droga_rowerowa_odleglosc: 'mniej-lepiej' },
     wagaNowych: 0,
   },
   {
@@ -359,6 +368,7 @@ export const PERSONY: readonly Persona[] = [
       punkt_schronienia_odleglosc: 1,
       sklep_odleglosc: 2,
     },
+    kierunki: { defibrylator_odleglosc: 'mniej-lepiej' },
     wagaNowych: 0,
   },
   {

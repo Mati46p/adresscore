@@ -38,7 +38,8 @@ export interface StanUrl {
 }
 
 export const MAKS_POROWNANIE = 5
-const MAKS_USTAWIENIA = 4096
+const MAKS_USTAWIENIA = 16384
+const MAKS_KLUCZY = 500
 
 function czytajUstawienia(tekst: string | null): StanUrl['ustawienia'] {
   if (!tekst || tekst.length > MAKS_USTAWIENIA) return null
@@ -48,22 +49,16 @@ function czytajUstawienia(tekst: string | null): StanUrl['ustawienia'] {
     const { v, w, k } = dane as Record<string, unknown>
     if (v !== 1 || !w || typeof w !== 'object' || Array.isArray(w)) return null
     if (!k || typeof k !== 'object' || Array.isArray(k)) return null
-    const wagi = Object.entries(w)
-    const kierunki = Object.entries(k)
-    if (wagi.length > 100 || kierunki.length > 100) return null
-    if (
-      wagi.some(
-        ([id, wartosc]) =>
-          !id || !Number.isInteger(wartosc) || (wartosc as number) < 0 || (wartosc as number) > 4,
-      )
+    // Link zapisuje wagę każdej warstwy manifestu (ponad 120), więc limit kluczy ma zapas.
+    // Błędny wpis odpada sam – reszta ustawień zostaje.
+    const wagi = Object.entries(w).filter(
+      ([id, wartosc]) =>
+        id && Number.isInteger(wartosc) && (wartosc as number) >= 0 && (wartosc as number) <= 4,
     )
-      return null
-    if (
-      kierunki.some(
-        ([id, wartosc]) => !id || !['wiecej-lepiej', 'mniej-lepiej'].includes(wartosc as string),
-      )
+    const kierunki = Object.entries(k).filter(
+      ([id, wartosc]) => id && ['wiecej-lepiej', 'mniej-lepiej'].includes(wartosc as string),
     )
-      return null
+    if (wagi.length > MAKS_KLUCZY || kierunki.length > MAKS_KLUCZY) return null
     return { wagi: Object.fromEntries(wagi), kierunki: Object.fromEntries(kierunki) }
   } catch {
     return null
@@ -167,16 +162,16 @@ export function zapiszHash(s: StanUrl): string {
     if (s.symulacja.a) parametry.set('a', s.symulacja.a)
     if (s.symulacja.b) parametry.set('b', s.symulacja.b)
   }
-  const q = parametry
-    .toString()
-    .replaceAll('%2C', ',')
-    .replaceAll('%3A', ':')
-    .replaceAll('%3B', ';')
   if (s.ekran === 'biznes') {
     parametry.set('b', s.branza ?? 'sklep')
     if (s.punktA) parametry.set('a', s.punktA.lon.toFixed(6) + ',' + s.punktA.lat.toFixed(6))
     if (s.punktB) parametry.set('c', s.punktB.lon.toFixed(6) + ',' + s.punktB.lat.toFixed(6))
   }
+  const q = parametry
+    .toString()
+    .replaceAll('%2C', ',')
+    .replaceAll('%3A', ':')
+    .replaceAll('%3B', ';')
   return `#${sciezka}${q ? `?${q}` : ''}`
 }
 

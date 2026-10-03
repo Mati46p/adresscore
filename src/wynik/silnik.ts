@@ -95,7 +95,7 @@ export interface Skala {
   do: number
   /** Punkt 50 na skali (może leżeć na brzegu albo poza przedziałem) albo null bez normy. */
   norma: number | null
-  zrodlo: 'zakres' | 'percentyle' | 'jednostki' | 'rangi' | 'brak'
+  zrodlo: 'zakres' | 'percentyle' | 'jednostki' | 'poziomy' | 'rangi' | 'brak'
   /** Skala rangowa: rosnące wartości węzłów. */
   wezly?: number[]
   /** Skala rangowa: ranga 0–1 każdego węzła (średnia przy remisach). */
@@ -212,7 +212,16 @@ export function zbudujSkale(meta: WskaznikMeta, wartosci: readonly (number | nul
   // Dla klas ze znanym zakresem (np. sama wartość 0 w strefie 0/1) zostaje skala liniowa.
   if (!meta.zakres && liczby[0] === liczby[liczby.length - 1]) return skalaRangowa(liczby)
   if (liczbaPoziomow(liczby, MAKS_POZIOMOW) <= MAKS_POZIOMOW) {
-    return skalaLiniowa(meta, () => liczby)
+    const skala = skalaLiniowa(meta, () => liczby)
+    // Rzadka klasa bez zakresu (np. 3% jedynek w strefie 0/1): 5. i 95. percentyl się
+    // pokrywają, a warstwa nie może przez to stracić danych – bierzemy pełny przedział poziomów.
+    if (skala.zrodlo !== 'brak') return skala
+    return {
+      od: liczby[0] as number,
+      do: liczby[liczby.length - 1] as number,
+      norma: null,
+      zrodlo: 'poziomy',
+    }
   }
   return skalaRangowa(liczby)
 }

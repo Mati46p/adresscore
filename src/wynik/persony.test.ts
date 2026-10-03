@@ -176,13 +176,36 @@ describe('hash URL', () => {
   })
 
   it('odrzuca niepoprawne własne ustawienia', () => {
-    for (const u of [
-      '{',
-      JSON.stringify({ v: 2, w: {}, k: {} }),
-      JSON.stringify({ v: 1, w: { halas_ldwn: 9 }, k: {} }),
-      JSON.stringify({ v: 1, w: {}, k: { halas_ldwn: 'nieznany' } }),
-    ]) {
+    for (const u of ['{', JSON.stringify({ v: 2, w: {}, k: {} })]) {
       assert.equal(czytajHash(`#/porownanie?u=${encodeURIComponent(u)}`).ustawienia, null)
     }
+  })
+
+  it('pomija tylko błędny wpis, resztę ustawień zachowuje', () => {
+    const u = JSON.stringify({
+      v: 1,
+      w: { halas_ldwn: 9, pm25_srednia: 3 },
+      k: { halas_ldwn: 'nieznany', pm25_srednia: 'mniej-lepiej' },
+    })
+    assert.deepEqual(czytajHash(`#/porownanie?u=${encodeURIComponent(u)}`).ustawienia, {
+      wagi: { pm25_srednia: 3 },
+      kierunki: { pm25_srednia: 'mniej-lepiej' },
+    })
+  })
+
+  it('link trybu Biznes zachowuje branżę i punkty A/B', () => {
+    const punktA = { lon: 19.94, lat: 50.06 }
+    const punktB = { lon: 19.95, lat: 50.07 }
+    const s = { ...czytajHash('#/'), ekran: 'biznes' as const, branza: 'apteka' as const }
+    const z = czytajHash(zapiszHash({ ...s, punktA, punktB }))
+    assert.equal(z.branza, 'apteka')
+    assert.deepEqual(z.punktA, punktA)
+    assert.deepEqual(z.punktB, punktB)
+  })
+
+  it('link z wagami wszystkich warstw manifestu (ponad 100) wraca cały', () => {
+    const wagi = Object.fromEntries(Array.from({ length: 130 }, (_, i) => [`warstwa_${i}`, 2]))
+    const hash = zapiszHash({ ...czytajHash('#/'), ustawienia: { wagi, kierunki: {} } })
+    assert.deepEqual(czytajHash(hash).ustawienia?.wagi, wagi)
   })
 })

@@ -91,6 +91,15 @@ describe('warstwy opcjonalne i strefy 0/1', () => {
     assert.equal(wynikiWszystkich([strefa], w, { sct_w_strefie: 'mniej-lepiej' }, 2)[1], 0)
   })
 
+  it('rzadka strefa 0/1 bez zakresu nie traci danych (5. i 95. percentyl równe)', () => {
+    const wartosci = Array.from({ length: 1000 }, (_, i) => (i < 30 ? 1 : 0))
+    const m = meta({ id: 'rzadka', zakres: undefined })
+    const skala = zbudujSkale(m, wartosci)
+    assert.equal(skala.zrodlo, 'poziomy')
+    assert.equal(ocenWartosc(0, skala, 'mniej-lepiej'), 100)
+    assert.equal(ocenWartosc(1, skala, 'mniej-lepiej'), 0)
+  })
+
   it('kontekst nie liczy się nawet z wagą i kierunkiem od użytkownika', () => {
     const bankomat = wsk(
       { id: 'bankomat_odleglosc', kategoria: 'kontekst', kierunek: 'mniej-lepiej' },

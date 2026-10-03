@@ -229,7 +229,9 @@ export function agregujOceny(ocenyWarstw, grupa, liczbaGrup) {
     }
     for (let g = 0; g < liczbaGrup; g++) {
       const p = k * liczbaGrup + g
-      udzial[p] = Math.round((SKALA_UDZIALU * liczba[g]) / razem[g])
+      // W dół, nie do najbliższej: 199 z 400 adresów nie może przejść progu połowy, a 399 z 400
+      // nie może udawać pełnego pokrycia w filtrach heksów.
+      udzial[p] = Math.floor((SKALA_UDZIALU * liczba[g]) / razem[g])
       if (liczba[g] === 0) continue
       srednia[p] = Math.round((suma[g] / liczba[g]) * SKALA_OCENY)
       // Zaokrąglenie na zewnątrz: filtr na heksie wyklucza tylko wtedy, gdy na pewno.
