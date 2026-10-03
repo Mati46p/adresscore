@@ -41,6 +41,33 @@ const ODPOWIEDZI: Record<string, OdpowiedzJev | null> = {
   cisza: null,
 }
 
+describe('zapytajJev – prawdopodobieństwa opcji (#154)', () => {
+  it('rozkład z pośrednika dochodzi do wołającego bez zmian', async () => {
+    const zRozkladem: Record<string, OdpowiedzJev | null> = {
+      profil: {
+        typ: 'choice',
+        wybor: 'rodzina',
+        pewnosc: 0.9,
+        prawdopodobienstwa: { rodzina: 0.9, senior: 0.1 },
+      },
+      dzieci: { typ: 'noul', noul: 0.93 },
+      cisza: { typ: 'score', ocena: 1.1, pewnosc: 0.8, prawdopodobienstwa: { 1: 0.9, 2: 0.1 } },
+    }
+    const { fetchImpl } = zbudujFetch(200, { odpowiedzi: zRozkladem, powod: null })
+    const w = await zapytajJev(ZAPYTANIE, { fetch: fetchImpl })
+    assert.deepEqual(w, { odpowiedzi: zRozkladem, powod: null })
+  })
+
+  it('bez rozkładu pole jest nieobecne, a zachowanie to samo', async () => {
+    const { fetchImpl } = zbudujFetch(200, { odpowiedzi: ODPOWIEDZI, powod: null })
+    const w = await zapytajJev(ZAPYTANIE, { fetch: fetchImpl })
+    const profil = w.odpowiedzi?.profil
+    assert.ok(profil && profil.typ === 'choice')
+    assert.equal(Object.hasOwn(profil, 'prawdopodobienstwa'), false)
+    assert.equal(profil.wybor, 'rodzina')
+  })
+})
+
 describe('zapytajJev', () => {
   it('POST na pośrednika z kontraktem, bez żadnego klucza w żądaniu', async () => {
     const { fetchImpl, wywolania } = zbudujFetch(200, { odpowiedzi: ODPOWIEDZI, powod: null })

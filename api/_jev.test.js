@@ -19,7 +19,7 @@ const CIALO = {
 }
 
 const ODPOWIEDZ_JEV = {
-  model: 'jev-latest',
+  model: 'jev-1.13.0',
   answers: {
     profil: { type: 'choice', choice: 'rodzina', confidence: 0.91 },
     dzieci: { type: 'noul', noul: 0.93 },
@@ -104,6 +104,110 @@ describe('wolajJev – kształt żądania', () => {
         cisza: { typ: 'score', ocena: 0.4, pewnosc: 0.7 },
       },
     })
+  })
+})
+
+describe('wolajJev – prawdopodobieństwa opcji (#154)', () => {
+  it('model przypięty do jev-1.13.0 i wysłany w ciele żądania', async () => {
+    assert.equal(MODEL_JEV, 'jev-1.13.0')
+    const { fetchImpl, wywolania } = zbudujFetch()
+    await wolajJev(zapytanie(), { klucz: 'k', fetch: fetchImpl })
+    assert.equal(JSON.parse(wywolania[0].init.body).model, 'jev-1.13.0')
+  })
+
+  it('choice i score: rozkład przechodzi jako prawdopodobienstwa', async () => {
+    const { fetchImpl } = zbudujFetch({
+      json: {
+        answers: {
+          profil: {
+            choice: 'rodzina',
+            confidence: 0.8,
+            probabilities: { rodzina: 0.9, singiel: 0.1 },
+          },
+          dzieci: { noul: 0.93, probabilities: { tak: 1 } },
+          cisza: { score: 0.4, confidence: 0.7, probabilities: { 0: 0.6, 1: 0.4 } },
+        },
+      },
+    })
+    const w = await wolajJev(zapytanie(), { klucz: 'k', fetch: fetchImpl })
+    assert.deepEqual(w.odpowiedzi, {
+      profil: {
+        typ: 'choice',
+        wybor: 'rodzina',
+        pewnosc: 0.8,
+        prawdopodobienstwa: { rodzina: 0.9, singiel: 0.1 },
+      },
+      dzieci: { typ: 'noul', noul: 0.93 },
+      cisza: { typ: 'score', ocena: 0.4, pewnosc: 0.7, prawdopodobienstwa: { 0: 0.6, 1: 0.4 } },
+    })
+  })
+
+  it('klucze spoza opcji żądania przepadają', async () => {
+    const { fetchImpl } = zbudujFetch({
+      json: {
+        answers: {
+          profil: {
+            choice: 'rodzina',
+            confidence: 0.8,
+            probabilities: { rodzina: 0.7, singiel: 0.2, senior: 0.1, toString: 0.5 },
+          },
+          cisza: { score: 1, confidence: 0.9, probabilities: { 0: 0.1, 1: 0.8, 2: 0.1 } },
+        },
+      },
+    })
+    const w = await wolajJev(zapytanie(), { klucz: 'k', fetch: fetchImpl })
+    assert.deepEqual(w.odpowiedzi.profil.prawdopodobienstwa, { rodzina: 0.7, singiel: 0.2 })
+    assert.deepEqual(w.odpowiedzi.cisza.prawdopodobienstwa, { 0: 0.1, 1: 0.8 })
+  })
+
+  it('wartości nieskończone, spoza 0–1 i nieliczbowe przepadają', async () => {
+    const { fetchImpl } = zbudujFetch({
+      json: {
+        answers: {
+          profil: {
+            choice: 'rodzina',
+            confidence: 0.8,
+            probabilities: { rodzina: Number.POSITIVE_INFINITY, singiel: 0.3 },
+          },
+          cisza: { score: 1, confidence: 0.9, probabilities: { 0: -0.1, 1: 1.2 } },
+        },
+      },
+    })
+    const w = await wolajJev(zapytanie(), { klucz: 'k', fetch: fetchImpl })
+    assert.deepEqual(w.odpowiedzi.profil.prawdopodobienstwa, { singiel: 0.3 })
+    // Nic nie przeszło filtra → pola nie ma wcale.
+    assert.equal(Object.hasOwn(w.odpowiedzi.cisza, 'prawdopodobienstwa'), false)
+
+    // NaN i tekst – też odrzucone (fetch wstrzykiwany może dać cokolwiek).
+    const drugi = zbudujFetch({
+      json: {
+        answers: {
+          profil: {
+            choice: 'singiel',
+            confidence: 0.6,
+            probabilities: { rodzina: Number.NaN, singiel: '0.6' },
+          },
+        },
+      },
+    })
+    const w2 = await wolajJev(zapytanie(), { klucz: 'k', fetch: drugi.fetchImpl })
+    assert.deepEqual(w2.odpowiedzi.profil, { typ: 'choice', wybor: 'singiel', pewnosc: 0.6 })
+  })
+
+  it('JEV nie przysłał rozkładu (albo przysłał nie-obiekt) → pola brak', async () => {
+    for (const probabilities of [undefined, null, [0.5, 0.5], 'x']) {
+      const { fetchImpl } = zbudujFetch({
+        json: {
+          answers: {
+            profil: { choice: 'rodzina', confidence: 0.91, probabilities },
+            cisza: { score: 0.4, confidence: 0.7, probabilities },
+          },
+        },
+      })
+      const w = await wolajJev(zapytanie(), { klucz: 'k', fetch: fetchImpl })
+      assert.equal(Object.hasOwn(w.odpowiedzi.profil, 'prawdopodobienstwa'), false)
+      assert.equal(Object.hasOwn(w.odpowiedzi.cisza, 'prawdopodobienstwa'), false)
+    }
   })
 })
 

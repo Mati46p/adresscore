@@ -21,9 +21,21 @@ export interface ZapytanieJev {
 }
 
 export type OdpowiedzJev =
-  | { typ: 'choice'; wybor: string; pewnosc: number | null }
+  | {
+      typ: 'choice'
+      wybor: string
+      pewnosc: number | null
+      /** Rozkład po id opcji z żądania, wartości 0–1 (#154). Brak, gdy JEV go nie przysłał. */
+      prawdopodobienstwa?: Record<string, number>
+    }
   | { typ: 'noul'; noul: number }
-  | { typ: 'score'; ocena: number; pewnosc: number | null }
+  | {
+      typ: 'score'
+      ocena: number
+      pewnosc: number | null
+      /** Rozkład po numerze poziomu („0”…„n−1”), wartości 0–1 (#154). Brak, gdy JEV nie przysłał. */
+      prawdopodobienstwa?: Record<string, number>
+    }
 
 /** Dlaczego nie ma odpowiedzi – do logów i pomiaru (#18), czytelnik widzi tylko zapas. */
 export type PowodBraku = 'brak-klucza' | 'odmowa' | 'blad' | 'limit'
