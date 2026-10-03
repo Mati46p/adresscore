@@ -1,6 +1,8 @@
+/* Ekran trybu „Biznes” (E10). Kolory z tokenów src/styles.css, bez wartości na sztywno; barw
+   palety danych (skala heksów) nie używamy jako koloru tekstu – napisy mają własne tokeny. */
 .biznes {
   padding: 32px clamp(16px, 3vw, 48px) 64px;
-  color: #1b3027;
+  color: var(--tekst);
 }
 .biznes-glowa {
   display: flex;
@@ -19,7 +21,7 @@
   line-height: 1.5;
 }
 .biznes-etykieta {
-  color: #337653;
+  color: var(--akcent);
   font-size: 0.77rem;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -33,10 +35,12 @@
 .biznes-branza select,
 .biznes-panel input {
   width: 100%;
+  min-height: var(--cel-dotyku);
   padding: 10px;
-  border: 1px solid #9eb3a5;
+  border: 1px solid var(--ramka-pola);
   border-radius: 8px;
-  background: #fff;
+  background: var(--powierzchnia);
+  color: var(--tekst);
   font: inherit;
 }
 .biznes-uklad {
@@ -67,27 +71,43 @@
   gap: 8px;
   padding: 9px;
   border-radius: 8px;
-  background: #fffffff2;
-  box-shadow: 0 2px 8px #0002;
+  background: var(--powierzchnia);
+  box-shadow: 0 2px 8px rgb(24 32 43 / 0.2);
 }
 .biznes-sterowanie span:last-child {
-  color: #5c6b60;
+  color: var(--tekst-3);
   font-size: 0.85rem;
 }
 .biznes-sterowanie button,
 .biznes-panel button {
-  border: 1px solid #2c6748;
+  min-width: var(--cel-dotyku);
+  min-height: var(--cel-dotyku);
+  border: 1px solid var(--akcent);
   border-radius: 7px;
-  background: #fff;
+  background: var(--powierzchnia);
   padding: 8px 12px;
-  color: #19432f;
+  color: var(--akcent);
   cursor: pointer;
   font: inherit;
 }
 .biznes-sterowanie button[aria-pressed="true"],
 .biznes-panel button[type="submit"] {
-  background: #1f5c46;
-  color: #fff;
+  background: var(--akcent);
+  color: var(--powierzchnia);
+}
+/* Najechanie tylko tam, gdzie jest mysz: na dotyku stan nie zostaje przyklejony po tapnięciu. */
+@media (hover: hover) {
+  .biznes-sterowanie button:hover,
+  .biznes-panel button:hover {
+    background: var(--akcent-jasny);
+  }
+  .biznes-sterowanie button[aria-pressed="true"]:hover,
+  .biznes-panel button[type="submit"]:hover {
+    background: var(--akcent-hover);
+  }
+  .biznes-zrodla a:hover {
+    color: var(--akcent-hover);
+  }
 }
 .biznes-panel {
   display: grid;
@@ -98,7 +118,7 @@
   display: grid;
   gap: 10px;
   padding: 18px;
-  background: #e7f0ea;
+  background: var(--akcent-jasny);
   border-radius: 10px;
 }
 .biznes-panel label {
@@ -111,8 +131,8 @@
   gap: 14px;
 }
 .biznes-ocena {
-  background: #fff;
-  border: 1px solid #d9e3db;
+  background: var(--powierzchnia);
+  border: 1px solid var(--ramka);
   border-radius: 10px;
   padding: 18px;
 }
@@ -127,23 +147,23 @@
 }
 .biznes-wspolrzedne {
   margin: 5px 0 14px;
-  color: #66776a;
+  color: var(--tekst-3);
   font-size: 0.85rem;
 }
 .biznes-glowna {
-  display: flex;
-  gap: 12px;
-  align-items: center;
   padding: 12px;
-  background: #e7f0ea;
+  background: var(--akcent-jasny);
   border-radius: 8px;
 }
-.biznes-glowna strong {
-  font-size: 2rem;
-  color: #1f5c46;
+.biznes-glowna p {
+  margin: 0;
+  line-height: 1.4;
 }
-.biznes-glowna span {
-  line-height: 1.35;
+.biznes-glowna strong {
+  display: block;
+  font-size: 2rem;
+  line-height: 1.2;
+  color: var(--akcent);
 }
 .biznes-ocena dl {
   margin: 16px 0 8px;
@@ -153,27 +173,61 @@
   justify-content: space-between;
   gap: 16px;
   padding: 5px 0;
-  border-bottom: 1px solid #edf1ee;
+  border-bottom: 1px solid var(--linia);
 }
 .biznes-ocena dt {
-  color: #52665a;
+  color: var(--tekst-2);
 }
 .biznes-ocena dd {
   margin: 0;
   font-weight: 700;
+  text-align: right;
+}
+.biznes-czynniki-naglowek {
+  margin: 16px 0 6px;
+  font-size: 1rem;
 }
 .biznes-czynniki {
-  line-height: 1.5;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+  line-height: 1.45;
 }
-.biznes-zrodlo {
+.biznes-czynnik strong {
+  color: var(--tekst-2);
+}
+.biznes-czynnik--za strong {
+  color: var(--akcent);
+}
+.biznes-czynnik--przeciw strong {
+  color: var(--ostrzezenie-tekst);
+}
+.biznes-zrodla {
   max-width: 1500px;
   margin: 24px auto 0;
-  color: #5d6d61;
+  color: var(--tekst-2);
   font-size: 0.88rem;
   line-height: 1.5;
 }
+.biznes-zrodla h2 {
+  margin: 0 0 6px;
+  font-size: 1rem;
+  color: var(--tekst);
+}
+.biznes-zrodla ul {
+  margin: 0 0 12px;
+  padding-left: 18px;
+}
+.biznes-zrodla li {
+  overflow-wrap: anywhere;
+}
+.biznes-zrodlo-opis {
+  color: var(--tekst-3);
+}
 .biznes-pusta {
-  color: #66776a;
+  color: var(--tekst-3);
 }
 @media (max-width: 1050px) {
   .biznes-uklad {

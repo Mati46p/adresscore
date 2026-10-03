@@ -5,6 +5,7 @@ import {
   bilansPopytu,
   czynnikiOceny,
   type KomorkaPopytu,
+  kursyZeSlowem,
   type Miejsce,
   type OcenaMiejsca,
   obliczBazowePunkty,
@@ -24,6 +25,9 @@ import {
   zbudujIndeks,
 } from './biznes.ts'
 import { ocenaPelna } from './biznesOdniesienie.ts'
+
+// Pauza zapisana kodem: w pliku nie ma literalnego znaku (w polskim tekście obowiązuje półpauza).
+const PAUZA = String.fromCodePoint(0x2014)
 
 const komorki: KomorkaPopytu[] = [
   ['h1', 19.999, 50, 100, 200, 0],
@@ -371,7 +375,7 @@ test('czynniki: zawsze 2–3 pozycje, dla każdej kombinacji progów', () => {
             )
             for (const c of czynniki) {
               assert.ok(c.tekst.length > 10)
-              assert.ok(!c.tekst.includes('—'))
+              assert.ok(!c.tekst.includes(PAUZA))
             }
           }
 })
@@ -399,4 +403,19 @@ test('czynniki: miejsce poza danymi o popycie wprost to mówi', () => {
   )
   assert.equal(czynniki[0]?.kierunek, 'przeciw')
   assert.match(czynniki[0]?.tekst ?? '', /nie ma żadnego adresu/)
+})
+
+test('kursy słowami: ułamek w dopełniaczu liczby pojedynczej, całkowite po liczebniku', () => {
+  assert.equal(kursyZeSlowem(23.2), '23,2 kursu')
+  assert.equal(kursyZeSlowem(0.4), '0,4 kursu')
+  assert.equal(kursyZeSlowem(5), '5 kursów')
+  assert.equal(kursyZeSlowem(5.04), '5 kursów')
+  assert.equal(kursyZeSlowem(1), '1 kurs')
+  assert.equal(kursyZeSlowem(2), '2 kursy')
+  assert.equal(kursyZeSlowem(12), '12 kursów')
+  assert.equal(kursyZeSlowem(22), '22 kursy')
+  const czynniki = czynnikiOceny(ocenaZ({ kursySzczytSrednio: 23.2, percentyl: 50 }), 800)
+  assert.ok(czynniki.some((c) => c.tekst.includes('średnio 23,2 kursu w porannym szczycie')))
+  const slabe = czynnikiOceny(ocenaZ({ kursySzczytSrednio: 0.4, percentyl: 50 }), 800)
+  assert.ok(slabe.some((c) => c.kierunek === 'przeciw' && /średnio 0,4 kursu/.test(c.tekst)))
 })

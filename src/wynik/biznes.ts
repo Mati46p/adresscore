@@ -55,7 +55,7 @@ export interface BialaPlama {
 
 // ── Parametry modelu ─────────────────────────────────────────────────────────────────────
 
-/** Przeliczenie stopni na metry dla szerokości Krakowa (płaska aproksymacja, błąd rzędu 0,1%). */
+/** Stopnie na metry dla szerokości Krakowa: płaska aproksymacja, na obszarze danych błąd poniżej 0,5%. */
 export const METRY_LON = 71_450
 export const METRY_LAT = 111_200
 /** Bok kratki siatki wyszukiwania; nie zależy od promienia branży, więc siatka heksów jest wspólna. */
@@ -653,6 +653,14 @@ export interface CzynnikOceny {
 
 const liczbaCzynnika = new Intl.NumberFormat('pl-PL', { maximumFractionDigits: 1 })
 
+/** Odmiana po liczebniku: 1 adres, 2 adresy, 5 adresów, 22 adresy, 112 adresów. */
+export function odmiana(n: number, jeden: string, kilka: string, wiele: string): string {
+  if (n === 1) return jeden
+  const j = n % 10
+  const d = n % 100
+  return j >= 2 && j <= 4 && (d < 12 || d > 14) ? kilka : wiele
+}
+
 interface Kandydat extends CzynnikOceny {
   /** 0–1: jak daleko od środka skali; steruje wyborem, gdy czynników jest więcej niż trzy. */
   moc: number
@@ -780,20 +788,28 @@ function czynnikOdleglosci(o: OcenaMiejsca, zasiegM: number): Kandydat | null {
   return null
 }
 
+/** „23,2 kursu” (ułamek wymaga dopełniacza liczby pojedynczej), ale „5 kursów”, „2 kursy”. */
+export function kursyZeSlowem(srednia: number): string {
+  const zaokraglone = Math.round(srednia * 10) / 10
+  if (Number.isInteger(zaokraglone))
+    return `${zaokraglone} ${odmiana(zaokraglone, 'kurs', 'kursy', 'kursów')}`
+  return `${liczbaCzynnika.format(zaokraglone)} kursu`
+}
+
 function czynnikKomunikacji(o: OcenaMiejsca): Kandydat | null {
   if (o.adresyWZasiegu === 0) return null
-  const kursy = liczbaCzynnika.format(o.kursySzczytSrednio)
+  const kursy = kursyZeSlowem(o.kursySzczytSrednio)
   if (o.kursySzczytSrednio >= PROGI_CZYNNIKOW.kursyDuzo)
     return {
       kierunek: 'za',
-      tekst: `Dobry dojazd komunikacją: średnio ${kursy} kursów w porannym szczycie.`,
+      tekst: `Dobry dojazd komunikacją: średnio ${kursy} w porannym szczycie.`,
       moc: Math.min(1, (o.kursySzczytSrednio - PROGI_CZYNNIKOW.kursyDuzo) / 10),
       wypelniacz: false,
     }
   if (o.kursySzczytSrednio < PROGI_CZYNNIKOW.kursyMalo)
     return {
       kierunek: 'przeciw',
-      tekst: `Słaby dojazd komunikacją: średnio ${kursy} kursów w porannym szczycie.`,
+      tekst: `Słaby dojazd komunikacją: średnio ${kursy} w porannym szczycie.`,
       moc: Math.min(1, PROGI_CZYNNIKOW.kursyMalo - o.kursySzczytSrednio),
       wypelniacz: false,
     }

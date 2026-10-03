@@ -1,7 +1,22 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
-import { type BialaPlama, type OcenaMiejsca, type PunktUslugi, progSkaliPlam } from '@/wynik/biznes'
-import { opisHeksuBiznesu } from '@/wynik/biznesOpis'
+import {
+  type BialaPlama,
+  czynnikiOceny,
+  type OcenaMiejsca,
+  type PunktUslugi,
+  progSkaliPlam,
+  rozbicieZasiegu,
+} from '@/wynik/biznes'
+import {
+  opisHeksuBiznesu,
+  wpisyZrodel,
+  wpisZrodlaPunktow,
+  type ZrodloDanych,
+  zdaniePozycji,
+} from '@/wynik/biznesOpis'
+import { ograniczDoGranic, postawionePunkty } from '@/wynik/biznesZnaczniki'
 import { useStan, ustawBranze, ustawPunktBiznesu } from '@/wynik/stan'
+import { GRANICE_PUNKTU, wGranicachPunktu } from '@/wynik/url'
 import './biznes.css'
 
 const MapaKrakowa = lazy(async () => ({
@@ -14,8 +29,11 @@ type Meta = {
   zasiegM: number
   liczbaPunktow: number
   dataDanych: string
+  zrodlo?: string
+  licencja?: string
 }
 const PUSTE_HEKSY: ReadonlyMap<string, number | null> = new Map()
+const LICZBA = new Intl.NumberFormat('pl-PL', { maximumFractionDigits: 0 })
 
 export function EkranBiznes() {
   const branza = useStan((s) => s.branza)
@@ -26,6 +44,7 @@ export function EkranBiznes() {
   const [punkty, setPunkty] = useState<{ lon: number; lat: number; nazwa: string }[]>([])
   const [heksy, setHeksy] = useState<ReadonlyMap<string, number | null>>(PUSTE_HEKSY)
   const [opisy, setOpisy] = useState<Map<string, BialaPlama>>(new Map())
+  const [zrodlaPopytu, setZrodlaPopytu] = useState<ZrodloDanych[]>([])
   const [skala, setSkala] = useState<readonly [string, string, string]>(['0', '50', '100'])
   const [ocenaA, setOcenaA] = useState<OcenaMiejsca | null>(null)
   const [ocenaB, setOcenaB] = useState<OcenaMiejsca | null>(null)
@@ -33,18 +52,20 @@ export function EkranBiznes() {
   const [aktywny, setAktywny] = useState<'a' | 'b'>('a')
   const [lonTekst, setLonTekst] = useState('19.940000')
   const [latTekst, setLatTekst] = useState('50.060000')
+  // Wersja wczytanej branży (0 = nic nie wczytano). Oceny liczymy dopiero po jej ustawieniu,
+  // więc punkty z linku i punkty postawione w trakcie ładowania są oceniane tą samą ścieżką.
+  const [gotowa, setGotowa] = useState(0)
   const worker = useRef<Worker | null>(null)
   const wersja = useRef(0)
-  const punktyRef = useRef({ punktA, punktB })
-  punktyRef.current = { punktA, punktB }
 
+  // Pola współrzędnych podążają za aktywnym punktem, a nie za każdą zmianą drugiego punktu.
+  const wybrany = aktywny === 'a' ? punktA : punktB
   useEffect(() => {
-    const wybrany = aktywny === 'a' ? punktA : punktB
     if (wybrany) {
       setLonTekst(wybrany.lon.toFixed(6))
       setLatTekst(wybrany.lat.toFixed(6))
     }
-  }, [aktywny, punktA, punktB])
+  }, [wybrany])
 
   useEffect(() => {
     fetch('/dane/biznes/katalog.json')
@@ -71,14 +92,13 @@ export function EkranBiznes() {
         wersja.current = d.wersja
         setMeta(d.meta)
         setPunkty((d.punkty as PunktUslugi[]).map(([lon, lat, nazwa]) => ({ lon, lat, nazwa })))
+        setZrodlaPopytu(d.zrodla as ZrodloDanych[])
         const plamy = d.plamy as BialaPlama[]
         setHeksy(new Map(plamy.map((p) => [p.h3, p.skala])))
         setOpisy(new Map(plamy.map((p) => [p.h3, p])))
         const prog = progSkaliPlam(plamy)
         setSkala(['0', String(Math.round(prog / 2)), `${Math.round(prog)}+`])
-        const { punktA: a, punktB: b } = punktyRef.current
-        if (a) w.postMessage({ typ: 'ocen', id: 'a', punkt: a, wersja: d.wersja })
-        if (b) w.postMessage({ typ: 'ocen', id: 'b', punkt: b, wersja: d.wersja })
+        setGotowa(d.wersja)
       }
       if (d.typ === 'ocena' && d.wersja === wersja.current) {
         if (d.id === 'a') setOcenaA(d.ocena)
@@ -93,6 +113,7 @@ export function EkranBiznes() {
 
   useEffect(() => {
     wersja.current = 0
+    setGotowa(0)
     setBlad('')
     setMeta(null)
     setOcenaA(null)
@@ -100,36 +121,33 @@ export function EkranBiznes() {
     worker.current?.postMessage({ typ: 'init', branza })
   }, [branza])
 
+  // Przesunięcie punktu zostawia poprzednią ocenę do czasu nowej (bez migania karty przy każdym
+  // kroku strzałki); wyczyszczenie jej wymaga usunięcia punktu albo zmiany branży.
   useEffect(() => {
-    setOcenaA(null)
-    if (punktA && wersja.current)
-      worker.current?.postMessage({ typ: 'ocen', id: 'a', punkt: punktA, wersja: wersja.current })
-  }, [punktA])
+    if (!punktA) {
+      setOcenaA(null)
+      return
+    }
+    if (gotowa) worker.current?.postMessage({ typ: 'ocen', id: 'a', punkt: punktA, wersja: gotowa })
+  }, [punktA, gotowa])
   useEffect(() => {
-    setOcenaB(null)
-    if (punktB && wersja.current)
-      worker.current?.postMessage({ typ: 'ocen', id: 'b', punkt: punktB, wersja: wersja.current })
-  }, [punktB])
+    if (!punktB) {
+      setOcenaB(null)
+      return
+    }
+    if (gotowa) worker.current?.postMessage({ typ: 'ocen', id: 'b', punkt: punktB, wersja: gotowa })
+  }, [punktB, gotowa])
 
   function postaw(lon: number, lat: number) {
-    if (
-      !Number.isFinite(lon) ||
-      !Number.isFinite(lat) ||
-      lon < 19.3 ||
-      lon > 20.8 ||
-      lat < 49.7 ||
-      lat > 50.5
-    )
-      return
+    if (!wGranicachPunktu(lon, lat)) return
     ustawPunktBiznesu(aktywny, { lon, lat })
     if (aktywny === 'a') setAktywny('b')
   }
 
-  const postawione = [
-    ...(punktA ? [{ id: 'a' as const, ...punktA }] : []),
-    ...(punktB ? [{ id: 'b' as const, ...punktB }] : []),
-  ]
+  const postawione = postawionePunkty(punktA, punktB)
   const nazwaBranzy = meta?.nazwa ?? katalog.find((m) => m.id === branza)?.nazwa ?? 'branży'
+  const zasiegM = meta?.zasiegM ?? 0
+  const zrodla = [wpisZrodlaPunktow(meta), ...wpisyZrodel(zrodlaPopytu)]
 
   return (
     <main className="biznes">
@@ -139,8 +157,11 @@ export function EkranBiznes() {
           <h1 tabIndex={-1}>Lokalizacja dla branży „{nazwaBranzy}”</h1>
           <p>
             Wybierz branżę, a następnie postaw punkt A lub B na mapie. Kolor pokazuje liczbę adresów
-            w zasięgu na jeden istniejący punkt. Najmocniejszy kolor zaczyna się przy 95.
-            percentylu; dokładną liczbę zobaczysz po wskazaniu miejsca na mapie.
+            w zasięgu na jeden istniejący punkt: im ciemniejszy, tym słabiej obsłużony popyt.
+            Najmocniejszy kolor zaczyna się przy 95. percentylu heksów, które mają jakikolwiek
+            punkt. Heks bez żadnego punktu w zasięgu to osobna kategoria: jego kolor wynika z liczby
+            adresów w zasięgu (tak, jakby stał tam jeden punkt), a dymek mówi wprost, że punktu nie
+            ma. Dokładne liczby zobaczysz po wskazaniu miejsca na mapie.
           </p>
         </div>
         <label className="biznes-branza">
@@ -178,16 +199,21 @@ export function EkranBiznes() {
           <Suspense fallback={<p role="status">Wczytuję mapę…</p>}>
             <MapaKrakowa
               heksy={heksy}
-              podpisWarstwy="Adresy na istniejący punkt (95. percentyl)"
+              podpisWarstwy="Adresy w zasięgu na 1 punkt: więcej = słabiej obsłużone"
               punktyUslug={punkty}
               postawionePunkty={postawione}
-              onPrzesunPunkt={(id, lon, lat) => ustawPunktBiznesu(id, { lon, lat })}
+              onPrzesunPunkt={(id, lon, lat) => {
+                // Przeciągnięcie i strzałki nie wypchną punktu poza obszar, który przyjmuje link.
+                const [l, b] = ograniczDoGranic(lon, lat)
+                ustawPunktBiznesu(id, { lon: l, lat: b })
+              }}
+              onUsunPunkt={(id) => ustawPunktBiznesu(id, null)}
               onKlik={postaw}
               opisHeksu={(heksyR10, res) =>
                 opisHeksuBiznesu(
                   heksyR10.flatMap((h) => opisy.get(h) ?? []),
                   res,
-                  meta?.zasiegM ?? 0,
+                  zasiegM,
                 )
               }
               etykietySkali={skala}
@@ -207,8 +233,8 @@ export function EkranBiznes() {
               <input
                 type="number"
                 step="0.000001"
-                min="19.3"
-                max="20.8"
+                min={GRANICE_PUNKTU.lonMin}
+                max={GRANICE_PUNKTU.lonMax}
                 value={lonTekst}
                 onChange={(e) => setLonTekst(e.target.value)}
               />
@@ -218,8 +244,8 @@ export function EkranBiznes() {
               <input
                 type="number"
                 step="0.000001"
-                min="49.7"
-                max="50.5"
+                min={GRANICE_PUNKTU.latMin}
+                max={GRANICE_PUNKTU.latMax}
                 value={latTekst}
                 onChange={(e) => setLatTekst(e.target.value)}
               />
@@ -231,37 +257,64 @@ export function EkranBiznes() {
               id="A"
               punkt={punktA}
               ocena={ocenaA}
+              branza={branza}
+              zasiegM={zasiegM}
               onUsun={() => ustawPunktBiznesu('a', null)}
             />
             <Ocena
               id="B"
               punkt={punktB}
               ocena={ocenaB}
+              branza={branza}
+              zasiegM={zasiegM}
               onUsun={() => ustawPunktBiznesu('b', null)}
             />
           </div>
         </aside>
       </div>
-      <p className="biznes-zrodlo">
-        Punkty: © OpenStreetMap contributors, wyciąg Geofabrik z {meta?.dataDanych ?? '—'} (ODbL).
-        Wskaźnik popytu: adresy, szacowana ludność z siatki NSP 2021 (1 km) i kursy w porannym
-        szczycie. Ludność z każdego oczka rozdzielono równomiernie między adresy; nie jest to pomiar
-        mieszkańców w budynkach. Odległości są w linii prostej. Model nie zna czynszu lokalu,
-        witryny, marki ani rzeczywistego ruchu pieszych. To wstępna selekcja miejsc, nie biznesplan.
-      </p>
+      <footer className="biznes-zrodla">
+        <h2>Źródła danych</h2>
+        <ul>
+          {zrodla.map((z) => (
+            <li key={z.nazwa}>
+              {z.url ? (
+                <a href={z.url} target="_blank" rel="noopener noreferrer">
+                  {z.nazwa}
+                </a>
+              ) : (
+                z.nazwa
+              )}
+              {z.opis && <span className="biznes-zrodlo-opis"> ({z.opis})</span>}
+            </li>
+          ))}
+        </ul>
+        <p>
+          Wskaźnik popytu: adresy, szacowana ludność z siatki NSP 2021 (1 km) i kursy w porannym
+          szczycie. Ludność z każdego oczka rozdzielono równomiernie między adresy; nie jest to
+          pomiar mieszkańców w budynkach. Odległości są w linii prostej. Model nie zna czynszu
+          lokalu, witryny, marki ani rzeczywistego ruchu pieszych. To wstępna selekcja miejsc, nie
+          biznesplan.
+        </p>
+      </footer>
     </main>
   )
 }
+
+const ZNAK_CZYNNIKA = { za: 'Za', przeciw: 'Przeciw', neutralny: 'Neutralnie' } as const
 
 function Ocena({
   id,
   punkt,
   ocena,
+  branza,
+  zasiegM,
   onUsun,
 }: {
   id: string
   punkt: Punkt | null
   ocena: OcenaMiejsca | null
+  branza: string
+  zasiegM: number
   onUsun: () => void
 }) {
   if (!punkt)
@@ -271,65 +324,83 @@ function Ocena({
         <p>Postaw punkt na mapie lub wpisz współrzędne.</p>
       </section>
     )
+  const rozbicie = ocena ? rozbicieZasiegu(ocena) : null
   return (
     <section className="biznes-ocena">
       <div className="biznes-ocena-top">
         <h2>Miejsce {id}</h2>
-        <button type="button" onClick={onUsun}>
+        <button type="button" onClick={onUsun} aria-label={`Usuń miejsce ${id}`}>
           Usuń
         </button>
       </div>
       <p className="biznes-wspolrzedne">
         {punkt.lat.toFixed(5)}, {punkt.lon.toFixed(5)}
       </p>
-      {ocena ? (
+      {ocena && rozbicie ? (
         <>
           <div className="biznes-glowna">
-            <strong>{ocena.percentyl === null ? 'brak' : ocena.percentyl + '%'}</strong>
-            <span>percentyl indeksu popytu na tle istniejących punktów tej branży</span>
+            <PozycjaMiejsca ocena={ocena} branza={branza} />
           </div>
           <dl>
             <div>
-              <dt>Adresy w zasięgu</dt>
-              <dd>{Math.round(ocena.adresyWZasiegu).toLocaleString('pl-PL')}</dd>
+              <dt>Adresy w zasięgu{zasiegM ? ` ${zasiegM} m` : ''}</dt>
+              <dd>{LICZBA.format(rozbicie.adresyWZasiegu)}</dd>
             </div>
             <div>
-              <dt>Szacowana ludność w zasięgu (NSP 2021)</dt>
-              <dd>{Math.round(ocena.mieszkancyWZasiegu).toLocaleString('pl-PL')}</dd>
+              <dt>z tego przypada temu miejscu</dt>
+              <dd>
+                {LICZBA.format(rozbicie.toMiejsce)} ({rozbicie.procentToMiejsce}%)
+              </dd>
             </div>
             <div>
-              <dt>Kursy w szczycie, średnio</dt>
-              <dd>{ocena.kursySzczytSrednio.toFixed(1)}</dd>
+              <dt>z tego przypada konkurentom</dt>
+              <dd>
+                {LICZBA.format(rozbicie.konkurenci)} ({rozbicie.procentKonkurenci}%)
+              </dd>
             </div>
             <div>
               <dt>Konkurenci w zasięgu</dt>
               <dd>{ocena.konkurenci}</dd>
             </div>
             <div>
-              <dt>Szacowany udział adresów</dt>
-              <dd>{ocena.udzialProcent}%</dd>
+              <dt>Szacowana ludność w zasięgu (NSP 2021)</dt>
+              <dd>{LICZBA.format(ocena.mieszkancyWZasiegu)}</dd>
             </div>
             <div>
-              <dt>Przydzielone adresy</dt>
-              <dd>{Math.round(ocena.przydzieloneAdresy).toLocaleString('pl-PL')}</dd>
+              <dt>Kursy w szczycie, średnio</dt>
+              <dd>{ocena.kursySzczytSrednio.toFixed(1)}</dd>
             </div>
           </dl>
-          <p className="biznes-czynniki">
-            {(ocena.percentyl ?? 0) >= 70
-              ? 'Za: wysoka pozycja na tle istniejących punktów.'
-              : 'Przeciw: umiarkowana pozycja na tle istniejących punktów.'}{' '}
-            {ocena.odlegloscKonkurenta !== null
-              ? 'Najbliższy konkurent: ' +
-                (ocena.najblizszyKonkurent ?? 'punkt bez nazwy') +
-                ' (' +
-                ocena.odlegloscKonkurenta +
-                ' m).'
-              : 'Brak konkurenta w zasięgu.'}
-          </p>
+          <h3 className="biznes-czynniki-naglowek">Co przemawia za i przeciw</h3>
+          <ul className="biznes-czynniki">
+            {czynnikiOceny(ocena, zasiegM).map((c) => (
+              <li key={c.tekst} className={`biznes-czynnik biznes-czynnik--${c.kierunek}`}>
+                <strong>{ZNAK_CZYNNIKA[c.kierunek]}:</strong> {c.tekst}
+              </li>
+            ))}
+          </ul>
         </>
       ) : (
         <p role="status">Liczenie wyniku…</p>
       )}
     </section>
+  )
+}
+
+/** Główna liczba karty: pozycja wśród istniejących punktów, z kierunkiem wypisanym słowami. */
+function PozycjaMiejsca({ ocena, branza }: { ocena: OcenaMiejsca; branza: string }) {
+  if (ocena.percentyl === null)
+    return (
+      <p>
+        {ocena.adresyWZasiegu === 0
+          ? 'Brak danych o popycie w zasięgu tego miejsca (dane obejmują Kraków i okolice), więc nie da się go porównać z istniejącymi punktami.'
+          : 'Brak istniejących punktów tej branży z popytem w zasięgu, więc nie ma z czym porównać tego miejsca.'}
+      </p>
+    )
+  const z = zdaniePozycji(ocena.percentyl, branza)
+  return (
+    <p>
+      {z.przed} <strong>{z.liczba}</strong> {z.po}
+    </p>
   )
 }

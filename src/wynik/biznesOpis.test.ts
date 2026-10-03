@@ -2,11 +2,10 @@ import assert from 'node:assert/strict'
 import { existsSync, readFileSync } from 'node:fs'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
-import type { BialaPlama } from './biznes.ts'
+import { type BialaPlama, odmiana } from './biznes.ts'
 import {
   bezPauzy,
   branzaWDopelniaczu,
-  odmiana,
   opisHeksuBiznesu,
   wpisyZrodel,
   wpisZrodlaPunktow,

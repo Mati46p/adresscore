@@ -2,6 +2,8 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { KROK_M, KROK_SHIFT_M, opisZnacznika, polecenieKlawisza, przesunOMetry } from './model.ts'
 
+// Pauza zapisana kodem: w pliku nie ma literalnego znaku (w polskim tekście obowiązuje półpauza).
+const PAUZA = String.fromCodePoint(0x2014)
 const punkt = { lon: 19.94, lat: 50.06 }
 const M_NA_STOPIEN = 111_320
 
@@ -55,5 +57,5 @@ test('opis znacznika dla czytnika: litera, współrzędne i sterowanie klawiatur
   assert.match(a, /^Miejsce A, 50\.06000 szerokości, 19\.94000 długości\./)
   assert.match(a, /Strzałki przesuwają o 10 m, z Shift o 50 m, Delete usuwa\.$/)
   assert.match(opisZnacznika({ id: 'b', lon: 20, lat: 50 }), /^Miejsce B,/)
-  assert.ok(!a.includes('—'))
+  assert.ok(!a.includes(PAUZA))
 })

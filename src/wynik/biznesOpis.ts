@@ -1,16 +1,8 @@
 // Teksty trybu „Biznes” jako czyste funkcje (#106, #107): zdanie o pozycji, dymek heksu, źródła.
 // Osobno od silnika (`biznes.ts`), żeby ekran nie składał zdań w komponencie – tu da się je testować.
-import { type BialaPlama, bezPunktu } from './biznes.ts'
+import { type BialaPlama, bezPunktu, odmiana } from './biznes.ts'
 
 const LICZBA = new Intl.NumberFormat('pl-PL', { maximumFractionDigits: 0 })
-
-/** Odmiana po liczebniku: 1 adres, 2 adresy, 5 adresów, 22 adresy, 112 adresów. */
-export function odmiana(n: number, jeden: string, kilka: string, wiele: string): string {
-  if (n === 1) return jeden
-  const j = n % 10
-  const d = n % 100
-  return j >= 2 && j <= 4 && (d < 12 || d > 14) ? kilka : wiele
-}
 
 /**
  * Nazwa branży w dopełniaczu liczby mnogiej („istniejących aptek”). Katalog zna tylko mianownik
