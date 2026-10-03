@@ -1,0 +1,297 @@
+// Uruchom: node --test api/
+// Pośrednik JEV bez sieci – fetch wstrzykiwany, klucz testowy z obiektu env.
+import assert from 'node:assert/strict'
+import { describe, it } from 'node:test'
+import { MODEL_JEV, obsluz, sprawdzZapytanie, URL_JEV, utworzLimiter, wolajJev } from './_jev.js'
+import handler from './jev.js'
+
+const CIALO = {
+  stan: 'Mam dwoje dzieci i pracuję w centrum',
+  pytania: {
+    profil: {
+      typ: 'choice',
+      polecenie: 'Kto szuka mieszkania?',
+      kryteria: { rodzina: 'Rodzina z dziećmi', singiel: 'Singiel w centrum' },
+    },
+    dzieci: { typ: 'noul', polecenie: 'Czy osoba ma dzieci?' },
+    cisza: { typ: 'score', polecenie: 'Jak ważna jest cisza?', kryteria: ['Nieważna', 'Ważna'] },
+  },
+}
+
+const ODPOWIEDZ_JEV = {
+  model: 'jev-latest',
+  answers: {
+    profil: { type: 'choice', choice: 'rodzina', confidence: 0.91 },
+    dzieci: { type: 'noul', noul: 0.93 },
+    cisza: { type: 'score', score: 0.4, confidence: 0.7 },
+  },
+}
+
+function zbudujFetch({ status = 200, json = ODPOWIEDZ_JEV } = {}) {
+  const wywolania = []
+  const fetchImpl = async (url, init) => {
+    wywolania.push({ url: String(url), init })
+    return { ok: status >= 200 && status < 300, status, json: async () => json }
+  }
+  return { fetchImpl, wywolania }
+}
+
+/** Fetch, który kończy się tylko przez AbortSignal – jak JEV, który nie odpowiada. */
+const fetchWiszacy = async (_url, init) =>
+  new Promise((_ok, blad) => {
+    init.signal.addEventListener('abort', () => blad(new DOMException('Aborted', 'AbortError')))
+  })
+
+const ENV = { JEV_API_KEY: 'klucz-testowy' }
+const bezLimitu = () => ({ ok: true })
+
+function zapytanie() {
+  const z = sprawdzZapytanie(CIALO)
+  assert.equal(z.blad, undefined)
+  return z
+}
+
+describe('wolajJev – kształt żądania', () => {
+  it('POST na systemone z modelem, stanem i pytaniami w formacie JEV', async () => {
+    const { fetchImpl, wywolania } = zbudujFetch()
+    await wolajJev(zapytanie(), { klucz: 'k', fetch: fetchImpl })
+    assert.equal(wywolania.length, 1)
+    const { url, init } = wywolania[0]
+    assert.equal(url, URL_JEV)
+    assert.equal(init.method, 'POST')
+    assert.equal(init.headers.authorization, 'Bearer k')
+    assert.equal(init.headers['content-type'], 'application/json')
+    assert.ok(init.signal instanceof AbortSignal)
+    const cialo = JSON.parse(init.body)
+    assert.equal(cialo.model, MODEL_JEV)
+    assert.equal(cialo.state, CIALO.stan)
+    assert.deepEqual(cialo.questions, {
+      profil: {
+        type: 'choice',
+        instructions: 'Kto szuka mieszkania?',
+        criteria: { rodzina: 'Rodzina z dziećmi', singiel: 'Singiel w centrum' },
+      },
+      dzieci: { type: 'noul', instructions: 'Czy osoba ma dzieci?' },
+      cisza: {
+        type: 'score',
+        instructions: 'Jak ważna jest cisza?',
+        criteria: ['Nieważna', 'Ważna'],
+      },
+    })
+  })
+
+  it('kolejność opcji choice zostaje (JEV ją widzi)', () => {
+    const z = sprawdzZapytanie({
+      stan: 'x',
+      pytania: { w: { typ: 'choice', polecenie: 'p', kryteria: { c: 'C', a: 'A', b: 'B' } } },
+    })
+    assert.deepEqual(Object.keys(z.pytania.w.criteria), ['c', 'a', 'b'])
+  })
+
+  it('stan przycięty do 2000 znaków', () => {
+    const z = sprawdzZapytanie({ ...CIALO, stan: 'a'.repeat(5000) })
+    assert.equal(z.stan.length, 2000)
+  })
+
+  it('odpowiedź JEV → kontrakt po polsku', async () => {
+    const { fetchImpl } = zbudujFetch()
+    const w = await wolajJev(zapytanie(), { klucz: 'k', fetch: fetchImpl })
+    assert.deepEqual(w, {
+      powod: null,
+      odpowiedzi: {
+        profil: { typ: 'choice', wybor: 'rodzina', pewnosc: 0.91 },
+        dzieci: { typ: 'noul', noul: 0.93 },
+        cisza: { typ: 'score', ocena: 0.4, pewnosc: 0.7 },
+      },
+    })
+  })
+})
+
+describe('wolajJev – zamknięta lista i degradacja', () => {
+  it('choice spoza listy, noul poza 0–1 i score poza skalą → null dla pytania', async () => {
+    const { fetchImpl } = zbudujFetch({
+      json: {
+        answers: {
+          profil: { choice: 'Warszawa, Marszałkowska 1', confidence: 0.99 },
+          dzieci: { noul: 1.7 },
+          cisza: { score: 5 },
+        },
+      },
+    })
+    const w = await wolajJev(zapytanie(), { klucz: 'k', fetch: fetchImpl })
+    assert.deepEqual(w.odpowiedzi, { profil: null, dzieci: null, cisza: null })
+  })
+
+  it('timeout → null, bez wyjątku', async () => {
+    const start = Date.now()
+    const w = await wolajJev(zapytanie(), { klucz: 'k', fetch: fetchWiszacy, timeoutMs: 30 })
+    assert.deepEqual(w, { odpowiedzi: null, powod: 'blad' })
+    assert.ok(Date.now() - start < 1000)
+  })
+
+  it('domyślny timeout to 800 ms', async () => {
+    const start = Date.now()
+    const w = await wolajJev(zapytanie(), { klucz: 'k', fetch: fetchWiszacy })
+    const czas = Date.now() - start
+    assert.equal(w.odpowiedzi, null)
+    assert.ok(czas >= 700 && czas < 2000, `czas ${czas} ms`)
+  })
+
+  for (const status of [401, 402, 403]) {
+    it(`${status} → odmowa, osobno od błędu przejściowego`, async () => {
+      const { fetchImpl } = zbudujFetch({ status, json: { message: 'nope' } })
+      const w = await wolajJev(zapytanie(), { klucz: 'k', fetch: fetchImpl })
+      assert.deepEqual(w, { odpowiedzi: null, powod: 'odmowa', kod: status })
+    })
+  }
+
+  it('5xx, błąd sieci i dziwny JSON → null z powodem „blad”', async () => {
+    for (const fetchImpl of [
+      zbudujFetch({ status: 503 }).fetchImpl,
+      zbudujFetch({ json: { cos: 1 } }).fetchImpl,
+      async () => {
+        throw new TypeError('fetch failed')
+      },
+    ]) {
+      const w = await wolajJev(zapytanie(), { klucz: 'k', fetch: fetchImpl })
+      assert.deepEqual(w, { odpowiedzi: null, powod: 'blad' })
+    }
+  })
+
+  it('brak klucza → null bez wołania sieci', async () => {
+    const { fetchImpl, wywolania } = zbudujFetch()
+    const w = await wolajJev(zapytanie(), { klucz: undefined, fetch: fetchImpl })
+    assert.deepEqual(w, { odpowiedzi: null, powod: 'brak-klucza' })
+    assert.equal(wywolania.length, 0)
+  })
+})
+
+describe('sprawdzZapytanie', () => {
+  it('odrzuca złe żądania', () => {
+    const zle = [
+      null,
+      { pytania: CIALO.pytania },
+      { stan: 'x', pytania: {} },
+      { stan: 'x', pytania: { a: { typ: 'liczba', polecenie: 'Ile?' } } },
+      {
+        stan: 'x',
+        pytania: { a: { typ: 'choice', polecenie: 'p', kryteria: { tylko: 'jedna' } } },
+      },
+      { stan: 'x', pytania: { a: { typ: 'score', polecenie: 'p', kryteria: ['jeden'] } } },
+      { stan: 'x', pytania: { 'zle id!': { typ: 'noul', polecenie: 'p' } } },
+      {
+        stan: 'x',
+        pytania: Object.fromEntries(
+          Array.from({ length: 17 }, (_, i) => [`p${i}`, { typ: 'noul', polecenie: 'p' }]),
+        ),
+      },
+    ]
+    for (const c of zle) assert.ok(sprawdzZapytanie(c).blad, JSON.stringify(c))
+  })
+})
+
+describe('obsluz – kontrakt HTTP', () => {
+  it('brak JEV_API_KEY → 200 i odpowiedzi null (klient bierze zapas), nigdy 500', async () => {
+    const { fetchImpl, wywolania } = zbudujFetch()
+    const w = await obsluz({
+      metoda: 'POST',
+      cialo: CIALO,
+      ip: '1.1.1.1',
+      env: {},
+      fetch: fetchImpl,
+      limiter: bezLimitu,
+    })
+    assert.equal(w.status, 200)
+    assert.deepEqual(w.json, { odpowiedzi: null, powod: 'brak-klucza' })
+    assert.equal(wywolania.length, 0)
+  })
+
+  it('z kluczem → 200 i odpowiedzi', async () => {
+    const { fetchImpl } = zbudujFetch()
+    const w = await obsluz({
+      metoda: 'POST',
+      cialo: CIALO,
+      ip: '1.1.1.1',
+      env: ENV,
+      fetch: fetchImpl,
+      limiter: bezLimitu,
+    })
+    assert.equal(w.status, 200)
+    assert.equal(w.json.odpowiedzi.profil.wybor, 'rodzina')
+  })
+
+  it('GET → 405, złe ciało → 400', async () => {
+    const opcje = { ip: '1.1.1.1', env: ENV, fetch: zbudujFetch().fetchImpl, limiter: bezLimitu }
+    assert.equal((await obsluz({ ...opcje, metoda: 'GET', cialo: null })).status, 405)
+    assert.equal((await obsluz({ ...opcje, metoda: 'POST', cialo: { stan: 1 } })).status, 400)
+  })
+})
+
+describe('limit żądań', () => {
+  it('limit na IP: 21. żądanie w minucie → 429, inny IP przechodzi, po minucie znowu można', () => {
+    const przepusc = utworzLimiter({ oknoMs: 60_000, naIp: 20, naInstancje: 300 })
+    for (let i = 0; i < 20; i++) assert.equal(przepusc('1.1.1.1', 1000 + i).ok, true)
+    const odbite = przepusc('1.1.1.1', 2000)
+    assert.equal(odbite.ok, false)
+    assert.ok(odbite.ponowZaS >= 1 && odbite.ponowZaS <= 60)
+    assert.equal(przepusc('2.2.2.2', 2000).ok, true)
+    assert.equal(przepusc('1.1.1.1', 61_001).ok, true)
+  })
+
+  it('limit na instancję chroni kredyt niezależnie od IP', () => {
+    const przepusc = utworzLimiter({ oknoMs: 60_000, naIp: 100, naInstancje: 3 })
+    assert.equal(przepusc('a', 0).ok, true)
+    assert.equal(przepusc('b', 0).ok, true)
+    assert.equal(przepusc('c', 0).ok, true)
+    assert.equal(przepusc('d', 0).ok, false)
+  })
+
+  it('obsluz po limicie → 429 z Retry-After i bez wołania JEV', async () => {
+    const { fetchImpl, wywolania } = zbudujFetch()
+    const limiter = utworzLimiter({ oknoMs: 60_000, naIp: 1, naInstancje: 10 })
+    const opcje = { metoda: 'POST', cialo: CIALO, ip: '3.3.3.3', env: ENV, fetch: fetchImpl }
+    assert.equal((await obsluz({ ...opcje, limiter, teraz: 0 })).status, 200)
+    const w = await obsluz({ ...opcje, limiter, teraz: 10 })
+    assert.equal(w.status, 429)
+    assert.deepEqual(w.json, { odpowiedzi: null, powod: 'limit' })
+    assert.ok(Number(w.naglowki['Retry-After']) >= 1)
+    assert.equal(wywolania.length, 1)
+  })
+})
+
+describe('handler – funkcja Vercela', () => {
+  function atrapaRes() {
+    const res = { naglowki: {}, statusCode: 0, tresc: '' }
+    res.setHeader = (k, v) => {
+      res.naglowki[k.toLowerCase()] = v
+    }
+    res.end = (t) => {
+      res.tresc = t
+    }
+    return res
+  }
+
+  it('bez klucza w env odpowiada 200 JSON-em z odpowiedzi null i no-store', async () => {
+    const res = atrapaRes()
+    const req = { method: 'POST', body: CIALO, headers: { 'x-forwarded-for': '9.9.9.9, 10.0.0.1' } }
+    await handler(req, res, { env: {}, fetch: zbudujFetch().fetchImpl })
+    assert.equal(res.statusCode, 200)
+    assert.equal(res.naglowki['cache-control'], 'no-store')
+    assert.match(res.naglowki['content-type'], /application\/json/)
+    assert.deepEqual(JSON.parse(res.tresc), { odpowiedzi: null, powod: 'brak-klucza' })
+  })
+
+  it('ciało jako strumień (bez req.body) też działa', async () => {
+    const res = atrapaRes()
+    const req = {
+      method: 'POST',
+      headers: {},
+      async *[Symbol.asyncIterator]() {
+        yield JSON.stringify(CIALO)
+      },
+    }
+    await handler(req, res, { env: ENV, fetch: zbudujFetch().fetchImpl })
+    assert.equal(res.statusCode, 200)
+    assert.equal(JSON.parse(res.tresc).odpowiedzi.dzieci.noul, 0.93)
+  })
+})
