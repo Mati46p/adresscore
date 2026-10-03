@@ -267,8 +267,8 @@ export function EkranSymulatora(): JSX.Element {
             przesuwa wszystkim percentyli.
           </p>
           <p>
-            Liczymy adresy, nie mieszkańców: ludność mamy tylko w siatce 1 km (GUS NSP 2021), więc
-            przeliczenie na mieszkańców adresu byłoby zgadywaniem.
+            Liczymy adresy, nie mieszkańców: ludność mamy tylko w siatkach (GUS NSP 2021 – 1 km,
+            zameldowania MSIP – 100 m), więc przypisanie mieszkańców do adresu byłoby zgadywaniem.
           </p>
           {wskaznik && (
             <p>
