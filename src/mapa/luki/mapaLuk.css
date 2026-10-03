@@ -1,0 +1,71 @@
+/* Mapa luk (#90). Rodzic daje wysokość; bez niej mapa trzyma minimum, żeby nie zniknąć. */
+.mapa-luk {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
+  min-width: 0;
+  min-height: 420px;
+}
+.mapa-luk__pasek {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.mapa-luk__warstwy {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+/* Długie nazwy warstw łamią się zamiast rozpychać ekran telefonu. */
+.mapa-luk__warstwa {
+  max-width: 100%;
+  white-space: normal;
+  text-align: left;
+  line-height: 1.25;
+}
+.mapa-luk__opis {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--tekst-2, #3d4652);
+  overflow-wrap: anywhere;
+}
+.mapa-luk__mapa {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 340px;
+  overflow: hidden;
+  border-radius: var(--promien, 8px);
+}
+
+.mapa-luk-legenda__podstawa {
+  margin: -3px 0 5px;
+  color: #3d4652;
+}
+.mapa-luk-legenda__kierunek {
+  margin-bottom: 4px;
+  font-weight: 600;
+  color: #18202b;
+}
+
+/* Telefon: ciaśniejsze przyciski warstw, żeby lista nie zjadała połowy wysokości mapy. */
+@media (max-width: 480px) {
+  /* Dwie kolumny: 4 warstwy w 2 rzędach, długie nazwy łamią się w przycisku. */
+  .mapa-luk__warstwy {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+  }
+  .mapa-luk__warstwa {
+    min-height: 44px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 13px;
+  }
+  .mapa-luk__opis {
+    font-size: 12px;
+  }
+}

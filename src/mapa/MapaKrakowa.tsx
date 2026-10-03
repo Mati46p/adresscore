@@ -14,7 +14,7 @@ import {
 } from 'maplibre-gl'
 import adresWorkera from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import { Protocol } from 'pmtiles'
-import { type JSX, useEffect, useId, useRef, useState } from 'react'
+import { type JSX, type ReactNode, useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import {
   type Geometria,
@@ -72,6 +72,20 @@ export interface MapaKrakowaProps {
   onKlik?: (lon: number, lat: number) => void
   /** h3 r10 wykluczone twardym filtrem (#37) – rysowane inaczej niż brak danych. */
   wykluczone?: ReadonlySet<string>
+  /** Własna treść legendy (tryb „Dla miasta”, #90). Bez niej: skala wyniku 0–100. */
+  legenda?: ReactNode
+  /**
+   * Własny tekst dymku. `heksyR10` = heksy r10 pod kursorem: jeden przy r10, dzieci przy r8/r9.
+   * Bez niego: „wynik N” albo „brak danych”.
+   */
+  opisHeksu?: (heksyR10: readonly string[], res: 8 | 9 | 10) => string
+  /**
+   * Wartość rodzica r8/r9 z jego heksów r10. Bez niej: średnia dzieci. Mapa luk (#90) sumuje
+   * adresy, bo średnia udziałów zawyżałaby heksy z kilkoma adresami.
+   */
+  wartoscRodzica?: (heksyR10: readonly string[]) => number | null
+  /** Ramka do pokazania (np. okolica z rankingu, #91) – zmiana wartości = przelot kamery. */
+  granice?: [[number, number], [number, number]] | null
 }
 
 const BRAK_WYKLUCZONYCH: ReadonlySet<string> = new Set()
@@ -166,6 +180,10 @@ export function MapaKrakowa({
   wybrany,
   onKlik,
   wykluczone = BRAK_WYKLUCZONYCH,
+  legenda: wlasnaLegenda,
+  opisHeksu,
+  wartoscRodzica,
+  granice,
 }: MapaKrakowaProps): JSX.Element {
   const kontener = useRef<HTMLDivElement>(null)
   const mapaRef = useRef<MapaLibre | null>(null)
@@ -175,6 +193,9 @@ export function MapaKrakowa({
   const dymekRef = useRef<Popup | null>(null)
   const onKlikRef = useRef(onKlik)
   const wybranyRef = useRef(wybrany)
+  const opisHeksuRef = useRef(opisHeksu)
+  const wartoscRodzicaRef = useRef(wartoscRodzica)
+  const graniceRef = useRef(granice)
   const [gotowa, setGotowa] = useState(false)
   const [legenda, setLegenda] = useState<HTMLElement | null>(null)
   const [krycieHeksow, setKrycieHeksow] = useState(100)
@@ -198,6 +219,9 @@ export function MapaKrakowa({
     onKlikRef.current = onKlik
     wybranyRef.current = wybrany
     etapRef.current = etap
+    opisHeksuRef.current = opisHeksu
+    wartoscRodzicaRef.current = wartoscRodzica
+    graniceRef.current = granice
   })
 
   useEffect(() => {
@@ -287,12 +311,28 @@ export function MapaKrakowa({
           },
         })
 
-        mapa.on('mousemove', id, (e: MapLayerMouseEvent) => {
+        const pokazDymek = (e: MapLayerMouseEvent) => {
           const f = e.features?.[0]
           if (f?.id === undefined) return
+          const opis = opisHeksuRef.current
+          let tekst: string
+          if (opis) {
+            const h = String(f.id)
+            const dzieci = res === 10 ? [h] : (geometriaRef.current?.dzieci[res].get(h) ?? [])
+            tekst = opis(dzieci, res)
+          } else {
+            const w = mapa.getFeatureState({ source: id, id: f.id }).w as number | undefined
+            tekst = podpisHeksu(w, res)
+          }
+          dymek.setLngLat(e.lngLat).setText(tekst).addTo(mapa)
+        }
+        mapa.on('mousemove', id, (e: MapLayerMouseEvent) => {
           mapa.getCanvas().style.cursor = 'pointer'
-          const w = mapa.getFeatureState({ source: id, id: f.id }).w as number | undefined
-          dymek.setLngLat(e.lngLat).setText(podpisHeksu(w, res)).addTo(mapa)
+          pokazDymek(e)
+        })
+        // Telefon nie ma najechania: bez własnej akcji klik pokazuje dymek (tryb „Dla miasta”).
+        mapa.on('click', id, (e: MapLayerMouseEvent) => {
+          if (!onKlikRef.current && opisHeksuRef.current) pokazDymek(e)
         })
         mapa.on('mouseleave', id, () => {
           mapa.getCanvas().style.cursor = ''
@@ -429,7 +469,7 @@ export function MapaKrakowa({
           .setLngLat([(minX + maxX) / 2, maxY])
           .addTo(mapa)
       }
-      if (pierwsza && heksy.size && !wybranyRef.current) {
+      if (pierwsza && heksy.size && !wybranyRef.current && !graniceRef.current) {
         if (etapRef.current === 'polska') zaplanujLot(mapa)
         else if (etapRef.current === 'miasto') {
           mapa.fitBounds(g.granice, { padding: 32, animate: false })
@@ -444,13 +484,10 @@ export function MapaKrakowa({
       mapa.setFeatureState({ source: zrodloHeksow(res), id: h }, { w: v })
     }
     for (const [h, w] of heksy) wyslij(10, h, wykluczone.has(h) ? W_WYKLUCZONY : w)
+    const rodzic = wartoscRodzicaRef.current ?? ((dzieci) => sredniaDzieci(dzieci, heksy))
     for (const res of [8, 9] as const) {
-      for (const [rodzic, dzieci] of g.dzieci[res])
-        wyslij(
-          res,
-          rodzic,
-          wszystkieWykluczone(dzieci, wykluczone) ? W_WYKLUCZONY : sredniaDzieci(dzieci, heksy),
-        )
+      for (const [h, dzieci] of g.dzieci[res])
+        wyslij(res, h, wszystkieWykluczone(dzieci, wykluczone) ? W_WYKLUCZONY : rodzic(dzieci))
     }
   }
 
@@ -481,6 +518,18 @@ export function MapaKrakowa({
       void lec(mapa, cel)
     }
   }, [lon, lat])
+
+  // Przelot do ramki (okolica z rankingu). Klucz z liczb, bo nowa tablica przy tych samych
+  // granicach nie może ruszać kamery.
+  const kluczGranic = granice ? granice.flat().join(',') : null
+  useEffect(() => {
+    const mapa = mapaRef.current
+    const g = graniceRef.current
+    if (!mapa || !gotowa || kluczGranic === null || !g) return
+    if (etapRef.current !== 'miasto') zakonczIntro()
+    const kamera = mapa.cameraForBounds(g, { padding: 48, maxZoom: 16 })
+    if (kamera) void lec(mapa, kamera)
+  }, [gotowa, kluczGranic])
 
   function zakonczIntro() {
     if (pauzaRef.current !== null) clearTimeout(pauzaRef.current)
@@ -586,6 +635,11 @@ export function MapaKrakowa({
       )}
       {legenda &&
         krycieHeksow > 0 &&
+        wlasnaLegenda !== undefined &&
+        createPortal(wlasnaLegenda, legenda)}
+      {legenda &&
+        krycieHeksow > 0 &&
+        wlasnaLegenda === undefined &&
         createPortal(
           <>
             <div className="mapa-legenda__tytul">{podpisWarstwy}</div>
