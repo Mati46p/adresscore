@@ -103,31 +103,46 @@ export const PROG_MOCNEJ_POTRZEBY = 0.9
 export const PROG_POTRZEBY = 0.6
 
 /**
- * Bramka „cudza sytuacja” (#147, #153): tekst o kimś spoza domu („Pytam dla koleżanki…”) albo
- * o sytuacji tylko wyobrażonej lub dawnej („Gdybym kiedyś miał psa…”). Gdy bramka jest
- * zamknięta, profil zostaje bez zmian, a z potrzeb zostają tylko bardzo pewne.
+ * Bramka „nikt tu nie zamieszka” (#147, #153, #162): tekst bez prawdziwego szukania (sama opinia
+ * albo ciekawość: „Kumpel ma trójkę dzieci… ciekawe, czy tam głośno”) albo sytuacja tylko
+ * wyobrażona lub dawna („Gdybyśmy kiedyś mieli dzieci…”, „kiedyś mieszkaliśmy z dziećmi”). Gdy
+ * bramka jest zamknięta, profil zostaje bez zmian, a z potrzeb zostają tylko bardzo pewne.
  *
- * #153: dwa wąskie twierdzenia zamiast jednego „Osoba opisuje własną obecną sytuację…” (#147)
- * i odwrócona logika – bramka zamyka się tylko na DOWÓD cudzej albo nieaktualnej sytuacji
- * (któreś twierdzenie ≥ PROG_BRAMKI), a nie na brak dowodu własnej. Twierdzenie z #147 dawało
- * „teściowa z nami zamieszka” 0,35 i „mama z nami zamieszka” 0,18 (profil Senior przepadał),
- * a dawnej sytuacji 0,71. Domownik, rodzina i własne plany to własna sytuacja; zakup na
- * wynajem też (inwestor). Dowody: WYNIKI.md, „Trzy błędy (#153)”.
+ * #162 (decyzja Jana): szukanie W CZYIMŚ IMIENIU („piszę w imieniu taty… szukamy mu”, „szukam
+ * dla koleżanki, ona…”) to NIE jest cudza sytuacja – mapa liczy profil i potrzeby osoby, która
+ * tam zamieszka. Dlatego `cudza_osoba` z #153 („szuka dla kogoś, kto z nią nie zamieszka”)
+ * zastąpiło `nikt_nie_szuka`. Pierwsza wersja („W tekście nie ma nikogo, kto zamieszka…”)
+ * dalej odcinała szukanie dla taty (0,54 i 0,85 na pozycjach zbioru nr 4) i inwestora (0,54).
+ * Twierdzenia potrzeb i pytanie o profil zostały bez zmian: na celowanych zdaniach („w imieniu
+ * taty” → Senior, „dla koleżanki” → Rodzina) JEV już opisuje przyszłego mieszkańca.
+ *
+ * Każde twierdzenie ma własny próg (`prog`). `nikt_nie_szuka` zamyka dopiero od 0,7: opisy
+ * własnej sytuacji bez słowa „szukam” („Mam 74 lata, sama już nie prowadzę…”) dostają do 0,50,
+ * a teksty bez szukania 0,75–0,92. Dowody: WYNIKI.md, „Szukam dla kogoś (#162)”.
+ *
+ * #153: wąskie twierdzenia i odwrócona logika – bramka zamyka się tylko na DOWÓD (ocena ≥ progu),
+ * a nie na brak dowodu własnej sytuacji. Twierdzenie z #147 („Osoba opisuje własną obecną
+ * sytuację…”) dawało „teściowa z nami zamieszka” 0,35 i profil Senior przepadał. Domownik,
+ * rodzina i własne plany to własna sytuacja. Dowody: WYNIKI.md, „Trzy błędy (#153)”.
  */
+/** Od tej oceny twierdzenia bramki (domyślnie) bramka się zamyka. */
+export const PROG_BRAMKI = 0.5
+/** #162: wyższy próg dla `nikt_nie_szuka` – własne opisy bez „szukam” dostają do 0,50. */
+export const PROG_NIKT_NIE_SZUKA = 0.7
 export const BRAMKA = [
   {
-    id: 'cudza_osoba',
+    id: 'nikt_nie_szuka',
     twierdzenie:
-      'Osoba szuka mieszkania dla kogoś innego, kto z nią nie mieszka i nie zamieszka (np. dla znajomego, klienta, rodzeństwa). Zakup na wynajem albo jako inwestycja to nie to.',
+      'Tekst to tylko opinia albo ciekawość – nikt nie szuka mieszkania ani dla siebie, ani dla kogoś innego (np. taty, koleżanki), ani pod wynajem.',
+    prog: PROG_NIKT_NIE_SZUKA,
   },
   {
     id: 'sytuacja_nieaktualna',
     twierdzenie:
       'Tekst mówi wyłącznie o sytuacji wyobrażonej („gdyby…”) albo nieaktualnej (tak było kiedyś), a nie o obecnej ani planowanej.',
+    prog: PROG_BRAMKI,
   },
 ] as const
-/** Od tej oceny któregokolwiek twierdzenia BRAMKA bramka się zamyka. */
-export const PROG_BRAMKI = 0.5
 /** Przy zamkniętej bramce zostają tylko potrzeby z noul ≥ PROG_POTRZEBY_PEWNEJ. */
 export const PROG_POTRZEBY_PEWNEJ = 0.9
 
@@ -518,12 +533,20 @@ export function profilZMocnychPotrzeb(
   return personaZPotrzeb(mocne)
 }
 
-/** #153: bramka zamknięta = któreś twierdzenie BRAMKA ma noul ≥ PROG_BRAMKI. */
+/**
+ * #153: bramka zamknięta = któreś twierdzenie BRAMKA ma noul ≥ swojego progu (#162: `prog`).
+ * #162: `nikt_nie_szuka` nie zamyka bramki, gdy JEV wybrał profil Inwestor. Kupujący pod
+ * wynajem nie ma mieszkańca, a to prawdziwe szukanie: pierwsza wersja twierdzenia dała mu 0,54
+ * mimo wykluczenia (obecna 0,04 – to tylko zabezpieczenie, bez kosztu wywołań).
+ */
 export function bramkaZamknieta(odpowiedzi: Record<string, OdpowiedzJev | null>): boolean {
+  const profil = odpowiedzi[ID_PROFILU]
+  const inwestor = profil?.typ === 'choice' && profil.wybor === 'inwestor'
   return BRAMKA.some((b) => {
+    if (inwestor && b.id === 'nikt_nie_szuka') return false
     const o = odpowiedzi[b.id]
     // Brak odpowiedzi = brak dowodu cudzej sytuacji – bramka zostaje otwarta.
-    return o?.typ === 'noul' && o.noul >= PROG_BRAMKI
+    return o?.typ === 'noul' && o.noul >= b.prog
   })
 }
 
@@ -531,8 +554,8 @@ export function bramkaZamknieta(odpowiedzi: Record<string, OdpowiedzJev | null>)
  * Odpowiedzi JEV → zrozumienie. null (→ reguły), gdy nic nie przeszło progu pewności.
  * Poziom kategorii liczy się tylko, gdy JEV jest pewny i odszedł od środka skali.
  *
- * #147: gdy tekst opisuje cudzą, wyobrażoną albo dawną sytuację (bramka zamknięta, #153),
- * profil zostaje bez zmian, poziomy kategorii przepadają, a z potrzeb zostają tylko bardzo
+ * #147: gdy tekst nie opisuje prawdziwego szukania – sama opinia albo ciekawość, sytuacja
+ * wyobrażona albo dawna (bramka zamknięta, #153, #162) – profil zostaje bez zmian, poziomy kategorii przepadają, a z potrzeb zostają tylko bardzo
  * pewne. Wtedy pusty wynik to „nic nie zrozumiano” od JEV, a nie powód do reguł – reguły
  * złapałyby słowa z cudzej sytuacji („kumpel ma psa” → pies).
  */

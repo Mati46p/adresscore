@@ -1394,6 +1394,189 @@ wysyła. Żadne wywołanie nie przekroczyło 800 ms pośrednika.
 (profil per rodzaj błędu, `cudza_sytuacja`, pasma) pochodzą z tego samego zapisanego przebiegu,
 bez nowych wywołań i bez czytania tekstów.
 
+## Szukam dla kogoś (#162)
+
+Pomiar z 2026-10-03, model `jev-1.13.0`. **Decyzja Jana:** gdy ktoś szuka mieszkania dla innej
+osoby („piszę w imieniu taty… szukamy mu”, „szukam dla koleżanki, ona…”), mapa liczy profil
+i potrzeby osoby, która tam zamieszka. Bramka zamyka się (profil bez zmian, z potrzeb tylko
+noul ≥ 0,9) tylko w trzech sytuacjach:
+
+- czysta hipoteza, bez prawdziwego szukania („gdybyśmy kiedyś…”);
+- sytuacja, która już nie trwa;
+- tekst bez przyszłego mieszkańca, czyli opinia albo ciekawość.
+
+Przed tą zmianą bramka z #153 zamykała się na `cudza_osoba` („szuka dla kogoś, kto z nią nie
+zamieszka”). Na zbiorze nr 4 cecha `cudza_sytuacja` wyszła przez to 0 z 3.
+
+### Co się zmieniło
+
+- **`cudza_osoba` → `nikt_nie_szuka`:** „Tekst to tylko opinia albo ciekawość – nikt nie szuka
+  mieszkania ani dla siebie, ani dla kogoś innego (np. taty, koleżanki), ani pod wynajem.”
+- **`sytuacja_nieaktualna`** zostało bajt w bajt takie samo.
+- **Każde twierdzenie ma własny próg.** `nikt_nie_szuka` zamyka bramkę od **0,7**
+  (`PROG_NIKT_NIE_SZUKA`), a `sytuacja_nieaktualna` jak dotąd od 0,5.
+- **Inwestor:** gdy JEV wybrał profil Inwestor, `nikt_nie_szuka` nie zamyka bramki. To tylko
+  zabezpieczenie, bez dodatkowych wywołań (patrz pierwsza wersja niżej).
+- **Bez zmian:** pytanie o profil, 10 twierdzeń potrzeb, kategorie i limit 16 pytań. Zmienił się
+  tylko tekst jednego pytania z 16.
+
+Dlaczego nie ruszałem profilu ani twierdzeń potrzeb („osoba, która ma tam zamieszkać”)? Na
+celowanych zdaniach JEV już opisuje przyszłego mieszkańca: „w imieniu taty” daje Seniora,
+a „dla koleżanki” daje Rodzinę. Do tego w #150 zmiana 7 twierdzeń naraz popsuła inne tematy.
+
+Każdego kandydata sprawdzałem w pełnym zapytaniu, z 16 pytaniami (lekcja z #150).
+
+### Dowody bez sieci (zbiór nr 4 – UŻYTY)
+
+Przebieg `k4-157` ma zapytanie bajt w bajt takie jak przed #162. Przeliczenie z obecną bramką
+zgadza się z zapisanym wynikiem w 40 z 40 opisów. Warianty bramki liczyłem z tych samych ocen
+JEV, bez nowych wywołań. Podaję tylko liczby zbiorcze.
+
+| Wariant (zbiór nr 4, 40 opisów) | Profil | Potrzeby P / R | Dokładnie | Bramka zamknięta | `cudza_sytuacja`: potrzeby R / bramka |
+|---|---|---|---|---|---|
+| Bramka z #153 | 34/40 | 78 / 70% | 13/40 | 2 | 50% / 2 z 3 |
+| Bez `cudza_osoba` (tylko `sytuacja_nieaktualna`) | 33/40 | 78 / 72% | 13/40 | 1 | 67% / 1 z 3 |
+| Bez bramki | 33/40 | 78 / 73% | 13/40 | 0 | 83% / 0 z 3 |
+
+Poza cechą `cudza_sytuacja` wszystkie warianty dają ten sam wynik. Zbiór nr 4 nie ma pozycji, na
+których bramka by pomagała, więc samo „bez `cudza_osoba`” nie mówi, czy zamknie się na ciekawość.
+Do tego potrzebne jest nowe twierdzenie, a więc wywołania na żywo.
+
+### Dowody na żywo – celowane zdania (moje)
+
+**Pierwsza wersja:** „W tekście nie ma nikogo, kto zamieszka w szukanym mieszkaniu – to tylko
+opinia albo ciekawość. Szukanie dla kogoś innego (taty, koleżanki) albo zakup na wynajem to nie
+to.” Na moich zdaniach działała:
+
+| Zdanie | ocena v1 | wynik |
+|---|---|---|
+| tata | 0,12 | Senior |
+| koleżanka | 0,20 | Rodzina |
+| ciekawość | 0,68 | bramka zamknięta |
+| domownik | 0,07 | bramka otwarta |
+| własna sytuacja | 0,15 | bramka otwarta |
+
+Odrzuciłem ją z dwóch powodów:
+
+- **Inwestor dostał 0,54**, więc bramka by się zamknęła mimo wykluczenia w twierdzeniu.
+- **Pozycje `cudza_sytuacja` ze zbioru nr 4** (UŻYTY, 3 wywołania) dostały 0,25 / 0,54 / 0,85,
+  a stare `cudza_osoba` miało 0,49 / 0,55 / 0,89. Bramka dalej zamykała się w 2 z 3. JEV
+  czytał pierwszą część twierdzenia jako „piszący tam nie zamieszka”.
+
+**Wersja końcowa** (`nikt_nie_szuka`) mówi o braku szukania, a nie o braku mieszkańca:
+
+| Zdanie (pełne zapytanie, 16 pytań) | `nikt_nie_szuka` | `sytuacja_nieaktualna` | Bramka | Wynik |
+|---|---|---|---|---|
+| „Piszę w imieniu taty. Tata ma 79 lat… Szukamy mu kawalerki blisko przychodni…” | 0,01 | 0,03 | otwarta | **Senior** 0,86; zieleń 0,93 (v1: senior, zdrowie, zieleń) |
+| „Szukam mieszkania dla koleżanki z pracy, ona ma dwójkę małych dzieci i psa…” | 0,02 | 0,04 | otwarta | **Rodzina** 0,98; dzieci 0,74, pies 0,95 |
+| „Gdybyśmy kiedyś mieli dzieci i psa… na razie nic nie szukamy” (hipoteza) | 0,92 | 0,85 | **zamknięta** | nic |
+| „Kiedyś mieszkaliśmy z trójką dzieci i psem… to już nieaktualne” (przeszłość) | 0,75 | 0,91 | **zamknięta** | nic |
+| „Kumpel ma trójkę dzieci i psa… Ciekawe, czy to prawda” (ciekawość) | 0,90 | 0,05 | **zamknięta** | tylko pies (0,96 ≥ 0,9) |
+| „Mamy z mężem dwójkę dzieci… i psa. Nie mamy samochodu…” (własna) | 0,23 | 0,03 | otwarta | Rodzina; dzieci, pies, bez samochodu |
+| „Od wiosny zamieszka z nami moja mama, ma 82 lata…” (domownik) | 0,10 | 0,03 | otwarta | Senior (z mocnej potrzeby); senior, zdrowie (+ dzieci 0,89) |
+| „Kupuję kawalerkę pod wynajem dla studentów, sam tam nie zamieszkam” (inwestor) | 0,04 | 0,04 | otwarta | Inwestor |
+
+Dla „taty” w wersji końcowej zapisałem tylko profil, bramkę i początek ocen potrzeb. Lista potrzeb
+w nawiasie pochodzi z pierwszej wersji (to samo zdanie, inne tylko twierdzenie bramki). Na
+domowniku JEV dokłada „dzieci” (0,89). Tak było też przed #162, bramka nie ma z tym związku.
+
+**Skąd próg 0,7: zbiór do strojenia, nie kontrolny.** Pytałem o 15 opisów z testu A/A (#157).
+Zapis tego testu, `aa-157`, ma zapytanie sprzed #162, więc porównanie jest sparowane.
+
+- Ocena `nikt_nie_szuka` dla opisów własnej sytuacji, które nie mówią „szukam”: A25 („Mam 74 lata,
+  sama już nie prowadzę…”) **0,50**, A13 0,49, A29 0,46, A07 0,45, A19 0,37.
+- Przy progu 0,5 A25 tracił Seniora i dwie potrzeby. To jedyna zmiana wyniku z 15.
+- Teksty bez szukania mają 0,75–0,92: hipoteza, przeszłość, ciekawość, a w tym zbiorze A05
+  („hej, sprawdzam tylko jak to działa”, 0,87, wzorzec: nic).
+- Próg 0,7 leży między tymi grupami, z zapasem 0,2 w dół i 0,05 w górę. Przy przeszłości i tak
+  zamyka `sytuacja_nieaktualna`.
+- Z progiem 0,7 na tych 15 opisach: **0 z 15 wyników innych niż w A/A**, bramka zamknięta tylko
+  na A05.
+- A25 przeliczyłem z zapisanych ocen. Po zmianie twierdzenia wszystkie pozostałe oceny są
+  w odległości do 0,06 od A/A, a żadna ocena A25 nie leży tak blisko progu.
+- Zamiana jednego twierdzenia przesuwa pozostałe oceny (pewność profilu, 10 potrzeb,
+  `sytuacja_nieaktualna`) średnio o |Δ| **0,008**, najwyżej o 0,06. To tyle, co szum w A/A
+  (0,005–0,008, najwyżej 0,07).
+
+### Zbiory użyte – przed i po (UŻYTE, tylko liczby zbiorcze)
+
+Wszystkie zbiory kontrolne 1–4 są już użyte, więc to nie jest wynik nagłówkowy. Nie czytałem
+tekstów pozycji. Pełnej części A żadnego zbioru nie powtarzałem, bo nie mieściła się w budżecie
+(45 wywołań). Wziąłem tylko pozycje z cechami, których dotyczy bramka.
+
+**Zbiór nr 4, `cudza_sytuacja`** (3 pozycje, 3 wywołania). „Przed” to zapisany przebieg
+`k4-157`: to samo zapytanie, a model jest deterministyczny (A/A).
+
+| `cudza_sytuacja` (n = 3) | Profil | Potrzeby P / R | Dokładnie | Bramka zamknięta |
+|---|---|---|---|---|
+| Przed (#153), wzorzec jak zapisany | 2/3 | 100 / 50% | 0/3 | 2 |
+| **Po (#162), wzorzec jak zapisany** | 1/3 | 100 / 50% | 0/3 | **1** |
+| Przed, bez oceny profilu | 3/3 | 100 / 50% | 1/3 | 2 |
+| **Po, bez oceny profilu** | 3/3 | 100 / 50% | 1/3 | **1** |
+
+- **Bramka otworzyła się na 1 pozycji.** Na dwóch pozycjach `nikt_nie_szuka` daje 0,03 i 0,04.
+  Stare `cudza_osoba` dawało tam 0,89 (bramka zamknięta) i 0,49 (bramka otwarta, ale tylko
+  0,01 pod progiem).
+- **Trzecia zostaje zamknięta przez `sytuacja_nieaktualna` 0,90.** To twierdzenie się nie
+  zmieniło: JEV czyta ten tekst jako sytuację wyobrażoną albo dawną. Przed #162 też miała 0,91,
+  a `nikt_nie_szuka` daje jej 0,78. Bez czytania tekstu nie rozstrzygnę, czy JEV ma rację.
+- **Dlaczego „profil” spadł z 2/3 do 1/3.** Wzorzec ma tu profil null, a potrzeby drugiej
+  osoby. Według nowej decyzji właściwy jest profil przyszłego mieszkańca, więc null we wzorcu to
+  konwencja sprzed decyzji, a nie błąd JEV. Otwarta pozycja dostaje Rodzinę (pewność 1,00),
+  a wzorzec ma dla niej potrzebę „dzieci”, więc to spójne z regułą. Dlatego podaję też wiersz
+  „bez oceny profilu”: tam profil jest 3/3, a „dokładnie” bez zmian, 1/3.
+- **Potrzeby się nie poprawiły (R 50%).** Na otwartej pozycji potrzeby wzorca mają dzieci 0,59
+  i praca w centrum 0,55, czyli tuż pod progiem 0,6. To już nie bramka, tylko siła twierdzeń
+  potrzeb przy tekście o drugiej osobie. Na moich zdaniach widać to samo: „dla koleżanki” daje
+  dzieci 0,74–0,77, a własna rodzina 0,98.
+
+**Zbiór nr 3, cechy `cudza_sytuacja`, `gdybanie`, `przeszlosc`, `domownik`** (6 pozycji,
+6 wywołań). „Przed” to zapisany przebieg `k3-153` przeliczony obecnym kodem. Ten przebieg miał
+jeszcze opisy profilu sprzed #155, więc porównanie jest przybliżone. W zbiorze nr 3 etykiety
+`cudza_sytuacja` mają inną konwencję niż w nr 4: profil null i (prawie) bez potrzeb.
+
+| Cecha | n | Przed: profil / dokładnie / bramka | **Po: profil / dokładnie / bramka** |
+|---|---|---|---|
+| `cudza_sytuacja` (w niej `gdybanie` i `przeszlosc`) | 3 | 3/3 / 3/3 / 2 | 2/3 / 1/3 / 2 |
+| `gdybanie` | 1 | 1/1 / 1/1 / zamknięta | 1/1 / 1/1 / zamknięta |
+| `przeszlosc` | 1 | 1/1 / 1/1 / otwarta | 1/1 / 0/1 / **zamknięta** |
+| `domownik` | 3 | 3/3 / 1/3 / 0 | 3/3 / 1/3 / 0 |
+
+- **`domownik`: bez zmian.** Bramka zamknięta 0 z 3.
+- **`gdybanie`: dalej zamyka.**
+- **Jedna pozycja się otworzyła** (`nikt_nie_szuka` 0,22, a stare `cudza_osoba` 0,59). Dostaje
+  Rodzinę bez potrzeb, a wzorzec zbioru nr 3 ma tu profil null. Jeśli to szukanie dla kogoś, to
+  według nowej decyzji Rodzina jest właściwa. Jeśli to sama opinia, to błąd. Bez czytania tekstu
+  nie rozstrzygnę.
+- **Pozycja `przeszlosc` jest teraz zamknięta** (`nikt_nie_szuka` 0,76, `sytuacja_nieaktualna`
+  0,18), a wzorzec ma dla niej bieżącą potrzebę „cisza”. To jedna pozycja, 0,06 nad progiem,
+  czyli w paśmie szumu progu. Progu pod nią nie przesuwałem, bo to byłoby strojenie na zbiorze
+  kontrolnym. Zostaje jako znane ryzyko: tekst o przeszłości z bieżącym życzeniem, ale bez
+  słowa „szukam”.
+
+### Wywołania na żywo
+
+**45 z budżetu 45:**
+
+- pierwsza wersja, razem 12:
+  - celowane zdania – 9;
+  - zbiór nr 4, `cudza_sytuacja` – 3;
+- wersja końcowa, razem 32:
+  - celowane zdania – 8;
+  - zbiór nr 4, `cudza_sytuacja` – 3;
+  - zbiór nr 3, cechy bramki – 6;
+  - 15 opisów ze zbioru do strojenia (A/A) – 15;
+- 1 wywołanie stracone przez błąd w moim skrypcie (odpowiedź nieodczytana).
+
+Opóźnienie bez zmian: p50 ok. 270–350 ms, max 588 ms.
+
+Przeliczenia bez sieci nic nie kosztowały. To warianty bramki na `k4-157`, próg 0,7 na zapisanych
+odpowiedziach i A25.
+
+`aa.ts` i raport `pomiar.ts` (liczba ocen bramki ≥ 0,5) dalej liczą jeden próg `PROG_BRAMKI`
+dla obu twierdzeń. To tylko liczba diagnostyczna: wynik pozycji idzie przez `bramkaZamknieta`
+z progami per twierdzenie.
+
 ## Na slajd
 
 Liczby pochodzą ze **zbioru kontrolnego nr 4** (#157). Napisał go na ślepo osobny agent AI, bez

@@ -19,6 +19,7 @@ import {
   POZIOMY_WAZNOSCI,
   PROG_BRAMKI,
   PROG_MOCNEJ_POTRZEBY,
+  PROG_NIKT_NIE_SZUKA,
   PROG_PEWNOSCI,
   PROG_PROFILU,
   profilZMocnychPotrzeb,
@@ -55,7 +56,7 @@ const WSKAZNIKI = [
 
 const BIEZACE = { wagi: { halas_ldwn: 1, przystanek_odleglosc: 2 }, kierunki: {} }
 
-const [CUDZA, NIEAKTUALNA] = BRAMKA.map((b) => b.id) as [string, string]
+const [NIKT, NIEAKTUALNA] = BRAMKA.map((b) => b.id) as [string, string]
 const noul = (x: number): OdpowiedzJev => ({ typ: 'noul', noul: x })
 
 describe('zapytanieOpiszSiebie', () => {
@@ -68,7 +69,7 @@ describe('zapytanieOpiszSiebie', () => {
       ID_PROFILU,
       ...KATEGORIE_JEV.map((k) => `kat_${k}`),
       ...potrzebyJev,
-      CUDZA,
+      NIKT,
       NIEAKTUALNA,
     ])
     assert.equal(z.stan, 'Mam psa')
@@ -204,14 +205,52 @@ describe('przetworzOdpowiedzi (JEV → zrozumienie)', () => {
     )
   })
 
-  it('#153: znajomy (twierdzenie „cudza osoba” wysokie) zamyka bramkę – profil bez zmian, tylko pewne potrzeby', () => {
-    // „Pytam dla koleżanki: ona ma dwójkę dzieci i psa” – JEV i tak wybiera Rodzinę z wysoką pewnością.
+  // #162: oceny w testach to odpowiedzi JEV z pomiaru na żywo (WYNIKI.md, „Szukam dla kogoś (#162)”).
+  it('#162: szukanie w imieniu taty – profil i potrzeby przyszłego mieszkańca zostają', async () => {
+    // „Piszę w imieniu taty. Tata ma 79 lat… Szukamy mu kawalerki blisko przychodni i apteki…”
     const odp: Record<string, OdpowiedzJev | null> = {
-      profil: { typ: 'choice', wybor: 'rodzina', pewnosc: 1 },
-      kat_spokoj: { typ: 'score', ocena: 4, pewnosc: 0.95 },
-      p_dzieci: noul(0.8),
+      profil: { typ: 'choice', wybor: 'senior', pewnosc: 0.86 },
+      p_zielen: noul(0.93),
+      p_senior: noul(0.98),
+      p_zdrowie: noul(0.96),
+      p_dzieci: noul(0.06),
+      [NIKT]: noul(0.01),
+      [NIEAKTUALNA]: noul(0.03),
+    }
+    assert.equal(bramkaZamknieta(odp), false)
+    const z = przetworzOdpowiedzi(odp)
+    assert.equal(z?.persona, 'senior')
+    assert.deepEqual(z?.potrzeby, ['zielen', 'senior', 'zdrowie'])
+    // Ta sama ścieżka co w aplikacji: JEV, nie reguły, i wagi Seniora.
+    const { fetchImpl } = zbudujFetch(200, { odpowiedzi: odp, powod: null })
+    const w = await opiszSiebie('Piszę w imieniu taty, szukamy mu mieszkania', { fetch: fetchImpl })
+    assert.equal(w.zrodlo, 'jev')
+    assert.equal(w.wynik.persona, 'senior')
+    assert.ok(w.wynik.potrzeby.includes('zdrowie'))
+  })
+
+  it('#162: szukanie dla koleżanki – liczą się jej dzieci, pies i brak auta (wcześniej bramka je odcinała)', () => {
+    const odp: Record<string, OdpowiedzJev | null> = {
+      profil: { typ: 'choice', wybor: 'rodzina', pewnosc: 0.98 },
+      p_dzieci: noul(0.74),
       p_pies: noul(0.95),
-      [CUDZA]: noul(0.9),
+      p_bez_samochodu: noul(0.95),
+      [NIKT]: noul(0.02),
+      [NIEAKTUALNA]: noul(0.04),
+    }
+    const z = przetworzOdpowiedzi(odp)
+    assert.equal(z?.persona, 'rodzina')
+    assert.deepEqual(z?.potrzeby, ['dzieci', 'pies', 'bez_samochodu'])
+  })
+
+  it('#162: ciekawość bez szukania („kumpel ma dzieci… ciekawe, czy tam głośno”) zamyka bramkę – profil bez zmian, tylko pewne potrzeby', () => {
+    // Na żywo: `nikt_nie_szuka` 0,90, a profil Rodzina z pewnością 0,99.
+    const odp: Record<string, OdpowiedzJev | null> = {
+      profil: { typ: 'choice', wybor: 'rodzina', pewnosc: 0.99 },
+      kat_spokoj: { typ: 'score', ocena: 4, pewnosc: 0.95 },
+      p_dzieci: noul(0.89),
+      p_pies: noul(0.96),
+      [NIKT]: noul(0.9),
       [NIEAKTUALNA]: noul(0.05),
     }
     assert.equal(bramkaZamknieta(odp), true)
@@ -219,20 +258,71 @@ describe('przetworzOdpowiedzi (JEV → zrozumienie)', () => {
     assert.ok(z)
     assert.equal(z.persona, null)
     assert.deepEqual(z.potrzeby, ['pies'])
-    assert.equal(z.potrzeby.includes('dzieci'), false)
     // Wagi: bez profilu bazą są bieżące, więc persona użytkownika się nie zmienia.
     const u = wagiZeZrozumienia(z, 'kupuje', WSKAZNIKI, BIEZACE)
     assert.equal(u.wagi.przystanek_odleglosc, BIEZACE.wagi.przystanek_odleglosc)
   })
 
-  it('#153: domownik („mama z nami zamieszka”) – oba twierdzenia bramki niskie → profil Senior zostaje', () => {
+  it('#162: czysta hipoteza bez szukania („Gdybyśmy kiedyś mieli dzieci…”) zamyka bramkę', () => {
+    const z = przetworzOdpowiedzi({
+      profil: { typ: 'choice', wybor: 'rodzina', pewnosc: 0.9 },
+      p_dzieci: noul(0.57),
+      p_zielen: noul(0.68),
+      [NIKT]: noul(0.92),
+      [NIEAKTUALNA]: noul(0.85),
+    })
+    assert.ok(z && nicNieZrozumiano(z))
+  })
+
+  it('#162: sytuacja dawna („Kiedyś mieszkaliśmy z dziećmi… to już nieaktualne”) zamyka bramkę', () => {
+    // Sama `sytuacja_nieaktualna` wystarczy – `nikt_nie_szuka` może być pod swoim progiem.
+    for (const nikt of [0.75, 0.3]) {
+      const z = przetworzOdpowiedzi({
+        profil: { typ: 'choice', wybor: 'senior', pewnosc: 0.95 },
+        p_senior: noul(0.71),
+        [NIKT]: noul(nikt),
+        [NIEAKTUALNA]: noul(0.91),
+      })
+      assert.ok(z && nicNieZrozumiano(z), `nikt_nie_szuka ${nikt}`)
+    }
+  })
+
+  it('#162: własna sytuacja bez słowa „szukam” – bramka otwarta, choć `nikt_nie_szuka` ma 0,50', () => {
+    // „Mam 74 lata, sama już nie prowadzę…” – przy progu 0,5 ten opis tracił profil Senior.
+    const odp: Record<string, OdpowiedzJev | null> = {
+      profil: { typ: 'choice', wybor: 'senior', pewnosc: 0.99 },
+      p_senior: noul(0.97),
+      p_zdrowie: noul(0.95),
+      p_bez_samochodu: noul(0.8),
+      [NIKT]: noul(0.5),
+      [NIEAKTUALNA]: noul(0.02),
+    }
+    assert.equal(bramkaZamknieta(odp), false)
+    const z = przetworzOdpowiedzi(odp)
+    assert.equal(z?.persona, 'senior')
+    assert.deepEqual(z?.potrzeby, ['bez_samochodu', 'senior', 'zdrowie'])
+  })
+
+  it('#162: własna rodzina – bez zmian (profil i potrzeby)', () => {
+    const z = przetworzOdpowiedzi({
+      profil: { typ: 'choice', wybor: 'rodzina', pewnosc: 1 },
+      p_dzieci: noul(0.98),
+      p_pies: noul(0.98),
+      p_bez_samochodu: noul(0.98),
+      [NIKT]: noul(0.23),
+      [NIEAKTUALNA]: noul(0.03),
+    })
+    assert.equal(z?.persona, 'rodzina')
+    assert.deepEqual(z?.potrzeby, ['dzieci', 'pies', 'bez_samochodu'])
+  })
+
+  it('#153/#162: domownik („mama z nami zamieszka”) – bramka otwarta, profil Senior zostaje', () => {
     // Bramka z #147 („własna obecna sytuacja”) dawała tu 0,18–0,35 i profil przepadał.
-    // Nowa bramka zamyka się tylko na dowód cudzej albo nieaktualnej sytuacji.
     const odp: Record<string, OdpowiedzJev | null> = {
       profil: { typ: 'choice', wybor: 'senior', pewnosc: 0.9 },
       p_senior: noul(0.97),
       p_zdrowie: noul(0.95),
-      [CUDZA]: noul(0.1),
+      [NIKT]: noul(0.1),
       [NIEAKTUALNA]: noul(0.08),
     }
     assert.equal(bramkaZamknieta(odp), false)
@@ -241,41 +331,65 @@ describe('przetworzOdpowiedzi (JEV → zrozumienie)', () => {
     assert.deepEqual(z?.potrzeby, ['senior', 'zdrowie'])
   })
 
-  it('#153: sytuacja tylko wyobrażona albo dawna zamyka bramkę', () => {
-    const z = przetworzOdpowiedzi({
-      profil: { typ: 'choice', wybor: 'rodzina', pewnosc: 0.9 },
-      p_pies: noul(0.85),
-      [CUDZA]: noul(0.05),
-      [NIEAKTUALNA]: noul(0.8),
-    })
-    assert.ok(z && nicNieZrozumiano(z))
+  it('#162: inwestor – `nikt_nie_szuka` nie zamyka bramki, gdy JEV wybrał Inwestora', () => {
+    // Pierwsza wersja twierdzenia dawała „Kupuję kawalerkę pod wynajem…” 0,54.
+    const odp: Record<string, OdpowiedzJev | null> = {
+      profil: { typ: 'choice', wybor: 'inwestor', pewnosc: 1 },
+      [NIKT]: noul(0.9),
+      [NIEAKTUALNA]: noul(0.04),
+    }
+    assert.equal(bramkaZamknieta(odp), false)
+    const z = przetworzOdpowiedzi(odp)
+    assert.equal(z?.persona, 'inwestor')
+    assert.deepEqual(z?.potrzeby, ['inwestycja'])
+    // Hipoteza inwestora („gdybym kiedyś kupił pod wynajem…”) nadal zamyka.
+    assert.equal(bramkaZamknieta({ ...odp, [NIEAKTUALNA]: noul(0.8) }), true)
   })
 
-  it('#147: cudza sytuacja bez pewnych potrzeb → „nic nie zrozumiano” od JEV, nie reguły', async () => {
+  it('#162: bramka nie pyta już o „cudzą osobę” – szukanie dla kogoś innego to nie powód do zamknięcia', () => {
+    const ids = BRAMKA.map((b) => b.id)
+    assert.deepEqual(ids, ['nikt_nie_szuka', 'sytuacja_nieaktualna'])
+    const nikt = BRAMKA[0].twierdzenie
+    assert.match(nikt, /dla kogoś innego/)
+    assert.match(nikt, /pod wynajem/)
+    assert.equal(BRAMKA[0].prog, PROG_NIKT_NIE_SZUKA)
+    assert.equal(BRAMKA[1].prog, PROG_BRAMKI)
+    assert.ok(PROG_NIKT_NIE_SZUKA > PROG_BRAMKI)
+  })
+
+  it('#147: tekst bez szukania i bez pewnych potrzeb → „nic nie zrozumiano” od JEV, nie reguły', async () => {
     const odp = {
       profil: { typ: 'choice', wybor: 'rodzina', pewnosc: 0.9 },
       p_dzieci: noul(0.85),
-      [CUDZA]: noul(0.92),
+      [NIKT]: noul(0.92),
     }
     const z = przetworzOdpowiedzi(odp as Record<string, OdpowiedzJev | null>)
     assert.ok(z && nicNieZrozumiano(z))
     const { fetchImpl } = zbudujFetch(200, { odpowiedzi: odp, powod: null })
-    const w = await opiszSiebie('Kumpel ma trójkę dzieci i psa', { fetch: fetchImpl })
+    const w = await opiszSiebie('Kumpel ma trójkę dzieci i psa, ciekawe jak mu się mieszka', {
+      fetch: fetchImpl,
+    })
     assert.equal(w.zrodlo, 'jev')
     assert.ok(nicNieZrozumiano(w.wynik), 'reguły złapałyby dzieci i psa kumpla')
   })
 
-  it('#153: bramka tuż pod progiem albo bez odpowiedzi → otwarta, jak dotąd; na progu – zamknięta', () => {
+  it('#153/#162: bramka tuż pod progiem albo bez odpowiedzi → otwarta, jak dotąd; na progu – zamknięta', () => {
     const baza: Record<string, OdpowiedzJev | null> = {
       profil: { typ: 'choice', wybor: 'rodzina', pewnosc: 0.95 },
       p_dzieci: noul(0.8),
     }
-    for (const b of [{ [CUDZA]: noul(PROG_BRAMKI - 0.01) }, { [CUDZA]: null }, {}]) {
+    for (const b of [
+      { [NIKT]: noul(PROG_NIKT_NIE_SZUKA - 0.01) },
+      { [NIEAKTUALNA]: noul(PROG_BRAMKI - 0.01) },
+      { [NIKT]: null },
+      {},
+    ]) {
       const z = przetworzOdpowiedzi({ ...baza, ...b })
       assert.equal(z?.persona, 'rodzina')
       assert.deepEqual(z?.potrzeby, ['dzieci'])
     }
     assert.equal(bramkaZamknieta({ ...baza, [NIEAKTUALNA]: noul(PROG_BRAMKI) }), true)
+    assert.equal(bramkaZamknieta({ ...baza, [NIKT]: noul(PROG_NIKT_NIE_SZUKA) }), true)
   })
 
   it('#147: profil Inwestor niesie przyszłość okolicy (potrzeba z tabeli, bez liczby JEV)', () => {
@@ -399,7 +513,7 @@ describe('#155: próg profilu i profil z mocnych potrzeb', () => {
       p_dzieci: noul(0.81),
       p_zielen: noul(0.9),
       kat_spokoj: { typ: 'score', ocena: 4, pewnosc: 0.9 },
-      [CUDZA]: noul(0.18),
+      [NIKT]: noul(0.18),
     }
     assert.equal(profilZMocnychPotrzeb(odp, 'Kumpel ma trójkę dzieci'), null)
     const z = przetworzOdpowiedzi(odp, 'Kumpel ma trójkę dzieci')
@@ -431,8 +545,8 @@ describe('#155: próg profilu i profil z mocnych potrzeb', () => {
 
   it('bramka zamknięta wygrywa z zapasem z potrzeb – profil bez zmian', () => {
     const z = przetworzOdpowiedzi(
-      { profil: profil('rodzina', 0.6), p_dzieci: noul(0.95), [CUDZA]: noul(0.9) },
-      'Pytam dla koleżanki, ona ma dzieci',
+      { profil: profil('rodzina', 0.6), p_dzieci: noul(0.95), [NIKT]: noul(0.9) },
+      'Koleżanka ma dzieci, ciekawe, jak jej się tam mieszka',
     )
     assert.equal(z?.persona, null)
     assert.deepEqual(z?.potrzeby, ['dzieci'])
