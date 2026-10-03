@@ -5,6 +5,8 @@ import { describe, it } from 'node:test'
 import type { PlikWskaznika, WskaznikMeta } from '../kontrakty/index.ts'
 import {
   BRAK_DANYCH,
+  drugieWywolanie,
+  ID_DRUGIEJ,
   ID_PYTANIA,
   idTematu,
   listaWarstw,
@@ -12,6 +14,7 @@ import {
   NIE_WIEM,
   odpowiedz,
   odpowiedzi,
+  PROG_DRUGIEJ,
   PROG_PEWNOSCI,
   PROG_TEMATU,
   przetworz,
@@ -21,6 +24,8 @@ import {
   TEMATY,
   tematWarstwy,
   type WarstwaDanych,
+  wybierzWarstwy,
+  wygladaNaZlozone,
   zapytajOAdres,
   zapytajOAdresWiele,
   zapytanieJev,
@@ -86,6 +91,18 @@ function fetchZ(json: unknown, status = 200) {
   const f = (async (_url: unknown, init?: RequestInit) => {
     wywolania.push(JSON.parse(String(init?.body)))
     return { ok: status >= 200 && status < 300, status, json: async () => json } as Response
+  }) as typeof fetch
+  return { f, wywolania }
+}
+/** #153: kolejne odpowiedzi pośrednika – pierwsza na pierwsze wywołanie, druga na drugie… */
+function fetchKolejno(...jsony: unknown[]) {
+  const wywolania: {
+    pytania: Record<string, { typ: string; polecenie: string; kryteria?: Record<string, string> }>
+  }[] = []
+  const f = (async (_url: unknown, init?: RequestInit) => {
+    wywolania.push(JSON.parse(String(init?.body)))
+    const json = jsony[Math.min(wywolania.length - 1, jsony.length - 1)]
+    return { ok: true, status: 200, json: async () => json } as Response
   }) as typeof fetch
   return { f, wywolania }
 }
@@ -452,6 +469,149 @@ describe('tematy – pytania złożone (#146)', () => {
     assert.ok(!regulaWiele(pytanie, pelna).warstwy.some((x) => tematWarstwy(x) === 'zielen'))
     // #152: dopisek zieleni i twierdzenie tematu (to, co widzi JEV) wróciły do #147, więc
     // asercje o ich brzmieniu z #150 są usunięte; zostaje przetwarzanie i reguły.
+  })
+
+  it('#153: „z psem do weta” – twierdzenia zieleni i zdrowia wykluczają weterynarza; bez zieleni i bez drugiego wywołania', async () => {
+    const zielen = temat('zielen').twierdzenie
+    assert.match(zielen, /weterynarz/)
+    assert.match(zielen, /posiadanie psa to nie to/)
+    // Spacer i park zostają w twierdzeniu – „gdzie wyjść z psem, jakiś park” to nadal zieleń.
+    assert.match(zielen, /parki/)
+    assert.match(zielen, /spacer/)
+    assert.match(temat('zdrowie').twierdzenie, /Weterynarz to nie to/)
+    // Mock: JEV wybiera weterynarza, zieleń i zdrowie pod progiem (jak po poprawce).
+    const pytanie = 'Daleko stąd z psem do weta?'
+    const { f, wywolania } = fetchKolejno({
+      odpowiedzi: odp('weterynarz_odleglosc', 0.93, { zielen: 0.2, zdrowie: 0.3, sklepy: 0.76 }),
+      powod: null,
+    })
+    const r = await wybierzWarstwy(pytanie, pelna, { fetch: f })
+    assert.equal(r.zrodlo, 'jev')
+    assert.deepEqual(r.wynik.warstwy, ['weterynarz_odleglosc'])
+    assert.ok(!r.wynik.warstwy.some((x) => tematWarstwy(x) === 'zielen'))
+    assert.equal(wywolania.length, 1)
+    assert.equal(r.drugie, null)
+  })
+
+  it('#153: dwa z jednego tematu przez JEV – reguły znają tylko przedszkole, drugie wywołanie dokłada żłobek', async () => {
+    const pytanie = 'Czy blisko jest przedszkole, a dla młodszego jakaś opieka na cały dzień?'
+    // Reguły nie znają drugiego obiektu – bez JEV byłaby jedna warstwa.
+    assert.deepEqual(regulaWiele(pytanie, pelna).warstwy, ['przedszkole_odleglosc'])
+    const { f, wywolania } = fetchKolejno(
+      { odpowiedzi: odp('przedszkole_odleglosc', 0.9, { szkoly: 0.95 }), powod: null },
+      {
+        odpowiedzi: { [ID_DRUGIEJ]: { typ: 'choice', wybor: 'zlobek_odleglosc', pewnosc: 0.88 } },
+        powod: null,
+      },
+    )
+    const r = await wybierzWarstwy(pytanie, pelna, { fetch: f })
+    assert.deepEqual(r.wynik.warstwy, ['przedszkole_odleglosc', 'zlobek_odleglosc'])
+    assert.equal(r.drugie, 'szkoly')
+    assert.equal(wywolania.length, 2)
+    // Drugie zapytanie: jedno pytanie, tylko warstwy tematu o innym obiekcie + nie_wiem na końcu.
+    const druga = wywolania[1]?.pytania[ID_DRUGIEJ]
+    assert.equal(Object.keys(wywolania[1]?.pytania ?? {}).length, 1)
+    assert.equal(druga?.typ, 'choice')
+    const opcje = Object.keys(druga?.kryteria ?? {})
+    assert.ok(!opcje.includes('przedszkole_odleglosc'))
+    assert.ok(opcje.includes('zlobek_odleglosc'))
+    assert.equal(opcje.at(-1), NIE_WIEM)
+    for (const w of opcje.slice(0, -1)) assert.equal(tematWarstwy(w), 'szkoly')
+    assert.ok((druga?.polecenie.length ?? 0) <= 300)
+  })
+
+  it('#153: drugie wywołanie – nie_wiem, niska pewność albo błąd → zostaje jedna warstwa', async () => {
+    const pytanie = 'Czy blisko jest przedszkole, a dla młodszego jakaś opieka na cały dzień?'
+    const pierwsza = {
+      odpowiedzi: odp('przedszkole_odleglosc', 0.9, { szkoly: 0.95 }),
+      powod: null,
+    }
+    for (const druga of [
+      {
+        odpowiedzi: { [ID_DRUGIEJ]: { typ: 'choice', wybor: NIE_WIEM, pewnosc: 0.95 } },
+        powod: null,
+      },
+      {
+        odpowiedzi: {
+          [ID_DRUGIEJ]: { typ: 'choice', wybor: 'zlobek_odleglosc', pewnosc: PROG_DRUGIEJ - 0.01 },
+        },
+        powod: null,
+      },
+      // Spoza listy drugiego wywołania (ten sam obiekt co pierwsza) – odrzucone.
+      {
+        odpowiedzi: {
+          [ID_DRUGIEJ]: { typ: 'choice', wybor: 'przedszkole_odleglosc', pewnosc: 0.99 },
+        },
+        powod: null,
+      },
+      { odpowiedzi: null, powod: 'blad' },
+    ]) {
+      const { f, wywolania } = fetchKolejno(pierwsza, druga)
+      const r = await wybierzWarstwy(pytanie, pelna, { fetch: f })
+      assert.deepEqual(r.wynik.warstwy, ['przedszkole_odleglosc'])
+      assert.equal(r.zrodlo, 'jev')
+      assert.equal(wywolania.length, 2)
+    }
+  })
+
+  it('#153: bez drugiego wywołania, gdy pytanie o jedno, temat nisko albo reguły już dały obie warstwy', async () => {
+    const przypadki: [string, OdpTestowa][] = [
+      // Pytanie nie wygląda na złożone.
+      ['Daleko do przedszkola?', odp('przedszkole_odleglosc', 0.9, { szkoly: 0.95 })],
+      // Temat pod progiem.
+      [
+        'Przedszkole, i co jeszcze?',
+        odp('przedszkole_odleglosc', 0.9, { szkoly: PROG_TEMATU - 0.01 }),
+      ],
+      // Reguły nazwały oba obiekty (#147) – druga warstwa już jest.
+      ['Blisko do przedszkola i żłobka?', odp('przedszkole_odleglosc', 0.9, { szkoly: 0.98 })],
+      // Temat bez różnych obiektów (powietrze).
+      ['Smog, a zimą dym z pieców?', odp('pm25_srednia', 0.9, { powietrze: 0.98 })],
+    ]
+    for (const [pytanie, o] of przypadki) {
+      const { f, wywolania } = fetchKolejno({ odpowiedzi: o, powod: null })
+      const r = await wybierzWarstwy(pytanie, pelna, { fetch: f })
+      assert.equal(wywolania.length, 1, pytanie)
+      assert.equal(r.drugie, null, pytanie)
+    }
+    // Brak JEV → reguły, bez drugiego wywołania.
+    const { f, wywolania } = fetchKolejno({ odpowiedzi: null, powod: 'brak-klucza' })
+    const r = await wybierzWarstwy('Przedszkole, a dla młodszego?', pelna, { fetch: f })
+    assert.equal(r.zrodlo, 'zapas')
+    assert.equal(wywolania.length, 1)
+  })
+
+  it('#153: wygladaNaZlozone i drugieWywolanie – tylko wolne miejsce i temat z obiektami', () => {
+    assert.equal(wygladaNaZlozone('Daleko do przedszkola?'), false)
+    assert.equal(wygladaNaZlozone('Apteka i przychodnia?'), true)
+    assert.equal(wygladaNaZlozone('Jest apteka? A lekarz?'), true)
+    assert.equal(wygladaNaZlozone('Jak tu z parkingiem'), false)
+    // Pełna odpowiedź (3 warstwy) – nie ma miejsca na drugą.
+    assert.equal(
+      drugieWywolanie(
+        odp('apteka_odleglosc', 0.9, { zdrowie: 0.95 }),
+        ['apteka_odleglosc', 'halas_ldwn', 'pm25_srednia'],
+        pelna,
+        'Apteka, cisza i powietrze?',
+      ),
+      null,
+    )
+    const d = drugieWywolanie(
+      odp('apteka_odleglosc', 0.9, { zdrowie: 0.95 }),
+      ['apteka_odleglosc'],
+      pelna,
+      'Apteka, a jak coś poważniejszego to gdzie?',
+    )
+    assert.equal(d?.temat, 'zdrowie')
+    const opcje = Object.keys(
+      (d?.zapytanie.pytania[ID_DRUGIEJ] as { kryteria: Record<string, string> }).kryteria,
+    )
+    assert.deepEqual(opcje, [
+      'przychodnia_odleglosc',
+      'przychodnia_bez_barier_odleglosc',
+      'defibrylator_odleglosc',
+      NIE_WIEM,
+    ])
   })
 
   it('#147: druga warstwa z tematu tylko w wolne miejsce, bez duplikatów, ≤ 3', () => {

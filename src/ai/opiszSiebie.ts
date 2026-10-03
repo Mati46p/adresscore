@@ -69,9 +69,14 @@ export const POZIOMY_WAZNOSCI = [
  * zajęło twierdzenie o własnej sytuacji – limit pośrednika to 16 pytań. Przyszłość okolicy
  * wynika z profilu Inwestor (potrzeba `inwestycja` z tabeli POTRZEBY); w #18 JEV odszedł od
  * środka skali tylko w 2 z 30 opisów, a jeden z nich i tak był inwestorem.
+ *
+ * #153: bez „Codzienności pieszo” – jej miejsce zajęło drugie twierdzenie bramki. Codzienność
+ * podnoszą potrzeby (dzieci, senior, lekarz, sklepy, rower, bez samochodu). Przeliczenie
+ * zapisanych przebiegów bez tego pytania (bez nowych wywołań): kategorie F1 bez zmian na
+ * zbiorze kontrolnym nr 1 i nr 2, −2 pp na wzorcowym; z czterech kategorii najtańsza
+ * (WYNIKI.md, „Trzy błędy (#153)”).
  */
 export const KATEGORIE_JEV = [
-  'codziennosc',
   'transport',
   'spokoj',
   'bezpieczenstwo',
@@ -86,17 +91,32 @@ export const PROG_PEWNOSCI = 0.6
 export const PROG_POTRZEBY = 0.6
 
 /**
- * #147: tekst o cudzej, hipotetycznej albo przeszłej sytuacji („Kumpel ma trójkę dzieci…”,
- * „Gdybyśmy kiedyś mieli dzieci…”). JEV ocenia to twierdzenie w tym samym wywołaniu.
+ * Bramka „cudza sytuacja” (#147, #153): tekst o kimś spoza domu („Pytam dla koleżanki…”) albo
+ * o sytuacji tylko wyobrażonej lub dawnej („Gdybym kiedyś miał psa…”). Gdy bramka jest
+ * zamknięta, profil zostaje bez zmian, a z potrzeb zostają tylko bardzo pewne.
  *
- * #152: brzmienie z #147, a nie z #150. Na zbiorze kontrolnym nr 1 bramka z #150 odcinała
- * 10 z 30 opisów i pełność potrzeb spadła z 88% do 71% (WYNIKI.md, „Wersja końcowa (#152)”).
+ * #153: dwa wąskie twierdzenia zamiast jednego „Osoba opisuje własną obecną sytuację…” (#147)
+ * i odwrócona logika – bramka zamyka się tylko na DOWÓD cudzej albo nieaktualnej sytuacji
+ * (któreś twierdzenie ≥ PROG_BRAMKI), a nie na brak dowodu własnej. Twierdzenie z #147 dawało
+ * „teściowa z nami zamieszka” 0,35 i „mama z nami zamieszka” 0,18 (profil Senior przepadał),
+ * a dawnej sytuacji 0,71. Domownik, rodzina i własne plany to własna sytuacja; zakup na
+ * wynajem też (inwestor). Dowody: WYNIKI.md, „Trzy błędy (#153)”.
  */
-export const ID_WLASNEJ_SYTUACJI = 'wlasna_sytuacja'
-export const TWIERDZENIE_WLASNEJ_SYTUACJI =
-  'Osoba opisuje własną obecną sytuację i swoje potrzeby (nie cudzą, nie hipotetyczną, nie przeszłą).'
-/** Poniżej tej oceny profil zostaje bez zmian, a potrzeby muszą mieć noul ≥ PROG_POTRZEBY_PEWNEJ. */
-export const PROG_WLASNEJ_SYTUACJI = 0.5
+export const BRAMKA = [
+  {
+    id: 'cudza_osoba',
+    twierdzenie:
+      'Osoba szuka mieszkania dla kogoś innego, kto z nią nie mieszka i nie zamieszka (np. dla znajomego, klienta, rodzeństwa). Zakup na wynajem albo jako inwestycja to nie to.',
+  },
+  {
+    id: 'sytuacja_nieaktualna',
+    twierdzenie:
+      'Tekst mówi wyłącznie o sytuacji wyobrażonej („gdyby…”) albo nieaktualnej (tak było kiedyś), a nie o obecnej ani planowanej.',
+  },
+] as const
+/** Od tej oceny któregokolwiek twierdzenia BRAMKA bramka się zamyka. */
+export const PROG_BRAMKI = 0.5
+/** Przy zamkniętej bramce zostają tylko potrzeby z noul ≥ PROG_POTRZEBY_PEWNEJ. */
 export const PROG_POTRZEBY_PEWNEJ = 0.9
 
 interface Wzorzec {
@@ -122,7 +142,7 @@ export interface Potrzeba {
 }
 
 // Kolejność = kolejność pytań do JEV i chipów „zrozumiałem”. Najwyżej 10 z twierdzeniem
-// (limit 16 pytań: 1 profil + 4 kategorie + 10 potrzeb + własna sytuacja).
+// (limit 16 pytań: 1 profil + 3 kategorie + 10 potrzeb + 2 twierdzenia bramki, #153).
 // #147: każde twierdzenie to jeden warunek – JEV obniża ocenę, gdy tekst spełnia tylko część
 // koniunkcji („nie ma samochodu i jeździ komunikacją” → „Nie mam samochodu” 0,58 w #18).
 // Pozostałe twierdzenia nie mają „i”. Próba ich zaostrzenia (dzieci, pies, praca w centrum,
@@ -346,7 +366,7 @@ export const ID_PROFILU = 'profil'
 export const idKategorii = (k: KategoriaOceniana) => `kat_${k}`
 export const idPotrzeby = (p: Potrzeba) => `p_${p.id}`
 
-/** Zapytanie w stałej kolejności: profil, 4 kategorie, potrzeby z twierdzeniem, własna sytuacja. */
+/** Zapytanie w stałej kolejności: profil, 3 kategorie, potrzeby z twierdzeniem, bramka. */
 export function zapytanieOpiszSiebie(tekst: string): ZapytanieJev {
   const pytania: ZapytanieJev['pytania'] = {}
   pytania[ID_PROFILU] = wybor('Który profil najlepiej pasuje do osoby szukającej mieszkania?', {
@@ -360,7 +380,7 @@ export function zapytanieOpiszSiebie(tekst: string): ZapytanieJev {
     )
   }
   for (const p of POTRZEBY) if (p.twierdzenie) pytania[idPotrzeby(p)] = takNie(p.twierdzenie)
-  pytania[ID_WLASNEJ_SYTUACJI] = takNie(TWIERDZENIE_WLASNEJ_SYTUACJI)
+  for (const b of BRAMKA) pytania[b.id] = takNie(b.twierdzenie)
   return { stan: tekst, pytania }
 }
 
@@ -417,22 +437,28 @@ function zloz(
 const procent = (x: number) => Math.round(Math.min(Math.max(x, 0), 1) * 100)
 const pewny = (pewnosc: number | null) => pewnosc === null || pewnosc >= PROG_PEWNOSCI
 
+/** #153: bramka zamknięta = któreś twierdzenie BRAMKA ma noul ≥ PROG_BRAMKI. */
+export function bramkaZamknieta(odpowiedzi: Record<string, OdpowiedzJev | null>): boolean {
+  return BRAMKA.some((b) => {
+    const o = odpowiedzi[b.id]
+    // Brak odpowiedzi = brak dowodu cudzej sytuacji – bramka zostaje otwarta.
+    return o?.typ === 'noul' && o.noul >= PROG_BRAMKI
+  })
+}
+
 /**
  * Odpowiedzi JEV → zrozumienie. null (→ reguły), gdy nic nie przeszło progu pewności.
  * Poziom kategorii liczy się tylko, gdy JEV jest pewny i odszedł od środka skali.
  *
- * #147: gdy JEV ocenia, że tekst nie opisuje własnej obecnej sytuacji (noul < próg), profil
- * zostaje bez zmian, poziomy kategorii przepadają, a z potrzeb zostają tylko bardzo pewne.
- * Wtedy pusty wynik to „nic nie zrozumiano” od JEV, a nie powód do reguł – reguły złapałyby
- * słowa z cudzej sytuacji („kumpel ma psa” → pies).
+ * #147: gdy tekst opisuje cudzą, wyobrażoną albo dawną sytuację (bramka zamknięta, #153),
+ * profil zostaje bez zmian, poziomy kategorii przepadają, a z potrzeb zostają tylko bardzo
+ * pewne. Wtedy pusty wynik to „nic nie zrozumiano” od JEV, a nie powód do reguł – reguły
+ * złapałyby słowa z cudzej sytuacji („kumpel ma psa” → pies).
  */
 export function przetworzOdpowiedzi(
   odpowiedzi: Record<string, OdpowiedzJev | null>,
 ): Zrozumienie | null {
-  const w = odpowiedzi[ID_WLASNEJ_SYTUACJI]
-  // Brak odpowiedzi na to jedno pytanie = jak przed #147 (nie karzemy za milczenie JEV).
-  const wlasna = w?.typ !== 'noul' || w.noul >= PROG_WLASNEJ_SYTUACJI
-  if (!wlasna) {
+  if (bramkaZamknieta(odpowiedzi)) {
     const potrzeby: { id: string; procent: number }[] = []
     for (const p of POTRZEBY) {
       const o = p.twierdzenie ? odpowiedzi[idPotrzeby(p)] : null

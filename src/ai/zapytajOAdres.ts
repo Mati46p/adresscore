@@ -11,8 +11,10 @@ import {
   type OdpowiedzJev,
   type OpcjeKlienta,
   takNie,
+  type WynikZZapasem,
   wybor,
   type ZapytanieJev,
+  zapytajJev,
   zJevem,
 } from './jev.ts'
 
@@ -196,7 +198,9 @@ export const TEMATY: readonly Temat[] = [
   {
     id: 'zielen',
     nazwa: 'zieleń',
-    twierdzenie: `${O}, czy w okolicy jest zieleń: parki, skwery, drzewa, las, przyroda, miejsce na spacer.`,
+    // #153: „z psem do weta” dokładało zieleń (zbiór kontrolny nr 1: 0,71). Jedno zdanie
+    // wykluczenia, jak przy czterech fałszywych dodatkach z #147; reszta tekstu bez zmian.
+    twierdzenie: `${O}, czy w okolicy jest zieleń: parki, skwery, drzewa, las, przyroda, miejsce na spacer. Wizyta u weterynarza albo samo posiadanie psa to nie to.`,
     warstwy: [
       'zielen_worldcover_100m',
       'zielen_udzial',
@@ -255,7 +259,8 @@ export const TEMATY: readonly Temat[] = [
   {
     id: 'zdrowie',
     nazwa: 'zdrowie',
-    twierdzenie: `${O}, czy blisko jest lekarz, przychodnia, apteka albo inna pomoc medyczna.`,
+    // #153: „Daleko stąd z psem do weta?” dokładało przychodnię (zdrowie 0,75).
+    twierdzenie: `${O}, czy blisko jest lekarz, przychodnia, apteka albo inna pomoc medyczna. Weterynarz to nie to.`,
     warstwy: [
       'przychodnia_odleglosc',
       'przychodnia_bez_barier_odleglosc',
@@ -499,6 +504,143 @@ function dobierz(
     zajete.add(t.id)
   }
   return wynik
+}
+
+// --- Druga warstwa z tematu przez JEV (#153) -----------------------------------------------
+
+/** Id pytania w drugim wywołaniu. */
+export const ID_DRUGIEJ = 'druga'
+/** Pewność drugiego wyboru od tej wartości – jak PROG_TEMATU (dokładamy, a nie odpowiadamy). */
+export const PROG_DRUGIEJ = 0.6
+
+/**
+ * Pytanie wygląda na złożone: wylicza kilka rzeczy („i”, „oraz”, „albo”, przecinek, kilka
+ * pytajników). To tylko warunek wstępny drugiego wywołania – o tym, czy pytanie naprawdę
+ * pyta o drugą rzecz, decyduje JEV (może wybrać `nie_wiem`).
+ */
+export function wygladaNaZlozone(pytanie: string): boolean {
+  const t = pytanie.toLowerCase()
+  return (
+    /[,;+]/.test(t) ||
+    (t.match(/\?/g) ?? []).length >= 2 ||
+    /(^|[^\p{L}])(i|oraz|albo|lub|ani|a także|czy też)([^\p{L}]|$)/u.test(t)
+  )
+}
+
+export interface DrugieWywolanie {
+  temat: string
+  /** Warstwa, do której szukamy drugiego obiektu. */
+  pierwsza: string
+  zapytanie: ZapytanieJev
+}
+
+/**
+ * #153: dwa różne obiekty z jednego tematu, których reguły słów kluczowych nie złapały
+ * („przedszkole, a dla młodszego coś na cały dzień”). Gdy temat z `obiekty` ma noul ≥
+ * PROG_TEMATU, ma w odpowiedzi dokładnie jedną warstwę, pytanie wygląda na złożone i jest
+ * wolne miejsce, pytamy JEV drugi raz: `choice` tylko z warstw tego tematu o INNYM obiekcie
+ * niż pierwsza, plus `nie_wiem`. Zwraca null, gdy drugiego wywołania nie trzeba (większość
+ * pytań – nadal jedno wywołanie). Najwyżej jedno drugie wywołanie na pytanie.
+ */
+export function drugieWywolanie(
+  odpowiedzi: Record<string, OdpowiedzJev | null>,
+  warstwy: readonly string[],
+  lista: readonly PozycjaListy[],
+  pytanie: string,
+): DrugieWywolanie | null {
+  if (warstwy.length === 0 || warstwy.length >= MAKS_ODPOWIEDZI) return null
+  if (!wygladaNaZlozone(pytanie)) return null
+  const pozycje = new Map(lista.map((p) => [p.id, p]))
+  for (const t of TEMATY) {
+    const obiekty = t.obiekty
+    if (!obiekty) continue
+    const o = odpowiedzi[idTematu(t)]
+    if (o?.typ !== 'noul' || !(o.noul >= PROG_TEMATU)) continue
+    const wTemacie = warstwy.filter((w) => tematWarstwy(w) === t.id)
+    const pierwsza = wTemacie[0]
+    if (wTemacie.length !== 1 || pierwsza === undefined) continue
+    const obiekt = obiekty[pierwsza]
+    const kandydaci = t.warstwy.filter(
+      (w) => pozycje.has(w) && obiekty[w] !== undefined && obiekty[w] !== obiekt,
+    )
+    if (obiekt === undefined || kandydaci.length === 0) continue
+    const k: Record<string, string> = {}
+    for (const w of kandydaci) k[w] = pozycje.get(w)?.opis ?? w
+    k[NIE_WIEM] = 'Pytanie nie pyta o nic więcej z tej grupy.'
+    const nazwa = pozycje.get(pierwsza)?.nazwa ?? pierwsza
+    return {
+      temat: t.id,
+      pierwsza,
+      zapytanie: {
+        stan: pytanie.slice(0, 2000),
+        pytania: {
+          [ID_DRUGIEJ]: wybor(
+            przytnij(
+              `Użytkownik pyta o kilka rzeczy naraz. Na „${nazwa}” już odpowiadamy. Czy pytanie dotyczy też innej rzeczy z listy niżej? Wybierz ją, a jeśli nie, wybierz nie_wiem.`,
+              MAKS_OPISU,
+            ),
+            k,
+          ),
+        },
+      },
+    }
+  }
+  return null
+}
+
+/** Odpowiedź na drugie wywołanie → warstwy z dołożoną drugą (zaraz po pierwszej z tematu). */
+export function dolozDruga(
+  warstwy: readonly string[],
+  d: Pick<DrugieWywolanie, 'pierwsza' | 'zapytanie'>,
+  odpowiedzi: Record<string, OdpowiedzJev | null> | null,
+): string[] {
+  const o = odpowiedzi?.[ID_DRUGIEJ]
+  if (o?.typ !== 'choice' || o.wybor === NIE_WIEM) return [...warstwy]
+  if (o.pewnosc === null || !(o.pewnosc >= PROG_DRUGIEJ)) return [...warstwy]
+  const dozwolone = d.zapytanie.pytania[ID_DRUGIEJ]
+  if (dozwolone?.typ !== 'choice' || !(o.wybor in dozwolone.kryteria)) return [...warstwy]
+  if (warstwy.includes(o.wybor) || warstwy.length >= MAKS_ODPOWIEDZI) return [...warstwy]
+  const wynik = [...warstwy]
+  wynik.splice(wynik.indexOf(d.pierwsza) + 1, 0, o.wybor)
+  return wynik
+}
+
+/** Wynik wyboru warstw z informacją o drugim wywołaniu (do pomiaru). */
+export interface WyborWarstwZJev extends WynikZZapasem<WyborWarstw> {
+  /** Temat drugiego wywołania albo null, gdy go nie było. */
+  drugie: string | null
+}
+
+/**
+ * Wybór 1–3 warstw (#146, #153): jedno wywołanie JEV (choice + tematy), a gdy trzeba – drugie
+ * po drugi obiekt z tematu. Każdy kłopot z pierwszym → reguły; z drugim → zostaje wynik
+ * pierwszego. Tę samą ścieżkę woła aplikacja i pomiar.
+ */
+export async function wybierzWarstwy(
+  pytanie: string,
+  lista: readonly PozycjaListy[],
+  opcje: OpcjeKlienta = {},
+): Promise<WyborWarstwZJev> {
+  let odpowiedziJev: Record<string, OdpowiedzJev | null> | null = null
+  const pierwszy = await zJevem(
+    zapytanieJev(pytanie, lista),
+    (odp) => {
+      odpowiedziJev = odp
+      return przetworzWiele(odp, lista, pytanie)
+    },
+    () => regulaWiele(pytanie, lista),
+    opcje,
+  )
+  const odp = odpowiedziJev as Record<string, OdpowiedzJev | null> | null
+  if (pierwszy.zrodlo !== 'jev' || !odp) return { ...pierwszy, drugie: null }
+  const d = drugieWywolanie(odp, pierwszy.wynik.warstwy, lista, pytanie)
+  if (!d) return { ...pierwszy, drugie: null }
+  const { odpowiedzi } = await zapytajJev(d.zapytanie, opcje)
+  return {
+    ...pierwszy,
+    wynik: { warstwy: dolozDruga(pierwszy.wynik.warstwy, d, odpowiedzi) },
+    drugie: d.temat,
+  }
 }
 
 // --- Reguła zapasowa: słowa kluczowe po polsku -------------------------------------------
@@ -835,7 +977,7 @@ export function odpowiedzi(
 
 /**
  * Całość (#146): jedno wywołanie JEV wybiera warstwę główną i ocenia tematy, a gdy nie może –
- * reguła z kilkoma tematami. Zwraca 1–3 odpowiedzi (albo jedno „nie wiem”), nigdy nie rzuca.
+ * reguła z kilkoma tematami. #153: czasem drugie wywołanie po drugi obiekt z tematu. Zwraca 1–3 odpowiedzi (albo jedno „nie wiem”), nigdy nie rzuca.
  * `zrodloOdpowiedzi` mówi, kto wybrał warstwy; liczby zawsze z danych.
  */
 export async function zapytajOAdresWiele(
@@ -845,12 +987,7 @@ export async function zapytajOAdresWiele(
   opcje: OpcjeKlienta = {},
 ): Promise<Odpowiedz[]> {
   const lista = listaWarstw(wskazniki.map((w) => w.meta))
-  const { wynik, zrodlo } = await zJevem(
-    zapytanieJev(pytanie, lista),
-    (odp) => przetworzWiele(odp, lista, pytanie),
-    () => regulaWiele(pytanie, lista),
-    opcje,
-  )
+  const { wynik, zrodlo } = await wybierzWarstwy(pytanie, lista, opcje)
   return odpowiedzi(wynik, wskazniki, i, zrodlo === 'jev' ? 'jev' : 'reguly')
 }
 
