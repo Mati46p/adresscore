@@ -358,6 +358,64 @@ a:hover {
   border-color: var(--akcent-obrys);
   color: var(--tekst);
 }
+.ranking-ulica {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+.ranking-ulica .pozycja-wyniku {
+  flex: 1;
+  min-width: 0;
+}
+.ranking-ulica__opis {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ranking-ulica__opis small {
+  color: var(--tekst-2);
+  font-size: 0.8em;
+}
+.ranking-ulica__dodaj,
+.ranking-porownaj {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--cel-dotyku);
+  padding: 8px 14px;
+  border: 1px solid var(--akcent-obrys);
+  border-radius: 10px;
+  background: var(--powierzchnia);
+  color: var(--akcent);
+  font: inherit;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+.ranking-ulica__dodaj[aria-pressed="true"],
+.ranking-porownaj {
+  background: var(--akcent);
+  color: white;
+}
+.ranking-ulica__dodaj:disabled {
+  color: var(--tekst-3);
+  border-color: var(--ramka);
+  cursor: not-allowed;
+}
+.ranking-ulica__dodaj:focus-visible,
+.ranking-porownaj:focus-visible {
+  outline: 2px solid var(--akcent);
+  outline-offset: 2px;
+}
+@media (max-width: 620px) {
+  .ranking-ulica {
+    flex-direction: column;
+  }
+  .ranking-ulica__dodaj {
+    align-self: flex-start;
+  }
+}
 .plakietka-wyniku {
   flex: none;
   width: 40px;

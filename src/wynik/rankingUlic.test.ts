@@ -29,6 +29,7 @@ test('ranking pokazuje ulicę raz i uśrednia wyniki jej adresów', () => {
   assert.equal(wynik[0]?.nazwa, 'Długa')
   assert.equal(wynik[0]?.wynik, 80)
   assert.equal(wynik[0]?.liczbaAdresow, 2)
+  assert.equal(wynik[0]?.adresDoPorownania, 0)
   assert.equal(wynik[0]?.slug, slugUlicy(a[0] as Adres))
   assert.equal(wynik[1]?.nazwa, 'Grodzka')
 })
@@ -55,4 +56,16 @@ test('brak oceny i adresy wykluczone nie zawyżają wyniku ulicy', () => {
   )
   assert.equal(wynik[0]?.wynik, 40)
   assert.equal(wynik[0]?.liczbaAdresow, 1)
+  assert.equal(wynik[0]?.adresDoPorownania, 0)
+})
+
+test('do porównania wybiera adres z danymi, który spełnia filtr', () => {
+  const a = [adres('Długa', '1'), adres('Długa', '3'), adres('Długa', '5')]
+  const wynik = rankingUlic(
+    a,
+    Float32Array.from([90, 80, 70]),
+    Uint8Array.from([1, 0, 0]),
+    new Map([['hex', 80]]),
+  )
+  assert.equal(wynik[0]?.adresDoPorownania, 1)
 })
