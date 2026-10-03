@@ -1,0 +1,404 @@
+{
+  "opis": "Kontrolny, odłożony zestaw „opisz siebie” (30 pozycji). Zestaw napisany na ślepo przez agenta AI bez dostępu do reguł, słów kluczowych ani promptów aplikacji, 2026-10-03.",
+  "zasady": "persona: jeden z rodzina|singiel|senior|inwestor albo null. potrzeby: tylko to, co uważny człowiek wywnioskuje z tekstu, bez nadinterpretacji. Sytuacje cudze, przeszłe i hipotetyczne nie dają potrzeb. Puste potrzeby = brak sygnału.",
+  "pozycje": [
+    {
+      "id": "K-A01",
+      "tekst": "mamy dwójkę, młodszy idzie we wrześniu do zerówki a starsza do 4 klasy. ja na zdalnym. marzy mi się żeby po szkole dało się wyjść z hulajnogą gdzieś między drzewa a nie wzdłuż czteropasmówki",
+      "persona": "rodzina",
+      "potrzeby": [
+        "dzieci",
+        "zielen"
+      ],
+      "cechy": [
+        "posrednie",
+        "wiek_dziecka"
+      ]
+    },
+    {
+      "id": "K-A02",
+      "tekst": "29 lat, sam, robie w biurowcu przy Rondzie Mogilskim. wieczorem chce wyjsc na piwo i zeby zabka byla na dole xd",
+      "persona": "singiel",
+      "potrzeby": [
+        "singiel",
+        "praca_centrum",
+        "sklepy"
+      ],
+      "cechy": [
+        "posrednie",
+        "bez_polskich_znakow",
+        "slang"
+      ]
+    },
+    {
+      "id": "K-A03",
+      "tekst": "Mam 71 lat, kolana już nie te i schody to dla mnie dramat. Do przychodni chodzę co dwa tygodnie, a córka namawia żebym przeniosła się bliżej niej do Krakowa.",
+      "persona": "senior",
+      "potrzeby": [
+        "senior",
+        "zdrowie"
+      ],
+      "cechy": [
+        "posrednie",
+        "wiek_osoby"
+      ]
+    },
+    {
+      "id": "K-A04",
+      "tekst": "szukam czegos pod wynajem, kawalerka albo 2 pokoje. liczy sie stopa zwrotu i zeby za 5 lat bylo warte wiecej niz teraz, sam tam mieszkac nie bede",
+      "persona": "inwestor",
+      "potrzeby": [
+        "inwestycja"
+      ],
+      "cechy": [
+        "posrednie",
+        "bez_polskich_znakow",
+        "zaprzeczenie_singiel"
+      ]
+    },
+    {
+      "id": "K-A05",
+      "tekst": "mamy owczarka australijskiego ktory musi sie wybiegac 2 razy dziennie, a ja mam astme i w styczniu na hucie nie dalo sie oddychac",
+      "persona": null,
+      "potrzeby": [
+        "pies",
+        "powietrze"
+      ],
+      "cechy": [
+        "posrednie",
+        "rasa_psa",
+        "bez_polskich_znakow"
+      ]
+    },
+    {
+      "id": "K-A06",
+      "tekst": "Sprzedaliśmy auto pół roku temu i nie żałujemy, wszędzie śmigamy na dwóch kółkach, nawet w listopadzie. Byle był porządny dojazd ścieżką do miasta.",
+      "persona": null,
+      "potrzeby": [
+        "bez_samochodu",
+        "rower"
+      ],
+      "cechy": [
+        "posrednie"
+      ]
+    },
+    {
+      "id": "K-A07",
+      "tekst": "Co tydzień latam w delegację do Londynu, w poniedziałek o 6 rano wylot. Nie chcę tracić godziny na dojazd do Balic.",
+      "persona": null,
+      "potrzeby": [
+        "lotnisko"
+      ],
+      "cechy": [
+        "posrednie"
+      ]
+    },
+    {
+      "id": "K-A08",
+      "tekst": "pracuje na nocki na oiomie i w dzien musze spac. za oknem tramwaj albo budowa = koniec mnie",
+      "persona": null,
+      "potrzeby": [
+        "cisza"
+      ],
+      "cechy": [
+        "posrednie",
+        "bez_polskich_znakow",
+        "zwiezle"
+      ]
+    },
+    {
+      "id": "K-A09",
+      "tekst": "żona w ciąży, termin na marzec. chcę żeby wieczorem dało się wracać od przystanku bez stresu, jasno, a nie przez bramy gdzie stoją ekipy z puszkami",
+      "persona": "rodzina",
+      "potrzeby": [
+        "dzieci",
+        "bezpieczenstwo"
+      ],
+      "cechy": [
+        "posrednie"
+      ]
+    },
+    {
+      "id": "K-A10",
+      "tekst": "pytam w imieniu siostry, ona ma trzy koty i pracuje na Starym Mieście, codziennie chodzi do biura. ja mam dzieci ale ja się nigdzie nie przeprowadzam",
+      "persona": null,
+      "potrzeby": [
+        "praca_centrum"
+      ],
+      "cechy": [
+        "podchwytliwe",
+        "cudza_sytuacja",
+        "pulapka_dzieci",
+        "koty_nie_pies"
+      ]
+    },
+    {
+      "id": "K-A11",
+      "tekst": "Kiedyś miałem psa i jeździłem dużo rowerem, teraz ani jednego ani drugiego, kolano po operacji. Od rozwodu mieszkam sam, sklep musi być blisko bo daleko nie zajdę.",
+      "persona": null,
+      "potrzeby": [
+        "singiel",
+        "sklepy"
+      ],
+      "cechy": [
+        "podchwytliwe",
+        "przeszlosc",
+        "pulapka_pies",
+        "pulapka_rower"
+      ]
+    },
+    {
+      "id": "K-A12",
+      "tekst": "gdybyśmy kiedyś mieli dzieci to pewnie szkoła by się przydała, ale na razie tylko my dwoje i kot. oboje pracujemy w okolicach Rynku i chcemy chodzić do roboty pieszo",
+      "persona": null,
+      "potrzeby": [
+        "praca_centrum"
+      ],
+      "cechy": [
+        "podchwytliwe",
+        "hipotetyczne",
+        "pulapka_dzieci"
+      ]
+    },
+    {
+      "id": "K-A13",
+      "tekst": "chcę mieszkać w samym centrum, najlepiej przy plantach, ale żeby była totalna cisza w nocy i dużo zieleni wokół. tak wiem wiem 😅",
+      "persona": null,
+      "potrzeby": [
+        "cisza",
+        "zielen"
+      ],
+      "cechy": [
+        "podchwytliwe",
+        "sprzecznosc"
+      ]
+    },
+    {
+      "id": "K-A14",
+      "tekst": "dzień dobry, chciałbym coś znaleźć",
+      "persona": null,
+      "potrzeby": [],
+      "cechy": [
+        "brak_sygnalu"
+      ]
+    },
+    {
+      "id": "K-A15",
+      "tekst": "nie wiem co tu napisac, zobacze co mi pokaze",
+      "persona": null,
+      "potrzeby": [],
+      "cechy": [
+        "brak_sygnalu",
+        "bez_polskich_znakow"
+      ]
+    },
+    {
+      "id": "K-A16",
+      "tekst": "No więc tak, Kuba ma 8 lat Zosia 3, Zosia w żłobku jeszcze, ja dojeżdżam na Kazimierz do roboty, a mąż pracuje z domu i ciągle narzeka że sąsiad pali w piecu czymś co śmierdzi jak opony, w sezonie okna nie da się otworzyć",
+      "persona": "rodzina",
+      "potrzeby": [
+        "dzieci",
+        "praca_centrum",
+        "powietrze"
+      ],
+      "cechy": [
+        "posrednie",
+        "wiek_dziecka",
+        "rozwlekle"
+      ]
+    },
+    {
+      "id": "K-A17",
+      "tekst": "mama z nami zamieszka bo sama już nie daje rady, 84 lata, cukrzyca. apteka i lekarz rodzinny na piechotę to podstawa",
+      "persona": null,
+      "potrzeby": [
+        "senior",
+        "zdrowie"
+      ],
+      "cechy": [
+        "posrednie",
+        "cudza_osoba_w_domu"
+      ]
+    },
+    {
+      "id": "K-A18",
+      "tekst": "Mam już 2 mieszkania na Krowodrzy pod studentów, szukam trzeciego. Ważne żeby obok zaraz nie wyrósł blok i żeby ceny w okolicy szły w górę.",
+      "persona": "inwestor",
+      "potrzeby": [
+        "inwestycja"
+      ],
+      "cechy": [
+        "posrednie"
+      ]
+    },
+    {
+      "id": "K-A19",
+      "tekst": "dojazd na grzegorzki rowerem, auta nie mam",
+      "persona": null,
+      "potrzeby": [
+        "rower",
+        "bez_samochodu",
+        "praca_centrum"
+      ],
+      "cechy": [
+        "posrednie",
+        "zwiezle",
+        "bez_polskich_znakow"
+      ]
+    },
+    {
+      "id": "K-A20",
+      "tekst": "wychodzę z labradorem o 6 rano i o 22 i nie chcę się bać na ulicy. mieszkam sama",
+      "persona": null,
+      "potrzeby": [
+        "pies",
+        "bezpieczenstwo",
+        "singiel"
+      ],
+      "cechy": [
+        "posrednie",
+        "rasa_psa"
+      ]
+    },
+    {
+      "id": "K-A21",
+      "tekst": "mamy z zona po 68 lat, emerytura, chcemy uciec z 10 pietra gdzies gdzie spokojnie, laweczka, park, i zeby do przychodni nie trzeba bylo jechac 2 autobusami",
+      "persona": "senior",
+      "potrzeby": [
+        "senior",
+        "cisza",
+        "zielen",
+        "zdrowie"
+      ],
+      "cechy": [
+        "posrednie",
+        "wiek_osoby",
+        "bez_polskich_znakow"
+      ]
+    },
+    {
+      "id": "K-A22",
+      "tekst": "IT, zdalnie, 2x w miesiącu lot do Monachium. Potrzebuję spokoju do calli i jakiegoś lasku do biegania obok",
+      "persona": null,
+      "potrzeby": [
+        "lotnisko",
+        "cisza",
+        "zielen"
+      ],
+      "cechy": [
+        "posrednie",
+        "zwiezle"
+      ]
+    },
+    {
+      "id": "K-A23",
+      "tekst": "Rodzice mieszkali w Nowej Hucie i ciągle chorowali od tego syfu w powietrzu zimą, nie chcę powtórki. Jestem z partnerem i dwoma jamnikami.",
+      "persona": null,
+      "potrzeby": [
+        "powietrze",
+        "pies"
+      ],
+      "cechy": [
+        "posrednie",
+        "rasa_psa"
+      ]
+    },
+    {
+      "id": "K-A24",
+      "tekst": "latam bardzo dużo więc chcę mieć blisko na lotnisko, ale nienawidzę hałasu samolotów, serio nie umiem spać jak coś huczy nad głową",
+      "persona": null,
+      "potrzeby": [
+        "lotnisko",
+        "cisza"
+      ],
+      "cechy": [
+        "podchwytliwe",
+        "sprzecznosc"
+      ]
+    },
+    {
+      "id": "K-A25",
+      "tekst": "student 4 roku, dorabiam w knajpie na kazimierzu do pozna. nie stac mnie na samochod i nie potrzebuje, byle nocny tramwaj byl",
+      "persona": null,
+      "potrzeby": [
+        "bez_samochodu",
+        "praca_centrum"
+      ],
+      "cechy": [
+        "posrednie",
+        "bez_polskich_znakow"
+      ]
+    },
+    {
+      "id": "K-A26",
+      "tekst": "Mąż ma POChP i po każdym sezonie grzewczym jest gorzej. Dzieci już dawno na swoim, my oboje po sześćdziesiątce.",
+      "persona": "senior",
+      "potrzeby": [
+        "senior",
+        "powietrze"
+      ],
+      "cechy": [
+        "posrednie",
+        "pulapka_dzieci"
+      ]
+    },
+    {
+      "id": "K-A27",
+      "tekst": "z chłopakiem + border collie, oboje w korpo przy Dworcu Głównym, sporo biegamy w parku",
+      "persona": null,
+      "potrzeby": [
+        "pies",
+        "praca_centrum",
+        "zielen"
+      ],
+      "cechy": [
+        "posrednie",
+        "rasa_psa",
+        "zwiezle"
+      ]
+    },
+    {
+      "id": "K-A28",
+      "tekst": "Jakbym miał psa to bym chciał park obok, ale nie mam i raczej nie będę. Ważne żeby biedronka była pod blokiem bo nie mam prawka i nigdzie autem nie pojadę.",
+      "persona": null,
+      "potrzeby": [
+        "sklepy",
+        "bez_samochodu"
+      ],
+      "cechy": [
+        "podchwytliwe",
+        "hipotetyczne",
+        "pulapka_pies",
+        "pulapka_zielen"
+      ]
+    },
+    {
+      "id": "K-A29",
+      "tekst": "kupuję dla córki na studia, a po studiach albo ona zostaje albo wynajmę. ważne żeby dzielnica była spokojna pod względem przestępczości, będzie wracać po nocach",
+      "persona": "inwestor",
+      "potrzeby": [
+        "inwestycja",
+        "bezpieczenstwo"
+      ],
+      "cechy": [
+        "posrednie",
+        "pulapka_dzieci_dorosle"
+      ]
+    },
+    {
+      "id": "K-A30",
+      "tekst": "blizniaki 2 latka, zona na macierzynskim, ja robie przy galerii krakowskiej. auto mamy jedno i wolalbym zeby zona nie musiala nim jezdzic po zakupy",
+      "persona": "rodzina",
+      "potrzeby": [
+        "dzieci",
+        "praca_centrum",
+        "sklepy"
+      ],
+      "cechy": [
+        "posrednie",
+        "wiek_dziecka",
+        "bez_polskich_znakow"
+      ]
+    }
+  ]
+}
