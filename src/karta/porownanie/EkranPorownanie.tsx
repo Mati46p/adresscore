@@ -209,6 +209,7 @@ export function EkranPorownanie() {
           <h2>Dodaj adres do porównania</h2>
           <Wyszukiwarka
             adresy={adresyDoDodania}
+            wyczyscPoWyborze
             onWybierz={(i) => {
               if (stan.porownanie.includes(i)) {
                 ustawStatus('Ten adres jest już w porównaniu.')

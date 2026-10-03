@@ -8,11 +8,12 @@ const MIN_ZNAKOW = 2
 interface Props {
   adresy: Adres[]
   onWybierz: (i: number) => void
+  wyczyscPoWyborze?: boolean
 }
 
 // Combobox wg wzorca WAI-ARIA (list autocomplete): fokus zostaje w polu, opcję wskazuje
 // aria-activedescendant.
-export function Wyszukiwarka({ adresy, onWybierz }: Props) {
+export function Wyszukiwarka({ adresy, onWybierz, wyczyscPoWyborze = false }: Props) {
   const id = useId()
   const idPola = `${id}-pole`
   const idListy = `${id}-lista`
@@ -37,7 +38,7 @@ export function Wyszukiwarka({ adresy, onWybierz }: Props) {
   function wybierz(k: number) {
     const w = wyniki[k]
     if (!w) return
-    setTekst(w.tytul)
+    setTekst(wyczyscPoWyborze ? '' : w.tytul)
     setOtwarta(false)
     setAktywna(-1)
     onWybierz(w.i)
