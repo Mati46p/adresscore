@@ -67,6 +67,8 @@ export interface PlikWskaznika {
   wartosci: (number | null)[]
   /** Opcjonalny opis do karty dla i-tego adresu, np. „Rondo Mogilskie, 240 m". */
   etykiety?: (string | null)[]
+  /** Słownik dla powtarzalnych etykiet obszarowych; etykiety[] zawiera wtedy klucze. */
+  slownikEtykiet?: Record<string, string>
 }
 
 /** Manifest generowany przy dev/build z plików wskaźników (bez tablic wartości). */

@@ -1,0 +1,146 @@
+:root {
+  font-family: Arial, sans-serif;
+  color: #17362a;
+  background: #f6f8f5;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+a {
+  color: #1f5c46;
+}
+.naglowek {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px clamp(20px, 5vw, 80px);
+  background: #fff;
+  border-bottom: 1px solid #d7e2d8;
+}
+.marka {
+  font-weight: 700;
+  font-size: 1.2rem;
+  text-decoration: none;
+}
+main {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 50px 20px 80px;
+}
+.wstep {
+  margin-bottom: 32px;
+}
+.etykieta {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #5b7566;
+}
+h1 {
+  margin: 8px 0 14px;
+  font-size: clamp(2rem, 5vw, 3.2rem);
+}
+.wstep p:last-child {
+  color: #51665b;
+  line-height: 1.5;
+}
+form {
+  display: grid;
+  grid-template-columns: 1fr 240px;
+  gap: 10px 16px;
+  align-items: end;
+}
+label {
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+input,
+select {
+  width: 100%;
+  padding: 13px 14px;
+  border: 1px solid #a9bcb0;
+  border-radius: 8px;
+  background: #fff;
+  color: inherit;
+  font: inherit;
+}
+input:focus,
+select:focus,
+button:focus-visible,
+a:focus-visible {
+  outline: 3px solid #66ad87;
+  outline-offset: 2px;
+}
+#stan {
+  margin: 28px 0 12px;
+  color: #51665b;
+}
+#wyniki {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  background: #fff;
+  border: 1px solid #d7e2d8;
+  border-radius: 10px;
+}
+#wyniki:empty {
+  display: none;
+}
+#wyniki li {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 15px 18px;
+  border-bottom: 1px solid #e7eee8;
+}
+#wyniki li:last-child {
+  border: 0;
+}
+#wyniki a {
+  font-weight: 700;
+  text-decoration: none;
+}
+#wyniki a:hover {
+  text-decoration: underline;
+}
+#wyniki span {
+  color: #66786e;
+  text-align: right;
+}
+#strony {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 18px;
+  margin-top: 24px;
+}
+#strony[hidden] {
+  display: none;
+}
+button {
+  padding: 10px 14px;
+  border: 1px solid #a9bcb0;
+  border-radius: 8px;
+  background: #fff;
+  color: inherit;
+  cursor: pointer;
+}
+button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+@media (max-width: 600px) {
+  form {
+    grid-template-columns: 1fr;
+  }
+  #wyniki li {
+    flex-direction: column;
+    gap: 4px;
+  }
+  #wyniki span {
+    text-align: left;
+  }
+}

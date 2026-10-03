@@ -4,8 +4,10 @@ import {
   bilansPopytu,
   type KomorkaPopytu,
   obliczBazowePunkty,
+  obliczBialePlamy,
   ocenMiejsce,
   type PunktUslugi,
+  progNasycenia,
   udzialyHuffa,
 } from './biznes.ts'
 
@@ -42,4 +44,19 @@ test('remisy bez popytu nie są fałszywie pokazywane jako najlepsza lokalizacja
   const wynik = ocenMiejsce([], apteki, 800, { lon: 20, lat: 50 })
   assert.equal(wynik.percentyl, 50)
   assert.equal(wynik.udzialProcent, 0)
+})
+
+test('skala mapy nasyca się na 95. percentylu, nie na maksimum', () => {
+  const wartosci = Array.from({ length: 100 }, (_, i) => i + 1)
+  assert.equal(progNasycenia(wartosci), 96)
+  const plamy = obliczBialePlamy(komorki, apteki, 800)
+  const prog = progNasycenia(plamy.map((p) => p.adresyNaPunkt))
+  for (const p of plamy) assert.equal(p.skala, Math.min(100, (100 * p.adresyNaPunkt) / prog))
+})
+
+test('konkurent bez nazwy zachowuje odległość i nie jest uznany za brak punktu', () => {
+  const wynik = ocenMiejsce(komorki, [[20.002, 50, '']], 800, { lon: 20, lat: 50 })
+  assert.equal(wynik.konkurenci, 1)
+  assert.equal(wynik.najblizszyKonkurent, null)
+  assert.ok((wynik.odlegloscKonkurenta ?? 0) > 0)
 })

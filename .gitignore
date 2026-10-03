@@ -25,6 +25,8 @@ supabase/.branches
 
 # Surowe pobrania ETL (powtarzalne skryptem, bywają setki MB)
 etl/.cache/
+__pycache__/
+*.pyc
 
 # Robocze warianty wizualne
 docs/warianty/

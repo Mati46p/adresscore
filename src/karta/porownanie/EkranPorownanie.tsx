@@ -1,10 +1,12 @@
 import { useEffect, useId, useMemo, useState } from 'react'
 import { liczba, opisAdresu } from '@/karta/adres'
 import { PanelFiltrow } from '@/karta/panel/PanelFiltrow'
+import { etykietaKierunku } from '@/karta/panel/preferencje'
 import { Wyszukiwarka } from '@/karta/wyszukiwarka/Wyszukiwarka'
 import { KATEGORIE } from '@/kontrakty'
 import { useDane } from '@/wynik/dane'
-import { wynikAdresu } from '@/wynik/silnik'
+import { ocenFiltr, opisFiltru, type TwardyFiltr } from '@/wynik/filtry'
+import { type RozbicieWarstwy, wynikAdresu } from '@/wynik/silnik'
 import { dodajDoPorownania, hrefDla, useStan, usunZPorownania } from '@/wynik/stan'
 import { MAKS_POROWNANIE } from '@/wynik/url'
 import { useWyniki } from '@/wynik/useWyniki'
@@ -17,10 +19,151 @@ import {
   RADAR_Y,
   ranking,
   werdykt,
+  wybraneWarstwy,
 } from './model'
 import './porownanie.css'
 
 const KOLORY = ['#176448', '#bc6b38', '#4b67a1', '#9a5f91', '#697a2e']
+
+function opisPomiaru(w: RozbicieWarstwy | undefined): string {
+  if (!w || w.wartosc === null) return 'Brak danych'
+  return `${new Intl.NumberFormat('pl-PL', { maximumFractionDigits: 2 }).format(w.wartosc)} ${w.meta.jednostka}`
+}
+
+function TabelaPreferencji({
+  okolice,
+  filtry,
+}: {
+  okolice: readonly OkolicaPorownania[]
+  filtry: readonly TwardyFiltr[]
+}) {
+  const wybrane = wybraneWarstwy(okolice[0]!.wynik)
+  return (
+    <section className="porownanie-tabela" aria-labelledby="porownanie-tabela-h">
+      <h2 id="porownanie-tabela-h">Szczegóły według Twoich preferencji</h2>
+      <p>
+        Każdy wiersz odpowiada warstwie z wagą większą od zera lub ustawionemu filtrowi. Ocena 0–100
+        uwzględnia wybrany kierunek; brak pomiaru pozostaje brakiem danych.
+      </p>
+      <div
+        className="porownanie-tabela__przewijanie"
+        role="region"
+        aria-label="Tabela porównania wybranych atrybutów"
+        tabIndex={0}
+      >
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Wybrany atrybut i ustawienie</th>
+              {okolice.map((o, i) => (
+                <th key={o.id} scope="col">
+                  <span className="porownanie-kropka" style={{ background: KOLORY[i] }} /> {o.nazwa}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="porownanie-tabela__wynik">
+              <th scope="row">
+                Wynik łączny<small>według aktualnych wag</small>
+              </th>
+              {okolice.map((o) => (
+                <td key={o.id}>
+                  <strong>
+                    {liczba(o.wynik.wynik)}
+                    {o.wynik.litera ? ` / ${o.wynik.litera}` : ''}
+                  </strong>
+                  <small>Dostępność danych: {Math.round(o.wynik.pewnosc * 100)}%</small>
+                </td>
+              ))}
+            </tr>
+            {OSIE.concat('kontekst').map((kategoria) => {
+              const warstwy = wybrane
+                .filter((w) => w.kategoria === kategoria)
+                .sort((a, b) => b.wagaUzytkownika - a.wagaUzytkownika)
+              if (warstwy.length === 0) return null
+              return [
+                <tr className="porownanie-tabela__grupa" key={`${kategoria}-grupa`}>
+                  <th scope="rowgroup" colSpan={okolice.length + 1}>
+                    {KATEGORIE[kategoria]}
+                  </th>
+                </tr>,
+                ...warstwy.map((w) => (
+                  <tr key={w.id}>
+                    <th scope="row">
+                      {w.meta.nazwa}
+                      <small>
+                        Waga {w.wagaUzytkownika}/4 ·{' '}
+                        {w.kierunek
+                          ? etykietaKierunku(w.meta, w.kierunek)
+                          : 'Bez wybranego kierunku'}
+                      </small>
+                    </th>
+                    {okolice.map((o) => {
+                      const pomiar = o.wynik.warstwy.find((x) => x.id === w.id)
+                      return (
+                        <td key={o.id}>
+                          <strong>{opisPomiaru(pomiar)}</strong>
+                          {pomiar?.etykieta && <small>{pomiar.etykieta}</small>}
+                          <small>
+                            {pomiar?.liczona
+                              ? pomiar.ocena === null
+                                ? 'Ocena: brak danych'
+                                : `Ocena: ${liczba(pomiar.ocena)}/100`
+                              : 'Nie wchodzi do wyniku'}
+                            {pomiar?.niedostepny ? ' · warstwa niedostępna' : ''}
+                          </small>
+                        </td>
+                      )
+                    })}
+                  </tr>
+                )),
+              ]
+            })}
+            {filtry.length > 0 && (
+              <tr className="porownanie-tabela__grupa">
+                <th scope="rowgroup" colSpan={okolice.length + 1}>
+                  Twarde filtry
+                </th>
+              </tr>
+            )}
+            {filtry.map((filtr) => {
+              const meta = okolice[0]?.wynik.warstwy.find((w) => w.id === filtr.id)?.meta
+              return (
+                <tr key={`filtr-${filtr.id}`}>
+                  <th scope="row">
+                    {opisFiltru(filtr, meta)}
+                    <small>Filtr wyklucza adres z rankingu, nie obniża oceny.</small>
+                  </th>
+                  {okolice.map((o) => {
+                    const pomiar = o.wynik.warstwy.find((w) => w.id === filtr.id)
+                    const ocena = ocenFiltr(pomiar?.wartosc, filtr)
+                    return (
+                      <td key={o.id}>
+                        <strong>
+                          {ocena === 'spelnia'
+                            ? 'Spełnia'
+                            : ocena === 'narusza'
+                              ? 'Nie spełnia'
+                              : 'Nie wiadomo'}
+                        </strong>
+                        <small>{opisPomiaru(pomiar)}</small>
+                        {pomiar?.etykieta && <small>{pomiar.etykieta}</small>}
+                      </td>
+                    )
+                  })}
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+      {wybrane.length === 0 && (
+        <p>Nie wybrano żadnej warstwy. Ustaw wagę większą od zera w preferencjach.</p>
+      )}
+    </section>
+  )
+}
 
 function Radar({ okolice }: { okolice: readonly OkolicaPorownania[] }) {
   const wagi = priorytety(okolice)
@@ -145,7 +288,6 @@ export function EkranPorownanie() {
   const dane = useDane()
   const stan = useStan((s) => s)
   const wynikiMapy = useWyniki()
-  const [widok, ustawWidok] = useState<'radar' | 'tabela'>('radar')
   const [status, ustawStatus] = useState('')
   const [szerokiEkran, ustawSzerokiEkran] = useState(() =>
     typeof window === 'undefined' ? true : window.matchMedia('(min-width: 861px)').matches,
@@ -289,67 +431,8 @@ export function EkranPorownanie() {
               <p className="komunikat">Żaden wybrany adres nie spełnia obecnych filtrów.</p>
             ) : (
               <>
-                <div className="porownanie-przelacznik" role="group" aria-label="Widok porównania">
-                  <button
-                    className="seg"
-                    type="button"
-                    aria-pressed={widok === 'radar'}
-                    onClick={() => ustawWidok('radar')}
-                  >
-                    Wykres radarowy
-                  </button>
-                  <button
-                    className="seg"
-                    type="button"
-                    aria-pressed={widok === 'tabela'}
-                    onClick={() => ustawWidok('tabela')}
-                  >
-                    Tabela
-                  </button>
-                </div>
-                {widok === 'radar' ? (
-                  <Radar okolice={aktywneOkolice} />
-                ) : (
-                  <div
-                    className="porownanie-tabela"
-                    role="region"
-                    aria-label="Tabela porównania"
-                    tabIndex={0}
-                  >
-                    <table>
-                      <thead>
-                        <tr>
-                          <th scope="col">Kategoria</th>
-                          {aktywneOkolice.map((o) => (
-                            <th key={o.id} scope="col">
-                              {o.nazwa}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {OSIE.map((id) => (
-                          <tr key={id}>
-                            <th scope="row">{KATEGORIE[id]}</th>
-                            {aktywneOkolice.map((o) => {
-                              const k = o.wynik.kategorie.find((x) => x.kategoria === id)
-                              return (
-                                <td key={o.id}>
-                                  {liczba(k?.ocena)}
-                                  <small>
-                                    {k?.ocena === null || !k
-                                      ? 'Brak danych'
-                                      : `${Math.round(k.pewnosc * 100)}% danych`}
-                                  </small>
-                                </td>
-                              )
-                            })}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
+                <Radar okolice={aktywneOkolice} />
+                <TabelaPreferencji okolice={aktywneOkolice} filtry={stan.filtry} />
                 <section className="porownanie-ranking" aria-label="Ranking dopasowania">
                   <h2>Dopasowanie do Ciebie</h2>
                   <ol>

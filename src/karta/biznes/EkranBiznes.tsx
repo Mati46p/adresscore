@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
-import type { BialaPlama, OcenaMiejsca, PunktUslugi } from '@/wynik/biznes'
+import { type BialaPlama, type OcenaMiejsca, type PunktUslugi, progNasycenia } from '@/wynik/biznes'
 import { useStan, ustawBranze, ustawPunktBiznesu } from '@/wynik/stan'
 import './biznes.css'
 
@@ -73,11 +73,8 @@ export function EkranBiznes() {
         const plamy = d.plamy as BialaPlama[]
         setHeksy(new Map(plamy.map((p) => [p.h3, p.skala])))
         setOpisy(new Map(plamy.map((p) => [p.h3, p])))
-        const maksimum = Math.max(
-          1,
-          ...plamy.filter((p) => p.skala === 100).map((p) => p.adresyNaPunkt),
-        )
-        setSkala(['0', String(Math.round(maksimum / 2)), String(Math.round(maksimum))])
+        const prog = progNasycenia(plamy.map((p) => p.adresyNaPunkt))
+        setSkala(['0', String(Math.round(prog / 2)), `${Math.round(prog)}+`])
         const { punktA: a, punktB: b } = punktyRef.current
         if (a) w.postMessage({ typ: 'ocen', id: 'a', punkt: a, wersja: d.wersja })
         if (b) w.postMessage({ typ: 'ocen', id: 'b', punkt: b, wersja: d.wersja })
@@ -141,7 +138,8 @@ export function EkranBiznes() {
           <h1 tabIndex={-1}>Lokalizacja dla branży „{nazwaBranzy}”</h1>
           <p>
             Wybierz branżę, a następnie postaw punkt A lub B na mapie. Kolor pokazuje liczbę adresów
-            w zasięgu na jeden istniejący punkt.
+            w zasięgu na jeden istniejący punkt. Najmocniejszy kolor zaczyna się przy 95.
+            percentylu; dokładną liczbę zobaczysz po wskazaniu miejsca na mapie.
           </p>
         </div>
         <label className="biznes-branza">
@@ -179,7 +177,7 @@ export function EkranBiznes() {
           <Suspense fallback={<p role="status">Wczytuję mapę…</p>}>
             <MapaKrakowa
               heksy={heksy}
-              podpisWarstwy="Adresy na istniejący punkt"
+              podpisWarstwy="Adresy na istniejący punkt (95. percentyl)"
               punktyUslug={punkty}
               postawionePunkty={postawione}
               onPrzesunPunkt={(id, lon, lat) => ustawPunktBiznesu(id, { lon, lat })}
@@ -191,7 +189,9 @@ export function EkranBiznes() {
                       ' adresów na punkt · ' +
                       p.konkurenci +
                       ' punktów · najbliżej: ' +
-                      (p.najblizszyKonkurent ?? 'brak')
+                      (p.konkurenci === 0
+                        ? 'brak punktu w zasięgu'
+                        : (p.najblizszyKonkurent ?? 'punkt bez nazwy'))
                   : 'Indeks luki: ' + Math.round(wartosc ?? 0) + '/100'
               }}
               etykietySkali={skala}
@@ -248,9 +248,10 @@ export function EkranBiznes() {
       </div>
       <p className="biznes-zrodlo">
         Punkty: © OpenStreetMap contributors, wyciąg Geofabrik z {meta?.dataDanych ?? '—'} (ODbL).
-        Popyt: adresy i ludność NSP 2021 w siatce 1 km oraz kursy w porannym szczycie. Odległości są
-        w linii prostej. Model nie zna czynszu lokalu, witryny, marki ani rzeczywistego ruchu
-        pieszych. To wstępna selekcja miejsc, nie biznesplan.
+        Wskaźnik popytu: adresy, szacowana ludność z siatki NSP 2021 (1 km) i kursy w porannym
+        szczycie. Ludność z każdego oczka rozdzielono równomiernie między adresy; nie jest to pomiar
+        mieszkańców w budynkach. Odległości są w linii prostej. Model nie zna czynszu lokalu,
+        witryny, marki ani rzeczywistego ruchu pieszych. To wstępna selekcja miejsc, nie biznesplan.
       </p>
     </main>
   )
@@ -297,7 +298,7 @@ function Ocena({
               <dd>{Math.round(ocena.adresyWZasiegu).toLocaleString('pl-PL')}</dd>
             </div>
             <div>
-              <dt>Ludność NSP 2021</dt>
+              <dt>Szacowana ludność w zasięgu (NSP 2021)</dt>
               <dd>{Math.round(ocena.mieszkancyWZasiegu).toLocaleString('pl-PL')}</dd>
             </div>
             <div>
@@ -321,9 +322,9 @@ function Ocena({
             {ocena.percentyl >= 70
               ? 'Za: wysoka pozycja na tle istniejących punktów.'
               : 'Przeciw: umiarkowana pozycja na tle istniejących punktów.'}{' '}
-            {ocena.najblizszyKonkurent
+            {ocena.odlegloscKonkurenta !== null
               ? 'Najbliższy konkurent: ' +
-                ocena.najblizszyKonkurent +
+                (ocena.najblizszyKonkurent ?? 'punkt bez nazwy') +
                 ' (' +
                 ocena.odlegloscKonkurenta +
                 ' m).'

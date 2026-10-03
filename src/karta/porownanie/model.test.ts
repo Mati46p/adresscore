@@ -1,6 +1,14 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { type OkolicaPorownania, priorytety, punktyRadaru, ranking, werdykt } from './model.ts'
+import type { RozbicieWarstwy } from '../../wynik/silnik.ts'
+import {
+  type OkolicaPorownania,
+  priorytety,
+  punktyRadaru,
+  ranking,
+  werdykt,
+  wybraneWarstwy,
+} from './model.ts'
 
 function okolica(id: string, wynik: number | null, pewnosc = 1): OkolicaPorownania {
   return {
@@ -54,4 +62,17 @@ test('linia priorytetów odczytuje wagi kategorii, a radar odrzuca braki', () =>
   assert.equal(wagi.spokoj, 0)
   assert.equal(punktyRadaru([50, null, 80]), null)
   assert.equal(punktyRadaru([0, 50, 100])?.split(' ').length, 3)
+})
+
+test('tabela bierze każdą warstwę z wagą, także bez oceny, i pomija wagę zero', () => {
+  const x = okolica('A', 70)
+  x.wynik.warstwy = [
+    { id: 'sklep', wagaUzytkownika: 3, ocena: 80 },
+    { id: 'budowa', wagaUzytkownika: 2, ocena: null },
+    { id: 'halas', wagaUzytkownika: 0, ocena: 40 },
+  ] as RozbicieWarstwy[]
+  assert.deepEqual(
+    wybraneWarstwy(x.wynik).map((w) => w.id),
+    ['sklep', 'budowa'],
+  )
 })

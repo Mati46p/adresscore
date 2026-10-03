@@ -1,4 +1,5 @@
 import { useEffect, useId, useState } from 'react'
+import { FiltrWyborczy } from '@/karta/FiltrWyborczy'
 import { KATEGORIE, type KategoriaId, type WskaznikMeta } from '@/kontrakty'
 import { useDane } from '@/wynik/dane'
 import { opisFiltru, type TwardyFiltr, type Warunek } from '@/wynik/filtry'
@@ -25,6 +26,7 @@ import {
   wyczyscFiltry,
 } from '@/wynik/stan'
 import { useWyniki } from '@/wynik/useWyniki'
+import { czyWarstwaWyborow } from '@/wynik/wybory'
 import './panel.css'
 import { etykietaKierunku, kierunkiWarstwy } from './preferencje'
 
@@ -38,7 +40,7 @@ const KIERUNKI: readonly { id: KierunekOceny; znak: string }[] = [
 
 const OPIS_TRYBU: Record<Tryb, string> = {
   kupuje:
-    'Mocniej liczy się przyszłość okolicy i ryzyko (waga +1). Cena m² jest informacyjna, dopóki samodzielnie nie włączysz jej w sekcji Kontekst po podłączeniu danych RCN.',
+    'Mocniej liczy się przyszłość okolicy i ryzyko (waga +1). Cena m² z RCN jest informacyjna, dopóki samodzielnie nie włączysz jej w sekcji Kontekst.',
   wynajmuje:
     'Mocniej liczy się dojazd (waga +1), słabiej przyszłość okolicy (waga −1). Szacunek czynszu: wkrótce – nie mamy jeszcze danych o najmie.',
   biznes:
@@ -235,8 +237,11 @@ export function PanelFiltrow() {
 
         {dane.stan === 'ladowanie' && <p className="panel-uwaga">Wczytuję warstwy…</p>}
         {dane.stan === 'blad' && <p className="panel-uwaga">Nie udało się wczytać warstw.</p>}
+        <FiltrWyborczy />
         {KOLEJNOSC_KATEGORII.map((kat, i) => {
-          const warstwy = warstwyPanelu.filter((w) => w.meta.kategoria === kat)
+          const warstwy = warstwyPanelu.filter(
+            (w) => w.meta.kategoria === kat && !czyWarstwaWyborow(w.meta.id),
+          )
           if (warstwy.length === 0) return null
           return (
             <GrupaWarstw

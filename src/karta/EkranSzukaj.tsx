@@ -1,4 +1,5 @@
-import { lazy, Suspense, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
+import { KATEGORIE } from '@/kontrakty'
 import { useDane } from '@/wynik/dane'
 import { WARSTWY_BIZNESU } from '@/wynik/persony'
 import { kierunekEfektywny } from '@/wynik/silnik'
@@ -57,6 +58,14 @@ export function EkranSzukaj() {
             (tryb !== 'biznes' || WARSTWY_BIZNESU.some((id) => id === w.meta.id && !w.meta.atrapa)),
         )
       : []
+  useEffect(() => {
+    if (
+      warstwa !== 'wynik' &&
+      dane.stan === 'gotowe' &&
+      !warstwy.some((w) => w.meta.id === warstwa)
+    )
+      ustawWarstwe('wynik')
+  }, [warstwa, warstwy, dane.stan])
 
   return (
     <main className="szukaj">
@@ -82,26 +91,27 @@ export function EkranSzukaj() {
 
       <div className="szukaj-prawa">
         <section aria-label="Mapa Krakowa" className="szukaj-mapa">
-          <div role="group" aria-label="Co pokazuje mapa" className="pasek-warstw">
-            <button
-              type="button"
-              className="seg"
-              aria-pressed={warstwa === 'wynik'}
-              onClick={() => ustawWarstwe('wynik')}
+          <div className="pasek-warstw">
+            <label htmlFor="mapa-warstwa">Mapa pokazuje</label>
+            <select
+              id="mapa-warstwa"
+              value={warstwa}
+              onChange={(event) => ustawWarstwe(event.currentTarget.value)}
             >
-              Wynik tej okolicy
-            </button>
-            {warstwy.map((w) => (
-              <button
-                key={w.meta.id}
-                type="button"
-                className="seg"
-                aria-pressed={warstwa === w.meta.id}
-                onClick={() => ustawWarstwe(w.meta.id)}
-              >
-                {w.meta.nazwa}
-              </button>
-            ))}
+              <option value="wynik">Wynik całej okolicy</option>
+              {Object.entries(KATEGORIE).map(([id, nazwa]) => {
+                const opcje = warstwy.filter((w) => w.meta.kategoria === id)
+                return opcje.length ? (
+                  <optgroup key={id} label={nazwa}>
+                    {opcje.map((w) => (
+                      <option key={w.meta.id} value={w.meta.id}>
+                        {w.meta.nazwa}
+                      </option>
+                    ))}
+                  </optgroup>
+                ) : null
+              })}
+            </select>
           </div>
           <div className="slot-mapy" data-slot="mapa">
             <Suspense

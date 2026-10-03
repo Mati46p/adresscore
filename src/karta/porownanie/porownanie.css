@@ -71,8 +71,7 @@
   border: 1px solid #e5c787;
   border-radius: 10px;
 }
-.porownanie-lista,
-.porownanie-przelacznik {
+.porownanie-lista {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
@@ -172,11 +171,23 @@
   margin: 4px 0;
 }
 .porownanie-tabela {
+  min-width: 0;
+}
+.porownanie-tabela > p {
+  margin: -4px 0 16px;
+  color: var(--tekst-2);
+  font-size: 14px;
+}
+.porownanie-tabela__przewijanie {
   overflow-x: auto;
+}
+.porownanie-tabela__przewijanie:focus-visible {
+  outline: 2px solid #1f5c46;
+  outline-offset: 2px;
 }
 .porownanie-tabela table {
   width: 100%;
-  min-width: 600px;
+  min-width: 850px;
   border-collapse: collapse;
   text-align: left;
 }
@@ -184,10 +195,31 @@
 .porownanie-tabela td {
   padding: 12px;
   border-bottom: 1px solid #e8edeb;
+  min-width: 175px;
+  vertical-align: top;
+}
+.porownanie-tabela thead th:first-child,
+.porownanie-tabela tbody th[scope="row"] {
+  min-width: 230px;
+}
+.porownanie-tabela th[scope="row"] {
+  font-weight: 650;
+}
+.porownanie-tabela td strong {
+  font-variant-numeric: tabular-nums;
+}
+.porownanie-tabela__grupa th {
+  background: #f0f5f2;
+  color: #254b3a;
+}
+.porownanie-tabela__wynik {
+  background: #f9fbf9;
 }
 .porownanie-tabela small {
   display: block;
   color: var(--tekst-2);
+  margin-top: 4px;
+  font-weight: 400;
 }
 .porownanie-ranking ol {
   display: grid;

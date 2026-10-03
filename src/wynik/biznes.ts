@@ -153,10 +153,15 @@ export function obliczBialePlamy(
       skala: 0,
     }
   })
-  const wartosci = surowe.map((r) => r.adresyNaPunkt).sort((a, b) => a - b)
-  const p95 = wartosci[Math.floor(wartosci.length * 0.95)] || 1
-  for (const r of surowe) r.skala = Math.min(100, Math.round((100 * r.adresyNaPunkt) / p95))
+  const p95 = progNasycenia(surowe.map((r) => r.adresyNaPunkt))
+  for (const r of surowe) r.skala = Math.min(100, (100 * r.adresyNaPunkt) / p95)
   return surowe
+}
+
+/** Wartość, przy której kolor mapy osiąga 100; wyższe wartości są nasycone. */
+export function progNasycenia(wartosci: readonly number[]): number {
+  const posortowane = [...wartosci].sort((a, b) => a - b)
+  return posortowane[Math.floor(posortowane.length * 0.95)] || 1
 }
 
 export function ocenMiejsce(
@@ -183,6 +188,7 @@ export function ocenMiejsce(
   const punktNowy = { ...miejsce, id: bazowePunkty.length, nazwa: 'Nowe miejsce' }
   // Punkt na istniejącym obiekcie porównujemy jako ten sam obiekt, a nie dwa identyczne sklepy.
   const zastapiony = najblizszy && dystans(miejsce, najblizszy) <= 25 ? najblizszy.id : -1
+  const najblizszyKonkurent = bliskie.find((p) => p.id !== zastapiony)
   const punktyDoOceny = bazowePunkty
     .filter((p) => p.id !== zastapiony)
     .map((p, id) => ({ ...p, id }))
@@ -205,8 +211,10 @@ export function ocenMiejsce(
     przydzielonyPopyt: wartosc,
     udzialProcent: adresyWZasiegu ? Math.round((100 * (wynik?.adresy ?? 0)) / adresyWZasiegu) : 0,
     percentyl,
-    najblizszyKonkurent: najblizszy?.nazwa || null,
-    odlegloscKonkurenta: najblizszy ? Math.round(dystans(miejsce, najblizszy)) : null,
+    najblizszyKonkurent: najblizszyKonkurent?.nazwa || null,
+    odlegloscKonkurenta: najblizszyKonkurent
+      ? Math.round(dystans(miejsce, najblizszyKonkurent))
+      : null,
   }
 }
 
