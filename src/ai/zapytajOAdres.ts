@@ -19,9 +19,24 @@ export const PROG_PEWNOSCI = 0.5
 const MAKS_WARSTW = 63
 const MAKS_OPISU = 300
 
+// Zdanie o pytaniach złożonych dodane po pomiarze #18: bez niego JEV na „Jak tu z powietrzem,
+// hałasem i drzewami?” wybierał nie_wiem zamiast jednej z pasujących warstw.
 export const POLECENIE =
   'Użytkownik pyta o jeden adres. Wybierz warstwę danych, która odpowiada na jego pytanie. ' +
+  'Jeśli pytanie dotyczy kilku rzeczy naraz, wybierz warstwę dla pierwszej z nich. ' +
   'Jeśli żadna nie pasuje, wybierz nie_wiem.'
+
+/**
+ * Dopiski do opisu warstwy dla JEV (przed opisem z danych, żeby nie uciął ich limit 300 znaków).
+ * Trzy warstwy powodzi różnią się tylko prawdopodobieństwem, więc JEV rozkładał pewność między
+ * nie i na „Czy piwnica może zalać?” spadał pod próg (pomiar #18) – wskazujemy domyślną.
+ */
+const DOPISKI_WARSTW: Readonly<Record<string, string>> = {
+  powodz_1proc:
+    'Domyślna odpowiedź na pytania, czy tu zalewa, czy zaleje piwnicę, o powódź i podtopienia.',
+  powodz_10proc: 'Tylko gdy pytanie wprost dotyczy częstych zalań (co kilka lat).',
+  powodz_02proc: 'Tylko gdy pytanie wprost dotyczy najgorszego, skrajnie rzadkiego scenariusza.',
+}
 
 /** Warstwa z danymi pod adresami – podzbiór `WskaznikPrzygotowany` z src/wynik/silnik.ts. */
 export interface WarstwaDanych {
@@ -72,7 +87,12 @@ export function listaWarstw(metas: readonly WskaznikMeta[]): PozycjaListy[] {
     .map((m) => ({
       id: m.id,
       nazwa: m.nazwa,
-      opis: przytnij(`${m.nazwa} (${m.jednostka}). ${pierwszeZdanie(m.opis)}`, MAKS_OPISU),
+      opis: przytnij(
+        [`${m.nazwa} (${m.jednostka}).`, DOPISKI_WARSTW[m.id], pierwszeZdanie(m.opis)]
+          .filter(Boolean)
+          .join(' '),
+        MAKS_OPISU,
+      ),
     }))
 }
 
