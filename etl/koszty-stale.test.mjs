@@ -21,6 +21,7 @@ import {
   zbudujWskaznik,
 } from './koszty-stale.mjs'
 import { DANE, KORZEN, wczytajAdresy } from './lib/wspolne.mjs'
+import { PRZENIESIONE } from './uprosc-kryteria.mjs'
 
 const wczytaj = (sciezka) => JSON.parse(readFileSync(sciezka, 'utf8'))
 const PLIK_WSKAZNIKA = join(DANE, 'wskazniki', `${ID}.json`)
@@ -327,11 +328,12 @@ test('opublikowany wskaźnik: wartość stała w gminie, 14 gmin bez luk, skład
   assert.equal(poGminie.get('1261011').n, 70217)
 })
 
-test('metadane: kontekst gminny, zł/rok, cztery źródła z licencją i atrybucją z-dykty.pl', () => {
+test('metadane: grupa z PRZENIESIONE, gmina, zł/rok, cztery źródła z licencją i atrybucją z-dykty.pl', () => {
   const { meta } = wczytaj(PLIK_WSKAZNIKA)
   assert.equal(meta.id, ID)
-  assert.equal(meta.kategoria, 'kontekst')
-  assert.equal(meta.kierunek, 'neutralny')
+  // Od #171 grupę i kierunek nadaje PRZENIESIONE (etl/uprosc-kryteria.mjs), z wagą startową 0.
+  assert.deepEqual([meta.kategoria, meta.kierunek], PRZENIESIONE[ID])
+  assert.equal(meta.domyslnaWaga, 0)
   assert.equal(meta.rozdzielczosc, 'gmina')
   assert.equal(meta.jednostka, 'zł/rok')
   assert.equal(meta.zadanie, 140)
@@ -344,16 +346,20 @@ test('metadane: kontekst gminny, zł/rok, cztery źródła z licencją i atrybuc
   assert.ok(meta.zrodla.some((z) => z.url === 'https://dane.gov.pl/pl/dataset/872'))
   for (const fraza of ['3 osoby', '60 m²', 'rozdz. 90002', 'nie adresu'])
     assert.ok(meta.opis.includes(fraza), fraza)
-  // metadane powstają z generatora, nie z ręcznej edycji pliku
-  assert.deepEqual(
-    meta,
-    zbudujMeta({
+  // metadane powstają z generatora, nie z ręcznej edycji pliku; od #171
+  // etl/uprosc-kryteria.mjs nadpisuje tylko grupę i kierunek (PRZENIESIONE) i wagę startową 0
+  const [kategoria, kierunek] = PRZENIESIONE[ID]
+  assert.deepEqual(meta, {
+    ...zbudujMeta({
       pobranoZdykty: meta.zrodla[0].pobrano,
       urlBudzet: meta.zrodla[1].url,
       urlLudnosc: meta.zrodla[2].url,
       pobranoStawek: meta.zrodla[3].pobrano,
     }),
-  )
+    kategoria,
+    kierunek,
+    domyslnaWaga: 0,
+  })
 })
 
 test('plik wskaźnika mieści się w limicie 2 MB z kontraktu', () => {

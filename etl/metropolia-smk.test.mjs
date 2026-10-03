@@ -15,6 +15,7 @@ import {
   terytyGmin,
   zgodnoscAdresowZGranicami,
 } from './metropolia-smk.mjs'
+import { PRZENIESIONE } from './uprosc-kryteria.mjs'
 
 test('liceum dla młodzieży: filtr nazw, także z zepsutym kodowaniem gmin', () => {
   for (const nazwa of [
@@ -163,7 +164,8 @@ test('zgodność adresów z granicami gmin: adres w cudzej gminie i gmina bez wi
 const WSKAZNIKI = {
   liceum_odleglosc: { kategoria: 'codziennosc', zrodel: 2 },
   droga_rowerowa_odleglosc: { kategoria: 'transport', zrodel: 1 },
-  woda_odleglosc: { kategoria: 'kontekst', zrodel: 2 },
+  // Od #171 grupę i kierunek nadaje PRZENIESIONE (etl/uprosc-kryteria.mjs), z wagą startową 0.
+  woda_odleglosc: { kategoria: PRZENIESIONE.woda_odleglosc[0], zrodel: 2 },
 }
 const wczytaj = (id) => JSON.parse(readFileSync(join(DANE, 'wskazniki', `${id}.json`), 'utf8'))
 
@@ -176,8 +178,14 @@ test('opublikowane wskaźniki: wersja, kontrakt, atrybucja MSIP i data stanu', (
     assert.equal(p.meta.id, id)
     assert.equal(p.meta.zadanie, 113)
     assert.equal(p.meta.kategoria, oczekiwane.kategoria)
-    // neutralny: dane z 2021 r. i niepełne pokrycie – bez kierunku nie liczą się do wyniku
-    assert.equal(p.meta.kierunek, 'neutralny')
+    if (PRZENIESIONE[id]) {
+      // przeniesione w #171: kierunek z PRZENIESIONE, waga startowa 0 – domyślnie poza wynikiem
+      assert.equal(p.meta.kierunek, PRZENIESIONE[id][1])
+      assert.equal(p.meta.domyslnaWaga, 0)
+    } else {
+      // neutralny: dane z 2021 r. i niepełne pokrycie – bez kierunku nie liczą się do wyniku
+      assert.equal(p.meta.kierunek, 'neutralny')
+    }
     assert.equal(p.meta.rozdzielczosc, 'adres')
     assert.equal(p.meta.jednostka, 'm')
     assert.equal(p.meta.atrapa, undefined)

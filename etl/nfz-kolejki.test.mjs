@@ -20,6 +20,7 @@ import {
   zbudujPoradnie,
   znajdzAdres,
 } from './nfz-kolejki.mjs'
+import { PRZENIESIONE } from './uprosc-kryteria.mjs'
 
 const PAUZA = String.fromCharCode(0x2014)
 
@@ -350,8 +351,10 @@ test('opublikowany wskaźnik: kontrakt, rozmiar, atrybucja NFZ i z-dykty, typogr
 
   const m = p.meta
   assert.equal(m.id, 'nfz_kolejki_dni')
-  assert.equal(m.kategoria, 'kontekst')
+  // Od #171 grupę i kierunek nadaje PRZENIESIONE (etl/uprosc-kryteria.mjs), z wagą startową 0.
+  assert.deepEqual([m.kategoria, m.kierunek], PRZENIESIONE.nfz_kolejki_dni)
   assert.equal(m.kierunek, 'mniej-lepiej')
+  assert.equal(m.domyslnaWaga, 0)
   assert.equal(m.rozdzielczosc, 'adres')
   assert.equal(m.jednostka, 'dni')
   assert.equal(m.zadanie, 138)

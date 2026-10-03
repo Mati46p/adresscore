@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { test } from 'node:test'
 import { DANE } from './lib/wspolne.mjs'
+import { PRZENIESIONE } from './uprosc-kryteria.mjs'
 import { GMINY, PIT, POWIATY, ROK, WYNAGRODZENIE, wartoscBDL } from './zamoznosc.mjs'
 
 test('BDL: przyjmujemy wyłącznie żądaną jednostkę, zmienną i rok', () => {
@@ -34,8 +35,9 @@ test('GUS: pełne pokrycie adresów, bez fałszywej rozdzielczości i wpływu na
     assert.equal(plik.wersjaAdresow, adresy.wersja)
     assert.equal(plik.wartosci.length, n)
     assert.equal(plik.wartosci.filter((v) => v === null).length, 0)
-    assert.equal(plik.meta.kategoria, 'kontekst')
-    assert.equal(plik.meta.kierunek, 'neutralny')
+    // Od #171 grupę i kierunek nadaje PRZENIESIONE (etl/uprosc-kryteria.mjs), z wagą startową 0.
+    assert.deepEqual([plik.meta.kategoria, plik.meta.kierunek], PRZENIESIONE[plik.meta.id])
+    assert.equal(plik.meta.domyslnaWaga, 0)
     assert.equal(plik.meta.rozdzielczosc, skala)
     assert.equal(plik.meta.zrodla[0].dataDanych, String(ROK))
   }

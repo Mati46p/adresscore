@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { test } from 'node:test'
 import { DANE } from './lib/wspolne.mjs'
+import { PRZENIESIONE } from './uprosc-kryteria.mjs'
 
 const dane = (sciezka) => JSON.parse(readFileSync(join(DANE, sciezka), 'utf8'))
 
@@ -16,8 +17,10 @@ test('wynik E8 i szczegóły odnoszą się do tej samej szkoły i wersji adresó
   assert.equal(wskaznik.wartosci.length, n)
   assert.equal(szczegoly.najblizsza.length, n)
   assert.equal(szczegoly.odleglosciM.length, n)
-  assert.equal(wskaznik.meta.kategoria, 'kontekst')
-  assert.equal(wskaznik.meta.kierunek, 'neutralny')
+  // Od #171 grupę i kierunek nadaje PRZENIESIONE (etl/uprosc-kryteria.mjs), z wagą startową 0.
+  const przeniesione = PRZENIESIONE.szkola_podst_wynik_e8
+  assert.deepEqual([wskaznik.meta.kategoria, wskaznik.meta.kierunek], przeniesione)
+  assert.equal(wskaznik.meta.domyslnaWaga, 0)
 
   let zDanymi = 0
   let brak = 0

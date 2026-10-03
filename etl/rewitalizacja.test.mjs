@@ -10,6 +10,7 @@ import {
   wartoscAdresu,
   znajdzPodobszar,
 } from './rewitalizacja.mjs'
+import { PRZENIESIONE } from './uprosc-kryteria.mjs'
 
 // Pauza (U+2014) jest zakazana w polskich tekstach projektu; zapis przez kod znaku, żeby sam
 // plik testu jej nie zawierał.
@@ -134,8 +135,9 @@ test('plik wskaźnika: tylko Kraków ma wartość, Kazimierz w obszarze, Stare M
   assert.equal(plik.wersjaAdresow, wersja)
   assert.equal(plik.wartosci.length, adresy.length)
   assert.equal(plik.etykiety.length, adresy.length)
-  assert.equal(plik.meta.kategoria, 'kontekst')
-  assert.equal(plik.meta.kierunek, 'neutralny')
+  // Od #171 grupę i kierunek nadaje PRZENIESIONE (etl/uprosc-kryteria.mjs), z wagą startową 0.
+  assert.deepEqual([plik.meta.kategoria, plik.meta.kierunek], PRZENIESIONE.obszar_rewitalizacji)
+  assert.equal(plik.meta.domyslnaWaga, 0)
   assert.equal(plik.meta.jednostka, 'status')
   assert.equal(plik.meta.zadanie, 125)
   assert.ok(!JSON.stringify(plik.meta).includes(PAUZA))

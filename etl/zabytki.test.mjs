@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import test from 'node:test'
 import { naMetry } from './lib/msip.mjs'
 import { DANE, wczytajAdresy } from './lib/wspolne.mjs'
+import { PRZENIESIONE } from './uprosc-kryteria.mjs'
 import {
   csv,
   dekodujNid,
@@ -364,8 +365,9 @@ test('plik wskaźnika: Kraków zawsze ma liczbę, poza Krakowem tylko dolne osza
   assert.equal(plik.wersjaAdresow, wersja)
   assert.equal(plik.wartosci.length, adresy.length)
   assert.equal(plik.etykiety.length, adresy.length)
-  assert.equal(plik.meta.kategoria, 'kontekst')
-  assert.equal(plik.meta.kierunek, 'neutralny')
+  // Od #171 grupę i kierunek nadaje PRZENIESIONE (etl/uprosc-kryteria.mjs), z wagą startową 0.
+  assert.deepEqual([plik.meta.kategoria, plik.meta.kierunek], PRZENIESIONE.zabytki_300m)
+  assert.equal(plik.meta.domyslnaWaga, 0)
   assert.equal(plik.meta.rozdzielczosc, 'adres')
   assert.equal(plik.meta.zadanie, 125)
   assert.ok(!JSON.stringify(plik.meta).includes(PAUZA))

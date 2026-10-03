@@ -13,6 +13,7 @@ import {
   zbudujFrekwencje,
 } from './frekwencja.mjs'
 import { DANE } from './lib/wspolne.mjs'
+import { PRZENIESIONE } from './uprosc-kryteria.mjs'
 
 /** Pauza (U+2014): w polskim tekście wolno tylko półpauzę ze spacjami. Zapis kodem, nie znakiem. */
 const PAUZA = '\u2014'
@@ -281,8 +282,9 @@ test('plik wskaźnika frekwencja_samorzad_2024: kontrakt, pokrycie, jedna liczba
   const m = p.meta
   assert.equal(m.id, ID)
   assert.equal(m.zadanie, 142)
-  assert.equal(m.kategoria, 'kontekst', 'fakt na karcie, bez wpływu na wynik')
-  assert.equal(m.kierunek, 'neutralny')
+  // Od #171 grupę i kierunek nadaje PRZENIESIONE; waga startowa 0 = bez wpływu na wynik domyślnie.
+  assert.deepEqual([m.kategoria, m.kierunek], PRZENIESIONE[ID])
+  assert.equal(m.domyslnaWaga, 0, 'bez wpływu na wynik, póki użytkownik nie ustawi wagi')
   assert.equal(m.rozdzielczosc, 'gmina')
   assert.equal(m.jednostka, '%')
   assert.deepEqual(m.zakres, [0, 100])

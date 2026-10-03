@@ -1,9 +1,12 @@
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import test from 'node:test'
 import { DANE, wczytajAdresy } from './lib/wspolne.mjs'
 import { dopasujGminy, MIARY, parsujRanking } from './obwarzanek.mjs'
+import { PRZENIESIONE } from './uprosc-kryteria.mjs'
+
+const USUNIETE_W_171 = new Set(['gmina_powodz_powierzchnia_pct'])
 
 const csv =
   '\uFEFFpozycja;gmina;powiat;wojewodztwo;teryt;wartosc;jednostka;gmin_ogolem;rok;url\r\n1;Kraków;Kraków;małopolskie;1261011;0,00;zl;2479;2025;https://z-dykty.pl/gmina/krakow-1261011\r\n2;Wieliczka;wielicki;małopolskie;1219053;1234,56;zl;2479;2024;https://z-dykty.pl/gmina/wieliczka-1219053\r\n'
@@ -41,10 +44,22 @@ test('opublikowane wskaźniki mają zgodną wersję i wartość jednakową w obr
   assert.equal(gminy.gminy.length, 14)
   const wiersze = new Map(gminy.gminy.map((g) => [g.teryt, g]))
   for (const m of MIARY) {
-    const p = JSON.parse(readFileSync(join(DANE, 'wskazniki', `${m.id}.json`), 'utf8'))
+    const sciezka = join(DANE, 'wskazniki', `${m.id}.json`)
+    if (USUNIETE_W_171.has(m.id)) {
+      // usunięte w #171 (etl/uprosc-kryteria.mjs): ani plik wskaźnika, ani miara w porównaniu gmin
+      assert.ok(!existsSync(sciezka), `${m.id} nie powinien być opublikowany`)
+      assert.ok(!gminy.miary.some((x) => x.id === m.id), m.id)
+      assert.ok(
+        gminy.gminy.every((g) => !(m.id in g.miary)),
+        m.id,
+      )
+      continue
+    }
+    const p = JSON.parse(readFileSync(sciezka, 'utf8'))
     assert.equal(p.wersjaAdresow, wersja)
-    assert.equal(p.meta.kategoria, 'kontekst')
-    assert.equal(p.meta.kierunek, 'neutralny')
+    // Od #171 grupę i kierunek nadaje PRZENIESIONE (etl/uprosc-kryteria.mjs), z wagą startową 0.
+    assert.deepEqual([p.meta.kategoria, p.meta.kierunek], PRZENIESIONE[m.id], m.id)
+    assert.equal(p.meta.domyslnaWaga, 0, m.id)
     assert.equal(p.wartosci.length, adresy.length)
     const roczniki = [...new Set(gminy.gminy.map((g) => g.miary[m.id]?.rok).filter(Boolean))].sort(
       (a, b) => a - b,

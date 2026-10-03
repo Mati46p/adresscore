@@ -29,6 +29,7 @@ import {
   zbudujWskaznik,
 } from './czyste-powietrze.mjs'
 import { DANE, KORZEN, wczytajAdresy } from './lib/wspolne.mjs'
+import { PRZENIESIONE } from './uprosc-kryteria.mjs'
 
 const PLIK_WSKAZNIKA = join(DANE, 'wskazniki', `${ID}.json`)
 const wczytaj = (sciezka) => JSON.parse(readFileSync(sciezka, 'utf8'))
@@ -639,11 +640,13 @@ test('opublikowany wskaźnik: wartość stała w gminie, 14 gmin bez luk, etykie
   assert.equal(poGminie.get('1206022').wartosci.has(1.5), true)
 })
 
-test('metadane: przyszłość, więcej = lepiej, gmina, dwa źródła NFOŚiGW z datą stanu i licencją', () => {
+test('metadane: grupa z PRZENIESIONE, więcej = lepiej, gmina, dwa źródła NFOŚiGW z datą i licencją', () => {
   const { meta } = wczytaj(PLIK_WSKAZNIKA)
   assert.equal(meta.id, ID)
-  assert.equal(meta.kategoria, 'przyszlosc')
+  // Od #171 grupę i kierunek nadaje PRZENIESIONE (etl/uprosc-kryteria.mjs), z wagą startową 0.
+  assert.deepEqual([meta.kategoria, meta.kierunek], PRZENIESIONE[ID])
   assert.equal(meta.kierunek, 'wiecej-lepiej')
+  assert.equal(meta.domyslnaWaga, 0)
   assert.equal(meta.rozdzielczosc, 'gmina')
   assert.equal(meta.jednostka, 'wniosków/100 domów')
   assert.equal(meta.zadanie, 141)
@@ -669,8 +672,10 @@ test('metadane: przyszłość, więcej = lepiej, gmina, dwa źródła NFOŚiGW z
     '12.12.2025',
   ])
     assert.ok(meta.opis.includes(fraza), fraza)
-  // metadane powstają z generatora i migawki, nie z ręcznej edycji pliku
-  assert.deepEqual(meta, zbudujMeta(wczytajMigawke()))
+  // metadane powstają z generatora i migawki, nie z ręcznej edycji pliku; od #171
+  // etl/uprosc-kryteria.mjs nadpisuje tylko grupę i kierunek (PRZENIESIONE) i wagę startową 0
+  const [kategoria, kierunek] = PRZENIESIONE[ID]
+  assert.deepEqual(meta, { ...zbudujMeta(wczytajMigawke()), kategoria, kierunek, domyslnaWaga: 0 })
 })
 
 test('plik wskaźnika mieści się w limicie 2 MB z kontraktu', () => {

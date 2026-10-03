@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { test } from 'node:test'
+import { PASMA } from './halas-obwarzanek.mjs'
 import {
   ETYKIETA_PONIZEJ_PROGU,
   etykietaAdresu,
@@ -140,11 +141,15 @@ test('etykieta adresu: cisza bez źródła hałasu, pasmo ze źródłem', () => 
   )
 })
 
-// Opublikowany plik jest wynikiem `node etl/halas.mjs`; test pilnuje, żeby kolejny bieg ETL
-// albo ręczna zmiana nie przywróciły brakujących wartości w mieście ani nie dopisały ich poza nim.
+// Opublikowany plik jest wynikiem `node etl/halas.mjs`, a od #171 scalenia z pasmami EEA
+// w `node etl/uprosc-kryteria.mjs`; test pilnuje, żeby kolejny bieg ETL albo ręczna zmiana
+// nie przywróciły brakujących wartości w mieście ani nie zgubiły pasm poza nim.
 const plik = JSON.parse(readFileSync(join(DANE, 'wskazniki', 'halas_ldwn.json'), 'utf8'))
 
-test('opublikowany wskaźnik: Kraków bez dziur, reszta null, wartości spójne z etykietami', () => {
+// Od #171 (etl/uprosc-kryteria.mjs) poza Krakowem są pasma EEA z dawnego halas_obwarzanek_lden.
+const pasmaEea = new Map(PASMA.filter(Boolean).map((p) => [p.wartosc, p.etykieta]))
+
+test('opublikowany wskaźnik: Kraków bez dziur, poza Krakowem pasma EEA albo null, etykiety spójne', () => {
   const { wersja, adresy } = wczytajAdresy()
   assert.equal(plik.wersjaAdresow, wersja)
   assert.equal(plik.wartosci.length, adresy.length)
@@ -152,13 +157,24 @@ test('opublikowany wskaźnik: Kraków bez dziur, reszta null, wartości spójne 
   let krakow = 0
   let luki = 0
   let cisza = 0
+  let poza = 0
+  let pozaZWartoscia = 0
   const zrodla = new Set()
   for (const adres of adresy) {
     const wartosc = plik.wartosci[adres.i]
     const etykieta = plik.etykiety[adres.i]
     if (adres.gmina !== 'Kraków') {
-      assert.equal(wartosc, null, `poza Krakowem nie ma mapy: ${adres.id}`)
-      assert.equal(etykieta, null, `poza Krakowem nie ma etykiety: ${adres.id}`)
+      poza++
+      if (wartosc === null) {
+        assert.equal(etykieta, null, `brak pasma EEA bez etykiety: ${adres.id}`)
+        continue
+      }
+      pozaZWartoscia++
+      assert.ok(
+        pasmaEea.has(wartosc),
+        `poza Krakowem wartość spoza pasm EEA: ${adres.id} ${wartosc}`,
+      )
+      assert.ok(etykieta.startsWith(`${pasmaEea.get(wartosc)}; hałas `), `${adres.id} ${etykieta}`)
       continue
     }
     krakow++
@@ -188,14 +204,42 @@ test('opublikowany wskaźnik: Kraków bez dziur, reszta null, wartości spójne 
   assert.ok(cisza > 0, 'adresy poza pasmami mapy powinny być ciszą, nie brakiem danych')
   // Pokrycie ~100%: dopuszczamy wyłącznie nieliczne faktyczne luki obliczeń mapy (próg z ETL).
   assert.ok(luki <= MAX_UDZIAL_LUK * krakow, `luki w Krakowie: ${luki} z ${krakow}`)
+  // Scalenie, które nic nie wniosło, albo pasmo zalewające cały obwarzanek, to błąd.
+  assert.ok(pozaZWartoscia > 5000, `adresów poza Krakowem z pasmem: ${pozaZWartoscia}`)
+  assert.ok(pozaZWartoscia / poza < 0.3, `udział poza Krakowem: ${pozaZWartoscia / poza}`)
 })
 
-test('meta wskaźnika: półpauza, skala zgodna z ciszą, opis tłumaczy 50 dB i brak liczby', () => {
+test('opublikowany wskaźnik: znane miejsca poza Krakowem przy drogach głównych i cicha wieś', () => {
+  const { adresy } = wczytajAdresy()
+  const wartosc = (gmina, ulica, nr) => {
+    const a = adresy.find((x) => x.gmina === gmina && x.ulica === ulica && x.nr === nr)
+    assert.ok(a, `brak adresu ${gmina} ${ulica} ${nr}`)
+    return plik.wartosci[a.i]
+  }
+  assert.equal(wartosc('Zielonki', 'Krakowskie Przedmieście', '214'), 67.5) // DK94
+  assert.equal(wartosc('Zabierzów', 'Krakowska', '59'), 72.5) // DK79
+  assert.equal(wartosc('Wielka Wieś', 'Olkuska', '79'), 72.5) // DK94
+  assert.equal(wartosc('Świątniki Górne', 'Bliska', '10'), null) // poza konturami EEA
+})
+
+test('meta wskaźnika: półpauza, skala zgodna z ciszą, opis obu źródeł i brak danych, źródła MSIP i EEA', () => {
   const { meta } = plik
   const pauza = String.fromCodePoint(0x2014)
   assert.ok(!JSON.stringify(meta).includes(pauza), 'w polskim tekście meta jest półpauza „–”')
   assert.deepEqual(meta.zakres, ZAKRES_LDWN)
-  assert.ok(meta.opis.includes(`poniżej ${PROG_LDWN} dB`))
-  assert.ok(meta.opis.includes('poza Krakowem'))
-  for (const zrodlo of meta.zrodla) assert.match(zrodlo.nazwa, /^Gmina Miejska Kraków, MSIP – /)
+  // Opis po #171: oba źródła z ich obszarem i jawny brak danych.
+  assert.ok(meta.opis.includes('Kraków: mapa MSIP 2022'), meta.opis)
+  assert.ok(meta.opis.includes('poza Krakowem: mapy strategiczne EEA'), meta.opis)
+  assert.ok(meta.opis.includes('brak danych'), meta.opis)
+  // Pasmo „poniżej progu” nie ma już zdania w opisie, więc tłumaczy je etykieta adresu.
+  assert.ok(plik.etykiety.includes(`${ETYKIETA_PONIZEJ_PROGU}; 4 m nad terenem`))
+  assert.ok(ETYKIETA_PONIZEJ_PROGU.includes(`poniżej ${PROG_LDWN} dB`))
+  const msip = meta.zrodla.filter((z) => /^Gmina Miejska Kraków, MSIP – /.test(z.nazwa))
+  const eea = meta.zrodla.filter((z) =>
+    /^(Europejska Agencja Środowiska \(EEA\)|EEA) – /.test(z.nazwa),
+  )
+  assert.ok(msip.length > 0, 'brak źródła MSIP')
+  assert.ok(eea.length > 0, 'brak źródła EEA')
+  assert.equal(msip.length + eea.length, meta.zrodla.length, 'źródło spoza MSIP i EEA')
+  for (const zrodlo of eea) assert.match(zrodlo.licencja, /European Environment Agency/)
 })

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { KOMISARIATY, komisariatDzielnicy, powiatAdresu, wartoscBdl } from './przestepstwa.mjs'
+import { PRZENIESIONE } from './uprosc-kryteria.mjs'
 
 test('każda z 18 dzielnic ma dokładnie jeden komisariat', () => {
   const wszystkie = KOMISARIATY.flatMap((k) => k.dzielnice)
@@ -37,14 +38,15 @@ test('wartość BDL: rok, brak = null, kontrola nazwy', () => {
   assert.throws(() => wartoscBdl(odp, 'A', 'Powiat wielicki', 2025))
 })
 
-test('wskaźniki przestępstw są kontekstem i nie wpływają na wynik', async () => {
+test('wskaźniki przestępstw mają grupę z PRZENIESIONE i domyślnie nie wpływają na wynik', async () => {
   const { readFileSync } = await import('node:fs')
   for (const id of ['przestepstwa_1000_powiat_2025', 'wykrywalnosc_powiat_2025']) {
     const w = JSON.parse(
       readFileSync(new URL(`../public/dane/wskazniki/${id}.json`, import.meta.url), 'utf8'),
     )
     const m = w.meta ?? w
-    assert.equal(m.kategoria, 'kontekst')
-    assert.equal(m.kierunek, 'neutralny')
+    // Od #171 grupę i kierunek nadaje PRZENIESIONE (etl/uprosc-kryteria.mjs), z wagą startową 0.
+    assert.deepEqual([m.kategoria, m.kierunek], PRZENIESIONE[id], id)
+    assert.equal(m.domyslnaWaga, 0, id)
   }
 })

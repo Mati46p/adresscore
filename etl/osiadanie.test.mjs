@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import test from 'node:test'
 import { DANE } from './lib/wspolne.mjs'
 import { dekodujBsq, indeksKomorki, wycinekSiatki } from './osiadanie.mjs'
+import { PRZENIESIONE } from './uprosc-kryteria.mjs'
 
 test('bsq: bajty Int8 i maska ważności od najstarszego bitu', () => {
   // 3 × 3 = 9 pikseli, maska zajmuje ⌈9/8⌉ = 2 bajty
@@ -56,8 +57,9 @@ test('plik wskaźnika osiadanie_mm_rok: kontrakt, zakres i zgodność z adresami
   assert.equal(p.etykiety, undefined)
   assert.equal(p.meta.id, 'osiadanie_mm_rok')
   assert.equal(p.meta.zadanie, 117)
-  assert.equal(p.meta.kategoria, 'kontekst', 'fakt na karcie, bez wpływu na wynik')
-  assert.equal(p.meta.kierunek, 'neutralny')
+  // Od #171 grupę i kierunek nadaje PRZENIESIONE; waga startowa 0 = bez wpływu na wynik domyślnie.
+  assert.deepEqual([p.meta.kategoria, p.meta.kierunek], PRZENIESIONE.osiadanie_mm_rok)
+  assert.equal(p.meta.domyslnaWaga, 0, 'bez wpływu na wynik, póki użytkownik nie ustawi wagi')
   assert.equal(p.meta.jednostka, 'mm/rok')
   assert.equal(p.meta.rozdzielczosc, 'siatka')
   assert.equal(p.meta.rozmiar, '123 m')

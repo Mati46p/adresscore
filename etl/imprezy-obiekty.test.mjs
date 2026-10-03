@@ -40,6 +40,7 @@ import {
   zakresZDatyEXPO,
 } from './lib/imprezy-zrodla.mjs'
 import { DANE, wczytajAdresy } from './lib/wspolne.mjs'
+import { PRZENIESIONE } from './uprosc-kryteria.mjs'
 
 const okno = { od: '2025-07-01', do: '2026-06-30' }
 const migawka = JSON.parse(readFileSync(PLIK_MIGAWKI, 'utf8'))
@@ -513,9 +514,10 @@ test('plik wskaźnika odpowiada migawce i adresom, a metadane spełniają kontra
   const { adresy, wersja } = wczytajAdresy()
   assert.equal(plik.wersjaAdresow, wersja)
   assert.equal(plik.wartosci.length, adresy.length)
-  assert.deepEqual(plik.meta, metaWskaznika(migawka))
-  assert.equal(plik.meta.kategoria, 'kontekst')
-  assert.equal(plik.meta.kierunek, 'neutralny')
+  // Od #171 etl/uprosc-kryteria.mjs nadpisuje grupę i kierunek (PRZENIESIONE) z wagą startową 0;
+  // reszta metadanych pochodzi wprost z ETL.
+  const [kategoria, kierunek] = PRZENIESIONE[ID_WSKAZNIKA]
+  assert.deepEqual(plik.meta, { ...metaWskaznika(migawka), kategoria, kierunek, domyslnaWaga: 0 })
   assert.equal(plik.meta.zadanie, 71)
   const pauza = String.fromCharCode(0x2014) // w tekście PL ma być półpauza
   assert.ok(!JSON.stringify(plik.meta).includes(pauza), 'pauza w tekście PL')

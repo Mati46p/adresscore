@@ -5,6 +5,7 @@ import test from 'node:test'
 import { do2180, pierscien } from './lib/geo.mjs'
 import { odlegloscDoObiektu, pierscienieZSciezki, rozbierzId } from './lib/nid-wms.mjs'
 import { DANE, wczytajAdresy } from './lib/wspolne.mjs'
+import { PRZENIESIONE } from './uprosc-kryteria.mjs'
 import {
   dataDanychRejestru,
   IndeksRejestru,
@@ -333,8 +334,9 @@ test('plik wskaźnika: liczba dla każdego adresu, etykiety ze słownika, znane 
   assert.ok(statSync(sciezka).size < 2 * 1024 * 1024, 'kontrakt: plik wskaźnika poniżej 2 MB')
   const m = plik.meta
   assert.equal(m.id, 'zabytki_rejestr_500m')
-  assert.equal(m.kategoria, 'kontekst')
-  assert.equal(m.kierunek, 'neutralny')
+  // Od #171 grupę i kierunek nadaje PRZENIESIONE (etl/uprosc-kryteria.mjs), z wagą startową 0.
+  assert.deepEqual([m.kategoria, m.kierunek], PRZENIESIONE.zabytki_rejestr_500m)
+  assert.equal(m.domyslnaWaga, 0)
   assert.equal(m.rozdzielczosc, 'adres')
   assert.equal(m.zadanie, 143)
   assert.ok(!JSON.stringify(m).includes(PAUZA))

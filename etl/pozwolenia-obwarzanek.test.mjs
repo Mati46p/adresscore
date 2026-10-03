@@ -257,73 +257,42 @@ test('promień liczenia to 500 m włącznie z brzegiem, odległość płaska (ws
 })
 
 // ----- opublikowany plik wskaźnika ---------------------------------------------------------
-// Czytane leniwie, żeby testy czystych funkcji działały też przed pierwszym biegiem ETL.
-let zaladowane
-function dane() {
-  if (!zaladowane) {
-    const adresy = JSON.parse(readFileSync(join(DANE, 'adresy.json'), 'utf8'))
-    const plik = JSON.parse(
-      readFileSync(join(DANE, 'wskazniki/inwestycje_500m_obwarzanek.json'), 'utf8'),
-    )
-    zaladowane = { adresy, plik, teryty: adresy.kolumny.teryt }
-  }
-  return zaladowane
-}
+// inwestycje_500m_obwarzanek połączono w #171 z inwestycje_500m (następca, test poniżej).
+// Plik czytany w teście, żeby testy czystych funkcji działały też przed pierwszym biegiem ETL.
 const TERYT_KRAKOW = '1261011'
 
-test('plik wskaźnika: wersja adresów, długość i metadane zgodne z kontraktem', () => {
-  const { adresy, plik, teryty } = dane()
+test('następca inwestycje_500m: liczba dla każdego adresu w Krakowie i gminach, Podłęże ≥ 11', () => {
+  const adresy = JSON.parse(readFileSync(join(DANE, 'adresy.json'), 'utf8'))
+  const plik = JSON.parse(readFileSync(join(DANE, 'wskazniki/inwestycje_500m.json'), 'utf8'))
+  const teryty = adresy.kolumny.teryt
   assert.equal(plik.wersjaAdresow, adresy.wersja)
   assert.equal(plik.wartosci.length, teryty.length)
-  const m = plik.meta
-  assert.equal(m.id, 'inwestycje_500m_obwarzanek')
-  assert.equal(m.zadanie, 123)
-  assert.equal(m.kategoria, 'przyszlosc')
-  assert.equal(m.rozdzielczosc, 'adres')
-  assert.equal(m.kierunek, 'neutralny')
-  assert.equal(m.jednostka, 'szt.')
-  // ta sama skala co inwestycje_500m z MSIP, żeby Kraków i gminy były porównywalne
-  const msip = JSON.parse(readFileSync(join(DANE, 'wskazniki/inwestycje_500m.json'), 'utf8')).meta
-  assert.deepEqual(m.zakres, msip.zakres)
-  assert.equal(m.jednostka, msip.jednostka)
-  assert.equal(m.kategoria, msip.kategoria)
-  assert.ok(m.zrodla.length >= 2)
-  for (const z of m.zrodla)
-    for (const k of ['nazwa', 'url', 'licencja', 'dataDanych', 'pobrano']) assert.ok(z[k], k)
-  assert.match(m.zrodla[0].url, /dane\.gov\.pl/)
-  assert.match(m.zrodla[0].licencja, /CC0/)
-  assert.match(m.opis, /500 m/)
-  assert.ok(!m.opis.includes(String.fromCharCode(0x2014)), 'opis bez pauzy (używamy półpauzy)')
-})
-
-test('plik wskaźnika: Kraków to null, gminy obwarzanka to liczby całkowite, zero zmierzone', () => {
-  const { plik, teryty } = dane()
+  // Oba źródła rozłącznych obszarów przetrwały scalenie: MSIP (Kraków) i RWDZ GUNB (CC0).
+  assert.ok(
+    plik.meta.zrodla.some((z) => /msip\.krakow\.pl/.test(z.url)),
+    'brak źródła MSIP',
+  )
+  const rwdz = plik.meta.zrodla.find((z) => /dane\.gov\.pl/.test(z.url))
+  assert.ok(rwdz, 'brak źródła RWDZ')
+  assert.match(rwdz.licencja, /CC0/)
   let obwarzanek = 0
   let zera = 0
   let suma = 0
   for (let i = 0; i < teryty.length; i++) {
     const v = plik.wartosci[i]
-    if (teryty[i] === TERYT_KRAKOW) {
-      assert.equal(v, null)
-    } else {
-      assert.ok(Number.isInteger(v) && v >= 0, `adres ${i}: ${v}`)
-      obwarzanek++
-      suma += v
-      if (v === 0) zera++
-    }
+    assert.ok(Number.isInteger(v) && v >= 0, `adres ${i}: ${v}`)
+    if (teryty[i] === TERYT_KRAKOW) continue
+    obwarzanek++
+    suma += v
+    if (v === 0) zera++
   }
-  assert.equal(obwarzanek, teryty.filter((t) => t !== TERYT_KRAKOW).length)
   assert.ok(obwarzanek > 100_000, `adresów obwarzanka: ${obwarzanek}`)
   assert.ok(zera > 0, 'są adresy bez pozwoleń w 500 m (zmierzone zero)')
   assert.ok(zera / obwarzanek < 0.5, 'nie większość adresów bez pozwoleń')
   const srednia = suma / obwarzanek
   // MSIP w Krakowie: średnio 5,35; gminy obwarzanka mają rzadszą zabudowę, ale ten sam rząd wielkości
   assert.ok(srednia > 0.5 && srednia < 20, `średnia ${srednia}`)
-})
-
-test('znane miejsce: Podłęże, 11 decyzji z 2025-02-24 na jednej działce, to co najmniej 11 w 500 m', () => {
-  const { adresy, plik, teryty } = dane()
-  // ST-MA-WI/WNIOSEK/728…743/2025 (Niepołomice, obręb Podłęże, dz. 1522) – działka podzielona na 1522/1…
+  // ST-MA-WI/WNIOSEK/728…743/2025 (Niepołomice, obręb Podłęże, dz. 1522): 11 decyzji z 2025-02-24.
   // ULDK: środek 1522/1 to ok. (583434, 239885) w EPSG:2180.
   let najblizszy = { d: Infinity, i: -1 }
   for (let i = 0; i < teryty.length; i++) {

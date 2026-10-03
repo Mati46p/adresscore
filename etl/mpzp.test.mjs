@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import test from 'node:test'
 import { DANE } from './lib/wspolne.mjs'
+import { PRZENIESIONE } from './uprosc-kryteria.mjs'
 
 test('MPZP: status i szczegóły odnoszą się do tych samych punktów adresowych', () => {
   const adresy = JSON.parse(readFileSync(join(DANE, 'adresy.json'), 'utf8'))
@@ -15,8 +16,9 @@ test('MPZP: status i szczegóły odnoszą się do tych samych punktów adresowyc
   assert.equal(status.wartosci.length, teryty.length)
   assert.equal(status.etykiety.length, teryty.length)
   assert.equal(katalog.adresy.length, teryty.length)
-  assert.equal(status.meta.kierunek, 'neutralny')
-  assert.equal(status.meta.kategoria, 'kontekst')
+  // Od #171 grupę i kierunek nadaje PRZENIESIONE (etl/uprosc-kryteria.mjs), z wagą startową 0.
+  assert.deepEqual([status.meta.kategoria, status.meta.kierunek], PRZENIESIONE.mpzp_status)
+  assert.equal(status.meta.domyslnaWaga, 0)
   assert.equal(status.meta.zrodla[0].dataDanych, katalog.dataDanych)
 
   let objetePlanem = 0

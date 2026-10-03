@@ -12,6 +12,7 @@ import {
 } from './kapieliska.mjs'
 import { odlegloscMetry } from './lib/codziennosc-geo.mjs'
 import { DANE, wczytajAdresy } from './lib/wspolne.mjs'
+import { PRZENIESIONE } from './uprosc-kryteria.mjs'
 
 // Pauza (U+2014) jest zakazana w polskich tekstach projektu; zapis przez kod znaku, żeby sam
 // plik testu jej nie zawierał.
@@ -138,8 +139,9 @@ test('plik wskaźnika: jedna wartość na adres, odległość do najbliższego p
   assert.equal(plik.wersjaAdresow, wersja)
   assert.equal(plik.wartosci.length, adresy.length)
   assert.equal(plik.etykiety.length, adresy.length)
-  assert.equal(plik.meta.kategoria, 'kontekst')
-  assert.equal(plik.meta.kierunek, 'neutralny')
+  // Od #171 grupę i kierunek nadaje PRZENIESIONE (etl/uprosc-kryteria.mjs), z wagą startową 0.
+  assert.deepEqual([plik.meta.kategoria, plik.meta.kierunek], PRZENIESIONE.kapielisko_odleglosc)
+  assert.equal(plik.meta.domyslnaWaga, 0)
   assert.equal(plik.meta.zadanie, 125)
   assert.ok(plik.meta.zrodla.every((z) => z.url && z.licencja && z.dataDanych && z.pobrano))
   const nazwy = new Set(kapieliska.map((k) => k.etykieta))

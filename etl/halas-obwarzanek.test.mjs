@@ -1,6 +1,4 @@
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
 import test from 'node:test'
 import { crc32 } from 'node:zlib'
 import { zlibSync } from 'fflate'
@@ -11,7 +9,6 @@ import {
   kodWPikselu,
   najwyzszePasmoEea,
   odczytajKlasy,
-  PASMA,
   pasmoEea,
   sprawdzKlasy,
   TERYT_KRAKOWA,
@@ -19,7 +16,6 @@ import {
   zlozWskaznik,
 } from './halas-obwarzanek.mjs'
 import { dekodujPngSzary } from './lib/png.mjs'
-import { DANE, wczytajAdresy } from './lib/wspolne.mjs'
 
 // ── pasma i wybór najwyższego ────────────────────────────────────────────────────────────────
 
@@ -294,54 +290,4 @@ test('Kraków i adresy bez konturu dostają null, nigdy 0', () => {
   assert.ok(!wartosci.includes(0))
 })
 
-// ── opublikowany wskaźnik ────────────────────────────────────────────────────────────────────
-
-test('opublikowany wskaźnik: wersja adresów, Kraków pusty, pasma i etykiety spójne', () => {
-  const { wersja, adresy } = wczytajAdresy()
-  const tekst = readFileSync(join(DANE, 'wskazniki', 'halas_obwarzanek_lden.json'), 'utf8')
-  const w = JSON.parse(tekst)
-  assert.equal(w.wersjaAdresow, wersja, 'po zmianie adresów uruchom node etl/halas-obwarzanek.mjs')
-  assert.equal(w.meta.id, 'halas_obwarzanek_lden')
-  assert.equal(w.meta.zadanie, 114)
-  assert.equal(w.wartosci.length, adresy.length)
-  assert.equal(w.etykiety.length, adresy.length)
-  const pauza = String.fromCharCode(0x2014) // kod znaku, żeby w pliku nie było samego znaku
-  assert.ok(!tekst.includes(pauza), 'w polskim tekście półpauza, nie pauza')
-  const dozwolone = new Map(PASMA.filter(Boolean).map((p) => [p.wartosc, p.etykieta]))
-  let zWartoscia = 0
-  let poza = 0
-  for (const a of adresy) {
-    const v = w.wartosci[a.i]
-    const e = w.etykiety[a.i]
-    if (a.teryt === TERYT_KRAKOWA) {
-      assert.equal(v, null)
-      assert.equal(e, null)
-      continue
-    }
-    poza++
-    if (v === null) {
-      assert.equal(e, null)
-      continue
-    }
-    zWartoscia++
-    assert.ok(dozwolone.has(v), `wartość ${v}`)
-    assert.ok(e.startsWith(`${dozwolone.get(v)}; hałas `), e)
-  }
-  // Odczyt, który nic nie zmierzył, albo taki, który zalał obwarzanek, to błąd.
-  assert.ok(zWartoscia > 5000, `adresów z wartością: ${zWartoscia}`)
-  assert.ok(zWartoscia / poza < 0.3, `udział: ${zWartoscia / poza}`)
-})
-
-test('opublikowany wskaźnik: znane miejsca przy drogach głównych i brak konturu na cichej wsi', () => {
-  const { adresy } = wczytajAdresy()
-  const w = JSON.parse(readFileSync(join(DANE, 'wskazniki', 'halas_obwarzanek_lden.json'), 'utf8'))
-  const wartosc = (gmina, ulica, nr) => {
-    const a = adresy.find((x) => x.gmina === gmina && x.ulica === ulica && x.nr === nr)
-    assert.ok(a, `brak adresu ${gmina} ${ulica} ${nr}`)
-    return w.wartosci[a.i]
-  }
-  assert.equal(wartosc('Zielonki', 'Krakowskie Przedmieście', '214'), 67.5) // DK94
-  assert.equal(wartosc('Zabierzów', 'Krakowska', '59'), 72.5) // DK79
-  assert.equal(wartosc('Wielka Wieś', 'Olkuska', '79'), 72.5) // DK94
-  assert.equal(wartosc('Świątniki Górne', 'Bliska', '10'), null) // poza konturami
-})
+// halas_obwarzanek_lden połączono w #171 z halas_ldwn (następca, testy w halas-pasma.test.mjs).
