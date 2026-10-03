@@ -23,6 +23,17 @@ import {
   zbudujGeometrie,
 } from '@/mapa/geometria'
 import {
+  dodajWarstwyLotu,
+  introDoPokazania,
+  kameraDlaGranic,
+  lec,
+  ograniczonyRuch,
+  PAUZA_PRZED_LOTEM,
+  WIDOK_KRAKOWA,
+  WIDOK_POLSKI,
+  zapamietajLotStartowy,
+} from '@/mapa/lot'
+import {
   gradientCss,
   KOLOR_SZRAFURY,
   KRYCIE_BRAKU,
@@ -114,6 +125,9 @@ function podpisHeksu(w: number | null | undefined, res: number): string {
   return res === 10 ? tekst : `${tekst} (średnia okolicy)`
 }
 
+/** Etap intro (#19): widok Polski → lot do Krakowa → zwykła mapa miasta. */
+type Etap = 'polska' | 'lot' | 'miasto'
+
 class KontrolkaLegendy implements IControl {
   readonly el = document.createElement('div')
   onAdd() {
@@ -141,10 +155,17 @@ export function MapaKrakowa({
   const wybranyRef = useRef(wybrany)
   const [gotowa, setGotowa] = useState(false)
   const [legenda, setLegenda] = useState<HTMLElement | null>(null)
+  // Wejście z wybranym adresem (link, powrót z karty) pomija intro – kamera od razu przy adresie.
+  const [etap, setEtap] = useState<Etap>(() =>
+    !wybrany && introDoPokazania() ? 'polska' : 'miasto',
+  )
+  const etapRef = useRef(etap)
+  const pauzaRef = useRef<number | null>(null)
 
   useEffect(() => {
     onKlikRef.current = onKlik
     wybranyRef.current = wybrany
+    etapRef.current = etap
   })
 
   useEffect(() => {
@@ -152,8 +173,7 @@ export function MapaKrakowa({
     const mapa = new MapaLibre({
       container: kontener.current,
       style: STYL,
-      center: KRAKOW,
-      zoom: 10.5,
+      ...kameraStartowa(etapRef.current, wybranyRef.current),
       minZoom: 5,
       maxBounds: GRANICE_WIDOKU,
       attributionControl: false,
@@ -258,11 +278,17 @@ export function MapaKrakowa({
         source: 'obrys',
         paint: { 'line-color': '#9AA2A8', 'line-width': 1.5, 'line-dasharray': [4, 3] },
       })
+      dodajWarstwyLotu(mapa)
       // Strict Mode montuje dwa razy – zdarzenie ze zdjętej mapy nie może ustawić stanu.
       if (mapaRef.current === mapa) setGotowa(true)
     })
 
-    mapa.on('click', (e) => onKlikRef.current?.(e.lngLat.lng, e.lngLat.lat))
+    mapa.on('click', (e) => {
+      // Klik w widoku Polski znaczy „pokaż mi dane", nie „najbliższy adres w Krakowie".
+      if (etapRef.current === 'polska') return startujLot(mapa)
+      onKlikRef.current?.(e.lngLat.lng, e.lngLat.lat)
+    })
+    sledzGestyPodczasIntro(mapa)
 
     return () => {
       dymek.remove()
@@ -271,6 +297,8 @@ export function MapaKrakowa({
       geometriaRef.current = null
       znacznikRef.current = null
       podpisMglyRef.current = null
+      if (pauzaRef.current !== null) clearTimeout(pauzaRef.current)
+      pauzaRef.current = null
       setGotowa(false)
       setLegenda(null)
     }
@@ -338,7 +366,10 @@ export function MapaKrakowa({
           .addTo(mapa)
       }
       if (pierwsza && heksy.size && !wybranyRef.current) {
-        mapa.fitBounds(g.granice, { padding: 32, animate: false })
+        if (etapRef.current === 'polska') zaplanujLot(mapa)
+        else if (etapRef.current === 'miasto') {
+          mapa.fitBounds(g.granice, { padding: 32, animate: false })
+        }
       }
     }
     const wyslane = wyslaneRef.current
@@ -377,17 +408,77 @@ export function MapaKrakowa({
       znacznikRef.current = z
     }
     znacznikRef.current.setLngLat([lon, lat]).addTo(mapa)
-    mapa.flyTo({ center: [lon, lat], zoom: Math.max(16, mapa.getZoom()), essential: true })
+    const cel = { center: [lon, lat] as [number, number], zoom: Math.max(16, mapa.getZoom()) }
+    if (etapRef.current === 'polska') {
+      // Adres przyszedł przed startem lotu (link z adresem, dane wczytane później): bez intro.
+      zakonczIntro()
+      mapa.jumpTo(cel)
+    } else {
+      void lec(mapa, cel)
+    }
   }, [lon, lat])
 
+  function zakonczIntro() {
+    if (pauzaRef.current !== null) clearTimeout(pauzaRef.current)
+    pauzaRef.current = null
+    zapamietajLotStartowy()
+    etapRef.current = 'miasto'
+    setEtap('miasto')
+  }
+
+  /** Dane są: chwila na obejrzenie Polski, potem lot (przy ograniczonym ruchu od razu skok). */
+  function zaplanujLot(mapa: MapaLibre) {
+    if (pauzaRef.current !== null) return
+    pauzaRef.current = window.setTimeout(
+      () => {
+        pauzaRef.current = null
+        startujLot(mapa)
+      },
+      ograniczonyRuch() ? 0 : PAUZA_PRZED_LOTEM,
+    )
+  }
+
+  function startujLot(mapa: MapaLibre) {
+    if (mapaRef.current !== mapa || etapRef.current !== 'polska') return
+    if (pauzaRef.current !== null) clearTimeout(pauzaRef.current)
+    pauzaRef.current = null
+    zapamietajLotStartowy()
+    const kamera = kameraDlaGranic(mapa, geometriaRef.current?.granice ?? WIDOK_KRAKOWA)
+    if (!kamera) return zakonczIntro()
+    etapRef.current = 'lot'
+    setEtap('lot')
+    void lec(mapa, kamera).then(() => {
+      if (mapaRef.current !== mapa || etapRef.current !== 'lot') return
+      etapRef.current = 'miasto'
+      setEtap('miasto')
+    })
+  }
+
+  /** Gest użytkownika w trakcie intro: MapLibre sam przerywa lot, my kończymy etap. */
+  function sledzGestyPodczasIntro(mapa: MapaLibre) {
+    mapa.on('movestart', (e) => {
+      if (!('originalEvent' in e) || !e.originalEvent) return
+      if (etapRef.current !== 'miasto') zakonczIntro()
+    })
+  }
+
   return (
-    <div className="mapa-krakowa">
+    <div className={etap === 'miasto' ? 'mapa-krakowa' : 'mapa-krakowa mapa-krakowa--intro'}>
       <div
         ref={kontener}
         className="mapa-krakowa__plotno"
         role="region"
         aria-label={`Mapa Krakowa – ${podpisWarstwy}`}
       />
+      {etap !== 'miasto' && (
+        <IntroPolski
+          lot={etap === 'lot'}
+          onPokaz={() => {
+            const mapa = mapaRef.current
+            if (mapa) startujLot(mapa)
+          }}
+        />
+      )}
       {legenda &&
         createPortal(
           <>
@@ -422,5 +513,31 @@ export function MapaKrakowa({
           legenda,
         )}
     </div>
+  )
+}
+
+function kameraStartowa(
+  etap: Etap,
+  wybrany: { lon: number; lat: number } | null | undefined,
+): { bounds: [[number, number], [number, number]] } | { center: [number, number]; zoom: number } {
+  if (wybrany) return { center: [wybrany.lon, wybrany.lat], zoom: 16 }
+  if (etap === 'polska') return { bounds: WIDOK_POLSKI }
+  return { center: KRAKOW, zoom: 10.5 }
+}
+
+/** Winieta i podpis nad widokiem Polski; znikają, gdy kamera dolatuje do Krakowa. */
+function IntroPolski({ lot, onPokaz }: { lot: boolean; onPokaz: () => void }): JSX.Element {
+  return (
+    <>
+      <div className="mapa-intro-winieta" aria-hidden="true" />
+      <div className={lot ? 'mapa-intro-podpis mapa-intro-podpis--lot' : 'mapa-intro-podpis'}>
+        <p>Dane: Kraków i obwarzanek. Reszta Polski – wkrótce</p>
+        {!lot && (
+          <button type="button" className="mapa-intro-przycisk" onClick={onPokaz}>
+            Pokaż Kraków
+          </button>
+        )}
+      </div>
+    </>
   )
 }
