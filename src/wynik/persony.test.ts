@@ -61,6 +61,13 @@ describe('persony', () => {
     }
     assert.equal(ustawieniaPersony('rodzina', 'kupuje', manifest).wagi.ludnosc_1km, 0)
   })
+
+  it('atrapa sklepu nie dostaje domyślnej wagi biznesowej', () => {
+    const warstwy = manifest.map((w) => ({ ...w, atrapa: w.id === 'sklep_odleglosc' }))
+    const { wagi } = ustawieniaPersony('rodzina', 'biznes', warstwy)
+    assert.equal(wagi.sklep_odleglosc, 0)
+    assert.equal(wagi.ludnosc_1km, 4)
+  })
 })
 
 describe('hash URL', () => {

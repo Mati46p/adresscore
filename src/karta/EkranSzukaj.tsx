@@ -52,7 +52,7 @@ export function EkranSzukaj() {
       ? dane.wskazniki.filter(
           (w) =>
             kierunekEfektywny(w.meta, kierunki) !== null &&
-            (tryb !== 'biznes' || WARSTWY_BIZNESU.some((id) => id === w.meta.id)),
+            (tryb !== 'biznes' || WARSTWY_BIZNESU.some((id) => id === w.meta.id && !w.meta.atrapa)),
         )
       : []
 

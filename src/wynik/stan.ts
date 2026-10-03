@@ -63,7 +63,8 @@ let idAdresow: readonly string[] | null = null
 let indeksPoId = new Map<string, number>()
 let indeksPoHash = new Map<string, number>()
 let slugPoIndeks: readonly string[] = []
-let metaWskaznikow: readonly Pick<WskaznikMeta, 'id' | 'kategoria'>[] = []
+let metaWskaznikow: readonly (Pick<WskaznikMeta, 'id' | 'kategoria'> &
+  Partial<Pick<WskaznikMeta, 'atrapa'>>)[] = []
 let oczekujacyUrl: StanUrl | null = null
 let odczytujemyHistorie = false
 type UstawieniaTrybu = Pick<StanAplikacji, 'persona' | 'wagi' | 'kierunki' | 'filtry'>
@@ -262,7 +263,8 @@ export function indeksAdresu(id: string | null): number | null {
  */
 export function podlaczDane(
   ids: readonly string[],
-  wskazniki: readonly Pick<WskaznikMeta, 'id' | 'kategoria'>[],
+  wskazniki: readonly (Pick<WskaznikMeta, 'id' | 'kategoria'> &
+    Partial<Pick<WskaznikMeta, 'atrapa'>>)[],
   adresy: readonly Adres[],
 ) {
   idAdresow = ids

@@ -84,7 +84,7 @@ export function PanelFiltrow() {
   const wskazniki = dane.stan === 'gotowe' ? dane.wskazniki : []
   const warstwyPanelu =
     tryb === 'biznes'
-      ? wskazniki.filter((w) => WARSTWY_BIZNESU.some((id) => id === w.meta.id))
+      ? wskazniki.filter((w) => WARSTWY_BIZNESU.some((id) => id === w.meta.id && !w.meta.atrapa))
       : wskazniki
   const liczone = warstwyPanelu.filter(
     (w) => w.meta.kategoria !== 'kontekst' || KONTEKST_DO_WYNIKU[w.meta.id],
@@ -166,10 +166,12 @@ export function PanelFiltrow() {
 
       {tryb === 'biznes' &&
         dane.stan === 'gotowe' &&
-        WARSTWY_BIZNESU.some((id) => !wskazniki.some((w) => w.meta.id === id)) && (
+        WARSTWY_BIZNESU.some(
+          (id) => !wskazniki.some((w) => w.meta.id === id && !w.meta.atrapa),
+        ) && (
           <p className="panel-uwaga" role="status">
-            Dostępne warstwy biznesowe: {warstwyPanelu.length} z {WARSTWY_BIZNESU.length}. Brakująca
-            warstwa nie wpływa na wynik.
+            Dostępne rzeczywiste warstwy biznesowe: {warstwyPanelu.length} z{' '}
+            {WARSTWY_BIZNESU.length}. Brakująca warstwa nie wpływa na wynik.
           </p>
         )}
 

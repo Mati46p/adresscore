@@ -126,19 +126,20 @@ export function znajdzPersone(id: string | null | undefined): Persona | undefine
 
 /**
  * Wagi i kierunki persony dopasowane do żywych warstw z manifestu.
- * Warstwy kontekstu zawsze dostają 0 – i tak nie wchodzą do wyniku.
+ * Profile mieszkaniowe dają kontekstowi 0; biznes jawnie ocenia ludność NSP 2021.
  */
 export function ustawieniaPersony(
   personaId: PersonaId,
   tryb: Tryb,
-  wskazniki: readonly Pick<WskaznikMeta, 'id' | 'kategoria'>[],
+  wskazniki: readonly (Pick<WskaznikMeta, 'id' | 'kategoria'> &
+    Partial<Pick<WskaznikMeta, 'atrapa'>>)[],
 ): { wagi: Record<string, number>; kierunki: Kierunki } {
   if (tryb === 'biznes') {
-    const znane = new Set(wskazniki.map((w) => w.id))
+    const rzeczywiste = new Set(wskazniki.filter((w) => !w.atrapa).map((w) => w.id))
     const wagi = Object.fromEntries(wskazniki.map((w) => [w.id, 0]))
     const kierunki: Record<string, Kierunki[string]> = {}
     for (const id of WARSTWY_BIZNESU) {
-      if (!znane.has(id)) continue
+      if (!rzeczywiste.has(id)) continue
       wagi[id] = 4
       kierunki[id] = 'wiecej-lepiej'
     }
