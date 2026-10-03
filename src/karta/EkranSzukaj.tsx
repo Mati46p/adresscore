@@ -1,8 +1,9 @@
 import { MapaPolski } from '@/components/MapaPolski'
 import { useDane } from '@/wynik/dane'
-import { useStan, ustawWarstwe } from '@/wynik/stan'
+import { pokazOkolice, useStan, ustawWarstwe } from '@/wynik/stan'
 import { PanelFiltrow } from './panel/PanelFiltrow'
 import { Ranking } from './Ranking'
+import { Wyszukiwarka } from './wyszukiwarka/Wyszukiwarka'
 
 /** Ekran 1 wg docs/makieta/Main.dc.html: panel filtrów po lewej, mapa po prawej. */
 export function EkranSzukaj() {
@@ -19,23 +20,11 @@ export function EkranSzukaj() {
   return (
     <main className="szukaj">
       <aside aria-label="Filtry" className="szukaj-panel">
-        {/* TODO #11: <Wyszukiwarka adresy={dane.adresy} onWybierz={pokazOkolice} /> z @/karta/wyszukiwarka/Wyszukiwarka */}
-        <div data-slot="wyszukiwarka">
-          <label htmlFor="szukaj-adres" className="etykieta-sekcji">
-            Adres
-          </label>
-          <input
-            id="szukaj-adres"
-            className="pole"
-            type="search"
-            placeholder="np. ul. Długa 12, Kraków"
-            disabled
-            aria-describedby="szukaj-adres-wkrotce"
-          />
-          <small id="szukaj-adres-wkrotce" style={{ color: 'var(--tekst-3)' }}>
-            Wyszukiwarka wkrótce.
-          </small>
-        </div>
+        {dane.stan === 'gotowe' ? (
+          <Wyszukiwarka adresy={dane.adresy} onWybierz={pokazOkolice} />
+        ) : (
+          <p className="etykieta-sekcji">Wczytuję adresy…</p>
+        )}
         <PanelFiltrow />
       </aside>
 
