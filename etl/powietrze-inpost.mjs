@@ -1,15 +1,12 @@
 // Indeks jakości powietrza z czujników paczkomatów InPost (Kraków + obwarzanek).
-// Uruchom: node etl/powietrze-inpost.mjs
-// Warstwa pomocnicza (decyzja #63): kategoria `kontekst`, nie wchodzi do wyniku.
-// Podstawą oceny powietrza zostaje GIOŚ (#7).
+// Moduł dla etl/powietrze.mjs: dopisek do warstwy PM2,5 (decyzja #63, zadanie #80).
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import KDBush from 'kdbush'
-import { CACHE, DANE, dzis, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
+import { CACHE, dzis } from './lib/wspolne.mjs'
 
 const API = 'https://api-shipx-pl.easypack24.net/v1/points'
-const PROMIEN_M = 1_000
+const PROMIEN_M = 300
 const RAD = Math.PI / 180
 const ZIEMIA_M = 6_371_000
 
@@ -98,8 +95,12 @@ async function pobierzWojewodztwo() {
   return items
 }
 
-async function main() {
-  const { adresy } = wczytajAdresy()
+/**
+ * Odczyty czujników dla adresów: etykieta „Czujnik: …" (krótka – limit 2 MB pliku) albo null dalej niż PROMIEN_M.
+ * Dopisek do oficjalnej warstwy PM2,5 (#80, decyzja #63) – wartości i wynik zostają z GIOŚ.
+ * Pozycji paczkomatów nie publikujemy; nazwa operatora idzie wyłącznie do listy źródeł.
+ */
+export async function odczytyCzujnikow(adresy) {
   const zapas = 0.02
   const granice = { lat: [Infinity, -Infinity], lon: [Infinity, -Infinity] }
   for (const a of adresy) {
@@ -113,47 +114,24 @@ async function main() {
   const { features, nieznane } = punktyZCzujnikiem(items, granice)
   if (nieznane.length) console.warn(`Nieznane poziomy indeksu (pominięte): ${nieznane.join(', ')}`)
   if (features.length < 50) throw new Error(`Podejrzanie mało czujników: ${features.length}`)
-
-  const opisZrodla =
-    'Publiczne API punktów InPost (ShipX Points), pole air_index_level – indeks z czujnika wbudowanego w część paczkomatów. Dane prywatnego operatora, nie rejestr publiczny; InPost nie publikuje metodyki ani kalibracji czujników.'
-  // Pozycji paczkomatów nie publikujemy – do repo trafiają wyłącznie wartości przy adresach.
   const indeks = new KDBush(features.length)
   for (const f of features) indeks.add(...f.geometry.coordinates)
   indeks.finish()
-  const najblizsze = adresy.map((a) => najblizszyCzujnik(a, features, indeks))
-  zapiszWskaznik(
-    {
-      id: 'powietrze_inpost_indeks',
-      kategoria: 'kontekst',
-      nazwa: 'Powietrze – czujnik w paczkomacie (nieoficjalne)',
-      opis: `Indeks jakości powietrza z najbliższego paczkomatu InPost z czujnikiem, w promieniu ${PROMIEN_M} m (1 = bardzo dobry … 6 = bardzo zły). Migawka z dnia pobrania, nie średnia roczna. Źródło prywatne i bez opisanej kalibracji – tylko kontekst, nie wpływa na wynik; ocenę powietrza daje GIOŚ. Dalej niż ${PROMIEN_M} m od czujnika: brak danych.`,
-      jednostka: 'indeks 1–6',
-      kierunek: 'mniej-lepiej',
-      rozdzielczosc: 'siatka',
-      rozmiar: `najbliższy czujnik ≤ ${PROMIEN_M} m`,
-      zakres: [1, 6],
-      zadanie: 80,
-      zrodla: [
-        {
-          nazwa: 'InPost – API punktów (ShipX Points), pole air_index_level',
-          url: API,
-          licencja:
-            'Dane operatora prywatnego udostępniane publicznie bez licencji otwartej; przetworzono: najbliższy czujnik ≤ 1 km',
-          dataDanych: dzis(),
-          pobrano: dzis(),
-        },
-      ],
-    },
-    // Bez etykiet: plik musiałby przekroczyć 2 MB; pozycji paczkomatów celowo nie publikujemy.
-    najblizsze.map((w) => w?.punkt.properties.wartosc ?? null),
-  )
-  console.log(
-    `Czujniki InPost: ${features.length} w obszarze / ${items.length} punktów w małopolskim`,
-  )
-}
-
-if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1])
-  main().catch((blad) => {
-    console.error(blad)
-    process.exitCode = 1
+  const etykiety = adresy.map((a) => {
+    const w = najblizszyCzujnik(a, features, indeks)
+    return w ? `Czujnik: ${w.punkt.properties.nazwa}` : null
   })
+  const liczba = etykiety.filter(Boolean).length
+  console.log(`Czujniki: ${features.length}, adresów do ${PROMIEN_M} m: ${liczba}/${adresy.length}`)
+  return {
+    etykiety,
+    zrodlo: {
+      nazwa: `InPost – indeks powietrza z czujników punktów odbioru (migawka z dnia pobrania), dopisek przy adresach do ${PROMIEN_M} m od czujnika`,
+      url: API,
+      licencja:
+        'Dane operatora prywatnego bez licencji otwartej; tylko dopisek na karcie, nie zmienia wartości GIOŚ ani wyniku',
+      dataDanych: dzis(),
+      pobrano: dzis(),
+    },
+  }
+}

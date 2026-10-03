@@ -22,12 +22,14 @@ import {
   znajdzRok,
 } from './lib/powietrze.mjs'
 import { dzis, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
+import { odczytyCzujnikow } from './powietrze-inpost.mjs'
 
 const { adresy } = wczytajAdresy()
 const { rok, warstwy } = await znajdzRok()
 const bbox = bboxAdresow(adresy)
 console.log(`Rok modelu: ${rok}, obszar EPSG:2180: ${bbox.join(', ')}`)
 
+const czujniki = await odczytyCzujnikow(adresy)
 const punkty = adresy.map((a) => doPuwg(a.lon, a.lat))
 
 const METADANE = {
@@ -146,23 +148,10 @@ for (const [wskaznik, idWarstwy] of Object.entries(warstwy)) {
           dataDanych: rok,
           pobrano: dzis(),
         },
-        // Uzupełnienie (decyzja #63): wartość zostaje z GIOŚ, odczyt czujników to osobna
-        // warstwa kontekstowa powietrze_inpost_indeks (#80) bez wpływu na wynik.
-        ...(wskaznik.startsWith('PM')
-          ? [
-              {
-                nazwa:
-                  'Uzupełnienie: indeks z czujników paczkomatów InPost (migawka, źródło nieoficjalne) – warstwa „Powietrze – czujnik w paczkomacie”',
-                url: 'https://api-shipx-pl.easypack24.net/v1/points',
-                licencja:
-                  'Dane operatora prywatnego bez licencji otwartej; nie zmieniają wartości GIOŚ ani wyniku',
-                dataDanych: dzis(),
-                pobrano: dzis(),
-              },
-            ]
-          : []),
+        ...(wskaznik === 'PM2.5' ? [czujniki.zrodlo] : []),
       ],
     },
     wartosci,
+    wskaznik === 'PM2.5' ? czujniki.etykiety : undefined,
   )
 }
