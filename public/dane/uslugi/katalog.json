@@ -1,0 +1,1284 @@
+{
+  "wersja": 1,
+  "wygenerowano": "2026-10-03",
+  "obszar": {
+    "opis": "Kraków i 13 gmin obwarzanka; prostokąt z marginesem ok. 3 km, żeby punkty tuż za granicą gminy były widoczne",
+    "bbox": {
+      "minLat": 49.84,
+      "maxLat": 50.3,
+      "minLon": 19.58,
+      "maxLon": 20.46
+    },
+    "gminy": [
+      {
+        "nazwa": "Kraków",
+        "terc": "1261011"
+      },
+      {
+        "nazwa": "Wieliczka",
+        "terc": "1219053"
+      },
+      {
+        "nazwa": "Niepołomice",
+        "terc": "1219043"
+      },
+      {
+        "nazwa": "Zabierzów",
+        "terc": "1206162"
+      },
+      {
+        "nazwa": "Skawina",
+        "terc": "1206113"
+      },
+      {
+        "nazwa": "Zielonki",
+        "terc": "1206172"
+      },
+      {
+        "nazwa": "Liszki",
+        "terc": "1206072"
+      },
+      {
+        "nazwa": "Kocmyrzów-Luborzyca",
+        "terc": "1206052"
+      },
+      {
+        "nazwa": "Wielka Wieś",
+        "terc": "1206152"
+      },
+      {
+        "nazwa": "Mogilany",
+        "terc": "1206092"
+      },
+      {
+        "nazwa": "Michałowice",
+        "terc": "1206082"
+      },
+      {
+        "nazwa": "Świątniki Górne",
+        "terc": "1206143"
+      },
+      {
+        "nazwa": "Koniusza",
+        "terc": "1214012"
+      },
+      {
+        "nazwa": "Igołomia-Wawrzeńczyce",
+        "terc": "1206022"
+      }
+    ]
+  },
+  "format": {
+    "opis": "Pliki kolumnowe <branza>.json: kolumny lon, lat (WGS84, 5 miejsc), zr (maska bitowa źródeł), flagi (maska flag branży, tylko gdy branża je ma) i nazwa (null, gdy brak albo mogłaby być daną osoby fizycznej). Same punkty, bez wskaźników na adres.",
+    "bityZrodel": {
+      "osm": 1,
+      "overture": 2,
+      "rejestr": 4,
+      "ceidg": 8
+    },
+    "uwagaRejestr": "Bit rejestr znaczy rejestr właściwy dla branży: apteka – Rejestr Aptek, poz – RPWDL (patrz mapowanie.rejestr)."
+  },
+  "progiDedupu": {
+    "metryZNazwa": 30,
+    "metryBezNazwy": 15
+  },
+  "zrodla": {
+    "osm": {
+      "nazwa": "OpenStreetMap, ekstrakt Geofabrik – małopolskie",
+      "url": "https://download.geofabrik.de/europe/poland/malopolskie.html",
+      "licencja": "Open Database License (ODbL) 1.0",
+      "licencjaUrl": "https://opendatacommons.org/licenses/odbl/1-0/",
+      "atrybucja": "© OpenStreetMap contributors, ODbL",
+      "uwagi": "Punkty z OSM tworzą bazę pochodną na warunkach ODbL: zachowaj atrybucję i udostępniaj ją dalej na tej samej licencji.",
+      "dataDanych": "2026-10-02",
+      "pobrano": "2026-10-03"
+    },
+    "overture": {
+      "nazwa": "Overture Maps Foundation – Places",
+      "url": "https://docs.overturemaps.org/guides/places/",
+      "licencja": "CDLA-Permissive-2.0",
+      "licencjaUrl": "https://cdla.dev/permissive-2-0/",
+      "atrybucja": "Overture Maps Foundation, Places (CDLA-Permissive-2.0)",
+      "uwagi": "Tylko miejsca z pewnością (confidence) co najmniej 0,7 i bez statusu zamknięcia.",
+      "dataDanych": "2026-09-23",
+      "pobrano": "2026-10-03",
+      "wydanie": "2026-09-23.1",
+      "miejscWObszarze": 55836
+    },
+    "rejestr_aptek": {
+      "nazwa": "Rejestr Aptek Ogólnodostępnych i Punktów Aptecznych (Centrum e-Zdrowia)",
+      "url": "https://rejestry.ezdrowie.gov.pl/ra/search/public",
+      "licencja": "Dane publiczne rejestru, jawne z mocy ustawy – Prawo farmaceutyczne",
+      "atrybucja": "Centrum e-Zdrowia, Rejestr Aptek",
+      "uwagi": "Adresy geokodowane usługą GUGiK UUG; prawda dla branży „apteka\".",
+      "dataDanych": "2026-10-03",
+      "pobrano": "2026-10-03",
+      "aktywnychWMalopolsce": 1085,
+      "adresZnaleziony": 1061,
+      "wObszarze": 431
+    },
+    "rpwdl": {
+      "nazwa": "Rejestr Podmiotów Wykonujących Działalność Leczniczą – poradnie (gabinety) lekarza POZ (Centrum e-Zdrowia)",
+      "url": "https://dane.gov.pl/pl/dataset/728,rejestr-podmiotow-wykonujacych-dzialalnosc-lecznicza",
+      "licencja": "CC BY 4.0",
+      "licencjaUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "atrybucja": "Centrum e-Zdrowia, RPWDL (CC BY 4.0)",
+      "uwagi": "Adresy geokodowane usługą GUGiK UUG.",
+      "dataDanych": "2026-10-02",
+      "pobrano": "2026-10-03",
+      "komorekWMalopolsce": 793,
+      "adresZnaleziony": 765,
+      "wObszarze": 306
+    },
+    "ceidg": {
+      "nazwa": "CEIDG – Centralna Ewidencja i Informacja o Działalności Gospodarczej (API v3)",
+      "url": "https://dane.biznes.gov.pl/",
+      "licencja": "Dane jawne CEIDG (ustawa o CEIDG); API dane.biznes.gov.pl",
+      "atrybucja": "Ministerstwo Rozwoju i Technologii, CEIDG",
+      "uwagi": "Wyłącznie uzupełnienie: adres działalności firmy jednoosobowej z danym PKD, nie potwierdzony lokal. Do plików trafia tylko punkt, branża i źródło – bez nazwy firmy, nazwiska, NIP i REGON.",
+      "dataDanych": "2026-10-03",
+      "pobrano": "2026-10-03",
+      "wpisow": 6122,
+      "adresZnaleziony": 5754,
+      "punktowWObszarze": 5750,
+      "zapytanWTymBiegu": 0,
+      "zapytanLacznie": 295,
+      "paryRazem": 70,
+      "paryKompletne": 67,
+      "budzetWyczerpany": false,
+      "odmowa": null,
+      "blad": null,
+      "pary": [
+        {
+          "branza": "sklep_spozywczy",
+          "obszar": "krakow",
+          "pkd": "47.11.Z",
+          "count": 2560,
+          "pobranoFirm": 1050,
+          "kompletne": false,
+          "limitStron": 45,
+          "odRoku": 2016,
+          "doRoku": 2026
+        },
+        {
+          "branza": "sklep_spozywczy",
+          "obszar": "wieliczka",
+          "pkd": "47.11.Z",
+          "count": 196,
+          "pobranoFirm": 196,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 1984,
+          "doRoku": 2026
+        },
+        {
+          "branza": "sklep_spozywczy",
+          "obszar": "niepolomice",
+          "pkd": "47.11.Z",
+          "count": 97,
+          "pobranoFirm": 97,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 1989,
+          "doRoku": 2026
+        },
+        {
+          "branza": "sklep_spozywczy",
+          "obszar": "zabierzow",
+          "pkd": "47.11.Z",
+          "count": 75,
+          "pobranoFirm": 75,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 1979,
+          "doRoku": 2026
+        },
+        {
+          "branza": "sklep_spozywczy",
+          "obszar": "skawina",
+          "pkd": "47.11.Z",
+          "count": 119,
+          "pobranoFirm": 119,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 1987,
+          "doRoku": 2026
+        },
+        {
+          "branza": "sklep_spozywczy",
+          "obszar": "zielonki",
+          "pkd": "47.11.Z",
+          "count": 85,
+          "pobranoFirm": 85,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 1987,
+          "doRoku": 2026
+        },
+        {
+          "branza": "sklep_spozywczy",
+          "obszar": "liszki",
+          "pkd": "47.11.Z",
+          "count": 62,
+          "pobranoFirm": 62,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 1990,
+          "doRoku": 2026
+        },
+        {
+          "branza": "sklep_spozywczy",
+          "obszar": "kocmyrzow_luborzyca",
+          "pkd": "47.11.Z",
+          "count": 57,
+          "pobranoFirm": 57,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 1991,
+          "doRoku": 2026
+        },
+        {
+          "branza": "sklep_spozywczy",
+          "obszar": "wielka_wies",
+          "pkd": "47.11.Z",
+          "count": 50,
+          "pobranoFirm": 50,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 1992,
+          "doRoku": 2026
+        },
+        {
+          "branza": "sklep_spozywczy",
+          "obszar": "mogilany",
+          "pkd": "47.11.Z",
+          "count": 54,
+          "pobranoFirm": 54,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 1980,
+          "doRoku": 2026
+        },
+        {
+          "branza": "sklep_spozywczy",
+          "obszar": "michalowice",
+          "pkd": "47.11.Z",
+          "count": 35,
+          "pobranoFirm": 35,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 1990,
+          "doRoku": 2026
+        },
+        {
+          "branza": "sklep_spozywczy",
+          "obszar": "swiatniki_gorne",
+          "pkd": "47.11.Z",
+          "count": 27,
+          "pobranoFirm": 27,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 1997,
+          "doRoku": 2026
+        },
+        {
+          "branza": "sklep_spozywczy",
+          "obszar": "koniusza",
+          "pkd": "47.11.Z",
+          "count": 16,
+          "pobranoFirm": 16,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 1991,
+          "doRoku": 2026
+        },
+        {
+          "branza": "sklep_spozywczy",
+          "obszar": "igolomia_wawrzenczyce",
+          "pkd": "47.11.Z",
+          "count": 25,
+          "pobranoFirm": 25,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 1990,
+          "doRoku": 2023
+        },
+        {
+          "branza": "fryzjer",
+          "obszar": "krakow",
+          "pkd": "96.21.Z",
+          "count": 842,
+          "pobranoFirm": 842,
+          "kompletne": true,
+          "limitStron": 34,
+          "odRoku": 1990,
+          "doRoku": 2026
+        },
+        {
+          "branza": "fryzjer",
+          "obszar": "wieliczka",
+          "pkd": "96.21.Z",
+          "count": 62,
+          "pobranoFirm": 62,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 1991,
+          "doRoku": 2026
+        },
+        {
+          "branza": "fryzjer",
+          "obszar": "niepolomice",
+          "pkd": "96.21.Z",
+          "count": 32,
+          "pobranoFirm": 32,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 1993,
+          "doRoku": 2026
+        },
+        {
+          "branza": "fryzjer",
+          "obszar": "zabierzow",
+          "pkd": "96.21.Z",
+          "count": 17,
+          "pobranoFirm": 17,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 2001,
+          "doRoku": 2026
+        },
+        {
+          "branza": "fryzjer",
+          "obszar": "skawina",
+          "pkd": "96.21.Z",
+          "count": 38,
+          "pobranoFirm": 38,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 1989,
+          "doRoku": 2026
+        },
+        {
+          "branza": "fryzjer",
+          "obszar": "zielonki",
+          "pkd": "96.21.Z",
+          "count": 13,
+          "pobranoFirm": 13,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 2002,
+          "doRoku": 2026
+        },
+        {
+          "branza": "fryzjer",
+          "obszar": "liszki",
+          "pkd": "96.21.Z",
+          "count": 13,
+          "pobranoFirm": 13,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 2014,
+          "doRoku": 2026
+        },
+        {
+          "branza": "fryzjer",
+          "obszar": "kocmyrzow_luborzyca",
+          "pkd": "96.21.Z",
+          "count": 20,
+          "pobranoFirm": 20,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 1999,
+          "doRoku": 2026
+        },
+        {
+          "branza": "fryzjer",
+          "obszar": "wielka_wies",
+          "pkd": "96.21.Z",
+          "count": 14,
+          "pobranoFirm": 14,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 2014,
+          "doRoku": 2026
+        },
+        {
+          "branza": "fryzjer",
+          "obszar": "mogilany",
+          "pkd": "96.21.Z",
+          "count": 16,
+          "pobranoFirm": 16,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 1995,
+          "doRoku": 2026
+        },
+        {
+          "branza": "fryzjer",
+          "obszar": "michalowice",
+          "pkd": "96.21.Z",
+          "count": 7,
+          "pobranoFirm": 7,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 2014,
+          "doRoku": 2026
+        },
+        {
+          "branza": "fryzjer",
+          "obszar": "swiatniki_gorne",
+          "pkd": "96.21.Z",
+          "count": 8,
+          "pobranoFirm": 8,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 1996,
+          "doRoku": 2026
+        },
+        {
+          "branza": "fryzjer",
+          "obszar": "koniusza",
+          "pkd": "96.21.Z",
+          "count": 3,
+          "pobranoFirm": 3,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 2013,
+          "doRoku": 2025
+        },
+        {
+          "branza": "fryzjer",
+          "obszar": "igolomia_wawrzenczyce",
+          "pkd": "96.21.Z",
+          "count": 5,
+          "pobranoFirm": 5,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 1992,
+          "doRoku": 2026
+        },
+        {
+          "branza": "fryzjer",
+          "obszar": "krakow",
+          "pkd": "96.02.Z",
+          "count": 1740,
+          "pobranoFirm": 300,
+          "kompletne": false,
+          "limitStron": 12,
+          "odRoku": 2022,
+          "doRoku": 2025
+        },
+        {
+          "branza": "fryzjer",
+          "obszar": "wieliczka",
+          "pkd": "96.02.Z",
+          "count": 112,
+          "pobranoFirm": 112,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 1988,
+          "doRoku": 2024
+        },
+        {
+          "branza": "fryzjer",
+          "obszar": "niepolomice",
+          "pkd": "96.02.Z",
+          "count": 67,
+          "pobranoFirm": 67,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 1980,
+          "doRoku": 2024
+        },
+        {
+          "branza": "fryzjer",
+          "obszar": "zabierzow",
+          "pkd": "96.02.Z",
+          "count": 53,
+          "pobranoFirm": 53,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 1991,
+          "doRoku": 2024
+        },
+        {
+          "branza": "fryzjer",
+          "obszar": "skawina",
+          "pkd": "96.02.Z",
+          "count": 102,
+          "pobranoFirm": 102,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 1990,
+          "doRoku": 2024
+        },
+        {
+          "branza": "fryzjer",
+          "obszar": "zielonki",
+          "pkd": "96.02.Z",
+          "count": 44,
+          "pobranoFirm": 44,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 1999,
+          "doRoku": 2024
+        },
+        {
+          "branza": "fryzjer",
+          "obszar": "liszki",
+          "pkd": "96.02.Z",
+          "count": 28,
+          "pobranoFirm": 28,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 1990,
+          "doRoku": 2024
+        },
+        {
+          "branza": "fryzjer",
+          "obszar": "kocmyrzow_luborzyca",
+          "pkd": "96.02.Z",
+          "count": 22,
+          "pobranoFirm": 22,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 1987,
+          "doRoku": 2024
+        },
+        {
+          "branza": "fryzjer",
+          "obszar": "wielka_wies",
+          "pkd": "96.02.Z",
+          "count": 29,
+          "pobranoFirm": 29,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 1994,
+          "doRoku": 2024
+        },
+        {
+          "branza": "fryzjer",
+          "obszar": "mogilany",
+          "pkd": "96.02.Z",
+          "count": 33,
+          "pobranoFirm": 33,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 1989,
+          "doRoku": 2024
+        },
+        {
+          "branza": "fryzjer",
+          "obszar": "michalowice",
+          "pkd": "96.02.Z",
+          "count": 30,
+          "pobranoFirm": 30,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 1987,
+          "doRoku": 2024
+        },
+        {
+          "branza": "fryzjer",
+          "obszar": "swiatniki_gorne",
+          "pkd": "96.02.Z",
+          "count": 21,
+          "pobranoFirm": 21,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 2003,
+          "doRoku": 2024
+        },
+        {
+          "branza": "fryzjer",
+          "obszar": "koniusza",
+          "pkd": "96.02.Z",
+          "count": 10,
+          "pobranoFirm": 10,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 1997,
+          "doRoku": 2024
+        },
+        {
+          "branza": "fryzjer",
+          "obszar": "igolomia_wawrzenczyce",
+          "pkd": "96.02.Z",
+          "count": 10,
+          "pobranoFirm": 10,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 2005,
+          "doRoku": 2022
+        },
+        {
+          "branza": "piekarnia",
+          "obszar": "krakow",
+          "pkd": "10.71.Z",
+          "count": 404,
+          "pobranoFirm": 404,
+          "kompletne": true,
+          "limitStron": 17,
+          "odRoku": 1972,
+          "doRoku": 2026
+        },
+        {
+          "branza": "piekarnia",
+          "obszar": "wieliczka",
+          "pkd": "10.71.Z",
+          "count": 31,
+          "pobranoFirm": 31,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 1995,
+          "doRoku": 2026
+        },
+        {
+          "branza": "piekarnia",
+          "obszar": "niepolomice",
+          "pkd": "10.71.Z",
+          "count": 20,
+          "pobranoFirm": 20,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 1990,
+          "doRoku": 2024
+        },
+        {
+          "branza": "piekarnia",
+          "obszar": "zabierzow",
+          "pkd": "10.71.Z",
+          "count": 21,
+          "pobranoFirm": 21,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 1979,
+          "doRoku": 2023
+        },
+        {
+          "branza": "piekarnia",
+          "obszar": "skawina",
+          "pkd": "10.71.Z",
+          "count": 21,
+          "pobranoFirm": 21,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 1994,
+          "doRoku": 2025
+        },
+        {
+          "branza": "piekarnia",
+          "obszar": "zielonki",
+          "pkd": "10.71.Z",
+          "count": 16,
+          "pobranoFirm": 16,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 1994,
+          "doRoku": 2024
+        },
+        {
+          "branza": "piekarnia",
+          "obszar": "liszki",
+          "pkd": "10.71.Z",
+          "count": 11,
+          "pobranoFirm": 11,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 1990,
+          "doRoku": 2024
+        },
+        {
+          "branza": "piekarnia",
+          "obszar": "kocmyrzow_luborzyca",
+          "pkd": "10.71.Z",
+          "count": 7,
+          "pobranoFirm": 7,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 2000,
+          "doRoku": 2026
+        },
+        {
+          "branza": "piekarnia",
+          "obszar": "wielka_wies",
+          "pkd": "10.71.Z",
+          "count": 11,
+          "pobranoFirm": 11,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 1995,
+          "doRoku": 2025
+        },
+        {
+          "branza": "piekarnia",
+          "obszar": "mogilany",
+          "pkd": "10.71.Z",
+          "count": 10,
+          "pobranoFirm": 10,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 1980,
+          "doRoku": 2022
+        },
+        {
+          "branza": "piekarnia",
+          "obszar": "michalowice",
+          "pkd": "10.71.Z",
+          "count": 5,
+          "pobranoFirm": 5,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 1992,
+          "doRoku": 2023
+        },
+        {
+          "branza": "piekarnia",
+          "obszar": "swiatniki_gorne",
+          "pkd": "10.71.Z",
+          "count": 5,
+          "pobranoFirm": 5,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 2005,
+          "doRoku": 2022
+        },
+        {
+          "branza": "piekarnia",
+          "obszar": "koniusza",
+          "pkd": "10.71.Z",
+          "count": 3,
+          "pobranoFirm": 3,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 2005,
+          "doRoku": 2025
+        },
+        {
+          "branza": "piekarnia",
+          "obszar": "igolomia_wawrzenczyce",
+          "pkd": "10.71.Z",
+          "count": 2,
+          "pobranoFirm": 2,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 2007,
+          "doRoku": 2021
+        },
+        {
+          "branza": "kawiarnia",
+          "obszar": "krakow",
+          "pkd": "56.30.Z",
+          "count": 2304,
+          "pobranoFirm": 1050,
+          "kompletne": false,
+          "limitStron": 45,
+          "odRoku": 2017,
+          "doRoku": 2026
+        },
+        {
+          "branza": "kawiarnia",
+          "obszar": "wieliczka",
+          "pkd": "56.30.Z",
+          "count": 128,
+          "pobranoFirm": 128,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 1991,
+          "doRoku": 2026
+        },
+        {
+          "branza": "kawiarnia",
+          "obszar": "niepolomice",
+          "pkd": "56.30.Z",
+          "count": 73,
+          "pobranoFirm": 73,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 1990,
+          "doRoku": 2026
+        },
+        {
+          "branza": "kawiarnia",
+          "obszar": "zabierzow",
+          "pkd": "56.30.Z",
+          "count": 69,
+          "pobranoFirm": 69,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 1990,
+          "doRoku": 2025
+        },
+        {
+          "branza": "kawiarnia",
+          "obszar": "skawina",
+          "pkd": "56.30.Z",
+          "count": 65,
+          "pobranoFirm": 65,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 1993,
+          "doRoku": 2026
+        },
+        {
+          "branza": "kawiarnia",
+          "obszar": "zielonki",
+          "pkd": "56.30.Z",
+          "count": 53,
+          "pobranoFirm": 53,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 1987,
+          "doRoku": 2026
+        },
+        {
+          "branza": "kawiarnia",
+          "obszar": "liszki",
+          "pkd": "56.30.Z",
+          "count": 44,
+          "pobranoFirm": 44,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 1990,
+          "doRoku": 2026
+        },
+        {
+          "branza": "kawiarnia",
+          "obszar": "kocmyrzow_luborzyca",
+          "pkd": "56.30.Z",
+          "count": 31,
+          "pobranoFirm": 31,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 1991,
+          "doRoku": 2026
+        },
+        {
+          "branza": "kawiarnia",
+          "obszar": "wielka_wies",
+          "pkd": "56.30.Z",
+          "count": 47,
+          "pobranoFirm": 47,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 1992,
+          "doRoku": 2026
+        },
+        {
+          "branza": "kawiarnia",
+          "obszar": "mogilany",
+          "pkd": "56.30.Z",
+          "count": 36,
+          "pobranoFirm": 36,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 1980,
+          "doRoku": 2026
+        },
+        {
+          "branza": "kawiarnia",
+          "obszar": "michalowice",
+          "pkd": "56.30.Z",
+          "count": 26,
+          "pobranoFirm": 26,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 1995,
+          "doRoku": 2026
+        },
+        {
+          "branza": "kawiarnia",
+          "obszar": "swiatniki_gorne",
+          "pkd": "56.30.Z",
+          "count": 15,
+          "pobranoFirm": 15,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 1996,
+          "doRoku": 2026
+        },
+        {
+          "branza": "kawiarnia",
+          "obszar": "koniusza",
+          "pkd": "56.30.Z",
+          "count": 8,
+          "pobranoFirm": 8,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 1982,
+          "doRoku": 2023
+        },
+        {
+          "branza": "kawiarnia",
+          "obszar": "igolomia_wawrzenczyce",
+          "pkd": "56.30.Z",
+          "count": 11,
+          "pobranoFirm": 11,
+          "kompletne": true,
+          "limitStron": null,
+          "odRoku": 1992,
+          "doRoku": 2026
+        }
+      ]
+    }
+  },
+  "branze": [
+    {
+      "id": "sklep_spozywczy",
+      "nazwa": "Sklep spożywczy",
+      "zasiegPieszyM": 500,
+      "mapowanie": {
+        "osm": [
+          "shop=supermarket",
+          "shop=convenience",
+          "shop=greengrocer"
+        ],
+        "osmWyklucz": [],
+        "overture": [
+          "convenience_store",
+          "grocery_store"
+        ],
+        "pkd": [
+          "47.11.Z"
+        ],
+        "flagi": {},
+        "rejestr": null,
+        "zrodloPrawdy": null
+      },
+      "uwagi": "Supermarkety, sklepy osiedlowe i warzywniaki. Bez rzeźni, delikatesów specjalistycznych, kiosków i drogerii.",
+      "plik": "sklep_spozywczy.json",
+      "n": 3923,
+      "zrodlaWPliku": [
+        "osm",
+        "overture",
+        "ceidg"
+      ],
+      "licencja": "Plik zawiera punkty z OpenStreetMap, więc jest bazą pochodną na licencji ODbL 1.0 (https://opendatacommons.org/licenses/odbl/1-0/): wymagana atrybucja „© OpenStreetMap contributors, ODbL\", a udostępniając go dalej, zachowaj tę licencję (share-alike). Overture Maps Foundation – Places: CDLA-Permissive-2.0. CEIDG – Centralna Ewidencja i Informacja o Działalności Gospodarczej (API v3): Dane jawne CEIDG (ustawa o CEIDG); API dane.biznes.gov.pl.",
+      "atrybucja": "© OpenStreetMap contributors, ODbL; Overture Maps Foundation, Places (CDLA-Permissive-2.0); Ministerstwo Rozwoju i Technologii, CEIDG",
+      "liczby": {
+        "surowe": {
+          "osm": 2128,
+          "overture": 1273,
+          "ceidg": 1795
+        },
+        "poDeduplikacji": 3923,
+        "wPliku": 3923,
+        "wPlikuWgZrodel": {
+          "osm": 2089,
+          "overture": 1266,
+          "ceidg": 1684
+        },
+        "tylkoJednoZrodlo": {
+          "osm": 1229,
+          "overture": 492,
+          "ceidg": 1304
+        },
+        "potwierdzoneWielomaZrodlami": 898,
+        "bezSamegoCeidg": 2619
+      }
+    },
+    {
+      "id": "apteka",
+      "nazwa": "Apteka",
+      "zasiegPieszyM": 800,
+      "mapowanie": {
+        "osm": [
+          "amenity=pharmacy"
+        ],
+        "osmWyklucz": [
+          "dispensing=no"
+        ],
+        "overture": [
+          "pharmacy"
+        ],
+        "pkd": [],
+        "flagi": {},
+        "rejestr": "rejestr_aptek",
+        "zrodloPrawdy": "rejestr"
+      },
+      "uwagi": "Prawdą jest Rejestr Aptek (aktywne apteki ogólnodostępne i punkty apteczne). OSM i Overture służą do kontroli pokrycia i zaznaczają, że punkt widać także tam.",
+      "plik": "apteka.json",
+      "n": 431,
+      "zrodlaWPliku": [
+        "osm",
+        "overture",
+        "rejestr"
+      ],
+      "licencja": "Plik zawiera punkty z OpenStreetMap, więc jest bazą pochodną na licencji ODbL 1.0 (https://opendatacommons.org/licenses/odbl/1-0/): wymagana atrybucja „© OpenStreetMap contributors, ODbL\", a udostępniając go dalej, zachowaj tę licencję (share-alike). Overture Maps Foundation – Places: CDLA-Permissive-2.0. Rejestr Aptek Ogólnodostępnych i Punktów Aptecznych (Centrum e-Zdrowia): Dane publiczne rejestru, jawne z mocy ustawy – Prawo farmaceutyczne.",
+      "atrybucja": "© OpenStreetMap contributors, ODbL; Overture Maps Foundation, Places (CDLA-Permissive-2.0); Centrum e-Zdrowia, Rejestr Aptek",
+      "liczby": {
+        "surowe": {
+          "osm": 477,
+          "overture": 211,
+          "rejestr": 431
+        },
+        "poDeduplikacji": 638,
+        "wPliku": 431,
+        "wPlikuWgZrodel": {
+          "osm": 318,
+          "rejestr": 431,
+          "overture": 95
+        },
+        "tylkoJednoZrodlo": {
+          "rejestr": 103
+        },
+        "potwierdzoneWielomaZrodlami": 328,
+        "bezSamegoCeidg": 431
+      },
+      "pokrycie": {
+        "metryLuzno": 100,
+        "rejestr": {
+          "rekordow": 431,
+          "punktow": 431,
+          "widocznychWZ_osmScisle": 318,
+          "widocznychWZ_osmScislePct": 73.8,
+          "widocznychWZ_osmLuzno": 405,
+          "widocznychWZ_osmLuznoPct": 94,
+          "widocznychWZ_overtureScisle": 95,
+          "widocznychWZ_overtureScislePct": 22,
+          "widocznychWZ_overtureLuzno": 160,
+          "widocznychWZ_overtureLuznoPct": 37.1
+        },
+        "osm": {
+          "rekordow": 477,
+          "punktow": 473,
+          "wRejestrzeScisle": 318,
+          "wRejestrzeScislePct": 67.2,
+          "wRejestrzeLuzno": 416,
+          "wRejestrzeLuznoPct": 87.2,
+          "bezRejestru": 155
+        },
+        "overture": {
+          "rekordow": 211,
+          "punktow": 183,
+          "wRejestrzeScisle": 95,
+          "wRejestrzeScislePct": 51.9,
+          "wRejestrzeLuzno": 171,
+          "wRejestrzeLuznoPct": 81,
+          "bezRejestru": 88
+        }
+      }
+    },
+    {
+      "id": "fryzjer",
+      "nazwa": "Fryzjer i barber",
+      "zasiegPieszyM": 800,
+      "mapowanie": {
+        "osm": [
+          "shop=hairdresser",
+          "shop=barber"
+        ],
+        "osmWyklucz": [],
+        "overture": [
+          "hair_salon",
+          "barber",
+          "hair_stylist"
+        ],
+        "pkd": [
+          "96.21.Z",
+          "96.02.Z"
+        ],
+        "flagi": {
+          "barber": {
+            "osm": [
+              "hairdresser=barber",
+              "shop=barber"
+            ],
+            "overture": [
+              "barber"
+            ]
+          }
+        },
+        "rejestr": null,
+        "zrodloPrawdy": null
+      },
+      "uwagi": "Flaga barber: salon męski (OSM hairdresser=barber, Overture barber). CEIDG: PKD 96.21.Z (od 2025) i dawne 96.02.Z.",
+      "plik": "fryzjer.json",
+      "n": 2337,
+      "zrodlaWPliku": [
+        "osm",
+        "overture",
+        "ceidg"
+      ],
+      "licencja": "Plik zawiera punkty z OpenStreetMap, więc jest bazą pochodną na licencji ODbL 1.0 (https://opendatacommons.org/licenses/odbl/1-0/): wymagana atrybucja „© OpenStreetMap contributors, ODbL\", a udostępniając go dalej, zachowaj tę licencję (share-alike). Overture Maps Foundation – Places: CDLA-Permissive-2.0. CEIDG – Centralna Ewidencja i Informacja o Działalności Gospodarczej (API v3): Dane jawne CEIDG (ustawa o CEIDG); API dane.biznes.gov.pl.",
+      "atrybucja": "© OpenStreetMap contributors, ODbL; Overture Maps Foundation, Places (CDLA-Permissive-2.0); Ministerstwo Rozwoju i Technologii, CEIDG",
+      "liczby": {
+        "surowe": {
+          "osm": 704,
+          "overture": 498,
+          "ceidg": 1860
+        },
+        "poDeduplikacji": 2337,
+        "wPliku": 2337,
+        "wPlikuWgZrodel": {
+          "osm": 700,
+          "overture": 498,
+          "ceidg": 1554
+        },
+        "tylkoJednoZrodlo": {
+          "osm": 416,
+          "overture": 285,
+          "ceidg": 1274
+        },
+        "potwierdzoneWielomaZrodlami": 362,
+        "bezSamegoCeidg": 1063
+      }
+    },
+    {
+      "id": "piekarnia",
+      "nazwa": "Piekarnia i cukiernia",
+      "zasiegPieszyM": 500,
+      "mapowanie": {
+        "osm": [
+          "shop=bakery",
+          "shop=pastry"
+        ],
+        "osmWyklucz": [],
+        "overture": [
+          "bakery"
+        ],
+        "pkd": [
+          "10.71.Z"
+        ],
+        "flagi": {},
+        "rejestr": null,
+        "zrodloPrawdy": null
+      },
+      "uwagi": "Piekarnie i cukiernie (OSM shop=bakery i pastry, Overture bakery, PKD 10.71.Z). Sklepy ze słodyczami (shop=confectionery) są poza branżą.",
+      "plik": "piekarnia.json",
+      "n": 1226,
+      "zrodlaWPliku": [
+        "osm",
+        "overture",
+        "ceidg"
+      ],
+      "licencja": "Plik zawiera punkty z OpenStreetMap, więc jest bazą pochodną na licencji ODbL 1.0 (https://opendatacommons.org/licenses/odbl/1-0/): wymagana atrybucja „© OpenStreetMap contributors, ODbL\", a udostępniając go dalej, zachowaj tę licencję (share-alike). Overture Maps Foundation – Places: CDLA-Permissive-2.0. CEIDG – Centralna Ewidencja i Informacja o Działalności Gospodarczej (API v3): Dane jawne CEIDG (ustawa o CEIDG); API dane.biznes.gov.pl.",
+      "atrybucja": "© OpenStreetMap contributors, ODbL; Overture Maps Foundation, Places (CDLA-Permissive-2.0); Ministerstwo Rozwoju i Technologii, CEIDG",
+      "liczby": {
+        "surowe": {
+          "osm": 605,
+          "overture": 254,
+          "ceidg": 536
+        },
+        "poDeduplikacji": 1226,
+        "wPliku": 1226,
+        "wPlikuWgZrodel": {
+          "osm": 602,
+          "overture": 254,
+          "ceidg": 520
+        },
+        "tylkoJednoZrodlo": {
+          "osm": 491,
+          "overture": 139,
+          "ceidg": 462
+        },
+        "potwierdzoneWielomaZrodlami": 134,
+        "bezSamegoCeidg": 764
+      }
+    },
+    {
+      "id": "kawiarnia",
+      "nazwa": "Kawiarnia",
+      "zasiegPieszyM": 500,
+      "mapowanie": {
+        "osm": [
+          "amenity=cafe"
+        ],
+        "osmWyklucz": [],
+        "overture": [
+          "coffee_shop",
+          "cafe"
+        ],
+        "pkd": [
+          "56.30.Z"
+        ],
+        "flagi": {},
+        "rejestr": null,
+        "zrodloPrawdy": null
+      },
+      "uwagi": "Kawiarnie i kawiarnie specjalistyczne. Bez barów, restauracji i kafejek internetowych.",
+      "plik": "kawiarnia.json",
+      "n": 2206,
+      "zrodlaWPliku": [
+        "osm",
+        "overture",
+        "ceidg"
+      ],
+      "licencja": "Plik zawiera punkty z OpenStreetMap, więc jest bazą pochodną na licencji ODbL 1.0 (https://opendatacommons.org/licenses/odbl/1-0/): wymagana atrybucja „© OpenStreetMap contributors, ODbL\", a udostępniając go dalej, zachowaj tę licencję (share-alike). Overture Maps Foundation – Places: CDLA-Permissive-2.0. CEIDG – Centralna Ewidencja i Informacja o Działalności Gospodarczej (API v3): Dane jawne CEIDG (ustawa o CEIDG); API dane.biznes.gov.pl.",
+      "atrybucja": "© OpenStreetMap contributors, ODbL; Overture Maps Foundation, Places (CDLA-Permissive-2.0); Ministerstwo Rozwoju i Technologii, CEIDG",
+      "liczby": {
+        "surowe": {
+          "osm": 519,
+          "overture": 536,
+          "ceidg": 1559
+        },
+        "poDeduplikacji": 2206,
+        "wPliku": 2206,
+        "wPlikuWgZrodel": {
+          "osm": 513,
+          "overture": 534,
+          "ceidg": 1456
+        },
+        "tylkoJednoZrodlo": {
+          "osm": 271,
+          "overture": 298,
+          "ceidg": 1370
+        },
+        "potwierdzoneWielomaZrodlami": 267,
+        "bezSamegoCeidg": 836
+      }
+    },
+    {
+      "id": "poz",
+      "nazwa": "Przychodnia POZ",
+      "zasiegPieszyM": 1200,
+      "mapowanie": {
+        "osm": [
+          "amenity=doctors?poz",
+          "amenity=clinic?poz"
+        ],
+        "osmWyklucz": [],
+        "overture": [
+          "family_practice",
+          "doctors_office?poz",
+          "health_care?poz"
+        ],
+        "pkd": [],
+        "flagi": {},
+        "rejestr": "rpwdl",
+        "zrodloPrawdy": null
+      },
+      "uwagi": "RPWDL (poradnie i gabinety lekarza POZ) plus punkty z OSM i Overture rozpoznane jako POZ: po specjalizacji (general, family, primary_care, paediatrics, internal) albo po nazwie (przychodnia, ośrodek zdrowia, NZOZ, lekarz rodzinny). Gabinety specjalistyczne, stomatologia i rehabilitacja odpadają.",
+      "plik": "poz.json",
+      "n": 394,
+      "zrodlaWPliku": [
+        "osm",
+        "overture",
+        "rejestr"
+      ],
+      "licencja": "Plik zawiera punkty z OpenStreetMap, więc jest bazą pochodną na licencji ODbL 1.0 (https://opendatacommons.org/licenses/odbl/1-0/): wymagana atrybucja „© OpenStreetMap contributors, ODbL\", a udostępniając go dalej, zachowaj tę licencję (share-alike). Overture Maps Foundation – Places: CDLA-Permissive-2.0. Rejestr Podmiotów Wykonujących Działalność Leczniczą – poradnie (gabinety) lekarza POZ (Centrum e-Zdrowia): CC BY 4.0.",
+      "atrybucja": "© OpenStreetMap contributors, ODbL; Overture Maps Foundation, Places (CDLA-Permissive-2.0); Centrum e-Zdrowia, RPWDL (CC BY 4.0)",
+      "liczby": {
+        "surowe": {
+          "osm": 139,
+          "overture": 24,
+          "rejestr": 306
+        },
+        "poDeduplikacji": 394,
+        "wPliku": 394,
+        "wPlikuWgZrodel": {
+          "osm": 138,
+          "rejestr": 288,
+          "overture": 24
+        },
+        "tylkoJednoZrodlo": {
+          "osm": 96,
+          "overture": 8,
+          "rejestr": 238
+        },
+        "potwierdzoneWielomaZrodlami": 52,
+        "bezSamegoCeidg": 394
+      }
+    }
+  ]
+}
