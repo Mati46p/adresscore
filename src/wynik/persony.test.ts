@@ -56,6 +56,7 @@ describe('hash URL', () => {
       persona: 'senior' as const,
       tryb: 'wynajmuje' as const,
       porownanie: ['a', 'b'],
+      ustawienia: null,
     }
     assert.deepEqual(czytajHash(zapiszHash(s)), s)
   })
@@ -78,5 +79,31 @@ describe('hash URL', () => {
 
   it('porównanie najwyżej 5', () => {
     assert.equal(czytajHash('#/porownanie?cmp=1,2,3,4,5,6,7').porownanie.length, 5)
+  })
+
+  it('zapisuje własne wagi i kierunki do linku', () => {
+    const s = {
+      ekran: 'porownanie' as const,
+      idAdresu: null,
+      persona: null,
+      tryb: 'kupuje' as const,
+      porownanie: ['a', 'b'],
+      ustawienia: {
+        wagi: { halas_ldwn: 4, zielen_udzial: 0 },
+        kierunki: { halas_ldwn: 'mniej-lepiej' as const },
+      },
+    }
+    assert.deepEqual(czytajHash(zapiszHash(s)), s)
+  })
+
+  it('odrzuca niepoprawne własne ustawienia', () => {
+    for (const u of [
+      '{',
+      JSON.stringify({ v: 2, w: {}, k: {} }),
+      JSON.stringify({ v: 1, w: { halas_ldwn: 9 }, k: {} }),
+      JSON.stringify({ v: 1, w: {}, k: { halas_ldwn: 'nieznany' } }),
+    ]) {
+      assert.equal(czytajHash(`#/porownanie?u=${encodeURIComponent(u)}`).ustawienia, null)
+    }
   })
 })

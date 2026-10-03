@@ -166,9 +166,18 @@ export function podlaczDane(
   metaWskaznikow = wskazniki
   const url = oczekujacyUrl ?? (typeof window === 'undefined' ? null : czytajHash(location.hash))
   oczekujacyUrl = null
-  const persona = url?.persona ?? (stan.persona === 'wlasna' ? PERSONA_DOMYSLNA : stan.persona)
+  const persona = url?.ustawienia
+    ? 'wlasna'
+    : (url?.persona ?? (stan.persona === 'wlasna' ? PERSONA_DOMYSLNA : stan.persona))
   const tryb = url?.tryb ?? stan.tryb
-  const { wagi, kierunki } = ustawieniaPersony(persona, tryb, wskazniki)
+  const domyslne = ustawieniaPersony(
+    persona === 'wlasna' ? PERSONA_DOMYSLNA : persona,
+    tryb,
+    wskazniki,
+  )
+  const { wagi, kierunki } = url?.ustawienia
+    ? sprawdzUstawienia(url.ustawienia, wskazniki, domyslne)
+    : domyslne
   zmien({
     persona,
     tryb,
@@ -190,6 +199,20 @@ function zUrl(url: StanUrl): Partial<StanAplikacji> {
   }
 }
 
+function sprawdzUstawienia(
+  ustawienia: NonNullable<StanUrl['ustawienia']>,
+  wskazniki: readonly Pick<WskaznikMeta, 'id' | 'kategoria'>[],
+  domyslne: { wagi: Record<string, number>; kierunki: Kierunki },
+) {
+  const znane = new Set(wskazniki.map((w) => w.id))
+  const wagi = { ...domyslne.wagi }
+  const kierunki = { ...domyslne.kierunki }
+  for (const [id, waga] of Object.entries(ustawienia.wagi)) if (znane.has(id)) wagi[id] = waga
+  for (const [id, kierunek] of Object.entries(ustawienia.kierunki))
+    if (znane.has(id)) kierunki[id] = kierunek
+  return { wagi, kierunki }
+}
+
 function doUrl(s: StanAplikacji): StanUrl {
   return {
     ekran: s.ekran,
@@ -197,6 +220,8 @@ function doUrl(s: StanAplikacji): StanUrl {
     persona: s.persona === 'wlasna' ? null : s.persona,
     tryb: s.tryb,
     porownanie: s.porownanie.map((i) => idAdresu(i)).filter((id) => id !== null),
+    ustawienia:
+      s.persona === 'wlasna' ? { wagi: { ...s.wagi }, kierunki: { ...s.kierunki } } : null,
   }
 }
 
@@ -232,14 +257,18 @@ if (typeof window !== 'undefined') {
       return zmien({ ekran: url.ekran })
     }
     const latka: Partial<StanAplikacji> = zUrl(url)
-    const persona = url.persona ?? stan.persona
+    const persona = url.ustawienia ? 'wlasna' : (url.persona ?? PERSONA_DOMYSLNA)
     const tryb = url.tryb ?? stan.tryb
-    if (persona !== stan.persona || tryb !== stan.tryb) {
-      // Ręczne wagi zostają, gdy link zmienia sam tryb.
-      if (persona === 'wlasna') Object.assign(latka, { tryb })
-      else
-        Object.assign(latka, { persona, tryb, ...ustawieniaPersony(persona, tryb, metaWskaznikow) })
-    }
+    const domyslne = ustawieniaPersony(
+      persona === 'wlasna' ? PERSONA_DOMYSLNA : persona,
+      tryb,
+      metaWskaznikow,
+    )
+    Object.assign(latka, {
+      persona,
+      tryb,
+      ...(url.ustawienia ? sprawdzUstawienia(url.ustawienia, metaWskaznikow, domyslne) : domyslne),
+    })
     zmien(latka)
   })
 }

@@ -2,6 +2,7 @@
 // Hash, a nie ścieżka, bo hosting SPA nie musi wtedy przepisywać adresów na index.html.
 import type { PersonaId, Tryb } from './persony.ts'
 import { PERSONY } from './persony.ts'
+import type { Kierunki } from './silnik.ts'
 
 export type Ekran = 'szukaj' | 'okolica' | 'porownanie'
 
@@ -13,9 +14,43 @@ export interface StanUrl {
   tryb: Tryb | null
   /** Id adresów na liście porównania. */
   porownanie: string[]
+  /** Własne ustawienia wyniku, zapisane wyłącznie dla persony „własna”. */
+  ustawienia: { wagi: Record<string, number>; kierunki: Kierunki } | null
 }
 
 export const MAKS_POROWNANIE = 5
+const MAKS_USTAWIENIA = 4096
+
+function czytajUstawienia(tekst: string | null): StanUrl['ustawienia'] {
+  if (!tekst || tekst.length > MAKS_USTAWIENIA) return null
+  try {
+    const dane: unknown = JSON.parse(tekst)
+    if (!dane || typeof dane !== 'object' || Array.isArray(dane)) return null
+    const { v, w, k } = dane as Record<string, unknown>
+    if (v !== 1 || !w || typeof w !== 'object' || Array.isArray(w)) return null
+    if (!k || typeof k !== 'object' || Array.isArray(k)) return null
+    const wagi = Object.entries(w)
+    const kierunki = Object.entries(k)
+    if (wagi.length > 100 || kierunki.length > 100) return null
+    if (
+      wagi.some(
+        ([id, wartosc]) =>
+          !id || !Number.isInteger(wartosc) || (wartosc as number) < 0 || (wartosc as number) > 4,
+      )
+    )
+      return null
+    if (
+      kierunki.some(
+        ([id, wartosc]) =>
+          !id || !['wiecej-lepiej', 'mniej-lepiej', 'optimum'].includes(wartosc as string),
+      )
+    )
+      return null
+    return { wagi: Object.fromEntries(wagi), kierunki: Object.fromEntries(kierunki) }
+  } catch {
+    return null
+  }
+}
 
 function odkoduj(tekst: string): string | null {
   try {
@@ -44,12 +79,14 @@ export function czytajHash(hash: string): StanUrl {
   const p = parametry.get('p')
   const t = parametry.get('t')
   const cmp = parametry.get('cmp')
+  const ustawienia = czytajUstawienia(parametry.get('u'))
   return {
     ekran,
     idAdresu,
     persona: PERSONY.some((x) => x.id === p) ? (p as PersonaId) : null,
     tryb: t === 'kupuje' || t === 'wynajmuje' ? t : null,
     porownanie: cmp ? cmp.split(',').filter(Boolean).slice(0, MAKS_POROWNANIE) : [],
+    ustawienia,
   }
 }
 
@@ -61,6 +98,8 @@ export function zapiszHash(s: StanUrl): string {
   if (s.persona) parametry.set('p', s.persona)
   if (s.tryb) parametry.set('t', s.tryb)
   if (s.porownanie.length) parametry.set('cmp', s.porownanie.join(','))
+  if (s.ustawienia)
+    parametry.set('u', JSON.stringify({ v: 1, w: s.ustawienia.wagi, k: s.ustawienia.kierunki }))
   const q = parametry.toString().replaceAll('%2C', ',')
   return `#${sciezka}${q ? `?${q}` : ''}`
 }
