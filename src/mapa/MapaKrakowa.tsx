@@ -1,5 +1,6 @@
 import {
   AttributionControl,
+  addProtocol,
   type ExpressionSpecification,
   type GeoJSONSource,
   type IControl,
@@ -9,10 +10,10 @@ import {
   NavigationControl,
   Popup,
   ScaleControl,
-  type StyleSpecification,
   setWorkerUrl,
 } from 'maplibre-gl'
 import adresWorkera from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
+import { Protocol } from 'pmtiles'
 import { type JSX, useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import {
@@ -33,6 +34,13 @@ import {
   WIDOK_POLSKI,
   zapamietajLotStartowy,
 } from '@/mapa/lot'
+import {
+  GRUPY_PODKLADU,
+  type GrupaPodkladu,
+  przeniesNazwyNaWierzch,
+  STYL,
+  ustawGrupePodkladu,
+} from '@/mapa/podklad'
 import {
   gradientCss,
   KOLOR_SZRAFURY,
@@ -70,6 +78,8 @@ const BRAK_WYKLUCZONYCH: ReadonlySet<string> = new Set()
 // MapLibre 6 szuka workera obok własnego pliku (import.meta.url). Po pre-bundlingu Vite i w buildzie
 // tego pliku tam nie ma (404, mapa bez kafli), więc Vite pakuje worker osobno i podajemy jego adres.
 setWorkerUrl(adresWorkera)
+const protokolPmtiles = new Protocol()
+addProtocol('pmtiles', protokolPmtiles.tile)
 
 const AKCENT = '#1F5C46'
 const KRAKOW: [number, number] = [19.94, 50.06]
@@ -79,28 +89,7 @@ const GRANICE_WIDOKU: [[number, number], [number, number]] = [
   [27.0, 56.2],
 ]
 
-export const STYL: StyleSpecification = {
-  version: 8,
-  sources: {
-    osm: {
-      type: 'raster',
-      tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
-      tileSize: 256,
-      maxzoom: 19,
-      attribution:
-        '<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a>',
-    },
-  },
-  layers: [
-    {
-      id: 'osm',
-      type: 'raster',
-      source: 'osm',
-      // Wyszarzony i rozjaśniony podkład: kolory heksów niosą treść, mapa daje tylko orientację.
-      paint: { 'raster-saturation': -0.7, 'raster-brightness-min': 0.12, 'raster-contrast': -0.1 },
-    },
-  ],
-}
+export { STYL } from '@/mapa/podklad'
 
 // Brak danych trzymamy w feature-state jako -1, bo stan nie odróżnia null od nieustawionego.
 const WARTOSC: ExpressionSpecification = ['coalesce', ['feature-state', 'w'], -1]
@@ -133,17 +122,11 @@ function ustawKrycieHeksow(mapa: MapaLibre, procent: number) {
       mapa.setPaintProperty(`${id}-obrys-braku`, 'line-opacity', ['case', BRAK, 0.8 * krycie, 0])
   }
   // Mgla i granica zasiegu tez przeslaniaja podklad podczas ogladania ulic.
-  for (const warstwa of ['mgla', 'obrys']) {
+  for (const warstwa of ['mgla', 'obrys', 'obrys-poswiata']) {
     if (mapa.getLayer(warstwa)) mapa.setLayoutProperty(warstwa, 'visibility', visibility)
   }
   if (mapa.getLayer('mgla')) mapa.setPaintProperty('mgla', 'fill-opacity', 0.78 * krycie)
   if (mapa.getLayer('obrys')) mapa.setPaintProperty('obrys', 'line-opacity', krycie)
-  // OSM ma bardziej czytelne nazwy ulic, gdy nie musi pozostawac tlem dla kolorowych heksow.
-  if (mapa.getLayer('osm')?.type === 'raster') {
-    mapa.setPaintProperty('osm', 'raster-saturation', -0.7 * krycie)
-    mapa.setPaintProperty('osm', 'raster-brightness-min', 0.12 * krycie)
-    mapa.setPaintProperty('osm', 'raster-contrast', -0.1 * krycie)
-  }
 }
 
 export const POLSKIE_NAPISY = {
@@ -196,6 +179,13 @@ export function MapaKrakowa({
   const [krycieHeksow, setKrycieHeksow] = useState(100)
   const krycieHeksowRef = useRef(krycieHeksow)
   const idKrycia = useId()
+  const [grupyPodkladu, setGrupyPodkladu] = useState<Record<GrupaPodkladu, boolean>>({
+    ulice: true,
+    tramwaje: true,
+    zielen: true,
+    woda: true,
+    nazwy: true,
+  })
   // Wejście z wybranym adresem (link, powrót z karty) pomija intro – kamera od razu przy adresie.
   const [etap, setEtap] = useState<Etap>(() =>
     !wybrany && introDoPokazania() ? 'polska' : 'miasto',
@@ -321,6 +311,7 @@ export function MapaKrakowa({
         paint: { 'line-color': '#9AA2A8', 'line-width': 1.5, 'line-dasharray': [4, 3] },
       })
       dodajWarstwyLotu(mapa)
+      przeniesNazwyNaWierzch(mapa)
       // Strict Mode montuje dwa razy – zdarzenie ze zdjętej mapy nie może ustawić stanu.
       if (mapaRef.current === mapa) setGotowa(true)
     })
@@ -329,6 +320,14 @@ export function MapaKrakowa({
       // Klik w widoku Polski znaczy „pokaż mi dane", nie „najbliższy adres w Krakowie".
       if (etapRef.current === 'polska') return startujLot(mapa)
       onKlikRef.current?.(e.lngLat.lng, e.lngLat.lat)
+    })
+    // Lot chwilowo ukrywa r10 i po lądowaniu go przywraca. Przy suwaku na 0%
+    // ostatnie słowo musi należeć do ustawienia użytkownika.
+    mapa.on('moveend', () => {
+      if (krycieHeksowRef.current !== 0) return
+      queueMicrotask(() => {
+        if (mapaRef.current === mapa) ustawKrycieHeksow(mapa, 0)
+      })
     })
     sledzGestyPodczasIntro(mapa)
 
@@ -387,6 +386,12 @@ export function MapaKrakowa({
       dymekRef.current?.remove()
     }
   }, [gotowa, legenda, krycieHeksow])
+
+  useEffect(() => {
+    const mapa = mapaRef.current
+    if (!mapa || !gotowa) return
+    for (const { id } of GRUPY_PODKLADU) ustawGrupePodkladu(mapa, id, grupyPodkladu[id])
+  }, [gotowa, grupyPodkladu])
 
   function zastosujHeksy(
     mapa: MapaLibre,
@@ -546,6 +551,28 @@ export function MapaKrakowa({
           <output htmlFor={idKrycia} className="mapa-ustawienia__wartosc">
             {krycieHeksow}%
           </output>
+          <details className="mapa-ustawienia__warstwy">
+            <summary>Warstwy podkładu</summary>
+            <div className="mapa-ustawienia__warstwy-lista">
+              {GRUPY_PODKLADU.map(({ id, etykieta }) => (
+                <button
+                  key={id}
+                  type="button"
+                  className="mapa-ustawienia__przelacznik"
+                  aria-pressed={grupyPodkladu[id]}
+                  onClick={() =>
+                    setGrupyPodkladu((aktualne) => ({
+                      ...aktualne,
+                      [id]: !aktualne[id],
+                    }))
+                  }
+                >
+                  <span className="mapa-ustawienia__znacznik" aria-hidden="true" />
+                  {etykieta}
+                </button>
+              ))}
+            </div>
+          </details>
         </div>
       )}
       {etap !== 'miasto' && (
