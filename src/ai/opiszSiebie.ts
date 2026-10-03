@@ -89,66 +89,11 @@ export const KATEGORIE_JEV = [
 const POZIOM_NEUTRALNY = 2
 
 /**
- * #172: poziom kategorii z oczekiwanego poziomu Σ poziom·p (rozkład `prawdopodobienstwa`, #154),
- * a nie z zaokrąglonej oceny i progu pewności 0,6. Pewność kategorii w zbiorach do strojenia
- * leżała przy samym progu (`kat_transport` 0,55–0,62) i w teście A/A (#170) przestawiała poziom
- * w 3 z 30 opisów. Oczekiwany poziom waha się między przebiegami średnio o 0,03 (p95 0,08).
- *
- * Progi leżą tam, gdzie w zapisanych przebiegach (zbiory nr 2–6, 900 ocen) prawie nie ma ocen,
- * i są ostrożne: niepewność między dwoma sąsiednimi poziomami daje ten bliższy środka.
- * Np. pół na pół „Ważne” i „Bardzo ważne” (3,5) to „Ważne”. Dowody: WYNIKI.md, „Stabilne progi (#172)”.
+ * Poniżej tej pewności JEV nie wierzymy poziomowi kategorii. #180: wraca reguła sprzed #172
+ * (zaokrąglona ocena przy pewności ≥ 0,6) – poziom z rozkładu nie poprawił stabilności ponad szum
+ * na zbiorze nr 7 (WYNIKI.md, „Pomiar #172 i #173 na zbiorze nr 7 (#174)”).
  */
-export interface ProgiKategorii {
-  /** Od tego oczekiwanego poziomu – „Bardzo ważne” (4). */
-  bardzoWazne: number
-  /** Od tego – „Ważne” (3). */
-  wazne: number
-  /** Do tego – „Mało ważne” (1). */
-  maloWazne: number
-  /** Do tego – „Bez znaczenia” (0). */
-  bezZnaczenia: number
-}
-export const PROGI_KATEGORII: ProgiKategorii = {
-  bardzoWazne: 3.55,
-  wazne: 2.65,
-  maloWazne: 1.2,
-  bezZnaczenia: 0.7,
-}
-
-/**
- * Oczekiwany poziom ze rozkładu po poziomach („0”…„4”), a bez rozkładu – `ocena` (pośrednik
- * liczy ją tak samo; na 270 ocenach z A/A różnica ≤ 0,02, tyle co zaokrąglenie p).
- */
-export function oczekiwanyPoziom(o: Extract<OdpowiedzJev, { typ: 'score' }>): number | null {
-  const p = o.prawdopodobienstwa
-  if (p && typeof p === 'object') {
-    let suma = 0
-    let wazona = 0
-    for (const [klucz, v] of Object.entries(p)) {
-      const poziom = Number(klucz)
-      if (!Number.isInteger(poziom) || poziom < 0 || poziom >= POZIOMY_WAZNOSCI.length) continue
-      if (typeof v !== 'number' || !Number.isFinite(v) || v < 0) continue
-      suma += v
-      wazona += poziom * v
-    }
-    if (suma > 0) return wazona / suma
-  }
-  return Number.isFinite(o.ocena) ? o.ocena : null
-}
-
-/** Poziom kategorii 0–4 albo null = środek skali (bez zmian wag). */
-export function poziomKategorii(
-  o: Extract<OdpowiedzJev, { typ: 'score' }>,
-  progi: ProgiKategorii = PROGI_KATEGORII,
-): number | null {
-  const e = oczekiwanyPoziom(o)
-  if (e === null) return null
-  if (e >= progi.bardzoWazne) return 4
-  if (e >= progi.wazne) return 3
-  if (e <= progi.bezZnaczenia) return 0
-  if (e <= progi.maloWazne) return 1
-  return null
-}
+export const PROG_PEWNOSCI = 0.6
 /**
  * #155: poniżej tej pewności JEV nie wierzymy wyborowi profilu (było 0,6 jak dla kategorii).
  * Zły profil przestawia wszystkie wagi, a „bez zmian” zostawia te, które użytkownik już ma.
@@ -744,6 +689,7 @@ function zloz(
 // ── Odpowiedzi JEV → zrozumienie ──────────────────────────────────────────────────────────
 
 const procent = (x: number) => Math.round(Math.min(Math.max(x, 0), 1) * 100)
+const pewny = (pewnosc: number | null) => pewnosc === null || pewnosc >= PROG_PEWNOSCI
 
 /** Progi profilu – parametr tylko dla testów i przeliczeń zapisanych przebiegów (WYNIKI.md). */
 export interface ProgiProfilu {
@@ -804,8 +750,7 @@ export function bramkaZamknieta(odpowiedzi: Record<string, OdpowiedzJev | null>)
 
 /**
  * Odpowiedzi JEV → zrozumienie. null (→ reguły), gdy nic nie przeszło progu pewności.
- * Poziom kategorii liczy się tylko, gdy oczekiwany poziom wyraźnie odszedł od środka skali
- * (#172: `poziomKategorii`, dawniej zaokrąglona ocena przy pewności ≥ 0,6).
+ * Poziom kategorii liczy się tylko, gdy JEV jest pewny i odszedł od środka skali.
  *
  * #147: gdy tekst nie opisuje prawdziwego szukania – sama opinia albo ciekawość, sytuacja
  * wyobrażona albo dawna (bramka zamknięta, #153, #162) – profil zostaje bez zmian, poziomy kategorii przepadają, a z potrzeb zostają tylko bardzo
@@ -842,10 +787,9 @@ export function przetworzOdpowiedzi(
   const poziomy: Partial<Record<KategoriaOceniana, number>> = {}
   for (const k of KATEGORIE_JEV) {
     const o = odpowiedzi[idKategorii(k)]
-    if (o?.typ !== 'score') continue
-    // #172: z oczekiwanego poziomu, bez progu pewności (PROGI_KATEGORII).
-    const poziom = poziomKategorii(o)
-    if (poziom !== null && poziom !== POZIOM_NEUTRALNY) poziomy[k] = poziom
+    if (o?.typ !== 'score' || !pewny(o.pewnosc)) continue
+    const poziom = Math.min(Math.max(Math.round(o.ocena), 0), POZIOMY_WAZNOSCI.length - 1)
+    if (poziom !== POZIOM_NEUTRALNY) poziomy[k] = poziom
   }
 
   const potrzeby: { id: string; procent: number | null }[] = []

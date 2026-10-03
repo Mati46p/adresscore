@@ -2242,6 +2242,9 @@ kosztowało.
 
 ## Stabilne progi (#172)
 
+> **Część kategorii z #172 cofnięta w #180 (decyzja po #174); propozycje przy słabym wyborze zostają.** Poziom kategorii znów liczy się z zaokrąglonej `ocena` przy pewności
+> ≥ 0,6 (`PROG_PEWNOSCI`), jak przed #172. Szczegóły: „Cofnięcie części kategorii (#180)” niżej.
+
 Pomiar z 2026-10-03, model `jev-1.13.0`. Test A/A z #170 pokazał, że surowy wybór JEV powtarza
 się 58/58, a odpowiedź końcowa różni się w 4–5 z 58 pozycji. Powód: wartości leżą tuż przy
 progach. Zmiany dotyczą tylko tego, jak kod czyta odpowiedź – zapytanie do JEV jest takie samo.
@@ -2614,6 +2617,34 @@ i `k7-r3b-174.json`. `pomiar.ts --zbior kontrolny7 --z-pliku <plik>` odtwarza z 
 zbiorcze, bez mapowania #171. Mapowanie #171, porównania sparowane, przeskoki A/A
 i przetworzenie odpowiedzi kodem innych wersji robiły skrypty poza repo (scratchpad), tak jak
 w #170.
+
+### Cofnięcie części kategorii (#180)
+
+**Część kategorii z #172 cofnięta w #180 (decyzja po #174); propozycje przy słabym wyborze zostają.**
+
+- **Cofnięte (`opiszSiebie.ts`):** `poziomKategorii`, `oczekiwanyPoziom`, `PROGI_KATEGORII`
+  (3,55 / 2,65 / 1,2 / 0,7). Wraca reguła z `59a58c5^`: poziom = zaokrąglona `ocena` przycięta
+  do 0–4, tylko przy pewności ≥ `PROG_PEWNOSCI` (0,6) albo bez pewności; środek skali nic nie
+  zmienia.
+- **Zostaje (`zapytajOAdres.ts`, bez zmian):** propozycje przy pewności 0,25–0,5, gdy da się
+  pokazać dwie (`PROG_SLABEGO_WYBORU`), i górna granica propozycji 0,86. Nietknięte też #173,
+  #176 i #177.
+- **Bez sieci, 0 wywołań:**
+  - Zapytania „opisz” dla 120 tekstów zbioru nr 7 mają ten sam skrót sha256 w drzewach R2
+    (`3a9580b`), R3 (`59a58c5`), `59a58c5^`, `main` i po cofnięciu.
+  - Odpowiedzi JEV z `k7-r3-174.json` przetworzone kodem po cofnięciu i kodem `59a58c5^`:
+    0/120 różnic (profil, potrzeby, poziomy kategorii) i te same liczby zbiorcze A
+    (`pomiar.ts --z-pliku`). Zapis przebiegu nie ma pewności kategorii, więc sprawdziłem cztery
+    założenia (brak pewności, wszędzie 0,6, wszędzie 0,59, stała losowa 0,3–1 na pozycję).
+    Reguła zapasowa (słowa kluczowe) w obu z `main` – inaczej różnią się 1–2 opisy z samych
+    nowych potrzeb reguł (fc3c399), a nie z cofnięcia.
+  - Część B: `pomiar.ts --z-pliku k7-r3-174.json` daje na gałęzi i na `main` identyczne
+    podsumowanie (141/148 od razu, 147/148 po kliknięciu, liczone przez `pomiar.ts` bez
+    mapowania #171).
+  - A/A `k7-r3` / `k7-r3b` po cofnięciu: odpowiedź inna w 17/120 opisów przy braku pewności
+    kategorii i 16/120 przy stałej losowej (kod z #172 na tych samych danych: 16/120). Pewność
+    kategorii nie jest zapisana, więc to przeliczenie nie widzi przeskoków przy progu 0,6. Pomiar
+    na żywo z tą samą regułą to para R0 / R2 wyżej: 16/120.
 
 ## Tabela potrzeb a silnik (#177)
 
