@@ -40,7 +40,7 @@ const KIERUNKI: readonly { id: KierunekOceny; znak: string }[] = [
 
 const OPIS_TRYBU: Record<Tryb, string> = {
   kupuje:
-    'Mocniej liczy się przyszłość okolicy i ryzyko (waga +1). Cena m² jest informacyjna, dopóki samodzielnie nie włączysz jej w sekcji Kontekst po podłączeniu danych RCN.',
+    'Mocniej liczy się przyszłość okolicy i ryzyko (waga +1). Cena m² z RCN jest informacyjna, dopóki samodzielnie nie włączysz jej w sekcji Kontekst.',
   wynajmuje:
     'Mocniej liczy się dojazd (waga +1), słabiej przyszłość okolicy (waga −1). Szacunek czynszu: wkrótce – nie mamy jeszcze danych o najmie.',
   biznes:

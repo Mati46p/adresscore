@@ -257,7 +257,7 @@ function Naglowek({
           <span
             className="okol-pewnosc-pasek"
             role="meter"
-            aria-label="Pewność wyniku"
+            aria-label="Kompletność danych w wybranych warstwach"
             aria-valuemin={0}
             aria-valuemax={100}
             aria-valuenow={pewnosc}
@@ -269,7 +269,7 @@ function Naglowek({
               }}
             />
           </span>
-          <span className="mono okol-pewnosc-proc">pewność {pewnosc}%</span>
+          <span className="mono okol-pewnosc-proc">kompletność danych {pewnosc}%</span>
         </div>
       </div>
     </section>

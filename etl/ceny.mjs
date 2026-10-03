@@ -170,7 +170,7 @@ zapiszWskaznik(
     id: 'cena_m2_mediana',
     kategoria: 'kontekst',
     nazwa: 'Mediana ceny m²',
-    opis: `Mediana ceny brutto 1 m² lokali mieszkalnych z aktów ${OD}–${DZIEN}; tylko akty z jednym lokalem i ceną przypisaną do lokalu. Co najmniej 10 transakcji w H3 r8, inaczej H3 r7, inaczej brak danych. Wykluczono powierzchnię <15 m² i cenę m² poza 2 000–60 000 zł. Dane wyłącznie dla Krakowa.`,
+    opis: `Mediana ceny brutto 1 m² lokali mieszkalnych. Zakres filtrowania aktów: ${OD}–${DZIEN}; najnowszy akt w pobranych danych: ${najnowsza}. Tylko akty z jednym lokalem i ceną przypisaną do lokalu. Co najmniej 10 transakcji w H3 r8, inaczej H3 r7, inaczej brak danych. Wykluczono powierzchnię <15 m² i cenę m² poza 2 000–60 000 zł. Dane wyłącznie dla Krakowa.`,
     jednostka: 'zł/m²',
     kierunek: 'neutralny',
     rozdzielczosc: 'heks',

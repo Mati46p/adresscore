@@ -10,7 +10,7 @@ const c = zrodlo.kolumny
 mkdirSync(new URL('../public/katalog/', import.meta.url), { recursive: true })
 writeFileSync(
   new URL('../public/katalog/wersja.json', import.meta.url),
-  JSON.stringify({ wersjaAdresow: zrodlo.wersja }),
+  `{ "wersjaAdresow": ${JSON.stringify(zrodlo.wersja)} }\n`,
 )
 const adresy = []
 const ulice = new Map()
