@@ -97,8 +97,8 @@ describe('zbiór wzorcowy „zapytaj o adres”', () => {
   })
 })
 
-// Zbiory kontrolne: nr 1 (#147), nr 2 (#152), nr 3 (#153), nr 4 (#157) i nr 5 (#163), napisane na ślepo przez osobnego agenta,
-// bez dostępu do kodu. Etykiet nie poprawiamy – test pilnuje tylko, że id są znane, a pomiar
+// Zbiory kontrolne: nr 1 (#147), nr 2 (#152), nr 3 (#153), nr 4 (#157), nr 5 (#163) i nr 6
+// (#170), napisane na ślepo przez osobnego agenta, bez dostępu do kodu. Etykiet nie poprawiamy – test pilnuje tylko, że id są znane, a pomiar
 // je zrozumie, i że teksty nie powtarzają się między zbiorami.
 const katalogWskaznikow = 'public/dane/wskazniki'
 const warstwyJev = () =>
@@ -150,6 +150,15 @@ const ZBIORY_KONTROLNE = [
     zapytaj: 'kontrolny5-zapytaj.json',
     nA: 40,
     nB: 35,
+  },
+  // #170: szósty zbiór na ślepo, duży (150 opisów, 150 pytań) – pierwszy na tyle liczny, żeby
+  // podawać wynik z przedziałem ufności.
+  {
+    nazwa: 'kontrolny nr 6',
+    opisz: 'kontrolny6-opisz.json',
+    zapytaj: 'kontrolny6-zapytaj.json',
+    nA: 150,
+    nB: 150,
   },
 ] as const
 const kontrolne = ZBIORY_KONTROLNE.map((z) => ({

@@ -1,0 +1,2017 @@
+{
+ "opis": "Zestaw kontrolny nr 6 (pytania) „zapytaj o adres” — Kraków i gminy obwarzanka. Napisany na ślepo przez agenta AI bez dostępu do kodu aplikacji, promptów ani wcześniejszych zestawów; wejście pisane (typed input), 2026-10-03. 150 pytań.",
+ "zasady": "Każde pytanie dotyczy jednego konkretnego adresu i jest wpisywane z klawiatury (literówki, brak polskich znaków, potoczny język dozwolone). tematy: jedna grupa na każdą pytaną rzecz; grupa = lista akceptowalnych identyfikatorów warstw z warstwy.txt (trafienie dowolnej warstwy z grupy zalicza grupę). [[\"nie_wiem\"]] = pytanie spoza zakresu danych. niejednoznaczne: jedna grupa ze wszystkimi rozsądnymi warstwami. bliska_pomylka: złoty temat to tylko rzeczywisty temat pytania, nie ten sugerowany słowem. Warstwy wyborcze tylko przy pytaniach wprost o wybory. Cechy: jeden_temat, zlozone, dwa_z_tematu, spoza, niejednoznaczne, bliska_pomylka.",
+ "pozycje": [
+  {
+   "id": "K6-B001",
+   "pytanie": "czy przy Badurskiego 10 jest gdzies blisko dom studencki? syn idzie na studia i szukamy mu pokoju",
+   "tematy": [
+    [
+     "akademik_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B002",
+   "pytanie": "na os. Kalinowym 7 daleko mam do najblizszej apteki?",
+   "tematy": [
+    [
+     "apteka_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B003",
+   "pytanie": "Wysłouchów 30 - czy w sąsiednich budynkach są jeszcze te stare dachy z eternitu?",
+   "tematy": [
+    [
+     "azbest_budynki_100m"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B004",
+   "pytanie": "gdzie wypłace kase w poblizu Zakopiańskiej 105, jest jakis bankomat albo poczta?",
+   "tematy": [
+    [
+     "bankomat_poczta_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B005",
+   "pytanie": "Skawina ul. Piłsudskiego 3 - ile tego rakotwórczego świństwa z dymu (benzopiren chyba) jest w powietrzu przez rok?",
+   "tematy": [
+    [
+     "bap_srednia"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B006",
+   "pytanie": "czy w okolicy Bieżanowskiej 50 zrobili coś z budżetu obywatelskiego, jakieś skwery czy chodniki?",
+   "tematy": [
+    [
+     "bo_projekty_1km"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B007",
+   "pytanie": "z Michałowic, Krakowska 60 ile busów jedzie rano do krakowa jak ide do pracy na 8?",
+   "tematy": [
+    [
+     "bus_mld_kursy_szczyt_h",
+     "kursy_szczyt_h"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B008",
+   "pytanie": "Wieliczka, Lednicka 4 - gdzie najblizej wsiade w busa do Krakowa?",
+   "tematy": [
+    [
+     "bus_mld_odleglosc",
+     "przystanek_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B009",
+   "pytanie": "mama ma 78 lat, czy przy Dobrego Pasterza 120 jest jakis klub seniora gdzie mogłaby chodzić na zajęcia?",
+   "tematy": [
+    [
+     "cas_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B010",
+   "pytanie": "ile chodzi metr mieszkania na Ruczaju koło Kobierzyńskiej 90?",
+   "tematy": [
+    [
+     "cena_m2_mediana"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B011",
+   "pytanie": "os. Teatralne 5 – jest gdzieś w okolicy ten defibrylator co wisi na ścianie w skrzynce?",
+   "tematy": [
+    [
+     "defibrylator_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B012",
+   "pytanie": "Liszki, działka przy ul. Polnej 18 — dojade tam normalnie asfaltem czy tylko polną drogą?",
+   "tematy": [
+    [
+     "dojazd_utwardzony",
+     "drogi_gruntowe_300m"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B013",
+   "pytanie": "Kocmyrzów, Wiejska 9: duzo tam szutrówek i błota naokoło jak popada?",
+   "tematy": [
+    [
+     "drogi_gruntowe_300m",
+     "dojazd_utwardzony"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B014",
+   "pytanie": "czy ulica Lea przy numerze 150 jest obsadzona drzewami, jakieś lipy przy chodniku?",
+   "tematy": [
+    [
+     "drzewa_100m",
+     "zielen_worldcover_100m"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B015",
+   "pytanie": "Mogilany ul. Rynek 2 — nie ma w okolicy jakiegoś zakładu co puszcza zanieczyszczenia?",
+   "tematy": [
+    [
+     "emitent_odleglosc",
+     "seveso_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B016",
+   "pytanie": "czy na os. Złotego Wieku 40 jest gęsto, dużo ludzi zameldowanych na małym kawałku?",
+   "tematy": [
+    [
+     "gestosc_zaludnienia_100m",
+     "ludnosc_1km"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B017",
+   "pytanie": "Zabierzów, Rudawa ul. Śląska 30 — czy ludzie w tej gminie masowo wymieniają kopciuchy z rządowego programu?",
+   "tematy": [
+    [
+     "gmina_czyste_powietrze_wnioski_100_domow"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B018",
+   "pytanie": "Niepołomice ul. Zabierzowska 15 - gmina jest bardzo zadłużona?",
+   "tematy": [
+    [
+     "gmina_dlug_pc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B019",
+   "pytanie": "czy gmina Zielonki dużo wydaje na drogi, szkoły itd? pytam bo patrze dom przy Galicyjskiej 8",
+   "tematy": [
+    [
+     "gmina_inwestycje_pc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B020",
+   "pytanie": "ile mnie wyniesie rocznie utrzymanie mieszkania (śmieci, woda, podatek) w Wieliczce na Kościuszki 20?",
+   "tematy": [
+    [
+     "gmina_koszty_stale_rok"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B021",
+   "pytanie": "Czernichów, ul. Gminna 4: jak duża część tej gminy ma w ogóle uchwalone plany zagospodarowania?",
+   "tematy": [
+    [
+     "gmina_mpzp_pokrycie_pct"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B022",
+   "pytanie": "gmina Michałowice bogata jest? ile wpływa do budżetu z podatku dochodowego na głowe, patrzę dom na Jesionowej 11",
+   "tematy": [
+    [
+     "gmina_pit_na_mieszkanca"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B023",
+   "pytanie": "Igołomia, ul. Wiślana 6 - jaka część całej gminy leży na terenach zalewowych?",
+   "tematy": [
+    [
+     "gmina_powodz_powierzchnia_pct"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B024",
+   "pytanie": "Al. Krasińskiego 16 da sie tam spać przy otwartym oknie czy wieczny ryk?",
+   "tematy": [
+    [
+     "halas_ldwn"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B025",
+   "pytanie": "Zabierzów, ul. Kolejowa 22 – głośno tam?",
+   "tematy": [
+    [
+     "halas_ldwn",
+     "halas_obwarzanek_lden"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B026",
+   "pytanie": "mieszkanie przy Lema 3 koło Tauron Areny — jak często są tam koncerty i tłumy pod oknem?",
+   "tematy": [
+    [
+     "imprezy_obiekty_dni_500m_2025_26"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B027",
+   "pytanie": "czy przy Rynku Podgórskim 7 często coś się dzieje, jakieś cykliczne festyny, jarmarki?",
+   "tematy": [
+    [
+     "imprezy_stale_wpisy_500m_2026",
+     "imprezy_obiekty_dni_500m_2025_26"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B028",
+   "pytanie": "na Zabłociu, Lipowa 12 - będą budować coś nowego obok? dźwigi pod oknem?",
+   "tematy": [
+    [
+     "inwestycje_500m"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B029",
+   "pytanie": "Skawina, os. Ogrody 3: ile pozwoleń na nowe bloki wydali w okolicy w tym i zeszłym roku",
+   "tematy": [
+    [
+     "inwestycje_500m_obwarzanek",
+     "inwestycje_500m"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B030",
+   "pytanie": "gdzie się najbliżej wykąpię latem od Nowohuckiej 40? jakieś strzeżone miejsce do pływania na dworze",
+   "tematy": [
+    [
+     "kapielisko_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B031",
+   "pytanie": "z Bronowic, ul. Rydla 50, ile pociągów rano odjeżdża z najbliższej stacji?",
+   "tematy": [
+    [
+     "kolej_kursy_szczyt_h"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B032",
+   "pytanie": "Węgrzce, Kosmonautów 9 - daleko na pociąg?",
+   "tematy": [
+    [
+     "kolej_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B033",
+   "pytanie": "Niepołomice, Kolejowa 2 – te pociągi stamtąd się spóźniają czy jeżdżą o czasie?",
+   "tematy": [
+    [
+     "kolej_punktualnosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B034",
+   "pytanie": "czy przy os. Na Wzgórzach 1 jest jakiś dom kultury albo biblioteka?",
+   "tematy": [
+    [
+     "kultura_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B035",
+   "pytanie": "Kurdwanów, Witosa 25 - jak często rano jeżdżą tramwaje i autobusy?",
+   "tematy": [
+    [
+     "kursy_szczyt_h"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B036",
+   "pytanie": "mam elektryka, gdzie go podładuje koło Mogilskiej 70?",
+   "tematy": [
+    [
+     "ladowarka_ev_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B037",
+   "pytanie": "dziadek musi przysiąść co 100 metrów, są ławki na ulicach koło os. Hutniczego 4?",
+   "tematy": [
+    [
+     "lawki_300m"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B038",
+   "pytanie": "córka idzie do ogólniaka, jest coś blisko Pachońskiego 5?",
+   "tematy": [
+    [
+     "liceum_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B039",
+   "pytanie": "ile jade na samolot z Wielickiej 250?",
+   "tematy": [
+    [
+     "lotnisko_czas_min"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B040",
+   "pytanie": "ile ludzi mieszka w promieniu kilometra od Węgrzynowickiej 30?",
+   "tematy": [
+    [
+     "ludnosc_1km",
+     "gestosc_zaludnienia_100m"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B041",
+   "pytanie": "Świątniki Górne, Bruchnalskiego 10: ile razy straż wyjeżdżała w gminie do wypadków, powalonych drzew itp w zeszłym roku?",
+   "tematy": [
+    [
+     "miejscowe_zagrozenia_gmina_2025"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B042",
+   "pytanie": "dzialka przy Myślenickiej 120 – czy jest na niej uchwalony plan miejscowy?",
+   "tematy": [
+    [
+     "mpzp_status"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B043",
+   "pytanie": "jak długo się czeka na ortopedę na NFZ w okolicy os. Bohaterów Września 30?",
+   "tematy": [
+    [
+     "nfz_kolejki_dni"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B044",
+   "pytanie": "Al. 29 Listopada 50, przy takim ruchu ile tam jest spalin, tego dwutlenku azotu?",
+   "tematy": [
+    [
+     "no2_srednia"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B045",
+   "pytanie": "na Józefa 15 dużo airbnb i hosteli dookoła?",
+   "tematy": [
+    [
+     "noclegi_lozka_300m"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B046",
+   "pytanie": "jeżdżę na wózku — czy koło os. Dywizjonu 303 nr 20 przejścia mają obniżone krawężniki?",
+   "tematy": [
+    [
+     "obnizone_krawezniki_300m"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B047",
+   "pytanie": "czy kamienica na Kalwaryjskiej 30 łapie się na program rewitalizacji miasta?",
+   "tematy": [
+    [
+     "obszar_rewitalizacji"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B048",
+   "pytanie": "Wieliczka, Górnicza 7 - czy ziemia tam osiada, np przez kopalnie?",
+   "tematy": [
+    [
+     "osiadanie_mm_rok"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B049",
+   "pytanie": "Św. Bronisławy 4 pod kopcem — jak blisko jest jakieś osuwisko?",
+   "tematy": [
+    [
+     "osuwisko_odleglosc",
+     "teren_osuwiskowy"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B050",
+   "pytanie": "Prokocim, Kurczaba 12: wracam wieczorem pieszo, ulice są tam oświetlone?",
+   "tematy": [
+    [
+     "oswietlenie_100m"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B051",
+   "pytanie": "gdzie mam najblizszy paczkomat od Bobrzyńskiego 33?",
+   "tematy": [
+    [
+     "paczkomat_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B052",
+   "pytanie": "Bieżanów, Mała Góra 20 - zimą sąsiedzi palą węglem w piecach?",
+   "tematy": [
+    [
+     "paleniska_200m"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B053",
+   "pytanie": "biegam po Błoniach, jest gdzieś kranik z wodą do picia blisko Piastowskiej 5?",
+   "tematy": [
+    [
+     "pitnik_odleglosc",
+     "toaleta_woda_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B054",
+   "pytanie": "Grota-Roweckiego 28 — gdzie zabiorę malucha na huśtawki?",
+   "tematy": [
+    [
+     "plac_zabaw_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B055",
+   "pytanie": "czy na Wrocławskiej 40 jest dużo pyłu pm10 średnio w roku?",
+   "tematy": [
+    [
+     "pm10_srednia"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B056",
+   "pytanie": "Batowice, os. Na Lotnisku 9 - jaki tam średnio drobny pył pm2.5, ten najgorszy dla płuc?",
+   "tematy": [
+    [
+     "pm25_srednia"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B057",
+   "pytanie": "jak daleko komisariat od os. Centrum C 4 w Nowej Hucie?",
+   "tematy": [
+    [
+     "policja_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B058",
+   "pytanie": "jakie są zarobki w powiecie dla adresu Zielonki, Krakowskie Przedmieście 50?",
+   "tematy": [
+    [
+     "powiat_wynagrodzenie_brutto"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B059",
+   "pytanie": "Wioślarska 4 przy Wiśle - zaleje mnie przy stuletniej wodzie?",
+   "tematy": [
+    [
+     "powodz_1proc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B060",
+   "pytanie": "Tyniecka 100 — czy to miejsce zalewa częściej, tak co kilka-kilkanaście lat?",
+   "tematy": [
+    [
+     "powodz_10proc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B061",
+   "pytanie": "Branice, ul. Sasanek 2 — przy jakiejś katastrofalnej powodzi, raz na 500 lat, woda by tam doszła?",
+   "tematy": [
+    [
+     "powodz_02proc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B062",
+   "pytanie": "Liszki, Kryspinów 5 — dużo się paliło w tej gminie w 2025?",
+   "tematy": [
+    [
+     "pozary_gmina_2025"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B063",
+   "pytanie": "czy z os. Mistrzejowice 12 mam blisko parking przesiadkowy żeby zostawić auto i jechać tramwajem?",
+   "tematy": [
+    [
+     "pr_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B064",
+   "pytanie": "dla 4latka: jakie przedszkole jest najbliżej Bochenka 30?",
+   "tematy": [
+    [
+     "przedszkole_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B065",
+   "pytanie": "Wieliczka, os. Asnyka 3 - dużo kradzieży i włamań w tym powiecie?",
+   "tematy": [
+    [
+     "przestepstwa_1000_powiat_2025"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B066",
+   "pytanie": "Wola Duchacka, Malborska 70 - czy dzielnica ogłasza jakieś przetargi na remonty i zlecenia?",
+   "tematy": [
+    [
+     "przetargi_dzielnica"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B067",
+   "pytanie": "os. Podwawelskie, Słomiana 15 — wiatr tam przewiewa czy powietrze stoi jak w misce?",
+   "tematy": [
+    [
+     "przewietrzanie_klasa"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B068",
+   "pytanie": "tata chodzi o kulach - jest przychodnia rodzinna bez schodów, z podjazdem, gdzieś przy Dąbrowskiej 4?",
+   "tematy": [
+    [
+     "przychodnia_bez_barier_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B069",
+   "pytanie": "lekarz rodzinny blisko os. Wandy 10?",
+   "tematy": [
+    [
+     "przychodnia_odleglosc",
+     "przychodnia_bez_barier_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B070",
+   "pytanie": "Królowej Jadwigi 220 przy Lesie Wolskim — jest tam obok rezerwat albo natura 2000?",
+   "tematy": [
+    [
+     "przyroda_chroniona_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "jeden_temat"
+   ]
+  },
+  {
+   "id": "K6-B071",
+   "pytanie": "os. Piastów 25: jest żłobek i przedszkole w okolicy?",
+   "tematy": [
+    [
+     "zlobek_odleglosc"
+    ],
+    [
+     "przedszkole_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "zlozone",
+    "dwa_z_tematu"
+   ]
+  },
+  {
+   "id": "K6-B072",
+   "pytanie": "Stawowa 150 — jak daleko do podstawówki i czy ta szkoła ma dobre wyniki z egzaminu ósmoklasisty?",
+   "tematy": [
+    [
+     "szkola_podst_odleglosc"
+    ],
+    [
+     "szkola_podst_wynik_e8"
+    ]
+   ],
+   "cechy": [
+    "zlozone",
+    "dwa_z_tematu"
+   ]
+  },
+  {
+   "id": "K6-B073",
+   "pytanie": "apteka i przychodnia blisko os. Oświecenia 20?",
+   "tematy": [
+    [
+     "apteka_odleglosc"
+    ],
+    [
+     "przychodnia_odleglosc",
+     "przychodnia_bez_barier_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "zlozone",
+    "dwa_z_tematu"
+   ]
+  },
+  {
+   "id": "K6-B074",
+   "pytanie": "Czyżyny, Al. Pokoju 70: czy jest jakaś porządna droga rowerowa i stojaki pod blokiem?",
+   "tematy": [
+    [
+     "droga_rowerowa_odleglosc",
+     "rower_infrastruktura_odleglosc"
+    ],
+    [
+     "stojaki_300m"
+    ]
+   ],
+   "cechy": [
+    "zlozone",
+    "dwa_z_tematu"
+   ]
+  },
+  {
+   "id": "K6-B075",
+   "pytanie": "Bronowice Małe, Balicka 40 - przystanek autobusowy i stacja kolejowa są blisko?",
+   "tematy": [
+    [
+     "przystanek_odleglosc"
+    ],
+    [
+     "kolej_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "zlozone",
+    "dwa_z_tematu"
+   ]
+  },
+  {
+   "id": "K6-B076",
+   "pytanie": "Starowiślna 60: czy to strefa płatnego parkowania i czy moje stare auto w ogóle może tam wjechać?",
+   "tematy": [
+    [
+     "spp_podstrefa"
+    ],
+    [
+     "sct_w_strefie"
+    ]
+   ],
+   "cechy": [
+    "zlozone",
+    "dwa_z_tematu"
+   ]
+  },
+  {
+   "id": "K6-B077",
+   "pytanie": "Krowodrza Górka 8 — dużo zieleni dookoła i czy jest jakaś rzeka albo staw blisko?",
+   "tematy": [
+    [
+     "zielen_udzial",
+     "zielen_worldcover_100m"
+    ],
+    [
+     "woda_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "zlozone",
+    "dwa_z_tematu"
+   ]
+  },
+  {
+   "id": "K6-B078",
+   "pytanie": "Wielicka 120: jaki smog zimą i czy w okolicy dużo domów z piecami na węgiel?",
+   "tematy": [
+    [
+     "pm25_srednia",
+     "pm10_srednia",
+     "no2_srednia",
+     "bap_srednia"
+    ],
+    [
+     "paleniska_200m"
+    ]
+   ],
+   "cechy": [
+    "zlozone",
+    "dwa_z_tematu"
+   ]
+  },
+  {
+   "id": "K6-B079",
+   "pytanie": "Wieliczka, Grabówki 5 — prąd i wodociąg dochodzą do działki?",
+   "tematy": [
+    [
+     "uzbrojenie_prad_50m"
+    ],
+    [
+     "uzbrojenie_woda_50m"
+    ]
+   ],
+   "cechy": [
+    "zlozone",
+    "dwa_z_tematu"
+   ]
+  },
+  {
+   "id": "K6-B080",
+   "pytanie": "Michałowice, Raciborowice 30: jest kanalizacja i gaz w ulicy?",
+   "tematy": [
+    [
+     "uzbrojenie_kanalizacja_50m"
+    ],
+    [
+     "uzbrojenie_gaz_50m"
+    ]
+   ],
+   "cechy": [
+    "zlozone",
+    "dwa_z_tematu"
+   ]
+  },
+  {
+   "id": "K6-B081",
+   "pytanie": "Mazowiecka 50: dużo tu emerytów, a ile małych dzieci w okolicy?",
+   "tematy": [
+    [
+     "udzial_65plus"
+    ],
+    [
+     "udzial_0_14"
+    ]
+   ],
+   "cechy": [
+    "zlozone",
+    "dwa_z_tematu"
+   ]
+  },
+  {
+   "id": "K6-B082",
+   "pytanie": "Zawiła 60: sklep spożywczy i paczkomat blisko?",
+   "tematy": [
+    [
+     "sklep_odleglosc"
+    ],
+    [
+     "paczkomat_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "zlozone",
+    "dwa_z_tematu"
+   ]
+  },
+  {
+   "id": "K6-B083",
+   "pytanie": "Płaszów, Saska 10 - zaleje przy powodzi stuletniej? a przy takiej co 10 lat?",
+   "tematy": [
+    [
+     "powodz_1proc"
+    ],
+    [
+     "powodz_10proc"
+    ]
+   ],
+   "cechy": [
+    "zlozone",
+    "dwa_z_tematu"
+   ]
+  },
+  {
+   "id": "K6-B084",
+   "pytanie": "Tyniec, Benedyktyńska 20: czy to teren osuwiskowy i czy grunt się rusza w pionie?",
+   "tematy": [
+    [
+     "teren_osuwiskowy",
+     "osuwisko_odleglosc"
+    ],
+    [
+     "osiadanie_mm_rok"
+    ]
+   ],
+   "cechy": [
+    "zlozone",
+    "dwa_z_tematu"
+   ]
+  },
+  {
+   "id": "K6-B085",
+   "pytanie": "os. Szkolne 30: latarnie są na ulicy i daleko na komisariat?",
+   "tematy": [
+    [
+     "oswietlenie_100m"
+    ],
+    [
+     "policja_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "zlozone",
+    "dwa_z_tematu"
+   ]
+  },
+  {
+   "id": "K6-B086",
+   "pytanie": "Zielonki, Bibice ul. Polna 3: czy działka ma plan miejscowy i czy obok wydano pozwolenia na budowę?",
+   "tematy": [
+    [
+     "mpzp_status"
+    ],
+    [
+     "inwestycje_500m_obwarzanek",
+     "inwestycje_500m"
+    ]
+   ],
+   "cechy": [
+    "zlozone",
+    "dwa_z_tematu"
+   ]
+  },
+  {
+   "id": "K6-B087",
+   "pytanie": "Dębniki, Praska 52: wybieg dla psa i weterynarz blisko?",
+   "tematy": [
+    [
+     "wybieg_psy_odleglosc"
+    ],
+    [
+     "weterynarz_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "zlozone"
+   ]
+  },
+  {
+   "id": "K6-B088",
+   "pytanie": "os. Kolorowe 12: jest siłownia pod chmurką i jakaś hala albo boisko?",
+   "tematy": [
+    [
+     "silownia_plenerowa_odleglosc"
+    ],
+    [
+     "sport_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "zlozone"
+   ]
+  },
+  {
+   "id": "K6-B089",
+   "pytanie": "Bieńczycka 15: ile mam do Rynku i do urzędu dzielnicy?",
+   "tematy": [
+    [
+     "rynek_czas_min"
+    ],
+    [
+     "urzad_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "zlozone"
+   ]
+  },
+  {
+   "id": "K6-B090",
+   "pytanie": "Pod Sowińcem 10: ile słońca jest tam w grudniu i czy jest ogródek działkowy blisko?",
+   "tematy": [
+    [
+     "slonce_grudzien_h"
+    ],
+    [
+     "rod_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "zlozone"
+   ]
+  },
+  {
+   "id": "K6-B091",
+   "pytanie": "Lasówka 9: gdzie wywiozę stare meble i elektrośmieci, i czy jest targ z warzywami?",
+   "tematy": [
+    [
+     "recykling_odleglosc"
+    ],
+    [
+     "targowisko_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "zlozone"
+   ]
+  },
+  {
+   "id": "K6-B092",
+   "pytanie": "os. Słoneczne 10: są maszty komórkowe blisko i jak jasno jest w nocy od łuny miasta?",
+   "tematy": [
+    [
+     "stacje_bazowe_300m"
+    ],
+    [
+     "swiatlo_nocne_viirs"
+    ]
+   ],
+   "cechy": [
+    "zlozone"
+   ]
+  },
+  {
+   "id": "K6-B093",
+   "pytanie": "Kazimierza Wielkiego 50: ilu rowerzystów dziennie jeździ tamtędy i czy mogę się podpiąć do miejskiego ciepła?",
+   "tematy": [
+    [
+     "rower_ruch_dobowy"
+    ],
+    [
+     "siec_cieplownicza_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "zlozone"
+   ]
+  },
+  {
+   "id": "K6-B094",
+   "pytanie": "Skawina, Tyniecka 10: jest blisko zakład z groźnymi chemikaliami, jak policja wykrywa sprawców w powiecie i czy są budynki z azbestem?",
+   "tematy": [
+    [
+     "seveso_odleglosc"
+    ],
+    [
+     "wykrywalnosc_powiat_2025"
+    ],
+    [
+     "azbest_budynki_100m"
+    ]
+   ],
+   "cechy": [
+    "zlozone"
+   ]
+  },
+  {
+   "id": "K6-B095",
+   "pytanie": "Kliny, Spacerowa 3: gdzie najbliższy publiczny szalet i czy są ławki?",
+   "tematy": [
+    [
+     "toaleta_woda_odleglosc"
+    ],
+    [
+     "lawki_300m"
+    ]
+   ],
+   "cechy": [
+    "zlozone"
+   ]
+  },
+  {
+   "id": "K6-B096",
+   "pytanie": "Czyżyny, Medweckiego 4: gdzie w razie katastrofy jest punkt schronienia i AED?",
+   "tematy": [
+    [
+     "punkt_schronienia_odleglosc"
+    ],
+    [
+     "defibrylator_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "zlozone"
+   ]
+  },
+  {
+   "id": "K6-B097",
+   "pytanie": "Niepołomice, Rynek 10: jaka była frekwencja w wyborach samorządowych i ile różnych usług mam w zasięgu spaceru?",
+   "tematy": [
+    [
+     "frekwencja_samorzad_2024"
+    ],
+    [
+     "uslugi_15min"
+    ]
+   ],
+   "cechy": [
+    "zlozone"
+   ]
+  },
+  {
+   "id": "K6-B098",
+   "pytanie": "Przemysłowa 7 na Zabłociu — czy to obszar rewitalizacji i jaka cena za metr?",
+   "tematy": [
+    [
+     "obszar_rewitalizacji"
+    ],
+    [
+     "cena_m2_mediana"
+    ]
+   ],
+   "cechy": [
+    "zlozone"
+   ]
+  },
+  {
+   "id": "K6-B099",
+   "pytanie": "Kanonicza 10: ile zabytków wokół i ile łóżek dla turystów w okolicy?",
+   "tematy": [
+    [
+     "zabytki_300m",
+     "zabytki_rejestr_500m"
+    ],
+    [
+     "noclegi_lozka_300m"
+    ]
+   ],
+   "cechy": [
+    "zlozone"
+   ]
+  },
+  {
+   "id": "K6-B100",
+   "pytanie": "Łagiewniki, Zakopiańska 62: przystanek blisko i ile jade na lotnisko?",
+   "tematy": [
+    [
+     "przystanek_odleglosc"
+    ],
+    [
+     "lotnisko_czas_min"
+    ]
+   ],
+   "cechy": [
+    "zlozone",
+    "dwa_z_tematu"
+   ]
+  },
+  {
+   "id": "K6-B101",
+   "pytanie": "czy blok na os. Kalinowym 14 ma windę?",
+   "tematy": [
+    [
+     "nie_wiem"
+    ]
+   ],
+   "cechy": [
+    "spoza"
+   ]
+  },
+  {
+   "id": "K6-B102",
+   "pytanie": "jacy są sąsiedzi pod Starowiślną 41, spokojni ludzie?",
+   "tematy": [
+    [
+     "nie_wiem"
+    ]
+   ],
+   "cechy": [
+    "spoza"
+   ]
+  },
+  {
+   "id": "K6-B103",
+   "pytanie": "ile kosztuje światłowód na Wybickiego 9 i jaki operator tam jest?",
+   "tematy": [
+    [
+     "nie_wiem"
+    ]
+   ],
+   "cechy": [
+    "spoza"
+   ]
+  },
+  {
+   "id": "K6-B104",
+   "pytanie": "ile zapłacę za godzinę parkowania na Dietla 50?",
+   "tematy": [
+    [
+     "nie_wiem"
+    ]
+   ],
+   "cechy": [
+    "spoza"
+   ]
+  },
+  {
+   "id": "K6-B105",
+   "pytanie": "w którym roku zbudowano kamienicę na Długiej 22?",
+   "tematy": [
+    [
+     "nie_wiem"
+    ]
+   ],
+   "cechy": [
+    "spoza"
+   ]
+  },
+  {
+   "id": "K6-B106",
+   "pytanie": "czy mieszkanie na Lubomirskiego 8 ma balkon?",
+   "tematy": [
+    [
+     "nie_wiem"
+    ]
+   ],
+   "cechy": [
+    "spoza"
+   ]
+  },
+  {
+   "id": "K6-B107",
+   "pytanie": "ile wynosi czynsz w spółdzielni na os. Piastów 40?",
+   "tematy": [
+    [
+     "nie_wiem"
+    ]
+   ],
+   "cechy": [
+    "spoza"
+   ]
+  },
+  {
+   "id": "K6-B108",
+   "pytanie": "czy deweloper co buduje na Lipowej 5 jest wiarygodny?",
+   "tematy": [
+    [
+     "nie_wiem"
+    ]
+   ],
+   "cechy": [
+    "spoza"
+   ]
+  },
+  {
+   "id": "K6-B109",
+   "pytanie": "jaki jest numer księgi wieczystej dla Kobierzyńskiej 120?",
+   "tematy": [
+    [
+     "nie_wiem"
+    ]
+   ],
+   "cechy": [
+    "spoza"
+   ]
+  },
+  {
+   "id": "K6-B110",
+   "pytanie": "czy w bloku na os. Teatralnym 3 są karaluchy?",
+   "tematy": [
+    [
+     "nie_wiem"
+    ]
+   ],
+   "cechy": [
+    "spoza"
+   ]
+  },
+  {
+   "id": "K6-B111",
+   "pytanie": "ile kresek Plusa złapie w mieszkaniu na Pędzichów 12?",
+   "tematy": [
+    [
+     "nie_wiem"
+    ]
+   ],
+   "cechy": [
+    "spoza"
+   ]
+  },
+  {
+   "id": "K6-B112",
+   "pytanie": "czy właściciel z Topolowej 33 zgodzi się na kota?",
+   "tematy": [
+    [
+     "nie_wiem"
+    ]
+   ],
+   "cechy": [
+    "spoza"
+   ]
+  },
+  {
+   "id": "K6-B113",
+   "pytanie": "o której zamykają Biedronke na Wielickiej 72?",
+   "tematy": [
+    [
+     "nie_wiem"
+    ]
+   ],
+   "cechy": [
+    "spoza"
+   ]
+  },
+  {
+   "id": "K6-B114",
+   "pytanie": "ile kosztuje bilet miesięczny MPK jak mieszkam na Ćwiklińskiej 5?",
+   "tematy": [
+    [
+     "nie_wiem"
+    ]
+   ],
+   "cechy": [
+    "spoza"
+   ]
+  },
+  {
+   "id": "K6-B115",
+   "pytanie": "czy w mieszkaniu na Rakowickiej 14 jest grzyb na ścianach?",
+   "tematy": [
+    [
+     "nie_wiem"
+    ]
+   ],
+   "cechy": [
+    "spoza"
+   ]
+  },
+  {
+   "id": "K6-B116",
+   "pytanie": "jak tam z bezpieczeństwem na os. Złota Jesień 5?",
+   "tematy": [
+    [
+     "oswietlenie_100m",
+     "policja_odleglosc",
+     "przestepstwa_1000_powiat_2025",
+     "wykrywalnosc_powiat_2025",
+     "miejscowe_zagrozenia_gmina_2025",
+     "pozary_gmina_2025",
+     "punkt_schronienia_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "niejednoznaczne"
+   ]
+  },
+  {
+   "id": "K6-B117",
+   "pytanie": "Kurdwanów, Witosa 40 — jak z powietrzem?",
+   "tematy": [
+    [
+     "pm25_srednia",
+     "pm10_srednia",
+     "no2_srednia",
+     "bap_srednia",
+     "paleniska_200m",
+     "przewietrzanie_klasa"
+    ]
+   ],
+   "cechy": [
+    "niejednoznaczne"
+   ]
+  },
+  {
+   "id": "K6-B118",
+   "pytanie": "czy na Mogilskiej 40 jest zielono?",
+   "tematy": [
+    [
+     "zielen_udzial",
+     "zielen_worldcover_100m",
+     "drzewa_100m"
+    ]
+   ],
+   "cechy": [
+    "niejednoznaczne"
+   ]
+  },
+  {
+   "id": "K6-B119",
+   "pytanie": "dobry dojazd z Zielonek, ul. Galicyjska 20?",
+   "tematy": [
+    [
+     "przystanek_odleglosc",
+     "kursy_szczyt_h",
+     "rynek_czas_min",
+     "kolej_odleglosc",
+     "kolej_kursy_szczyt_h",
+     "bus_mld_odleglosc",
+     "bus_mld_kursy_szczyt_h",
+     "dojazd_utwardzony"
+    ]
+   ],
+   "cechy": [
+    "niejednoznaczne"
+   ]
+  },
+  {
+   "id": "K6-B120",
+   "pytanie": "czy os. Kalinowe 2 nadaje się dla rodziny z dziećmi?",
+   "tematy": [
+    [
+     "szkola_podst_odleglosc",
+     "przedszkole_odleglosc",
+     "zlobek_odleglosc",
+     "plac_zabaw_odleglosc",
+     "szkola_podst_wynik_e8",
+     "udzial_0_14",
+     "liceum_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "niejednoznaczne"
+   ]
+  },
+  {
+   "id": "K6-B121",
+   "pytanie": "Wieliczka, Słowackiego 30 - wszystko mam pod ręką do codziennych zakupów i spraw?",
+   "tematy": [
+    [
+     "sklep_odleglosc",
+     "uslugi_15min",
+     "bankomat_poczta_odleglosc",
+     "paczkomat_odleglosc",
+     "targowisko_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "niejednoznaczne"
+   ]
+  },
+  {
+   "id": "K6-B122",
+   "pytanie": "czy grunt pod domem w Świątnikach, Ogrodowa 5 jest stabilny?",
+   "tematy": [
+    [
+     "teren_osuwiskowy",
+     "osuwisko_odleglosc",
+     "osiadanie_mm_rok"
+    ]
+   ],
+   "cechy": [
+    "niejednoznaczne"
+   ]
+  },
+  {
+   "id": "K6-B123",
+   "pytanie": "jak tu ludzie głosowali do sejmu na os. Tysiąclecia 50, kto wygrał?",
+   "tematy": [
+    [
+     "sejm2023_lista_1",
+     "sejm2023_lista_2",
+     "sejm2023_lista_3",
+     "sejm2023_lista_4",
+     "sejm2023_lista_5",
+     "sejm2023_lista_6",
+     "sejm2023_lista_7"
+    ]
+   ],
+   "cechy": [
+    "niejednoznaczne"
+   ]
+  },
+  {
+   "id": "K6-B124",
+   "pytanie": "jak z rowerem na Kamieńskiego 11?",
+   "tematy": [
+    [
+     "rower_infrastruktura_odleglosc",
+     "droga_rowerowa_odleglosc",
+     "stojaki_300m",
+     "rower_ruch_dobowy"
+    ]
+   ],
+   "cechy": [
+    "niejednoznaczne"
+   ]
+  },
+  {
+   "id": "K6-B125",
+   "pytanie": "czy działka w Mogilanach, ul. Sportowa 8 jest uzbrojona?",
+   "tematy": [
+    [
+     "uzbrojenie_prad_50m",
+     "uzbrojenie_woda_50m",
+     "uzbrojenie_gaz_50m",
+     "uzbrojenie_kanalizacja_50m",
+     "siec_cieplownicza_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "niejednoznaczne"
+   ]
+  },
+  {
+   "id": "K6-B126",
+   "pytanie": "mieszkanie na Lipińskiego 10 to dobra inwestycja?",
+   "tematy": [
+    [
+     "cena_m2_mediana",
+     "inwestycje_500m",
+     "mpzp_status",
+     "obszar_rewitalizacji",
+     "noclegi_lozka_300m",
+     "akademik_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "niejednoznaczne"
+   ]
+  },
+  {
+   "id": "K6-B127",
+   "pytanie": "Bulwarowa 30 w Nowej Hucie: coś tam truje w okolicy?",
+   "tematy": [
+    [
+     "emitent_odleglosc",
+     "seveso_odleglosc",
+     "azbest_budynki_100m",
+     "pm25_srednia",
+     "pm10_srednia",
+     "no2_srednia",
+     "bap_srednia"
+    ]
+   ],
+   "cechy": [
+    "niejednoznaczne"
+   ]
+  },
+  {
+   "id": "K6-B128",
+   "pytanie": "os. Albertyńskie 20 — dobre miejsce dla starszej osoby?",
+   "tematy": [
+    [
+     "cas_odleglosc",
+     "przychodnia_odleglosc",
+     "przychodnia_bez_barier_odleglosc",
+     "apteka_odleglosc",
+     "lawki_300m",
+     "obnizone_krawezniki_300m",
+     "udzial_65plus",
+     "przystanek_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "niejednoznaczne"
+   ]
+  },
+  {
+   "id": "K6-B129",
+   "pytanie": "czy Biskupice, ul. Szkolna 9, to bogata gmina?",
+   "tematy": [
+    [
+     "gmina_pit_na_mieszkanca",
+     "gmina_dlug_pc",
+     "gmina_inwestycje_pc",
+     "powiat_wynagrodzenie_brutto"
+    ]
+   ],
+   "cechy": [
+    "niejednoznaczne"
+   ]
+  },
+  {
+   "id": "K6-B130",
+   "pytanie": "jak tam z wodą przy Półłankach 30?",
+   "tematy": [
+    [
+     "powodz_1proc",
+     "powodz_10proc",
+     "powodz_02proc",
+     "woda_odleglosc",
+     "uzbrojenie_woda_50m",
+     "kapielisko_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "niejednoznaczne"
+   ]
+  },
+  {
+   "id": "K6-B131",
+   "pytanie": "słychać w nocy tramwaje na Królewskiej 60?",
+   "tematy": [
+    [
+     "halas_ldwn"
+    ]
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K6-B132",
+   "pytanie": "mam benzyniaka z 2003, moge dojeżdżać pod Karmelicką 40 bez mandatu?",
+   "tematy": [
+    [
+     "sct_w_strefie"
+    ]
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K6-B133",
+   "pytanie": "czy na Dietla 70 jest gdzie zaparkować rower?",
+   "tematy": [
+    [
+     "stojaki_300m"
+    ]
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K6-B134",
+   "pytanie": "czy koło os. Bohaterów Września 20 jest szkółka pływania dla dziecka, w sensie jakiś basen?",
+   "tematy": [
+    [
+     "sport_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K6-B135",
+   "pytanie": "w lesie koło Leśnej 7 w Zabierzowie da się spuścić psa, jest jakiś wybieg?",
+   "tematy": [
+    [
+     "wybieg_psy_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K6-B136",
+   "pytanie": "czy ludzie w gminie Wieliczka (Kopernika 4) biorą dotacje z Czystego Powietrza?",
+   "tematy": [
+    [
+     "gmina_czyste_powietrze_wnioski_100_domow"
+    ]
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K6-B137",
+   "pytanie": "os. Kombatantów 4: noc jest tam naprawdę ciemna, widać gwiazdy, czy niebo świeci od miasta?",
+   "tematy": [
+    [
+     "swiatlo_nocne_viirs"
+    ]
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K6-B138",
+   "pytanie": "woda w kranie w Mogilanach, Ogrodowa 3 — jest wodociąg czy trzeba studnię kopać?",
+   "tematy": [
+    [
+     "uzbrojenie_woda_50m"
+    ]
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K6-B139",
+   "pytanie": "Krzesławice, Wańkowicza 20: zimą będzie ciepło? da się podpiąć pod ciepłownię zamiast pieca?",
+   "tematy": [
+    [
+     "siec_cieplownicza_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K6-B140",
+   "pytanie": "na Szlak 50 dzieci siedzą w zimie po ciemku, ile tam słońca jest w najkrótszy dzień?",
+   "tematy": [
+    [
+     "slonce_grudzien_h"
+    ]
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K6-B141",
+   "pytanie": "Balice, ul. Krakowska 2 — samoloty startują nad głową, bardzo głośno?",
+   "tematy": [
+    [
+     "halas_ldwn",
+     "halas_obwarzanek_lden"
+    ]
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K6-B142",
+   "pytanie": "czy przy os. Przyjaźni 3 jest coś jak uniwersytet trzeciego wieku dla mamy?",
+   "tematy": [
+    [
+     "cas_odleglosc",
+     "kultura_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K6-B143",
+   "pytanie": "jaki jest rynek mieszkań na Prądniku, Siewna 30, drogo?",
+   "tematy": [
+    [
+     "cena_m2_mediana"
+    ]
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K6-B144",
+   "pytanie": "czy na Krakowskiej 10 w Niepołomicach jest jakaś stacja żeby naładować auto na prąd?",
+   "tematy": [
+    [
+     "ladowarka_ev_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K6-B145",
+   "pytanie": "Golikówka 10 przy Bagrach — grozi mi woda jak przyjdą ulewy i rzeka wyleje?",
+   "tematy": [
+    [
+     "powodz_1proc",
+     "powodz_10proc",
+     "powodz_02proc"
+    ]
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K6-B146",
+   "pytanie": "os. Oświecenia 40: jest gdzie wynająć działkę na pomidory?",
+   "tematy": [
+    [
+     "rod_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K6-B147",
+   "pytanie": "os. Na Skarpie 20: jak będzie pożar albo katastrofa, gdzie jest wyznaczone miejsce schronienia?",
+   "tematy": [
+    [
+     "punkt_schronienia_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K6-B148",
+   "pytanie": "czy powietrze na Grunwaldzkiej 5 w Skawinie jest zdrowe dla astmatyka?",
+   "tematy": [
+    [
+     "pm25_srednia",
+     "pm10_srednia",
+     "no2_srednia",
+     "bap_srednia"
+    ]
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K6-B149",
+   "pytanie": "czy dziecko bezpiecznie dojdzie pieszo do podstawówki z os. Kosmonautów 5, daleko to?",
+   "tematy": [
+    [
+     "szkola_podst_odleglosc"
+    ]
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  },
+  {
+   "id": "K6-B150",
+   "pytanie": "na Floriańskiej 30 ludzie są kulturalni czy imprezują do rana w barach pod oknem?",
+   "tematy": [
+    [
+     "zycie_nocne_300m"
+    ]
+   ],
+   "cechy": [
+    "bliska_pomylka"
+   ]
+  }
+ ]
+}
