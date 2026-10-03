@@ -109,10 +109,10 @@ describe('listaWarstw', () => {
     assert.deepEqual(klucze, [...LISTA.map((x) => x.id), NIE_WIEM])
   })
 
-  it('prawdziwy katalog public/dane: bez atrap, ≤ 64 opcji, każde id spełnia format pośrednika', () => {
+  it('prawdziwy katalog public/dane: bez atrap, ≤ 128 opcji, każde id spełnia format pośrednika', () => {
     const metas = metasZDanych()
     const lista = listaWarstw(metas)
-    assert.ok(lista.length > 10 && lista.length + 1 <= 64)
+    assert.ok(lista.length > 10 && lista.length + 1 <= 128)
     for (const p of lista) {
       assert.match(p.id, /^[a-z0-9_-]+$/i)
       assert.ok(p.opis.length > 0 && p.opis.length <= 300)

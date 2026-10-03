@@ -15,8 +15,8 @@ export const ID_PYTANIA = 'warstwa'
 export const NIE_WIEM = 'nie_wiem'
 /** Poniżej tej pewności (albo bez pewności) wyboru JEV nie bierzemy – decyduje reguła. */
 export const PROG_PEWNOSCI = 0.5
-/** Limity pośrednika (api/_jev.js): do 64 opcji choice, opis opcji do 300 znaków. */
-const MAKS_WARSTW = 63
+/** Limity pośrednika (api/_jev.js): do 128 opcji choice (JEV sprawdzony na żywo na 76), opis opcji do 300 znaków. */
+const MAKS_WARSTW = 127
 const MAKS_OPISU = 300
 
 // Zdanie o pytaniach złożonych dodane po pomiarze #18: bez niego JEV na „Jak tu z powietrzem,

@@ -20,7 +20,7 @@ export const LIMITY = {
   pytan: 16,
   idPytania: 40,
   polecenie: 300,
-  opcjiChoice: 64,
+  opcjiChoice: 128,
   opisOpcji: 300,
   poziomowScore: 10,
 }
