@@ -29,7 +29,25 @@ export const LIMITY = {
   opcjiChoice: 128,
   opisOpcji: 300,
   poziomowScore: 10,
+  /** #163: przykładów w opisie strukturalnym (`przyklady` → `examples`). */
+  przykladow: 5,
+  /**
+   * #163: całe pytania w formacie JEV (JSON, znaki) – bezpiecznik na opisy strukturalne. Mieści
+   * każde żądanie z samymi tekstami, które przechodziło wcześniej (choice ze 128 opisami po 300
+   * znaków i 15 twierdzeń to ok. 50 tys.).
+   */
+  pytaniaZnakow: 60_000,
 }
+
+/**
+ * #163: opis strukturalny (dokumentacja TypeSafe: primitives/choice, primitives/advanced) –
+ * nazwy pól po polsku w kontrakcie, po angielsku w JEV (tak jak w przykładach producenta):
+ * `co` → `what` (co opcja obejmuje), `nie_dla` → `not_for` (co należy do sąsiedniej opcji),
+ * `przyklady` → `examples` (kilka przykładowych tekstów). Inne pola są odrzucane.
+ */
+const POLA_OPISU = { co: 'what', nie_dla: 'not_for', przyklady: 'examples' }
+/** #163: kryteria noul – kiedy twierdzenie jest prawdziwe, a kiedy fałszywe. */
+const POLA_NOUL = { prawda: 'true', falsz: 'false' }
 
 /** Limit żądań w oknie 60 s – na IP i na całą instancję (ochrona kredytu). */
 export const LIMIT_ZADAN = { oknoMs: 60_000, naIp: 20, naInstancje: 300 }
@@ -38,6 +56,52 @@ const ID = /^[a-z0-9_-]+$/i
 
 function tekst(x, maks) {
   return typeof x === 'string' && x.trim().length > 0 && x.length <= maks
+}
+
+const obiekt = (x) => Boolean(x) && typeof x === 'object' && !Array.isArray(x)
+
+/**
+ * Opis opcji choice albo strony noul (#163): tekst albo obiekt `{ co, nie_dla?, przyklady? }`.
+ * Zwraca kształt dla JEV (tekst bez zmian albo `{ what, not_for?, examples? }`) albo null,
+ * gdy opis jest zły: puste albo za długie pole, nieznane pole, brak `co`, przykłady spoza 1–5.
+ */
+function przelozOpis(x) {
+  if (typeof x === 'string') return tekst(x, LIMITY.opisOpcji) ? x : null
+  if (!obiekt(x) || !Object.keys(x).every((pole) => Object.hasOwn(POLA_OPISU, pole))) return null
+  if (!tekst(x.co, LIMITY.opisOpcji)) return null
+  // Stała kolejność pól (JEV widzi JSON): co, nie_dla, przykłady.
+  const wynik = { [POLA_OPISU.co]: x.co }
+  if (x.nie_dla !== undefined) {
+    if (!tekst(x.nie_dla, LIMITY.opisOpcji)) return null
+    wynik[POLA_OPISU.nie_dla] = x.nie_dla
+  }
+  if (x.przyklady !== undefined) {
+    const p = x.przyklady
+    if (
+      !Array.isArray(p) ||
+      p.length < 1 ||
+      p.length > LIMITY.przykladow ||
+      !p.every((e) => tekst(e, LIMITY.opisOpcji))
+    )
+      return null
+    wynik[POLA_OPISU.przyklady] = [...p]
+  }
+  return wynik
+}
+
+/** Kryteria noul (#163): `{ prawda?, falsz? }` (co najmniej jedno) → `{ true?, false? }`. */
+function przelozKryteriaNoul(k) {
+  if (!obiekt(k)) return null
+  const pola = Object.keys(k)
+  if (pola.length === 0 || !pola.every((p) => Object.hasOwn(POLA_NOUL, p))) return null
+  const wynik = {}
+  for (const pole of Object.keys(POLA_NOUL)) {
+    if (k[pole] === undefined) continue
+    const opis = przelozOpis(k[pole])
+    if (opis === null) return null
+    wynik[POLA_NOUL[pole]] = opis
+  }
+  return wynik
 }
 
 /**
@@ -64,21 +128,30 @@ export function sprawdzZapytanie(cialo) {
 
     if (p.typ === 'noul') {
       pytania[id] = { type: 'noul', instructions: p.polecenie }
+      // #163: kryteria są opcjonalne – bez nich pytanie wygląda dokładnie jak przed zmianą.
+      if (p.kryteria !== undefined) {
+        const criteria = przelozKryteriaNoul(p.kryteria)
+        if (!criteria)
+          return {
+            blad: `Pytanie ${id}: kryteria noul to { prawda?, falsz? } – tekst albo { co, nie_dla?, przyklady? }`,
+          }
+        pytania[id].criteria = criteria
+      }
     } else if (p.typ === 'choice') {
       const k = p.kryteria
-      const opcje = k && typeof k === 'object' && !Array.isArray(k) ? Object.entries(k) : []
+      const opcje = obiekt(k) ? Object.entries(k) : []
       if (opcje.length < 2 || opcje.length > LIMITY.opcjiChoice)
         return { blad: `Pytanie ${id}: choice wymaga od 2 do ${LIMITY.opcjiChoice} opcji` }
+      const criteria = {}
       for (const [opcja, opis] of opcje) {
         if (opcja.length > LIMITY.idPytania || !ID.test(opcja))
           return { blad: `Pytanie ${id}: złe id opcji ${opcja}` }
-        if (!tekst(opis, LIMITY.opisOpcji)) return { blad: `Pytanie ${id}: pusty opis opcji` }
+        // #163: opis to tekst albo obiekt { co, nie_dla?, przyklady? }.
+        const przelozony = przelozOpis(opis)
+        if (przelozony === null) return { blad: `Pytanie ${id}: zły opis opcji ${opcja}` }
+        criteria[opcja] = przelozony
       }
-      pytania[id] = {
-        type: 'choice',
-        instructions: p.polecenie,
-        criteria: Object.fromEntries(opcje),
-      }
+      pytania[id] = { type: 'choice', instructions: p.polecenie, criteria }
     } else if (p.typ === 'score') {
       const poziomy = p.kryteria
       if (
@@ -93,6 +166,8 @@ export function sprawdzZapytanie(cialo) {
       return { blad: `Pytanie ${id}: typ musi być choice, noul albo score` }
     }
   }
+  if (JSON.stringify(pytania).length > LIMITY.pytaniaZnakow)
+    return { blad: `Pytania razem ponad ${LIMITY.pytaniaZnakow} znaków` }
   return { stan: cialo.stan.slice(0, LIMITY.stan), pytania }
 }
 

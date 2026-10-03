@@ -1,8 +1,8 @@
 # Pomiar JEV po polsku (#18)
 
-> Najnowszy wynik jest w sekcji „Pomiar rundy (#154–#157)”: cała runda (#154–#156) zmierzona raz
-> na **zbiorze kontrolnym nr 4**, pisanym na ślepo, plus test A/A – ile wynosi szum JEV na
-> przypiętym modelu. Zbiór nr 3 mierzyliśmy w „Trzy błędy (#153)”, nr 2 w „Wersja końcowa (#152)”,
+> Najnowszy wynik jest w sekcji „Opisy strukturalne (#163)”: przed i po na **zbiorze kontrolnym
+> nr 5**, pisanym na ślepo, mierzonym raz. Runda #154–#156 na zbiorze nr 4 i test A/A (szum JEV na
+> przypiętym modelu) są w sekcji „Pomiar rundy (#154–#157)”. Zbiór nr 3 mierzyliśmy w „Trzy błędy (#153)”, nr 2 w „Wersja końcowa (#152)”,
 > a nr 1 w „Poprawki trafności (#147)” i „Druga runda (#150)”. Liczby z #18 niżej dotyczą zbioru,
 > na którym potem stroiliśmy.
 
@@ -1577,7 +1577,270 @@ odpowiedziach i A25.
 dla obu twierdzeń. To tylko liczba diagnostyczna: wynik pozycji idzie przez `bramkaZamknieta`
 z progami per twierdzenie.
 
+## Opisy strukturalne (#163)
+
+Pomiar z 2026-10-03, model `jev-1.13.0`. Punkt R6 z `RESEARCH-JEV.md` i rozszerzenie od Jana:
+zwykłe opisy wszystkich warstw.
+
+### Co się zmieniło
+
+1. **Pośrednik (`api/_jev.js`) przyjmuje opisy strukturalne.** Zmiana jest addytywna: zapytania
+   z samymi tekstami wyglądają dla JEV tak samo jak wcześniej (test).
+   - Opcja `choice` to tekst albo `{ co, nie_dla?, przyklady? }`. Pośrednik przekłada to na
+     `{ what, not_for?, examples? }`.
+   - Twierdzenie `noul` może mieć `kryteria: { prawda?, falsz? }`, co daje `criteria.true` /
+     `criteria.false`. Każda strona to tekst albo obiekt jak wyżej.
+   - Każde pole ma do 300 znaków, przykładów może być 1–5. Nieznane pole jest odrzucane.
+   - Całe pytania mają do 60 tys. znaków, a ciało funkcji do 64 tys. (było 32 tys.). Zapytanie
+     „zapytaj o adres” ma teraz ok. 31 tys. znaków.
+   - Odpowiedź nadal przechodzi tylko z id opcji z żądania.
+2. **Kształty sprawdzone w dokumentacji i na żywo.** Dokumentacja TypeSafe (`primitives/choice`,
+   `primitives/noul`, `primitives/advanced`, `api`) opisuje:
+   - opcję jako obiekt z polami `what` / `not_for` / `examples` (nazwy pól są dowolne, „none are
+     reserved”);
+   - noul z `criteria.true` / `criteria.false` (tekst albo obiekt);
+   - zły kształt to błąd 422.
+
+   Jedno wywołanie na żywo z oboma kształtami dało 200 i sensowne odpowiedzi. Z notatkami
+   w `RESEARCH-JEV.md` nic się nie kłóci.
+3. **Zwykłe opisy wszystkich 108 warstw** (`src/ai/opisyWarstwJev.ts`). Zastąpiły „nazwę
+   (jednostkę) + dopisek + pierwsze zdanie opisu z danych”.
+   - Każdy opis mówi, co warstwa znaczy dla mieszkańca i na jakie pytania odpowiada.
+   - Skróty są rozwinięte (LDWN, SCT, P+R, POZ, MPZP…), jednostki zapisane słowami, bez żargonu
+     („oczko siatki”, „H3”, „interferometria”).
+   - Dopiski z #147 (park, smog, „słychać tramwaje”…) są wplecione w treść.
+   - `public/dane` się nie zmieniło.
+   - Test `opisyWarstwJev.test.ts` wymaga wpisu dla każdej warstwy bez atrapy i rozwinięcia
+     każdego skrótu z listy obok skrótu.
+4. **`nie_dla` i przykłady tylko przy opcjach mylonych w zapisanych przebiegach:**
+   - rodzina powodzi (1%, 10%, 0,2% i udział gminy);
+   - rodzina powietrza (PM2,5, PM10, NO2, benzo(a)piren, paleniska, przewietrzanie);
+   - hałas ↔ przystanek;
+   - cena m² ↔ „nie wiem”. Ta para myliła się w każdym ze zbiorów nr 2–4, zawsze jako
+     `nie_wiem` zamiast ceny.
+5. **Kryteria prawda/fałsz dla 5 tematów ze znanymi fałszywymi dodatkami.** Fałsz to znany
+   fałszywy dodatek, prawda to pytanie o sam temat. Twierdzenia zostały bez zmian.
+   - komunikacja: tramwaj jako źródło hałasu;
+   - sklepy: apteka i lekarz;
+   - powietrze: wjazd dieslem do strefy;
+   - bezpieczeństwo: bezpieczna jazda rowerem;
+   - zieleń: weterynarz.
+6. **„Opisz siebie”: kryteria prawda/fałsz dla bramki i dwóch potrzeb.** Twierdzenia zostały
+   bez zmian.
+   - `nikt_nie_szuka`: fałsz to także własny opis potrzeb bez słowa „szukam”. W #162 taki opis
+     dostał 0,50.
+   - `sytuacja_nieaktualna`: fałsz to obecny plan, także gdy tekst wspomina przeszłość.
+   - `dzieci`: „osoba” to przyszły mieszkaniec, także przy szukaniu dla kogoś. W #162 było tu
+     0,59.
+   - `bez_samochodu`: najsłabsza potrzeba.
+   - `praca_centrum`: kryteria **odrzucone** na zbiorze do strojenia. „Szybki dojazd na AGH”
+     spadł z 0,67 do 0,47, a żaden opis nie zyskał.
+
+### Metoda: przed i po w jednym wywołaniu
+
+Dwa pełne przebiegi zbioru nr 5 (przed i po) kosztowałyby ok. 160 wywołań, czyli cały budżet,
+bez strojenia. Dlatego `pomiar.ts --przed-po <commit>` wysyła **jedno wywołanie na pozycję**
+z pytaniami trzech wersji:
+
+- **przed** – kod z `origin/main` (`fe6843c`), wyciągnięty z repozytorium do plików tymczasowych;
+- **po** – ta zmiana;
+- **proste** – ta zmiana bez `nie_dla`, przykładów i kryteriów prawda/fałsz, czyli same nowe
+  zwykłe opisy.
+
+Pytanie takie samo we wszystkich wersjach JEV ocenia raz, a inne dostaje przedrostek. Każda
+wersja przechodzi przez walidację pośrednika osobno i jest przetwarzana własnym kodem. Wersja
+„przed” idzie kodem z `main`, także w drugim wywołaniu (#153), więc to sparowane porównanie.
+
+Dlaczego to jest uczciwe:
+
+- według dokumentacji pytania w jednym zapytaniu są niezależne;
+- w #162 zamiana jednego twierdzenia przesuwała pozostałe oceny średnio o 0,008, czyli tyle, co
+  szum A/A.
+
+Ograniczenie: każda wersja dzieli zapytanie z pytaniami pozostałych, a nie stoi sama. Czasy
+tych wywołań nie są czasami aplikacji, bo zapytanie jest ok. 3 razy większe. Czas aplikacji jest
+zmierzony osobno, niżej.
+
+### Strojenie (zbiory do strojenia i własne zdania)
+
+Ta sama metoda na zbiorze wzorcowym B (28 pytań), 15 opisach A z testu A/A oraz 12 pytaniach
+i 8 opisach napisanych przeze mnie (cechy jak w zbiorze nr 5: bliska pomyłka, w imieniu,
+nikt nie szuka). Wszystko liczone na pełnym zapytaniu, 67 wywołań.
+
+| | przed | proste | **po** |
+|---|---|---|---|
+| A (23): dokładnie | 78% | 78% | **87%** |
+| B (40): pojedyncze – warstwa główna | 25/28 | 27/28 | **27/28** |
+| B: precyzja warstw | 91% | 95% | 93% |
+| B: fałszywe dodatki na pojedynczych | 2 | 1 | 2 |
+
+- Na znanych fałszywych dodatkach oceny tematów spadły:
+  - B02 „słychać tramwaje” → komunikacja: 0,09 → 0,03;
+  - B26 → sklepy: 0,25 → 0,05;
+  - B13 diesel → powietrze: 0,18 → 0,04;
+  - B28 → bezpieczeństwo: 0,25 → 0,12;
+  - moje „weterynarz” → zieleń: 0,06 → 0,02.
+- Prawdziwe tematy wzrosły:
+  - B16 komunikacja: 0,62 → 0,90;
+  - B21: 0,79 → 0,92;
+  - B23 bezpieczeństwo: 0,46 → 0,79, zieleń: 0,53 → 0,70;
+  - B27 zieleń: 0,83 → 0,94.
+- Zwykłe opisy same naprawiły dwa pytania:
+  - B04 „opłaca się kupić pod wynajem”: `nie_wiem` 0,87 → cena 0,57 (z przykładami 0,77);
+  - moje pytanie o wjazd starym autem: zapas → Strefa Czystego Transportu 0,81.
+- Bramka: mój opis „jeżdżę autem do pracy w Zabierzowie, cisza i zieleń” na `main` zamykał się
+  na `nikt_nie_szuka` 0,74. Teraz ma 0,45 i bramka jest otwarta.
+- Koszt: moje pytanie „gdzie zostawię auto i przesiądę się do tramwaju” dostało dodatkowo
+  przystanek (komunikacja 0,46 → 0,65).
+
+### Wynik nagłówkowy – zbiór kontrolny nr 5 (świeży, na ślepo, mierzony raz)
+
+`kontrolny5-opisz.json` (40 opisów) i `kontrolny5-zapytaj.json` (35 pytań: 23 pojedyncze,
+8 złożonych, 4 spoza zakresu).
+
+- Napisał je osobny agent bez dostępu do kodu. Weszły bajt w bajt osobnym commitem przed kodem.
+- Otworzyłem je dopiero przy gotowym kodzie, żeby je skopiować i policzyć pozycje i cechy.
+- Jeden przebieg: `pomiar.ts --na-zywo --zbior kontrolny5 --przed-po origin/main`. Po nim nic
+  w kodzie nie zmieniałem.
+- Przebiegi: `przebiegi/k5-przed-163.json`, `k5-po-163.json` i `k5-proste-163.json`.
+- JEV oznacza to, co widzi użytkownik: odpowiedź JEV, a pod progiem reguły.
+
+**A – „opisz siebie”** (40 opisów):
+
+| | Reguły | JEV przed | JEV proste¹ | **JEV po** |
+|---|---|---|---|---|
+| Profil trafiony | 60% | 93% | 93% | **95%** |
+| Potrzeby (10 z twierdzeniem) – P / R / F1 | 67 / 65 / 66% | 86 / 90 / 88% | 86 / 90 / 88% | **90 / 88 / 89%** |
+| Potrzeby – F1 na wszystkich 15 | 64% | 74% | 74% | 74% |
+| Kategorie ważne – F1 | 73% | 81% | 81% | 81% |
+| **Cały opis zrozumiany dokładnie** | 35% | 70% (28) | 70% (28) | **78% (31)** |
+| „Nic nie zrozumiano” tam, gdzie trzeba | 4/5 | 5/5 | 5/5 | 5/5 |
+| Bramka zamknięta | – | 5 | 5 | 3 |
+
+¹ W „opisz siebie” wersja proste to dokładnie zapytanie z `main`, bo nie używa listy warstw.
+
+**B – „zapytaj o adres”** (35 pytań):
+
+| | Reguły | JEV przed | JEV proste | **JEV po** |
+|---|---|---|---|---|
+| **Trafna warstwa główna od razu** | 37% | 89% (31) | 94% (33) | **97% (34)** |
+| Pojedyncze – warstwa główna | 5/23 | 20/23 | 21/23 | **22/23** |
+| Pokrycie pytań złożonych | 44% | 56% | 62% | **62%** |
+| Złożone z kompletem tematów | 1/8 | 2/8 | 2/8 | 2/8 |
+| Spoza zakresu → „nie wiem” bez dodatków | 4/4 | 4/4 | 4/4 | 4/4 |
+| Precyzja warstw | 60% | 86% | 86% | 87% |
+| Fałszywe dodatki na pojedynczych (pytań) | 2 | 3 | 4 | **5** |
+| Zapas (pewność wyboru < 0,5) | – | 4/35 | 2/35 | **1/35** |
+| Pewność wyboru > 0,9 | – | 14/35 | 21/35 | **23/35** |
+| Po kliknięciu propozycji (#156) | – | 30/35 | 33/35 | **34/35** |
+
+**Przekrój po cechach.** Liczby zbiorcze. Strzałka to zmiana „przed → po”, a w nawiasie liczba
+pozycji, które zyskały i straciły.
+
+| Cecha | n | Miara | Przed → **po** | Proste |
+|---|---|---|---|---|
+| `bliska_pomylka` (A) | 7 | dokładnie | 71% → **86%** (+1 / −0) | 71% |
+| `bliska_pomylka` (B) | 5 | warstwa główna | 80% → **100%** (+1 / −0) | 80% |
+| `bliska_pomylka` (B) | 5 | fałszywe dodatki | 1 → 2 | 1 |
+| `w_imieniu` (A) | 4 | dokładnie; potrzeby P / R | 25% → **50%** (+1 / −0); 82 / 100% → 89 / 89% | 25% |
+| `nikt_nie_szuka` (A) | 3 | dokładnie; bramka zamknięta | 100% → 100%; 3 → 2 | 100%; 3 |
+| `domownik` (A) | 4 | dokładnie | 50% → 75% (+1 / −0) | 50% |
+| `profil_glowny` (A) | 6 | dokładnie | 83% → 83% | 83% |
+| `niejednoznaczne` (B) | 4 | warstwa główna | 50% → 75% (+1 / −0) | 75% |
+| `zlozone` (B) | 8 | warstwa główna; pokrycie | 88% → 100% (+1); 56% → 62% | 100%; 62% |
+| `spoza` (B) | 4 | „nie wiem” | 4/4 → 4/4 | 4/4 |
+
+Pozycja po pozycji (bez tekstów):
+
+- **A:** „dokładnie” +3 / −0. Zyskały po jednej pozycji z cech `bliska_pomylka`, `w_imieniu`
+  i `domownik`. Żaden opis nie przeszedł z dokładnego na niedokładny. Zysk w A pochodzi
+  wyłącznie z kryteriów prawda/fałsz (wersja proste = przed).
+- **B:** warstwa główna +3 / −0. Dwie pozycje zyskały już na zwykłych opisach (`niejednoznaczne`
+  i `zlozone`), trzecia (`bliska_pomylka`) dopiero z `nie_dla` i przykładami.
+- **Fałszywe dodatki 3 → 5** – to koszt.
+  - Obie nowe pozycje to pytania, w których na `main` wybór miał pewność < 0,5 i odpowiadały
+    reguły z błędną warstwą. Teraz JEV daje trafną warstwę główną, ale dokłada temat.
+  - Raz to hałas: ocena 0,62, temat bez kryteriów i bez zmian.
+  - Raz to powietrze: ocena wzrosła z 0,75 do 0,87, a wzorzec mówi „nie powietrze”. Ta pozycja
+    ma cechę `bliska_pomylka`.
+  - Żadne pytanie nie straciło trafnej warstwy głównej.
+- **Bramka** zamknęła się w 3 opisach zamiast 5. Ubyło jedno zamknięcie poza cechą
+  `nikt_nie_szuka` i jedno w tej cesze. Wszystkie 3 opisy `nikt_nie_szuka` zostały zrozumiane
+  dokładnie w obu wersjach (JEV nic nie wyłapał także przy otwartej bramce).
+
+Mówiąc wprost:
+
+- Według A/A (#157) różnica 2 lub więcej pozycji na tym samym zbiorze to skutek zmiany, a nie
+  szum. Tu jest +3 w A i +3 w B, bez żadnej pozycji, która przeszła z trafnej na chybioną.
+- Na cechach celu zysk to +2 w `bliska_pomylka` (A + B) i +1 w `w_imieniu`.
+- `nikt_nie_szuka` jest bez zmian. Bramka zamyka się rzadziej i nic przez to nie straciła.
+- To 40 + 35 pozycji: 1 opis = 2,5 pp, 1 pytanie = 3 pp. Cechy mają 3–8 pozycji, więc
+  procenty w przekroju skaczą o 12–33 pp na pozycję.
+- **Który kawałek pomógł (przekrój pomocniczy):**
+  - same zwykłe opisy warstw dają w B +2 pozycje warstwy głównej (89% → 94%), mniej zapasów
+    (4 → 2) i więcej pewnych wyborów (14 → 21 powyżej 0,9);
+  - `nie_dla` i przykłady dokładają w B +1 (`bliska_pomylka`);
+  - kryteria prawda/fałsz dają całe +3 w A;
+  - zwykłe opisy kosztują 1 fałszywy dodatek, a struktura drugi.
+- Zbiór nr 5 wypada dla JEV wyraźnie lepiej niż nr 4 (dokładnie 70% vs 33% przed tą zmianą),
+  a dla reguł gorzej (warstwa główna 37% vs 66%). To inny zbiór. Porównanie przed i po na tym
+  samym zbiorze jest sparowane, ale poziomów nie da się wprost zestawić z #157.
+
+### Opóźnienie
+
+| Zapytanie | p50 / p95 / max |
+|---|---|
+| Aplikacja po #163, „zapytaj o adres” (5 pytań ze starego B, osobne wywołania) | 399 / 552 / 552 ms |
+| Dla porównania: A/A przed #163 (#157, 14 pytań B + 15 opisów A) | 304–310 / 479–485 / 589–642 ms |
+| Zbiór nr 5, wywołanie z trzema wersjami naraz: A / B | 286 / 420 / 496 ms; 581 / 1014 / 1015 ms |
+
+- Zapytanie „zapytaj o adres” ma teraz ok. 31 tys. znaków, a wcześniej ok. 23 tys.
+- Na 5 pytaniach p50 wyszło ok. 90 ms więcej niż w A/A. To mała próbka i inny dzień, więc
+  traktuję to jako możliwy koszt rzędu 0,1 s.
+- Wszystkie odpowiedzi w aplikacji zmieściły się w 800 ms pośrednika.
+- „Opisz siebie” ma zapytanie większe o ok. 2 tys. znaków, więc praktycznie bez zmian.
+
+### Wywołania na żywo
+
+**158 z budżetu 160:**
+
+- weryfikacja kształtów API – 1;
+- próba trybu `--przed-po` – 2;
+- strojenie – 67 (23 opisy + 40 pytań + 4 drugie wywołania);
+- zbiór nr 5 – 83 (75 pozycji + 8 drugich wywołań: po 4 dla starych i nowych opisów);
+- czas aplikacji – 5.
+
+### Decyzja
+
+**Zostaje.** Warunek był taki: po lepsze od przed o ≥ 2 pozycje na cechach celu, bez strat gdzie
+indziej.
+
+- Cechy celu: +3 (`bliska_pomylka` +2, `w_imieniu` +1).
+- Całość: A +3, B +3, żadna pozycja nie przeszła z trafnej na chybioną.
+- Jedyna strata to 2 fałszywe dodatki więcej. Oba są na pytaniach, które zyskały trafną warstwę
+  główną.
+- Próg tematu i pozostałe progi bez zmian.
+
+**Po pomiarze, przy scalaniu:** na `main` w trakcie zadania doszło 12 warstw (uzbrojenie terenu,
+drogi gruntowe, nocne światło, przestępstwa i wykrywalność w powiecie, zabytki z rejestru,
+wydarzenia w dużych obiektach, wnioski „Czyste Powietrze”). Test pokrycia wymaga dla nich
+opisów, więc dopisałem 12 zwykłych zdań (samo `co`, bez `nie_dla` i przykładów). To nie jest
+strojenie – opisów pozostałych warstw, kryteriów ani progów nie ruszałem. Lista dla JEV ma
+teraz 120 warstw zamiast 108, więc w aplikacji wybór ma 12 opcji więcej niż w pomiarze (tak jak
+warstwy Sejmu w #152). Zapytanie ma ok. 33 tys. znaków.
+
 ## Na slajd
+
+**Po #163 (zbiór kontrolny nr 5, na ślepo, 40 opisów i 35 pytań, mierzony raz).** Zbiór nr 5
+potwierdza zdania niżej o wyborze warstwy i profilu, z wyższymi liczbami. Liczby po #163:
+
+- Na pytanie o adres JEV wskazuje właściwe dane od razu w 97% pytań (przed #163: 89%; reguły:
+  37%).
+- Profil trafia w 95% opisów, a cały opis rozumie dokładnie w 78% (przed #163: 70%; reguły: 35%).
+- Opisy warstw po ludzku i definicje „kiedy tak, kiedy nie” dały +3 pozycje w każdej części
+  zbioru, bez żadnej pozycji, która przeszła z trafnej na chybioną.
+- Na zbiorze nr 4 te same miary wypadły niżej (91% i 33% przed #163). Zbiory różnią się
+  trudnością, więc zdania „97%” i „78%” podajemy razem z nazwą zbioru.
 
 Liczby pochodzą ze **zbioru kontrolnego nr 4** (#157). Napisał go na ślepo osobny agent AI, bez
 dostępu do kodu i poleceń. Wersję po rundzie #154–#156 zmierzyliśmy na nim raz i potem niczego
@@ -1617,6 +1880,9 @@ bez nowych wywołań:
 | `przebiegi/k3-153.json` | zbiór kontrolny nr 3 | #153 |
 | `przebiegi/k4-157.json` | zbiór kontrolny nr 4, runda #154–#156 | #157 |
 | `przebiegi/aa-157.json` | test A/A na `jev-1.13.0` (dwa identyczne przebiegi) | #157 |
+| `przebiegi/k5-przed-163.json` | zbiór kontrolny nr 5, kod z `main` przed #163 (wersja „przed”) | #163 |
+| `przebiegi/k5-po-163.json` | zbiór kontrolny nr 5, #163 (wersja „po”, wynik nagłówkowy) | #163 |
+| `przebiegi/k5-proste-163.json` | zbiór kontrolny nr 5, same zwykłe opisy bez struktury (przekrój pomocniczy) | #163 |
 
 Przebiegów zbioru nr 1 (#147, #150) nie zapisywaliśmy pozycja po pozycji – są tylko liczby
 zbiorcze powyżej. Raport z przeglądu projektu JEV (nazwy warstw, prawdopodobieństwa, profil,

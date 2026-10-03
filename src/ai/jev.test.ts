@@ -35,6 +35,30 @@ const fetchWiszacy = (async (_url: unknown, init?: RequestInit) =>
     init?.signal?.addEventListener('abort', () => blad(new DOMException('Aborted', 'AbortError')))
   })) as typeof fetch
 
+describe('budowniczowie pytań – opisy strukturalne (#163)', () => {
+  it('takNie bez kryteriów jak dotąd, z kryteriami – pole kryteria', () => {
+    assert.deepEqual(takNie('Czy?'), { typ: 'noul', polecenie: 'Czy?' })
+    assert.deepEqual(takNie('Czy?', { falsz: { co: 'Nie', przyklady: ['x'] } }), {
+      typ: 'noul',
+      polecenie: 'Czy?',
+      kryteria: { falsz: { co: 'Nie', przyklady: ['x'] } },
+    })
+  })
+  it('wybor przyjmuje tekst i obiekt { co, nie_dla?, przyklady? } w jednej liście', async () => {
+    const p = wybor('Która?', { a: 'Tekst', b: { co: 'Hałas', nie_dla: 'Przystanek' } })
+    assert.deepEqual(p, {
+      typ: 'choice',
+      polecenie: 'Która?',
+      kryteria: { a: 'Tekst', b: { co: 'Hałas', nie_dla: 'Przystanek' } },
+    })
+    const sciezka = new URL('../../api/_jev.js', import.meta.url).href
+    const { sprawdzZapytanie } = (await import(sciezka)) as {
+      sprawdzZapytanie: (c: unknown) => { blad?: string }
+    }
+    assert.equal(sprawdzZapytanie({ stan: 'x', pytania: { p } }).blad, undefined)
+  })
+})
+
 const ODPOWIEDZI: Record<string, OdpowiedzJev | null> = {
   profil: { typ: 'choice', wybor: 'rodzina', pewnosc: 0.9 },
   dzieci: { typ: 'noul', noul: 0.93 },

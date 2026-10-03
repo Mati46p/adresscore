@@ -372,6 +372,45 @@ describe('tematy – pytania złożone (#146)', () => {
     for (const t of TEMATY) assert.equal(z.pytania[idTematu(t)]?.typ, 'noul')
   })
 
+  it('#163: kryteria prawda/fałsz tylko dla tematów ze zmierzonymi fałszywymi dodatkami', async () => {
+    const z = zapytanieJev('Czy w nocy słychać tramwaje?', pelna)
+    const zKryteriami = TEMATY.filter((t) => {
+      const p = z.pytania[idTematu(t)]
+      return p?.typ === 'noul' && p.kryteria !== undefined
+    }).map((t) => t.id)
+    assert.deepEqual(zKryteriami, [
+      'powietrze',
+      'zielen',
+      'komunikacja',
+      'sklepy',
+      'bezpieczenstwo',
+    ])
+    const tekst = (id: string) => JSON.stringify(temat(id).kryteria?.falsz)
+    // Fałsz = znany fałszywy dodatek: hałas ≠ komunikacja, apteka ≠ sklepy, diesel ≠ powietrze,
+    // rower ≠ zagrożenia, weterynarz ≠ zieleń.
+    assert.match(tekst('komunikacja'), /hałasu/)
+    assert.match(tekst('sklepy'), /aptekę/)
+    assert.match(tekst('powietrze'), /dieslem/)
+    assert.match(tekst('bezpieczenstwo'), /rowerem/)
+    assert.match(tekst('zielen'), /weterynarza/)
+    // Twierdzenia bez zmian (wykluczenia z #147/#153 zostają w poleceniu).
+    assert.match(temat('komunikacja').twierdzenie, /Hałas od tramwajów to nie to\.$/)
+    const sciezka = new URL('../../api/_jev.js', import.meta.url).href
+    const { sprawdzZapytanie } = (await import(sciezka)) as {
+      sprawdzZapytanie: (c: unknown) => {
+        blad?: string
+        pytania: Record<string, { criteria?: Record<string, unknown> }>
+      }
+    }
+    const api = sprawdzZapytanie(z)
+    assert.equal(api.blad, undefined)
+    assert.deepEqual(Object.keys(api.pytania[idTematu(temat('sklepy'))]?.criteria ?? {}), [
+      'true',
+      'false',
+    ])
+    assert.equal(api.pytania[idTematu(temat('halas'))]?.criteria, undefined)
+  })
+
   it('temat bez warstwy na liście nie trafia do zapytania', () => {
     const z = zapytanieJev('cokolwiek', LISTA)
     const tematy = Object.keys(z.pytania).filter((k) => k !== ID_PYTANIA)

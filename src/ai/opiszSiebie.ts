@@ -16,6 +16,7 @@ import {
 } from '../wynik/persony.ts'
 import type { Kierunki } from '../wynik/silnik.ts'
 import {
+  type KryteriaTakNie,
   type OdpowiedzJev,
   type OpcjeKlienta,
   ocena,
@@ -134,12 +135,45 @@ export const BRAMKA = [
     id: 'nikt_nie_szuka',
     twierdzenie:
       'Tekst to tylko opinia albo ciekawość – nikt nie szuka mieszkania ani dla siebie, ani dla kogoś innego (np. taty, koleżanki), ani pod wynajem.',
+    // #163: kryteria prawda/fałsz – własny opis potrzeb bez słowa „szukam” to szukanie (#162: 0,50).
+    kryteria: {
+      prawda: {
+        co: 'Nikt nie szuka mieszkania: tekst to tylko opinia, plotka, ciekawość albo sprawdzanie, jak działa aplikacja.',
+        przyklady: [
+          'Ciekawe, czy na tym osiedlu jest głośno, kolega tam mieszka.',
+          'Sprawdzam tylko, jak to działa.',
+        ],
+      },
+      falsz: {
+        co: 'Ktoś szuka albo kupuje mieszkanie: dla siebie, z rodziną, dla kogoś bliskiego (taty, córki, koleżanki) albo pod wynajem – także gdy tekst tylko opisuje swoje potrzeby, bez słowa „szukam”.',
+        przyklady: [
+          'Mam 70 lat, chodzę o lasce, potrzebuję blisko lekarza.',
+          'Piszę w imieniu mamy, chcemy jej znaleźć kawalerkę.',
+        ],
+      },
+    },
     prog: PROG_NIKT_NIE_SZUKA,
   },
   {
     id: 'sytuacja_nieaktualna',
     twierdzenie:
       'Tekst mówi wyłącznie o sytuacji wyobrażonej („gdyby…”) albo nieaktualnej (tak było kiedyś), a nie o obecnej ani planowanej.',
+    kryteria: {
+      prawda: {
+        co: 'Cały tekst dotyczy sytuacji wyobrażonej („gdybyśmy kiedyś…”) albo dawnej, która już nie trwa, a obecnych potrzeb w nim nie ma.',
+        przyklady: [
+          'Gdybym kiedyś miał psa, chciałbym mieć blisko park.',
+          'Kiedyś mieszkaliśmy z dziećmi, ale to już nieaktualne.',
+        ],
+      },
+      falsz: {
+        co: 'Tekst opisuje obecną sytuację albo prawdziwy plan (dziecko w drodze, mama z nami zamieszka) – także gdy przy okazji wspomina przeszłość.',
+        przyklady: [
+          'W marcu urodzi nam się dziecko.',
+          'Kiedyś jeździłem autem, dziś już nie prowadzę i potrzebuję tramwaju.',
+        ],
+      },
+    },
     prog: PROG_BRAMKI,
   },
 ] as const
@@ -158,6 +192,8 @@ export interface Potrzeba {
   etykieta: string
   /** Twierdzenie dla JEV (noul); brak = potrzeba tylko z reguł (pokrywa ją profil albo kategoria). */
   twierdzenie?: string
+  /** #163: kiedy twierdzenie jest prawdziwe, a kiedy fałszywe – tylko najsłabsze potrzeby. */
+  kryteria?: KryteriaTakNie
   /** Wzorce na tekście bez polskich znaków, małymi literami. */
   wzorce: Wzorzec[]
   /** Profil, który potrzeba sugeruje (reguły; JEV wybiera profil sam). */
@@ -180,6 +216,15 @@ export const POTRZEBY: readonly Potrzeba[] = [
     id: 'dzieci',
     etykieta: 'dzieci',
     twierdzenie: 'Osoba mieszka z dziećmi albo planuje dzieci.',
+    // #163: przy szukaniu dla kogoś (#162) „osoba” to przyszły mieszkaniec – dzieci 0,59 pod progiem.
+    kryteria: {
+      prawda: {
+        co: 'W szukanym mieszkaniu zamieszkają dzieci: ma je albo planuje osoba pisząca albo ta, dla której szuka mieszkania (np. córka z wnukami, koleżanka z dziećmi).',
+      },
+      falsz: {
+        co: 'Nikt, kto ma tam zamieszkać, nie ma dzieci ani ich nie planuje; dzieci dorosłe i wyprowadzone albo dzieci znajomych, którzy tam nie zamieszkają.',
+      },
+    },
     wzorce: [
       {
         re: /\b(dzieci|dzieck|dziecm|cork|coreczk|syn\b|syna\b|synem|synow|synk|przedszkol|szkol|zlob|niemowl|maluch|rodzin)/,
@@ -235,6 +280,17 @@ export const POTRZEBY: readonly Potrzeba[] = [
     id: 'bez_samochodu',
     etykieta: 'bez samochodu',
     twierdzenie: 'Osoba nie ma samochodu.',
+    // #163: najsłabsza potrzeba („No car obviously” 0,39, „auta nie potrzebuję” 0,21 w #18).
+    kryteria: {
+      prawda: {
+        co: 'Tekst mówi, że osoba nie ma samochodu, nie prowadzi albo chce żyć bez auta i jeździć komunikacją.',
+        przyklady: ['Auta nie mam i nie planuję.', 'No car, wszędzie jeżdżę tramwajem.'],
+      },
+      falsz: {
+        co: 'Osoba ma samochód i nim jeździ albo tekst w ogóle nie mówi o aucie ani o komunikacji.',
+        przyklady: ['Do pracy dojeżdżam autem.'],
+      },
+    },
     wzorce: [
       {
         re: /\b(bez (samochodu|auta|samochod)|nie mam (samochodu|auta|prawa jazdy)|nie jezdze (samochodem|autem))/,
@@ -265,6 +321,8 @@ export const POTRZEBY: readonly Potrzeba[] = [
     id: 'praca_centrum',
     etykieta: 'praca w centrum',
     twierdzenie: 'Osoba codziennie dojeżdża do pracy albo na uczelnię w centrum miasta.',
+    // #163: kryteria prawda/fałsz (z listą miejsc „w centrum”) odrzucone na zbiorze do strojenia:
+    // „szybki dojazd na AGH” spadł z 0,67 do 0,47, a żaden opis nie zyskał (WYNIKI.md, #163).
     wzorce: [
       {
         re: /\b(prac\w* (w|na) (centrum|rynku|starym miescie|kazimierzu)|w centrum|centrum miasta|do centrum|rynek|rynku|stare miasto|starym miescie|dojazd\w* do pracy|dojezdzam|biuro|biurze|uczelni)/,
@@ -435,8 +493,9 @@ export function zapytanieOpiszSiebie(tekst: string): ZapytanieJev {
       POZIOMY_WAZNOSCI,
     )
   }
-  for (const p of POTRZEBY) if (p.twierdzenie) pytania[idPotrzeby(p)] = takNie(p.twierdzenie)
-  for (const b of BRAMKA) pytania[b.id] = takNie(b.twierdzenie)
+  for (const p of POTRZEBY)
+    if (p.twierdzenie) pytania[idPotrzeby(p)] = takNie(p.twierdzenie, p.kryteria)
+  for (const b of BRAMKA) pytania[b.id] = takNie(b.twierdzenie, b.kryteria)
   return { stan: tekst, pytania }
 }
 

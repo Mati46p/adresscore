@@ -8,8 +8,10 @@
 import type { WskaznikMeta, Zrodlo } from '../kontrakty/index.ts'
 import { KOLEJNOSC_KATEGORII } from '../wynik/silnik.ts'
 import {
+  type KryteriaTakNie,
   type OdpowiedzJev,
   type OpcjeKlienta,
+  type OpisOpcji,
   takNie,
   type WynikZZapasem,
   wybor,
@@ -17,6 +19,7 @@ import {
   zapytajJev,
   zJevem,
 } from './jev.ts'
+import { OPISY_WARSTW_DLA_JEV } from './opisyWarstwJev.ts'
 
 /** Id pytania w zapytaniu do pośrednika. */
 export const ID_PYTANIA = 'warstwa'
@@ -35,42 +38,9 @@ export const POLECENIE =
   'Jeśli pytanie dotyczy kilku rzeczy naraz, wybierz warstwę dla pierwszej z nich. ' +
   'Jeśli żadna nie pasuje, wybierz nie_wiem.'
 
-/**
- * Dopiski do opisu warstwy dla JEV (przed opisem z danych, żeby nie uciął ich limit 300 znaków).
- * Trzy warstwy powodzi różnią się tylko prawdopodobieństwem, więc JEV rozkładał pewność między
- * nie i na „Czy piwnica może zalać?” spadał pod próg (pomiar #18) – wskazujemy domyślną.
- * #147: potoczne słowa, którymi ludzie pytają (park, skwer, smog, korki…). Opisy z danych są
- * techniczne („odsetek powierzchni oczka 100 m…”), a słowo „park” w nich nie pada (B19 w #18).
- */
-const DOPISKI_WARSTW: Readonly<Record<string, string>> = {
-  powodz_1proc:
-    'Domyślna odpowiedź na pytania, czy tu zalewa, czy zaleje piwnicę, o powódź, wysoką wodę, wylewy rzeki i podtopienia.',
-  powodz_10proc: 'Tylko gdy pytanie wprost dotyczy częstych zalań (co kilka lat).',
-  powodz_02proc: 'Tylko gdy pytanie wprost dotyczy najgorszego, skrajnie rzadkiego scenariusza.',
-  zielen_worldcover_100m:
-    'Domyślna odpowiedź na pytania o zieleń: park, skwer, trawnik, czy jest zielono, gdzie wyjść na spacer albo z psem.',
-  drzewa_100m: 'Odpowiedź na pytania o drzewa przy ulicy i pod oknem.',
-  pm25_srednia:
-    'Domyślna odpowiedź na pytania o smog, czyste powietrze i czym się tu oddycha (astma, alergia).',
-  bap_srednia: 'Odpowiedź na pytania o dym z pieców i palenie węglem.',
-  halas_ldwn:
-    'Domyślna odpowiedź na pytania, czy jest głośno albo cicho, czy słychać ulicę, tramwaje albo pociągi i czy da się spać przy otwartym oknie.',
-  przystanek_odleglosc:
-    'Domyślna odpowiedź na pytania o komunikację miejską: tramwaj, autobus, MPK, daleko do przystanku.',
-  kursy_szczyt_h: 'Odpowiedź na pytania, jak często coś jeździ i ile się czeka.',
-  rynek_czas_min:
-    'Odpowiedź na pytania, ile się jedzie do centrum albo na Rynek, także rano w korkach.',
-  kolej_odleglosc: 'Odpowiedź na pytania o pociąg, stację i dojazd koleją.',
-  sklep_odleglosc: 'Domyślna odpowiedź na pytania o sklep i zakupy (Biedronka, Żabka, Lidl).',
-  przychodnia_odleglosc:
-    'Domyślna odpowiedź na pytania o lekarza rodzinnego, przychodnię i ośrodek zdrowia.',
-  apteka_odleglosc: 'Odpowiedź na pytania o aptekę i leki.',
-  szkola_podst_odleglosc: 'Domyślna odpowiedź na pytania o szkołę i podstawówkę.',
-  spp_podstrefa: 'Odpowiedź na pytania, czy za parkowanie auta pod domem trzeba płacić.',
-  inwestycje_500m: 'Odpowiedź na pytania, czy coś tu wybudują, czy będzie budowa za oknem.',
-  oswietlenie_100m: 'Odpowiedź na pytania, czy wieczorem na ulicy jest jasno.',
-  siec_cieplownicza_odleglosc: 'Odpowiedź na pytania o miejskie ogrzewanie i ciepło z sieci.',
-}
+// #163: opisy warstw dla JEV (zwykłe zdania zamiast technicznego opisu z danych, z dopiskami
+// z #147 wplecionymi w treść) są w `opisyWarstwJev.ts`. `nie_dla` i `przyklady` tylko tam, gdzie
+// JEV mylił opcje w zapisanych przebiegach.
 
 /** Warstwa z danymi pod adresami – podzbiór `WskaznikPrzygotowany` z src/wynik/silnik.ts. */
 export interface WarstwaDanych {
@@ -84,8 +54,11 @@ export interface WarstwaDanych {
 export interface PozycjaListy {
   id: string
   nazwa: string
-  /** Opis dla klasyfikatora JEV (≤ 300 znaków). */
+  /** Opis dla klasyfikatora JEV (≤ 300 znaków) – zwykłe zdanie (#163) albo opis z danych. */
   opis: string
+  /** #163: co należy do sąsiedniej opcji i przykładowe pytania – tylko dla mylonych opcji. */
+  nie_dla?: string
+  przyklady?: readonly string[]
 }
 
 const kolejnoscKategorii = (k: string) => {
@@ -118,22 +91,37 @@ export function listaWarstw(metas: readonly WskaznikMeta[]): PozycjaListy[] {
         (a.id < b.id ? -1 : a.id > b.id ? 1 : 0),
     )
     .slice(0, MAKS_WARSTW)
-    .map((m) => ({
-      id: m.id,
-      nazwa: m.nazwa,
-      opis: przytnij(
-        [`${m.nazwa} (${m.jednostka}).`, DOPISKI_WARSTW[m.id], pierwszeZdanie(m.opis)]
-          .filter(Boolean)
-          .join(' '),
-        MAKS_OPISU,
-      ),
-    }))
+    .map((m) => {
+      const opis = OPISY_WARSTW_DLA_JEV[m.id]
+      // Warstwa bez opisu dla JEV (nowa) – opis z danych; test opisyWarstwJev wymaga wpisu.
+      if (!opis)
+        return {
+          id: m.id,
+          nazwa: m.nazwa,
+          opis: przytnij(`${m.nazwa} (${m.jednostka}). ${pierwszeZdanie(m.opis)}`, MAKS_OPISU),
+        }
+      return {
+        id: m.id,
+        nazwa: m.nazwa,
+        opis: przytnij(opis.co, MAKS_OPISU),
+        ...(opis.nie_dla && { nie_dla: przytnij(opis.nie_dla, MAKS_OPISU) }),
+        ...(opis.przyklady && { przyklady: opis.przyklady }),
+      }
+    })
 }
 
-/** Kryteria choice: id warstwy → opis, plus `nie_wiem` na końcu. */
-export function kryteria(lista: readonly PozycjaListy[]): Record<string, string> {
-  const k: Record<string, string> = {}
-  for (const p of lista) k[p.id] = p.opis
+/**
+ * Kryteria choice: id warstwy → opis, plus `nie_wiem` na końcu. #163: opcja to obiekt
+ * `{ co, nie_dla?, przyklady? }` (pole `what` w JEV, jak w dokumentacji TypeSafe).
+ */
+export function kryteria(lista: readonly PozycjaListy[]): Record<string, OpisOpcji> {
+  const k: Record<string, OpisOpcji> = {}
+  for (const p of lista)
+    k[p.id] = {
+      co: p.opis,
+      ...(p.nie_dla && { nie_dla: p.nie_dla }),
+      ...(p.przyklady && { przyklady: p.przyklady }),
+    }
   k[NIE_WIEM] = 'Pytanie nie dotyczy żadnej z warstw powyżej albo jest niejasne.'
   return k
 }
@@ -150,6 +138,11 @@ export interface Temat {
   nazwa: string
   /** Twierdzenie dla JEV (≤ 300 znaków), „Pytanie (choćby w części) dotyczy …”. */
   twierdzenie: string
+  /**
+   * #163: kiedy twierdzenie jest prawdziwe, a kiedy fałszywe (`criteria.true` / `criteria.false`
+   * w JEV) – tylko tematy ze zmierzonymi fałszywymi dodatkami. Twierdzenie zostaje bez zmian.
+   */
+  kryteria?: KryteriaTakNie
   /** Warstwy tematu (id z public/dane/wskazniki). */
   warstwy: readonly string[]
   /** Warstwa, którą temat dokłada, gdy reguły nie wskażą lepszej z grupy. */
@@ -185,6 +178,16 @@ export const TEMATY: readonly Temat[] = [
     id: 'powietrze',
     nazwa: 'powietrze',
     twierdzenie: `${O}, jakim powietrzem się tu oddycha: smog, pyły, spaliny, dym z pieców. Pytanie o przepisy dla aut (wjazd do strefy, mandat) to nie to.`,
+    kryteria: {
+      prawda: {
+        co: 'Pytanie o jakość powietrza: smog, pyły, spaliny w powietrzu, dym z pieców, czym się tu oddycha.',
+        przyklady: ['Jest tu smog zimą?', 'Czuć dym z kominów?'],
+      },
+      falsz: {
+        co: 'Pytanie o przepisy dla samochodów: czy starym autem albo dieslem wolno wjechać do Strefy Czystego Transportu, mandat, opłata – to strefa, nie powietrze.',
+        przyklady: ['Czy moim starym autem wolno tu wjeżdżać?'],
+      },
+    },
     warstwy: [
       'pm25_srednia',
       'pm10_srednia',
@@ -201,6 +204,16 @@ export const TEMATY: readonly Temat[] = [
     // #153: „z psem do weta” dokładało zieleń (zbiór kontrolny nr 1: 0,71). Jedno zdanie
     // wykluczenia, jak przy czterech fałszywych dodatkach z #147; reszta tekstu bez zmian.
     twierdzenie: `${O}, czy w okolicy jest zieleń: parki, skwery, drzewa, las, przyroda, miejsce na spacer. Wizyta u weterynarza albo samo posiadanie psa to nie to.`,
+    kryteria: {
+      prawda: {
+        co: 'Pytanie o zieleń w okolicy: park, skwer, las, drzewa, miejsce na spacer, także spacer z psem.',
+        przyklady: ['Jest gdzie pobiegać w parku?', 'Dużo tu drzew?'],
+      },
+      falsz: {
+        co: 'Pytanie o weterynarza, sklep zoologiczny albo samo posiadanie psa, bez pytania o zieleń.',
+        przyklady: ['Daleko do weterynarza?'],
+      },
+    },
     warstwy: [
       'zielen_worldcover_100m',
       'zielen_udzial',
@@ -222,6 +235,16 @@ export const TEMATY: readonly Temat[] = [
     id: 'komunikacja',
     nazwa: 'komunikacja',
     twierdzenie: `${O}, jak stąd dojechać komunikacją publiczną: odległość do przystanku albo stacji, jak często jeździ, ile trwa dojazd. Hałas od tramwajów to nie to.`,
+    kryteria: {
+      prawda: {
+        co: 'Pytanie o dojazd komunikacją publiczną: odległość do przystanku albo stacji, jak często jeździ, ile trwa dojazd, czy da się żyć bez samochodu.',
+        przyklady: ['Daleko stąd do tramwaju?', 'Jak często jeździ tu autobus?'],
+      },
+      falsz: {
+        co: 'Tramwaj, autobus albo pociąg pojawia się tylko jako źródło hałasu, a pytanie dotyczy ciszy i spania.',
+        przyklady: ['Czy tramwaje nie hałasują w nocy?', 'Słychać tu pociągi?'],
+      },
+    },
     warstwy: [
       'przystanek_odleglosc',
       'kursy_szczyt_h',
@@ -279,6 +302,16 @@ export const TEMATY: readonly Temat[] = [
     id: 'sklepy',
     nazwa: 'sklepy i usługi',
     twierdzenie: `${O}, czy blisko są sklepy albo usługi: zakupy, poczta, bankomat, paczkomat, weterynarz. Apteka i lekarz to nie sklepy.`,
+    kryteria: {
+      prawda: {
+        co: 'Pytanie o sklepy albo codzienne usługi: zakupy spożywcze, poczta, bankomat, paczkomat, weterynarz.',
+        przyklady: ['Jest blisko jakiś market?', 'Daleko do paczkomatu?'],
+      },
+      falsz: {
+        co: 'Pytanie tylko o aptekę, lekarza albo przychodnię – to zdrowie, nie sklepy.',
+        przyklady: ['Gdzie najbliższa apteka?', 'Daleko do przychodni?'],
+      },
+    },
     warstwy: [
       'sklep_odleglosc',
       'uslugi_15min',
@@ -305,6 +338,16 @@ export const TEMATY: readonly Temat[] = [
     id: 'bezpieczenstwo',
     nazwa: 'bezpieczeństwo',
     twierdzenie: `${O}, czy okolica jest bezpieczna od przestępstw i zdarzeń: oświetlenie ulic wieczorem, policja, interwencje służb, pożary. Bezpieczeństwo jazdy rowerem to nie to.`,
+    kryteria: {
+      prawda: {
+        co: 'Pytanie, czy okolica jest bezpieczna od przestępstw i zdarzeń: kradzieże, napady, ciemne ulice wieczorem, policja, pożary.',
+        przyklady: ['Bezpiecznie tu wracać nocą?', 'Dużo tu włamań?'],
+      },
+      falsz: {
+        co: 'Pytanie o bezpieczną jazdę rowerem: drogi rowerowe, ruch aut na trasie – to rower, nie przestępstwa.',
+        przyklady: ['Da się tu bezpiecznie jeździć rowerem?'],
+      },
+    },
     warstwy: [
       'oswietlenie_100m',
       'policja_odleglosc',
@@ -391,7 +434,7 @@ export function zapytanieJev(pytanie: string, lista: readonly PozycjaListy[]): Z
   const pytania: ZapytanieJev['pytania'] = { [ID_PYTANIA]: wybor(POLECENIE, kryteria(lista)) }
   // Temat bez żadnej warstwy na liście nic by nie dołożył – nie pytamy o niego.
   for (const t of TEMATY)
-    if (t.warstwy.some((w) => ids.has(w))) pytania[idTematu(t)] = takNie(t.twierdzenie)
+    if (t.warstwy.some((w) => ids.has(w))) pytania[idTematu(t)] = takNie(t.twierdzenie, t.kryteria)
   return { stan: pytanie.slice(0, 2000), pytania }
 }
 
@@ -652,6 +695,7 @@ export function drugieWywolanie(
       (w) => pozycje.has(w) && obiekty[w] !== undefined && obiekty[w] !== obiekt,
     )
     if (obiekt === undefined || kandydaci.length === 0) continue
+    // #163: drugie wywołanie dostaje zwykłe zdania (bez nie_dla – tam są sąsiedzi z innych tematów).
     const k: Record<string, string> = {}
     for (const w of kandydaci) k[w] = pozycje.get(w)?.opis ?? w
     k[NIE_WIEM] = 'Pytanie nie pyta o nic więcej z tej grupy.'

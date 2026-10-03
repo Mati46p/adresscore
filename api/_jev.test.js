@@ -294,6 +294,152 @@ describe('sprawdzZapytanie', () => {
   })
 })
 
+describe('sprawdzZapytanie – opisy strukturalne (#163)', () => {
+  const choice = (opis) => ({
+    stan: 'x',
+    pytania: { w: { typ: 'choice', polecenie: 'p', kryteria: { a: opis, b: 'Zwykły opis' } } },
+  })
+  const noul = (kryteria) => ({
+    stan: 'x',
+    pytania: { t: { typ: 'noul', polecenie: 'Czy?', kryteria } },
+  })
+
+  it('opcja choice jako obiekt → what / not_for / examples w stałej kolejności, tekst bez zmian', () => {
+    const z = sprawdzZapytanie(
+      choice({ przyklady: ['Głośno?', 'Cicho?'], nie_dla: 'Przystanek', co: 'Hałas' }),
+    )
+    assert.equal(z.blad, undefined)
+    const k = z.pytania.w.criteria
+    assert.deepEqual(k.a, { what: 'Hałas', not_for: 'Przystanek', examples: ['Głośno?', 'Cicho?'] })
+    assert.deepEqual(Object.keys(k.a), ['what', 'not_for', 'examples'])
+    assert.equal(k.b, 'Zwykły opis')
+    assert.deepEqual(Object.keys(k), ['a', 'b'])
+    // Samo `co` też przechodzi.
+    assert.deepEqual(sprawdzZapytanie(choice({ co: 'Hałas' })).pytania.w.criteria.a, {
+      what: 'Hałas',
+    })
+  })
+
+  it('noul z kryteriami prawda/fałsz → criteria.true / criteria.false (tekst albo obiekt)', () => {
+    const z = sprawdzZapytanie(
+      noul({ prawda: 'Pyta o dojazd', falsz: { co: 'Tylko hałas', przyklady: ['Słychać?'] } }),
+    )
+    assert.equal(z.blad, undefined)
+    assert.deepEqual(z.pytania.t, {
+      type: 'noul',
+      instructions: 'Czy?',
+      criteria: { true: 'Pyta o dojazd', false: { what: 'Tylko hałas', examples: ['Słychać?'] } },
+    })
+    assert.deepEqual(sprawdzZapytanie(noul({ falsz: 'Nie' })).pytania.t.criteria, { false: 'Nie' })
+  })
+
+  it('bez kryteriów noul wygląda dokładnie jak przed #163 (zmiana addytywna)', () => {
+    assert.deepEqual(sprawdzZapytanie(CIALO).pytania.dzieci, {
+      type: 'noul',
+      instructions: 'Czy osoba ma dzieci?',
+    })
+  })
+
+  it('odrzuca złe opisy: nieznane pole, brak co, puste, za długie, za dużo przykładów', () => {
+    const dlugi = 'x'.repeat(301)
+    const zleOpcje = [
+      { co: 'a', what: 'b' },
+      { nie_dla: 'b' },
+      { co: '' },
+      { co: dlugi },
+      { co: 'a', nie_dla: dlugi },
+      { co: 'a', nie_dla: 5 },
+      { co: 'a', przyklady: [] },
+      { co: 'a', przyklady: 'jeden' },
+      { co: 'a', przyklady: ['1', '2', '3', '4', '5', '6'] },
+      { co: 'a', przyklady: ['ok', dlugi] },
+      { co: 'a', przyklady: ['ok', 3] },
+      ['tablica'],
+      null,
+      42,
+    ]
+    for (const o of zleOpcje) assert.ok(sprawdzZapytanie(choice(o)).blad, JSON.stringify(o))
+    const zleNoul = [
+      {},
+      'tekst',
+      ['prawda'],
+      { true: 'a' },
+      { prawda: 'a', inne: 'b' },
+      { prawda: '' },
+      { prawda: { co: dlugi } },
+      { falsz: { co: 'a', powod: 'b' } },
+      null,
+    ]
+    for (const k of zleNoul) assert.ok(sprawdzZapytanie(noul(k)).blad, JSON.stringify(k))
+  })
+
+  it('pięć przykładów i pola po 300 znaków przechodzą (granice limitu)', () => {
+    const t = 'y'.repeat(300)
+    const z = sprawdzZapytanie(choice({ co: t, nie_dla: t, przyklady: [t, t, t, t, t] }))
+    assert.equal(z.blad, undefined)
+  })
+
+  it('całe pytania ponad limit znaków → błąd, a duże zapytanie z samymi tekstami przechodzi', () => {
+    const opcje = (n, dl) =>
+      Object.fromEntries(Array.from({ length: n }, (_, i) => [`o${i}`, 'x'.repeat(dl)]))
+    // 128 opcji po 300 znaków i 15 twierdzeń – największe zapytanie sprzed #163.
+    const duze = {
+      stan: 'x',
+      pytania: {
+        w: { typ: 'choice', polecenie: 'p', kryteria: opcje(128, 300) },
+        ...Object.fromEntries(
+          Array.from({ length: 15 }, (_, i) => [
+            `t${i}`,
+            { typ: 'noul', polecenie: 'p'.repeat(300) },
+          ]),
+        ),
+      },
+    }
+    assert.equal(sprawdzZapytanie(duze).blad, undefined)
+    const t = 'z'.repeat(300)
+    const zaDuze = {
+      stan: 'x',
+      pytania: {
+        w: {
+          typ: 'choice',
+          polecenie: 'p',
+          kryteria: Object.fromEntries(
+            Array.from({ length: 128 }, (_, i) => [`o${i}`, { co: t, nie_dla: t, przyklady: [t] }]),
+          ),
+        },
+      },
+    }
+    assert.match(sprawdzZapytanie(zaDuze).blad ?? '', /znaków/)
+  })
+
+  it('odpowiedź choice na opcji z opisem strukturalnym: dalej tylko znane id', async () => {
+    const z = sprawdzZapytanie(choice({ co: 'Hałas', nie_dla: 'Przystanek' }))
+    const { fetchImpl } = zbudujFetch({
+      json: {
+        answers: {
+          w: {
+            type: 'choice',
+            choice: 'a',
+            confidence: 0.9,
+            probabilities: { a: 0.9, b: 0.1, x: 0.5 },
+          },
+        },
+      },
+    })
+    const w = await wolajJev(z, { klucz: 'k', fetch: fetchImpl })
+    assert.deepEqual(w.odpowiedzi.w, {
+      typ: 'choice',
+      wybor: 'a',
+      pewnosc: 0.9,
+      prawdopodobienstwa: { a: 0.9, b: 0.1 },
+    })
+    const { fetchImpl: zly } = zbudujFetch({
+      json: { answers: { w: { type: 'choice', choice: 'what', confidence: 0.9 } } },
+    })
+    assert.equal((await wolajJev(z, { klucz: 'k', fetch: zly })).odpowiedzi.w, null)
+  })
+})
+
 describe('obsluz – kontrakt HTTP', () => {
   it('brak JEV_API_KEY → 200 i odpowiedzi null (klient bierze zapas), nigdy 500', async () => {
     const { fetchImpl, wywolania } = zbudujFetch()

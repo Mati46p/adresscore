@@ -3,7 +3,8 @@
 // klient z regułą zapasową: `src/ai/jev.ts`.
 import { obsluz, utworzLimiter } from './_jev.js'
 
-const MAKS_CIALO = 32_000
+// #163: opisy strukturalne wszystkich warstw – zapytanie „zapytaj o adres” ma ok. 31 tys. znaków.
+const MAKS_CIALO = 64_000
 // Licznik żyje tyle, co ciepła instancja funkcji.
 const limiter = utworzLimiter()
 

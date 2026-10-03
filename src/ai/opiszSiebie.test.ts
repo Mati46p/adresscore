@@ -88,9 +88,43 @@ describe('zapytanieOpiszSiebie', () => {
     assert.ok(!ids.includes('kat_przyszlosc'))
     assert.ok(!ids.includes('kat_codziennosc'))
     for (const b of BRAMKA)
-      assert.deepEqual(z.pytania[b.id], { typ: 'noul', polecenie: b.twierdzenie })
+      assert.deepEqual(z.pytania[b.id], {
+        typ: 'noul',
+        polecenie: b.twierdzenie,
+        kryteria: b.kryteria,
+      })
     // Pośrednik przyjmuje to zapytanie bez zmian.
     assert.equal(sprawdzZapytanie(z).blad, undefined)
+  })
+
+  it('#163: kryteria prawda/fałsz tylko dla bramki i najsłabszych potrzeb, twierdzenia bez zmian', async () => {
+    const sciezka = new URL('../../api/_jev.js', import.meta.url).href
+    const { sprawdzZapytanie } = (await import(sciezka)) as {
+      sprawdzZapytanie: (c: unknown) => {
+        blad?: string
+        pytania: Record<string, { criteria?: { true?: unknown; false?: unknown } }>
+      }
+    }
+    const zKryteriami = Object.entries(z.pytania)
+      .filter(([, p]) => p.typ === 'noul' && p.kryteria)
+      .map(([id]) => id)
+    assert.deepEqual(zKryteriami, ['p_dzieci', 'p_bez_samochodu', NIKT, NIEAKTUALNA])
+    // Twierdzenia są te same co przed #163 – kryteria tylko dochodzą.
+    assert.equal(
+      BRAMKA[0].twierdzenie,
+      'Tekst to tylko opinia albo ciekawość – nikt nie szuka mieszkania ani dla siebie, ani dla kogoś innego (np. taty, koleżanki), ani pod wynajem.',
+    )
+    assert.equal(
+      POTRZEBY.find((p) => p.id === 'praca_centrum')?.kryteria,
+      undefined,
+      'praca w centrum: kryteria odrzucone na zbiorze do strojenia',
+    )
+    // Pośrednik przekłada je na criteria.true / criteria.false.
+    const api = sprawdzZapytanie(z)
+    assert.equal(api.blad, undefined)
+    const nikt = api.pytania[NIKT]?.criteria
+    assert.match(JSON.stringify(nikt?.true), /"what":"Nikt nie szuka/)
+    assert.match(JSON.stringify(nikt?.false), /bez słowa „szukam”/)
   })
 
   it('#147: twierdzenie „bez samochodu” to jeden warunek, bez „i”', () => {
@@ -127,7 +161,7 @@ describe('zapytanieOpiszSiebie', () => {
   it('#155: opcje profilu mówią, kim jest osoba, a nie, co ceni (≤ 16 pytań bez zmian)', () => {
     const profil = z.pytania[ID_PROFILU]
     assert.equal(profil?.typ, 'choice')
-    const kryteria: Record<string, string> = profil?.typ === 'choice' ? profil.kryteria : {}
+    const kryteria = (profil?.typ === 'choice' ? profil.kryteria : {}) as Record<string, string>
     assert.deepEqual(kryteria, { ...OPISY_PROFILI_JEV, nieznany: OPIS_PROFILU_NIEZNANEGO })
     assert.match(kryteria.senior ?? '', /emerytur/)
     assert.match(kryteria.rodzina ?? '', /dziećmi w domu/)

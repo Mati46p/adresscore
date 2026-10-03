@@ -8,6 +8,13 @@
 //   … --zbior kontrolny2    # drugi zbiór na ślepo (#152), mierzony raz: tak samo, tylko liczby
 //   … --zbior kontrolny3    # trzeci zbiór na ślepo (#153), mierzony raz; + przekrój po cechach
 //   … --zbior kontrolny4    # czwarty zbiór na ślepo (#157, 40 + 35), mierzony raz; + propozycje #156
+//   … --zbior kontrolny5    # piąty zbiór na ślepo (#163), mierzony raz: przed i po w jednym wywołaniu
+//   … --zbior-wlasny a.json b.json  # własne zbiory do strojenia (#163), z błędami pozycja po pozycji
+//   … --przed-po <commit> --wyjscie-przed p.json --wyjscie po.json [--wyjscie-proste s.json]
+//                           # #163: JEDNO wywołanie na pozycję z pytaniami trzech wersji naraz:
+//                           # „przed” (kod z <commit>), „po” (bieżący) i „proste” (bieżący bez
+//                           # nie_dla, przykładów i kryteriów prawda/fałsz). Pytania są niezależne
+//                           # (dokumentacja TypeSafe), więc to sparowane porównanie za 1/3 ceny.
 //   … --tylko-pisane        # bez pozycji naśladujących mowę (MOWIONE niżej) – przekrój pomocniczy
 //   … --z-pliku wynik.json  # bez sieci: przelicza zapisany przebieg (--wyjscie) od nowa
 //
@@ -21,23 +28,23 @@
 // tematów (noul) przelicza inne progi bez nowych wywołań.
 // Klucz czyta tylko pośrednik z process.env; skrypt go nie wypisuje ani nie zapisuje.
 // Do pliku wyjścia trafiają wyłącznie wyniki po przetworzeniu (bez surowych odpowiedzi API).
-import { readdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { execFileSync } from 'node:child_process'
+import { readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import type { PlikWskaznika } from '../../kontrakty/index.ts'
-import type { OdpowiedzJev, OpcjeKlienta } from '../jev.ts'
+import type { OdpowiedzJev, OpcjeKlienta, ZapytanieJev } from '../jev.ts'
+import * as opiszTeraz from '../opiszSiebie.ts'
 import {
   BRAMKA,
-  bramkaZamknieta,
   KATEGORIE_OCENIANE,
   type KategoriaOceniana,
   nicNieZrozumiano,
-  opiszSiebie,
   POTRZEBY,
   PROG_BRAMKI,
   PUSTE_ZROZUMIENIE,
-  przetworzOdpowiedzi,
   type Zrozumienie,
   zRegul,
 } from '../opiszSiebie.ts'
+import * as zapytajTeraz from '../zapytajOAdres.ts'
 import {
   ID_PYTANIA,
   idTematu,
@@ -49,7 +56,6 @@ import {
   regulaWiele,
   TEMATY,
   type WyborWarstw,
-  wybierzWarstwy,
 } from '../zapytajOAdres.ts'
 
 // ── Zbiory ────────────────────────────────────────────────────────────────────────────────
@@ -94,6 +100,8 @@ const PLIKI_KONTROLNE: Record<string, { opisz: string; zapytaj: string }> = {
   // #157: czwarty zbiór na ślepo, większy (40 opisów, 35 pytań), cechy `profil_glowny`,
   // `profil_niejasny`, `cudza_sytuacja`, `domownik` (A) i `niejednoznaczne`, `zlozone`, `spoza` (B).
   kontrolny4: { opisz: 'kontrolny4-opisz.json', zapytaj: 'kontrolny4-zapytaj.json' },
+  // #163: piąty zbiór na ślepo, z cechą `bliska_pomylka` (opcje, które JEV myli) – cel #163.
+  kontrolny5: { opisz: 'kontrolny5-opisz.json', zapytaj: 'kontrolny5-zapytaj.json' },
 }
 if (NAZWA_ZBIORU !== undefined && !PLIKI_KONTROLNE[NAZWA_ZBIORU]) {
   console.error(
@@ -103,9 +111,14 @@ if (NAZWA_ZBIORU !== undefined && !PLIKI_KONTROLNE[NAZWA_ZBIORU]) {
 }
 const PLIKI = NAZWA_ZBIORU === undefined ? undefined : PLIKI_KONTROLNE[NAZWA_ZBIORU]
 const KONTROLNY = PLIKI !== undefined
+/** #163: własne zbiory do strojenia (ścieżki), liczone jak zbiór wzorcowy – z błędami. */
+const iWlasny = argv.indexOf('--zbior-wlasny')
+const WLASNY = iWlasny >= 0 ? { opisz: argv[iWlasny + 1], zapytaj: argv[iWlasny + 2] } : undefined
 
 const KATALOG = new URL('./', import.meta.url)
 const czytaj = (plik: string) => JSON.parse(readFileSync(new URL(plik, KATALOG), 'utf8'))
+const czytajWlasny = (plik: string | undefined) =>
+  plik ? (JSON.parse(readFileSync(plik, 'utf8')).pozycje ?? []) : []
 /**
  * Zbiór kontrolny ma ten sam schemat z dwiema różnicami: „spoza zakresu” to `[["nie_wiem"]]`
  * (u nas `[]`), a „nic” nie jest jawne – to profil null i brak potrzeb.
@@ -115,13 +128,17 @@ const ZBIOR_A_PELNY: PozycjaOpisz[] = KONTROLNY
       ...p,
       nic: p.nic ?? (p.persona === null && p.potrzeby.length === 0),
     }))
-  : czytaj('zbior-opisz.json').pozycje
+  : WLASNY
+    ? czytajWlasny(WLASNY.opisz)
+    : czytaj('zbior-opisz.json').pozycje
 const ZBIOR_B_PELNY: PozycjaZapytaj[] = KONTROLNY
   ? (czytaj(PLIKI.zapytaj).pozycje as PozycjaZapytaj[]).map((p) => ({
       ...p,
       tematy: p.tematy.filter((t) => !(t.length === 1 && t[0] === NIE_WIEM)),
     }))
-  : czytaj('zbior-zapytaj.json').pozycje
+  : WLASNY
+    ? czytajWlasny(WLASNY.zapytaj)
+    : czytaj('zbior-zapytaj.json').pozycje
 
 /**
  * #152: pole w aplikacji jest PISANE, nie dyktowane. Pozycje, których pułapka to zjawisko
@@ -200,6 +217,187 @@ async function klientNaZywo(): Promise<{
     opcje: () => ({ fetch: fetchPrzezPosrednika }),
     ostatnie: () => ostatnie,
     wszystkie: () => wszystkie,
+  }
+}
+
+type Klient = Awaited<ReturnType<typeof klientNaZywo>>
+
+/** Kod, który buduje zapytania i przetwarza odpowiedzi (#163: bieżący albo z innego commitu). */
+interface Modul {
+  opisz: Pick<
+    typeof opiszTeraz,
+    'opiszSiebie' | 'przetworzOdpowiedzi' | 'bramkaZamknieta' | 'zapytanieOpiszSiebie'
+  >
+  zapytaj: Pick<typeof zapytajTeraz, 'wybierzWarstwy' | 'zapytanieJev'>
+  lista: ReturnType<typeof listaWarstw>
+}
+const MODUL_TERAZ: Modul = { opisz: opiszTeraz, zapytaj: zapytajTeraz, lista: LISTA }
+
+/**
+ * #163: kod z innego commitu (np. `main` przed zmianą) – pliki wyciągnięte z repozytorium obok
+ * bieżących (te same importy względne), tak jak w `zgodnosc147.ts`. Pliki tymczasowe znikają
+ * na końcu przebiegu.
+ */
+const TYMCZASOWE: URL[] = []
+async function modulZCommitu(commit: string): Promise<Modul> {
+  const pokaz = (sciezka: string) =>
+    execFileSync('git', ['show', `${commit}:${sciezka}`], {
+      cwd: KORZEN,
+      encoding: 'utf8',
+      maxBuffer: 256 * 1024 * 1024,
+    })
+  const AI = new URL('../', import.meta.url)
+  const plik = (nazwa: string) => {
+    const u = new URL(`_przed_${nazwa}`, AI)
+    writeFileSync(u, pokaz(`src/ai/${nazwa}`))
+    TYMCZASOWE.push(u)
+    return u
+  }
+  const opisz = (await import(plik('opiszSiebie.ts').href)) as typeof opiszTeraz
+  const zapytaj = (await import(plik('zapytajOAdres.ts').href)) as typeof zapytajTeraz
+  return { opisz, zapytaj, lista: zapytaj.listaWarstw(METAS) }
+}
+
+/** #163: wersja „proste” – bieżące opisy bez `nie_dla`, przykładów i kryteriów prawda/fałsz. */
+export function bezStruktury(z: ZapytanieJev): ZapytanieJev {
+  const pytania: ZapytanieJev['pytania'] = {}
+  for (const [id, p] of Object.entries(z.pytania)) {
+    if (p.typ === 'noul') pytania[id] = { typ: 'noul', polecenie: p.polecenie }
+    else if (p.typ === 'choice')
+      pytania[id] = {
+        ...p,
+        kryteria: Object.fromEntries(
+          Object.entries(p.kryteria).map(([k, v]) => [k, typeof v === 'string' ? v : { co: v.co }]),
+        ),
+      }
+    else pytania[id] = p
+  }
+  return { ...z, pytania }
+}
+
+type Wariant = 'po' | 'przed' | 'proste'
+const WARIANTY = ['po', 'przed', 'proste'] as const
+
+/**
+ * #163: pytania trzech wersji w jednym zapytaniu. Pytanie takie samo jak w „po” zostaje pod swoim
+ * id (JEV odpowiada na nie raz), inne dostaje przedrostek (`a_` przed, `b_` proste). Zwraca mapę:
+ * wersja → id w wersji → id w zapytaniu.
+ */
+export function scalWersje(wersje: Record<Wariant, ZapytanieJev>) {
+  const rowne = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b)
+  const mapa: Record<Wariant, Record<string, string>> = { po: {}, przed: {}, proste: {} }
+  for (const id of Object.keys(wersje.po.pytania)) mapa.po[id] = id
+  for (const id of Object.keys(wersje.przed.pytania))
+    mapa.przed[id] = rowne(wersje.po.pytania[id], wersje.przed.pytania[id]) ? id : `a_${id}`
+  for (const id of Object.keys(wersje.proste.pytania)) {
+    const p = wersje.proste.pytania[id]
+    mapa.proste[id] = rowne(wersje.po.pytania[id], p)
+      ? id
+      : rowne(wersje.przed.pytania[id], p)
+        ? (mapa.przed[id] as string)
+        : `b_${id}`
+  }
+  return mapa
+}
+
+/**
+ * #163: klienci trzech wersji na jednym wywołaniu. Pierwsze wywołanie pozycji (opisz: `profil`,
+ * zapytaj: `warstwa`) idzie raz, z pytaniami wszystkich wersji; każda wersja dostaje swoje
+ * odpowiedzi pod swoimi id. Drugie wywołanie (#153) idzie na żywo, z pamięcią po treści.
+ * Czas pierwszego wywołania to czas zapytania z trzema wersjami (większe niż w aplikacji).
+ */
+async function klienciPrzedPo(przed: Modul) {
+  const posrednik = (await import(new URL('api/_jev.js', KORZEN).href)) as {
+    sprawdzZapytanie: (c: unknown) => {
+      blad?: string
+      stan: string
+      pytania: Record<string, unknown>
+    }
+    wolajJev: (
+      z: { stan: string; pytania: Record<string, unknown> },
+      o: { klucz?: string; timeoutMs?: number },
+    ) => Promise<{ odpowiedzi: Wywolanie['odpowiedzi']; powod: string | null }>
+  }
+  type Pierwsze = {
+    ms: number
+    powod: string | null
+    odp: Record<Wariant, Wywolanie['odpowiedzi']>
+  }
+  const pierwsze = new Map<string, Pierwsze>()
+  const drugie = new Map<string, Wywolanie>()
+  const zywy = await klientNaZywo()
+
+  async function pierwszeWywolanie(cialo: ZapytanieJev): Promise<Pierwsze> {
+    const opisz = 'profil' in cialo.pytania
+    const tekst = cialo.stan
+    const po = opisz
+      ? opiszTeraz.zapytanieOpiszSiebie(tekst)
+      : zapytajTeraz.zapytanieJev(tekst, LISTA)
+    const wersje: Record<Wariant, ZapytanieJev> = {
+      po,
+      przed: opisz
+        ? przed.opisz.zapytanieOpiszSiebie(tekst)
+        : przed.zapytaj.zapytanieJev(tekst, przed.lista),
+      proste: bezStruktury(po),
+    }
+    // Każda wersja osobno przez walidację pośrednika (limit 16 pytań, długości, pola opisów).
+    const api = {} as Record<Wariant, Record<string, unknown>>
+    for (const w of WARIANTY) {
+      const z = posrednik.sprawdzZapytanie(wersje[w])
+      if (z.blad) throw new Error(`Wersja ${w}: ${z.blad}`)
+      api[w] = z.pytania
+    }
+    const mapa = scalWersje(wersje)
+    const pytania: Record<string, unknown> = {}
+    for (const w of WARIANTY)
+      for (const [id, wId] of Object.entries(mapa[w])) pytania[wId] = api[w][id]
+    const t0 = performance.now()
+    liczbaWywolan++
+    const r = await posrednik.wolajJev(
+      { stan: tekst.slice(0, 2000), pytania },
+      { klucz: process.env.JEV_API_KEY, timeoutMs: 5000 },
+    )
+    const ms = Math.round(performance.now() - t0)
+    const odp = {} as Record<Wariant, Wywolanie['odpowiedzi']>
+    for (const w of WARIANTY) {
+      const o = r.odpowiedzi
+      odp[w] = o
+        ? Object.fromEntries(Object.entries(mapa[w]).map(([id, wId]) => [id, o[wId] ?? null]))
+        : null
+    }
+    return { ms, powod: r.powod, odp }
+  }
+
+  return (w: Wariant): Klient => {
+    let ostatnie: Wywolanie = { ms: 0, odpowiedzi: null, powod: 'brak' }
+    const wszystkie: Wywolanie[] = []
+    const f = (async (url: string | URL | Request, init?: RequestInit) => {
+      const cialo = JSON.parse(String(init?.body)) as ZapytanieJev
+      if ('profil' in cialo.pytania || ID_PYTANIA in cialo.pytania) {
+        const klucz = `${'profil' in cialo.pytania ? 'A' : 'B'}|${cialo.stan}`
+        let p = pierwsze.get(klucz)
+        if (!p) {
+          p = await pierwszeWywolanie(cialo)
+          pierwsze.set(klucz, p)
+        }
+        ostatnie = { ms: p.ms, odpowiedzi: p.odp[w], powod: p.powod }
+      } else {
+        const klucz = String(init?.body)
+        let d = drugie.get(klucz)
+        if (!d) {
+          await zywy.opcje().fetch?.(url, init)
+          d = zywy.ostatnie()
+          drugie.set(klucz, d)
+        }
+        ostatnie = d
+      }
+      wszystkie.push(ostatnie)
+      return new Response(
+        JSON.stringify({ odpowiedzi: ostatnie.odpowiedzi, powod: ostatnie.powod }),
+        { status: 200 },
+      )
+    }) as typeof fetch
+    return { opcje: () => ({ fetch: f }), ostatnie: () => ostatnie, wszystkie: () => wszystkie }
   }
 }
 
@@ -294,7 +492,7 @@ const zZrozumienia = (z: Zrozumienie) => ({
   nic: nicNieZrozumiano(z),
 })
 
-async function biegA(naZywo: Awaited<ReturnType<typeof klientNaZywo>> | null): Promise<WynikA[]> {
+async function biegA(naZywo: Klient | null, modul: Modul = MODUL_TERAZ): Promise<WynikA[]> {
   const wyniki: WynikA[] = []
   for (const p of ZBIOR_A) {
     const w: WynikA = {
@@ -304,10 +502,12 @@ async function biegA(naZywo: Awaited<ReturnType<typeof klientNaZywo>> | null): P
       systemy: { reguly: zZrozumienia(zRegul(p.tekst)) },
     }
     if (naZywo) {
-      const r = await opiszSiebie(p.tekst, naZywo.opcje())
+      const r = await modul.opisz.opiszSiebie(p.tekst, naZywo.opcje())
       const o = naZywo.ostatnie()
       const odp = o.odpowiedzi
-      w.systemy.jev_surowy = zZrozumienia((odp && przetworzOdpowiedzi(odp)) ?? PUSTE_ZROZUMIENIE)
+      w.systemy.jev_surowy = zZrozumienia(
+        (odp && modul.opisz.przetworzOdpowiedzi(odp)) ?? PUSTE_ZROZUMIENIE,
+      )
       w.systemy.jev_z_zapasem = zZrozumienia(r.wynik)
       const profil = odp?.profil
       const noul: Record<string, number | null> = {}
@@ -340,7 +540,7 @@ async function biegA(naZywo: Awaited<ReturnType<typeof klientNaZywo>> | null): P
         noul,
         poziomy,
         bramka,
-        zamknieta: Boolean(odp && bramkaZamknieta(odp)),
+        zamknieta: Boolean(odp && modul.opisz.bramkaZamknieta(odp)),
       }
       process.stderr.write(`A ${p.id} ${o.ms} ms ${r.zrodlo}\n`)
     }
@@ -445,7 +645,7 @@ interface WynikB {
   }
 }
 
-async function biegB(naZywo: Awaited<ReturnType<typeof klientNaZywo>> | null): Promise<WynikB[]> {
+async function biegB(naZywo: Klient | null, modul: Modul = MODUL_TERAZ): Promise<WynikB[]> {
   const wyniki: WynikB[] = []
   for (const p of ZBIOR_B) {
     const w: WynikB = {
@@ -459,7 +659,7 @@ async function biegB(naZywo: Awaited<ReturnType<typeof klientNaZywo>> | null): P
       // Ta sama ścieżka co zapytajOAdresWiele(), bez wczytywania wartości warstw (#153: z drugim
       // wywołaniem, gdy trzeba). Czas pytania = suma jego wywołań.
       const przed = naZywo.wszystkie().length
-      const r = await wybierzWarstwy(p.pytanie, LISTA, naZywo.opcje())
+      const r = await modul.zapytaj.wybierzWarstwy(p.pytanie, modul.lista, naZywo.opcje())
       const wywolania = naZywo.wszystkie().slice(przed)
       const o = wywolania[0] ?? naZywo.ostatnie()
       const msRazem = wywolania.reduce((acc, x) => acc + x.ms, 0)
@@ -920,30 +1120,65 @@ if (naZywo && !process.env.JEV_API_KEY) {
 }
 const iTylko = argv.indexOf('--tylko')
 const tylko = iTylko >= 0 ? argv[iTylko + 1] : undefined
-const klient = naZywo ? await klientNaZywo() : null
 // --z-pliku: zapisany przebieg (bez sieci), tylko pozycje bieżącego zbioru (np. tylko pisane).
 const zapisany = zPliku
   ? (JSON.parse(readFileSync(zPliku, 'utf8')) as { a: WynikA[]; b: WynikB[] })
   : null
 const idsA = new Set(ZBIOR_A.map((p) => p.id))
 const idsB = new Set(ZBIOR_B.map((p) => p.id))
-// --tylko a|b: drugi zbiór liczy się bez sieci (same reguły) – oszczędza wywołania JEV.
-const a = zapisany
-  ? zapisany.a.filter((w) => idsA.has(w.id))
-  : await biegA(tylko === 'b' ? null : klient)
-const b = zapisany
-  ? zapisany.b.filter((w) => idsB.has(w.id))
-  : await biegB(tylko === 'a' ? null : klient)
-const { tekst, podsumowanie } = raport(
-  a,
-  b,
-  naZywo || Boolean(zapisany?.a.some((w) => w.jev) || zapisany?.b.some((w) => w.jev)),
-)
-console.log(tekst)
-if (wyjscie) {
+
+const zapisz = (plik: string | undefined, a: WynikA[], b: WynikB[], podsumowanie: unknown) => {
+  if (!plik) return
   writeFileSync(
-    wyjscie,
+    plik,
     `${JSON.stringify({ data: new Date().toISOString(), naZywo, podsumowanie, a, b }, null, 2)}\n`,
   )
-  console.error(`Zapisano ${wyjscie}`)
+  console.error(`Zapisano ${plik}`)
+}
+
+// #163: --przed-po <commit> – trzy wersje (przed, po, proste) na jednym wywołaniu na pozycję.
+const iPrzedPo = argv.indexOf('--przed-po')
+const commitPrzed = iPrzedPo >= 0 ? argv[iPrzedPo + 1] : undefined
+if (commitPrzed && naZywo) {
+  const wyjscia: Record<Wariant, string | undefined> = {
+    po: wyjscie,
+    przed: argv[argv.indexOf('--wyjscie-przed') + 1],
+    proste: argv.includes('--wyjscie-proste')
+      ? argv[argv.indexOf('--wyjscie-proste') + 1]
+      : undefined,
+  }
+  if (!argv.includes('--wyjscie-przed')) wyjscia.przed = undefined
+  try {
+    const przed = await modulZCommitu(commitPrzed)
+    const klienci = await klienciPrzedPo(przed)
+    for (const w of WARIANTY) {
+      const modul = w === 'przed' ? przed : MODUL_TERAZ
+      const a = await biegA(tylko === 'b' ? null : klienci(w), modul)
+      const b = await biegB(tylko === 'a' ? null : klienci(w), modul)
+      // Wywołań tylko z tej wersji nie ma – licznik to wywołania na żywo od początku przebiegu.
+      const { tekst, podsumowanie } = raport(a, b, true)
+      console.log(`\n# Wersja: ${w}${w === 'przed' ? ` (${commitPrzed})` : ''}\n`)
+      console.log(tekst)
+      zapisz(wyjscia[w], a, b, podsumowanie)
+    }
+    console.error(`Wywołań na żywo razem: ${liczbaWywolan}`)
+  } finally {
+    for (const u of TYMCZASOWE) rmSync(u, { force: true })
+  }
+} else {
+  const klient = naZywo ? await klientNaZywo() : null
+  // --tylko a|b: drugi zbiór liczy się bez sieci (same reguły) – oszczędza wywołania JEV.
+  const a = zapisany
+    ? zapisany.a.filter((w) => idsA.has(w.id))
+    : await biegA(tylko === 'b' ? null : klient)
+  const b = zapisany
+    ? zapisany.b.filter((w) => idsB.has(w.id))
+    : await biegB(tylko === 'a' ? null : klient)
+  const { tekst, podsumowanie } = raport(
+    a,
+    b,
+    naZywo || Boolean(zapisany?.a.some((w) => w.jev) || zapisany?.b.some((w) => w.jev)),
+  )
+  console.log(tekst)
+  zapisz(wyjscie, a, b, podsumowanie)
 }
