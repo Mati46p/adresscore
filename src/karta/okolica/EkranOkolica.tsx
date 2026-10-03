@@ -5,6 +5,7 @@ import { useDane } from '@/wynik/dane'
 import type { RozbicieWarstwy, WynikAdresu } from '@/wynik/silnik'
 import { dodajDoPorownania, hrefDla, przejdz, useStan } from '@/wynik/stan'
 import { useWynikAdresu } from '@/wynik/useWyniki'
+import { CoByToZmienilo } from '../CoByToZmienilo'
 import { Etykieta } from './Etykieta'
 import { KOLORY_ETYKIETY, type LiteraEtykiety } from './kolory'
 import {
@@ -91,7 +92,7 @@ export function EkranOkolica() {
           <Strony tytul="Najmocniejsze strony" pozycje={mocne} wariant="plus" />
           <Strony tytul="Co obniża wynik" pozycje={slabe} wariant="minus" />
         </div>
-        {/* slot #30: <CoByToZmienilo … /> */}
+        <CoByToZmienilo warstwy={wynik.warstwy} />
       </section>
 
       <Rozbicie warstwy={warstwyWyniku} wynik={wynik.wynik} />
