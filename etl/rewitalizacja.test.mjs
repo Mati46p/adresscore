@@ -7,7 +7,6 @@ import {
   ETYKIETA,
   opisWskaznika,
   podobszary,
-  punktWWielokacie,
   wartoscAdresu,
   znajdzPodobszar,
 } from './rewitalizacja.mjs'
@@ -25,6 +24,10 @@ const kwadrat = (x0, y0, x1, y1) => [
   [x0, y1],
   [x0, y0],
 ]
+/** Kwadrat przesunięty o dx, dy stopni względem punktu odniesienia w Krakowie (19,9 E, 50,0 N). */
+const LON0 = 19.9
+const LAT0 = 50.0
+const kw = (x0, y0, x1, y1) => kwadrat(LON0 + x0, LAT0 + y0, LON0 + x1, LAT0 + y1)
 const cecha = (nazwa, geometria, uchwala = UCHWALA) => ({
   type: 'Feature',
   properties: { nazwa_gpr: nazwa, uchwała: uchwala },
@@ -32,64 +35,42 @@ const cecha = (nazwa, geometria, uchwala = UCHWALA) => ({
 })
 const zbior = (...features) => ({ type: 'FeatureCollection', features })
 
-test('punkt w wielokącie: obrys, otwór i brzeg bbox', () => {
-  const zOtworem = [kwadrat(0, 0, 10, 10), kwadrat(4, 4, 6, 6)]
-  assert.equal(punktWWielokacie(2, 2, zOtworem), true)
-  assert.equal(punktWWielokacie(5, 5, zOtworem), false, 'w otworze')
-  assert.equal(punktWWielokacie(11, 5, zOtworem), false, 'poza obrysem')
-  assert.equal(punktWWielokacie(5, -1, zOtworem), false)
-  // Wielokąt wklęsły (litera L): punkt w wycięciu jest poza.
-  const el = [
-    [
-      [0, 0],
-      [4, 0],
-      [4, 2],
-      [2, 2],
-      [2, 4],
-      [0, 4],
-      [0, 0],
-    ],
-  ]
-  assert.equal(punktWWielokacie(1, 3, el), true)
-  assert.equal(punktWWielokacie(3, 3, el), false)
-})
-
-test('podobszary: Polygon i MultiPolygon, a zła uchwała albo geometria zatrzymuje eksport', () => {
+test('znajdzPodobszar: Polygon z otworem, MultiPolygon i punkt w obwiedni poza częściami', () => {
   const lista = podobszary(
     zbior(
-      cecha('Podobszar rewitalizacji A', { type: 'Polygon', coordinates: [kwadrat(0, 0, 1, 1)] }),
+      cecha('Podobszar rewitalizacji A', {
+        type: 'Polygon',
+        coordinates: [kw(0, 0, 0.1, 0.1), kw(0.04, 0.04, 0.06, 0.06)],
+      }),
       cecha('Podobszar rewitalizacji B', {
         type: 'MultiPolygon',
-        coordinates: [[kwadrat(2, 2, 3, 3)], [kwadrat(5, 5, 6, 6)]],
+        coordinates: [[kw(0.2, 0.2, 0.3, 0.3)], [kw(0.5, 0.5, 0.6, 0.6)]],
       }),
     ),
   )
   assert.equal(lista.length, 2)
-  assert.deepEqual(lista[1].bbox, [2, 2, 6, 6])
-  assert.equal(znajdzPodobszar(0.5, 0.5, lista).nazwa, 'Podobszar rewitalizacji A')
-  assert.equal(znajdzPodobszar(5.5, 5.5, lista).nazwa, 'Podobszar rewitalizacji B')
-  assert.equal(znajdzPodobszar(4, 4, lista), null, 'w bbox drugiego, ale poza jego częściami')
+  const gdzie = (dx, dy) => znajdzPodobszar(LON0 + dx, LAT0 + dy, lista)
+  assert.equal(gdzie(0.02, 0.02).nazwa, 'Podobszar rewitalizacji A')
+  assert.equal(gdzie(0.05, 0.05), null, 'w otworze')
+  assert.equal(gdzie(0.25, 0.25).nazwa, 'Podobszar rewitalizacji B', 'pierwsza część')
+  assert.equal(gdzie(0.55, 0.55).nazwa, 'Podobszar rewitalizacji B', 'druga część')
+  assert.equal(gdzie(0.4, 0.4), null, 'w obwiedni B, ale poza jego częściami')
+  assert.equal(gdzie(0.9, 0.9), null, 'poza wszystkimi')
+})
+
+test('podobszary: zła uchwała, geometria albo ucięta warstwa zatrzymują eksport', () => {
+  const dobry = { type: 'Polygon', coordinates: [kw(0, 0, 0.1, 0.1)] }
+  assert.equal(podobszary(zbior(cecha('X', dobry))).length, 1)
+  assert.throws(() => podobszary(zbior(cecha('X', dobry, 'Uchwała XX/1/30'))), /poza uchwałą/)
+  assert.throws(() => podobszary(zbior(cecha('', dobry))), /bez nazwy/)
   assert.throws(
-    () =>
-      podobszary(
-        zbior(
-          cecha('X', { type: 'Polygon', coordinates: [kwadrat(0, 0, 1, 1)] }, 'Uchwała XX/1/30'),
-        ),
-      ),
-    /poza uchwałą/,
-  )
-  assert.throws(
-    () => podobszary(zbior(cecha('X', { type: 'Point', coordinates: [1, 1] }))),
+    () => podobszary(zbior(cecha('X', { type: 'Point', coordinates: [19.9, 50] }))),
     /wielokąta/,
   )
   assert.throws(() => podobszary(zbior()), /pusta/)
   assert.throws(() => podobszary({ type: 'Feature' }), /FeatureCollection/)
   assert.throws(
-    () =>
-      podobszary({
-        ...zbior(cecha('X', { type: 'Polygon', coordinates: [kwadrat(0, 0, 1, 1)] })),
-        exceededTransferLimit: true,
-      }),
+    () => podobszary({ ...zbior(cecha('X', dobry)), exceededTransferLimit: true }),
     /ucięta/,
   )
 })
@@ -127,11 +108,11 @@ test('etykieta i opis: tylko „objęty programem rewitalizacji", bez pauzy i be
     zbior(
       cecha('Podobszar rewitalizacji „stara” Nowa Huta', {
         type: 'Polygon',
-        coordinates: [kwadrat(0, 0, 1, 1)],
+        coordinates: [kw(0, 0, 0.1, 0.1)],
       }),
       cecha('Podobszar rewitalizacji Kazimierz-Stradom', {
         type: 'Polygon',
-        coordinates: [kwadrat(2, 2, 3, 3)],
+        coordinates: [kw(0.2, 0.2, 0.3, 0.3)],
       }),
     ),
   )

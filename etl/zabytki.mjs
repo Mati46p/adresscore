@@ -16,26 +16,23 @@
 // pozycja, a w pozostałych miejscach zostaje null (brak danych), nigdy 0.
 //
 // Uruchom: node etl/zabytki.mjs. Surowe pobrania w etl/.cache/ (MSIP: zabytki-*.geojson, NID:
-// nid-zasoby.json i nid-zen-<data>.csv, ok. 70 MB); żeby pobrać ponownie, usuń pliki. Gdy Node
-// odrzuci certyfikat MSIP: NODE_EXTRA_CA_CERTS.
+// nid-zasoby.json i nid-zen-<data>.csv, ok. 70 MB); żeby pobrać ponownie, usuń pliki. MSIP idzie
+// przez etl/lib/msip.mjs (powtórzenia, a przy odrzuconym certyfikacie obejście tylko dla hosta MSIP).
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import KDBush from 'kdbush'
 import { odlegloscMetry } from './lib/codziennosc-geo.mjs'
+import { ATRYBUCJA_MSIP, LICENCJA_MSIP, MSIP, naMetry, pobierzJsonDoCache } from './lib/msip.mjs'
+import { indeksPunktow, sumaWPromieniu } from './lib/przestrzen.mjs'
 import { dzis, pobierzDoCache, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
 
 export const PROMIEN_M = 300
 export const TERYT_KRAKOW = '1261011'
-const MSIP =
-  'https://msip.um.krakow.pl/arcgis/rest/services/Obserwatorium/zabytki_do_pobrania/MapServer'
+const USLUGA = `${MSIP}/Obserwatorium/zabytki_do_pobrania/MapServer`
 const NID_ZBIOR = 'https://dane.gov.pl/pl/dataset/2627,ewidencja-zabytkow-nieruchomych'
 const NID_ZASOBY = 'https://api.dane.gov.pl/1.4/datasets/2627/resources'
-const LICENCJA_MSIP =
-  'Regulamin MSIP: https://msip.krakow.pl/getHtml?dok_id=228972; dane orientacyjne, nie przesądzają o ochronie konserwatorskiej (opis zbioru MSIP 2741)'
+const LICENCJA_ZABYTKI = `${LICENCJA_MSIP}; dane orientacyjne, nie przesądzają o ochronie konserwatorskiej (opis zbioru MSIP 2741)`
 const NAGLOWKI = { 'User-Agent': 'adresscore-etl/1.0 (HackYeah 2026)' }
-const RAD = Math.PI / 180
-const M_NA_STOPIEN = (6_371_000 * Math.PI) / 180
 
 // ── CSV NID ──────────────────────────────────────────────────────────────────────────────────
 
@@ -241,40 +238,38 @@ export function scalMsip(rejestr, ewidencja) {
 
 // ── Liczenie w promieniu ─────────────────────────────────────────────────────────────────────
 
-export function indeksPrzestrzenny(punkty) {
-  const kd = new KDBush(punkty.length)
-  for (const p of punkty) kd.add(p.lon, p.lat)
-  kd.finish()
-  return { kd, punkty }
+// Liczymy płasko, w metrach EPSG:2178 (naMetry): w okolicy Krakowa skala tego układu odbiega od 1
+// o kilka ppm, czyli o ułamek milimetra na 300 m. To dokładniejsze niż haversine na kuli, która
+// na tej szerokości zaniża odległości wschód-zachód o ok. 0,3% (1 m na 300 m).
+
+/** Indeksy punktów MSIP w metrach: rejestr i ewidencja osobno, żeby etykieta mogła je rozdzielić. */
+export function indeksyMsip(punkty) {
+  const dla = (rodzaj) =>
+    indeksPunktow(punkty.filter((p) => p.rodzaj === rodzaj).map((p) => naMetry(p.lon, p.lat)))
+  return { rejestr: dla('rejestr'), ewidencja: dla('ewidencja') }
 }
 
-/** Punkty nie dalej niż promień (m) od adresu: prostokąt w stopniach, potem dokładna odległość. */
-export function wPromieniu(indeks, lat, lon, promien = PROMIEN_M) {
-  const dLat = (promien / M_NA_STOPIEN) * 1.02
-  const dLon = dLat / Math.cos(lat * RAD)
-  return indeks.kd
-    .range(lon - dLon, lat - dLat, lon + dLon, lat + dLat)
-    .map((i) => indeks.punkty[i])
-    .filter((p) => odlegloscMetry(lat, lon, p.lat, p.lon) <= promien)
-}
+export const indeksPunktowNid = (punkty) => indeksPunktow(punkty.map((p) => naMetry(p.lon, p.lat)))
 
 /**
  * Wartość dla adresu. Kraków: liczba pozycji MSIP (0 to zmierzone zero). Poza Krakowem: liczba
  * zlokalizowanych pozycji NID, a przy braku trafienia null, bo brak pozycji w niepełnej ewidencji
  * nie dowodzi braku zabytków.
  */
-export function wartoscAdresu(adres, indeksMsip, indeksNid, promien = PROMIEN_M) {
+export function wartoscAdresu(adres, msip, nid, promien = PROMIEN_M) {
+  const [x, y] = naMetry(adres.lon, adres.lat)
   if (adres.teryt === TERYT_KRAKOW) {
-    const w = wPromieniu(indeksMsip, adres.lat, adres.lon, promien)
-    const rejestr = w.filter((p) => p.rodzaj === 'rejestr').length
+    const rejestr = sumaWPromieniu(msip.rejestr, x, y, promien)
+    const ewidencja = sumaWPromieniu(msip.ewidencja, x, y, promien)
+    const razem = rejestr + ewidencja
     return {
-      wartosc: w.length,
-      etykieta: w.length ? `${rejestr} w rejestrze, ${w.length - rejestr} w ewidencji` : null,
+      wartosc: razem,
+      etykieta: razem ? `${rejestr} w rejestrze, ${ewidencja} w ewidencji` : null,
     }
   }
-  const w = wPromieniu(indeksNid, adres.lat, adres.lon, promien)
-  return w.length
-    ? { wartosc: w.length, etykieta: 'co najmniej (niepełna ewidencja NID)' }
+  const n = sumaWPromieniu(nid, x, y, promien)
+  return n
+    ? { wartosc: n, etykieta: 'co najmniej (niepełna ewidencja NID)' }
     : { wartosc: null, etykieta: null }
 }
 
@@ -287,16 +282,10 @@ export function opisWskaznika({ nidKrakow, msipWszystkich, nidGminy, nidZlokaliz
 
 // ── Pobranie i zapis ─────────────────────────────────────────────────────────────────────────
 
-const warstwaMsip = async (warstwa, plik) =>
-  JSON.parse(
-    readFileSync(
-      await pobierzDoCache(
-        `${MSIP}/${warstwa}/query?where=1%3D1&outFields=*&returnGeometry=true&outSR=4326&f=geojson`,
-        plik,
-        { headers: NAGLOWKI },
-      ),
-      'utf8',
-    ),
+const warstwaMsip = (warstwa, plik) =>
+  pobierzJsonDoCache(
+    `${USLUGA}/${warstwa}/query?where=1%3D1&outFields=*&returnGeometry=true&outSR=4326&f=geojson`,
+    plik,
   )
 
 async function pobierzNid() {
@@ -340,8 +329,8 @@ async function main() {
       `zlokalizowane ${nidGminy.zlokalizowane}, bez numeru ${nidGminy.bezNumeru}, z pustą ulicą ${nidGminy.bezUlicy}, bez zgodnego adresu w PRG ${nidGminy.bezAdresuPrg}, niejednoznaczne ${nidGminy.niejednoznaczne}`,
   )
 
-  const indeksMsip = indeksPrzestrzenny(msip.punkty)
-  const indeksNid = indeksPrzestrzenny(nidGminy.punkty)
+  const indeksMsip = indeksyMsip(msip.punkty)
+  const indeksNid = indeksPunktowNid(nidGminy.punkty)
   const wyniki = adresy.map((a) => wartoscAdresu(a, indeksMsip, indeksNid))
   const wartosci = wyniki.map((w) => w.wartosc)
 
@@ -383,18 +372,16 @@ async function main() {
       zadanie: 125,
       zrodla: [
         {
-          nazwa:
-            'Gmina Miejska Kraków, Portal MSIP Obserwatorium (https://msip.krakow.pl) – Obiekty w Rejestrze Zabytków (stan wg najnowszej adnotacji w danych)',
-          url: `${MSIP}/0`,
-          licencja: LICENCJA_MSIP,
+          nazwa: `${ATRYBUCJA_MSIP} – Obiekty w Rejestrze Zabytków (stan wg najnowszej adnotacji w danych)`,
+          url: `${USLUGA}/0`,
+          licencja: LICENCJA_ZABYTKI,
           dataDanych: stanMsip(rejestr),
           pobrano,
         },
         {
-          nazwa:
-            'Gmina Miejska Kraków, Portal MSIP Obserwatorium (https://msip.krakow.pl) – Obiekty w Gminnej Ewidencji Zabytków (stan wg najnowszej adnotacji w danych)',
+          nazwa: `${ATRYBUCJA_MSIP} – Obiekty w Gminnej Ewidencji Zabytków (stan wg najnowszej adnotacji w danych)`,
           url: 'https://msip.krakow.pl/dataset/2741',
-          licencja: LICENCJA_MSIP,
+          licencja: LICENCJA_ZABYTKI,
           dataDanych: stanMsip(ewidencja),
           pobrano,
         },

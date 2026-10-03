@@ -13,20 +13,23 @@
 //
 // Poza Krakowem null (brak danych): inne gminy mają własne programy, których tu nie ma.
 // Uruchom: node etl/rewitalizacja.mjs. Surowa warstwa trafia do etl/.cache/rewitalizacja.geojson
-// (żeby pobrać ponownie, usuń ten plik). Gdy Node odrzuci certyfikat MSIP: NODE_EXTRA_CA_CERTS.
-import { readFileSync } from 'node:fs'
+// (żeby pobrać ponownie, usuń ten plik). MSIP idzie przez etl/lib/msip.mjs (powtórzenia, a przy
+// odrzuconym certyfikacie obejście tylko dla hosta MSIP); geometria przez etl/lib/geo.mjs.
 import { fileURLToPath } from 'node:url'
-import { dzis, pobierzDoCache, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
+import { do2180, punktWWielokacie, wielokatyZGeojson } from './lib/geo.mjs'
+import { ATRYBUCJA_MSIP, LICENCJA_MSIP, MSIP, pobierzJsonDoCache } from './lib/msip.mjs'
+import { dzis, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
 
-const WARSTWA =
-  'https://msip.um.krakow.pl/arcgis/rest/services/Obserwatorium/Rewitalizacja_od_2022/MapServer/0'
+const WARSTWA = `${MSIP}/Obserwatorium/Rewitalizacja_od_2022/MapServer/0`
 const ZBIOR = 'https://msip.krakow.pl/dataset/2341'
-const LICENCJA_MSIP = 'Regulamin MSIP: https://msip.krakow.pl/getHtml?dok_id=228972'
 const UCHWALA = 'XCVII/2644/22'
 const TERYT_KRAKOW = '1261011'
 export const ETYKIETA = 'objęty programem rewitalizacji'
 
-/** Wielokąty podobszarów z GeoJSON z MSIP; błąd przy zmianie uchwały albo kształtu danych. */
+/**
+ * Podobszary z GeoJSON z MSIP jako { nazwa, wielokaty } (wielokąty w EPSG:2180 z lib/geo.mjs).
+ * Błąd przy zmianie uchwały albo kształtu danych: wtedy opis wskaźnika wymaga przeglądu.
+ */
 export function podobszary(geojson) {
   if (geojson?.type !== 'FeatureCollection' || !Array.isArray(geojson.features))
     throw new Error('Rewitalizacja: oczekiwano FeatureCollection')
@@ -42,53 +45,14 @@ export function podobszary(geojson) {
       )
     const nazwa = String(f.properties?.nazwa_gpr ?? '').trim()
     if (!nazwa) throw new Error('Rewitalizacja: podobszar bez nazwy')
-    const wielokaty = typ === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates
-    return { nazwa, wielokaty, bbox: bbox(wielokaty) }
+    return { nazwa, wielokaty: wielokatyZGeojson(f.geometry, { nazwa }) }
   })
 }
 
-function bbox(wielokaty) {
-  const b = [Infinity, Infinity, -Infinity, -Infinity]
-  for (const w of wielokaty)
-    for (const [x, y] of w[0]) {
-      b[0] = Math.min(b[0], x)
-      b[1] = Math.min(b[1], y)
-      b[2] = Math.max(b[2], x)
-      b[3] = Math.max(b[3], y)
-    }
-  return b
-}
-
-function wPierscieniu(lon, lat, pierscien) {
-  let wSrodku = false
-  for (let i = 0, j = pierscien.length - 1; i < pierscien.length; j = i++) {
-    const [xi, yi] = pierscien[i]
-    const [xj, yj] = pierscien[j]
-    if (yi > lat !== yj > lat && lon < ((xj - xi) * (lat - yi)) / (yj - yi) + xi) wSrodku = !wSrodku
-  }
-  return wSrodku
-}
-
-/** Punkt w wielokącie z otworami: pierwszy pierścień to obrys, kolejne to dziury. */
-export function punktWWielokacie(lon, lat, pierscienie) {
-  return (
-    wPierscieniu(lon, lat, pierscienie[0]) &&
-    !pierscienie.slice(1).some((otwor) => wPierscieniu(lon, lat, otwor))
-  )
-}
-
-/** Podobszar zawierający punkt albo null. */
+/** Podobszar zawierający punkt (lon, lat w WGS84) albo null. */
 export function znajdzPodobszar(lon, lat, lista) {
-  return (
-    lista.find(
-      (p) =>
-        lon >= p.bbox[0] &&
-        lon <= p.bbox[2] &&
-        lat >= p.bbox[1] &&
-        lat <= p.bbox[3] &&
-        p.wielokaty.some((w) => punktWWielokacie(lon, lat, w)),
-    ) ?? null
-  )
+  const [x, y] = do2180(lon, lat)
+  return lista.find((p) => p.wielokaty.some((w) => punktWWielokacie(x, y, w))) ?? null
 }
 
 /** Wartość dla adresu: 1/0 w Krakowie, null poza nim (brak danych, nie „poza obszarem"). */
@@ -109,12 +73,12 @@ export function opisWskaznika(lista) {
 }
 
 async function main() {
-  const plik = await pobierzDoCache(
-    `${WARSTWA}/query?where=1%3D1&outFields=*&returnGeometry=true&outSR=4326&f=geojson`,
-    'rewitalizacja.geojson',
-    { headers: { 'User-Agent': 'adresscore-etl/1.0 (HackYeah 2026)' } },
+  const lista = podobszary(
+    await pobierzJsonDoCache(
+      `${WARSTWA}/query?where=1%3D1&outFields=*&returnGeometry=true&outSR=4326&f=geojson`,
+      'rewitalizacja.geojson',
+    ),
   )
-  const lista = podobszary(JSON.parse(readFileSync(plik, 'utf8')))
   const { adresy } = wczytajAdresy()
   const wyniki = adresy.map((a) => wartoscAdresu(a, lista))
   const pobrano = dzis()
@@ -131,8 +95,7 @@ async function main() {
       zadanie: 125,
       zrodla: [
         {
-          nazwa:
-            'Gmina Miejska Kraków, Portal MSIP Obserwatorium (https://msip.krakow.pl) – Obszar rewitalizacji w Mieście Krakowie od 2022',
+          nazwa: `${ATRYBUCJA_MSIP} – Obszar rewitalizacji w Mieście Krakowie od 2022`,
           url: ZBIOR,
           licencja: LICENCJA_MSIP,
           dataDanych: '2022-10-12',

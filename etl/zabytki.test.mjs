@@ -2,13 +2,14 @@ import assert from 'node:assert/strict'
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import test from 'node:test'
-import { odlegloscMetry } from './lib/codziennosc-geo.mjs'
+import { naMetry } from './lib/msip.mjs'
 import { DANE, wczytajAdresy } from './lib/wspolne.mjs'
 import {
   csv,
   dekodujNid,
   gminaNid,
-  indeksPrzestrzenny,
+  indeksPunktowNid,
+  indeksyMsip,
   lokalizujNid,
   najnowszaData,
   norm,
@@ -19,7 +20,6 @@ import {
   scalMsip,
   TERYT_KRAKOW,
   wartoscAdresu,
-  wPromieniu,
   wybierzCsvNid,
 } from './zabytki.mjs'
 
@@ -244,34 +244,41 @@ test('scalMsip: ta sama pozycja w rejestrze i ewidencji liczy się raz', () => {
 
 // ── Promień 300 m ────────────────────────────────────────────────────────────────────────────
 
-test('wPromieniu: granica 300 m na północ i na wschód, zgodność z liczeniem brutalnym', () => {
+test('promień 300 m: granica na północ, wschód i po przekątnej oraz zgodność z liczeniem brutalnym', () => {
   assert.equal(PROMIEN_M, 300)
   const [lat0, lon0] = [50.06, 19.94]
-  const punkty = [
+  const krakow = (lat, lon) => ({ teryt: TERYT_KRAKOW, lat, lon })
+  const bezNid = indeksPunktowNid([])
+  const punkt = (rodzaj, n, e, id) => {
+    const [lat, lon] = przesun(lat0, lon0, n, e)
+    return { lat, lon, rodzaj, id }
+  }
+  const granica = [
     [299, 0],
     [301, 0],
     [0, 299],
     [0, 301],
     [-200, -200], // 283 m po przekątnej
     [-220, 220], // 311 m po przekątnej
-  ].map(([n, e], i) => {
-    const [lat, lon] = przesun(lat0, lon0, n, e)
-    return { lat, lon, rodzaj: 'rejestr', id: i }
+  ].map(([n, e], i) => punkt('rejestr', n, e, i))
+  assert.deepEqual(wartoscAdresu(krakow(lat0, lon0), indeksyMsip(granica), bezNid), {
+    wartosc: 3,
+    etykieta: '3 w rejestrze, 0 w ewidencji',
   })
-  const trafione = wPromieniu(indeksPrzestrzenny(punkty), lat0, lon0).map((p) => p.id)
-  assert.deepEqual(trafione.sort(), [0, 2, 4])
 
-  // Deterministyczny „losowy" rozrzut 400 punktów w kwadracie 2 × 2 km; wynik = liczenie brutalne.
+  // Deterministyczny „losowy" rozrzut 400 punktów w kwadracie 2 × 2 km (na zmianę rejestr
+  // i ewidencja); wynik ma być taki sam jak przy liczeniu brutalnym, bez indeksu, w tych samych
+  // metrach EPSG:2178. Haversine na kuli dałby inną wartość przy samej granicy: na tej szerokości
+  // kula zaniża odległość w kierunku wschód-zachód o ok. 0,3% (1 m na 300 m).
   let ziarno = 12345
   const los = () => {
     ziarno = (ziarno * 1103515245 + 12345) % 2147483648
     return ziarno / 2147483648
   }
-  const rozrzut = Array.from({ length: 400 }, (_, id) => {
-    const [lat, lon] = przesun(lat0, lon0, (los() - 0.5) * 2000, (los() - 0.5) * 2000)
-    return { lat, lon, rodzaj: 'ewidencja', id }
-  })
-  const indeks = indeksPrzestrzenny(rozrzut)
+  const rozrzut = Array.from({ length: 400 }, (_, id) =>
+    punkt(id % 2 ? 'ewidencja' : 'rejestr', (los() - 0.5) * 2000, (los() - 0.5) * 2000, id),
+  )
+  const indeks = indeksyMsip(rozrzut)
   for (const [n, e] of [
     [0, 0],
     [400, -300],
@@ -279,16 +286,23 @@ test('wPromieniu: granica 300 m na północ i na wschód, zgodność z liczeniem
     [950, 950],
   ]) {
     const [lat, lon] = przesun(lat0, lon0, n, e)
-    const wzor = rozrzut
-      .filter((p) => odlegloscMetry(lat, lon, p.lat, p.lon) <= 300)
-      .map((p) => p.id)
-      .sort((a, b) => a - b)
-    const wynik = wPromieniu(indeks, lat, lon)
-      .map((p) => p.id)
-      .sort((a, b) => a - b)
-    assert.deepEqual(wynik, wzor, `punkt ${n},${e}`)
+    const [x, y] = naMetry(lon, lat)
+    const wzor = rozrzut.filter((p) => {
+      const [px, py] = naMetry(p.lon, p.lat)
+      return Math.hypot(x - px, y - py) <= 300
+    })
+    const rejestr = wzor.filter((p) => p.rodzaj === 'rejestr').length
+    assert.deepEqual(
+      wartoscAdresu(krakow(lat, lon), indeks, bezNid),
+      {
+        wartosc: wzor.length,
+        etykieta: wzor.length
+          ? `${rejestr} w rejestrze, ${wzor.length - rejestr} w ewidencji`
+          : null,
+      },
+      `punkt ${n},${e}`,
+    )
   }
-  assert.deepEqual(wPromieniu(indeksPrzestrzenny([]), lat0, lon0), [])
 })
 
 test('wartoscAdresu: Kraków liczy z podziałem na rejestr i ewidencję, poza Krakowem brak trafienia to null', () => {
@@ -297,13 +311,13 @@ test('wartoscAdresu: Kraków liczy z podziałem na rejestr i ewidencję, poza Kr
     const [lat, lon] = przesun(lat0, lon0, n, e)
     return { lat, lon, rodzaj }
   }
-  const msip = indeksPrzestrzenny([
+  const msip = indeksyMsip([
     wokol('rejestr', 10, 0),
     wokol('rejestr', 0, -100),
     wokol('ewidencja', 250, 0),
     wokol('ewidencja', 400, 0),
   ])
-  const nid = indeksPrzestrzenny([wokol('nid', 50, 50)])
+  const nid = indeksPunktowNid([wokol('nid', 50, 50)])
   const krakow = { teryt: TERYT_KRAKOW, lat: lat0, lon: lon0 }
   assert.deepEqual(wartoscAdresu(krakow, msip, nid), {
     wartosc: 3,
