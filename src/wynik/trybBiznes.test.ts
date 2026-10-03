@@ -10,6 +10,7 @@ test('preferencje sklepu są osobne od ustawień mieszkaniowych podczas przełą
       { id: 'sklep_odleglosc', kategoria: 'codziennosc' },
       { id: 'ludnosc_1km', kategoria: 'kontekst' },
     ],
+    [],
   )
   ustawWage('halas_ldwn', 4)
   ustawFiltr({ id: 'halas_ldwn', warunek: 'max', prog: 55 })
