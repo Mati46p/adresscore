@@ -1,0 +1,52 @@
+.komitety-wybor {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.komitety-wybor legend {
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.komitety-opcje {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 145px), 1fr));
+  gap: 8px;
+}
+
+.komitety-opcja {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 7px 10px;
+  border: 1px solid var(--ramka);
+  border-radius: 10px;
+  cursor: pointer;
+  line-height: 1.25;
+}
+
+.komitety-opcja:has(input:checked) {
+  border-color: var(--akcent);
+  background: var(--akcent-jasny);
+  font-weight: 600;
+}
+
+.komitety-opcja:focus-within {
+  outline: 2px solid var(--akcent);
+  outline-offset: 2px;
+}
+
+.komitety-opcja input {
+  flex: none;
+  accent-color: var(--akcent);
+}
+
+.komitety-pelna-nazwa {
+  margin: 10px 0 0;
+  color: var(--tekst-2);
+  font-size: 12px;
+  line-height: 1.4;
+}
