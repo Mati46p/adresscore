@@ -44,23 +44,55 @@ export function literaZWyniku(wynik: number | null): Litera | null {
 
 // ── Skala ────────────────────────────────────────────────────────────────────────────────
 //
-// Podejście: skala odcinkowo liniowa na przedziale [od, do].
-// - Przedział to `meta.zakres`. Bez zakresu bierzemy 5. i 95. percentyl danych, żeby jeden
-//   odstający adres nie spłaszczył skali reszcie miasta (stąd „percentyle" w zadaniu).
-// - Norma leżąca wewnątrz przedziału to punkt 50: przekroczenie przepisu zawsze daje ocenę
-//   poniżej połowy, niezależnie od tego, jak szeroki jest zakres. Norma na brzegu przedziału
-//   (np. WHO PM2,5 = 5 przy zakresie 5–30) nic nie wnosi do skali – zostaje skala liniowa.
-// - Wartości poza przedziałem przycinamy do 0 albo 100.
-// - `optimum` (≈ w makiecie): 100 w środku przedziału, 0 na obu brzegach.
+// Skala zamienia pomiar na pozycję u ∈ [0, 1], a kierunek zamienia u na ocenę 0–100.
+//
+// Warstwy bez normy dostają skalę rangową (percentylową): u to ranga wartości w rozkładzie
+// adresów z danymi, czyli „lepiej niż X% adresów". Dlaczego nie skala liniowa w `zakres`:
+// rozkłady są mocno skośne (odległości, liczby kursów). Kursy w szczycie mają zakres 0–80
+// przy medianie 2,5, więc liniowo mediana dostawała 3 przy „więcej = lepiej" i 97 przy
+// „mniej = lepiej" – po odwróceniu 98% adresów miało ≥ 70 i mapa była „wszędzie dobra".
+// Na rangach mediana ma 50 w obu kierunkach, a odwrócenie kierunku daje dokładne lustro.
+// - Remisy dostają średnią rangę (ważne przy wielu zerach): u = (średnia pozycja w posortowanych
+//   danych) / (n − 1). Najniższa wartość bez remisu ma 0, najwyższa 1, mediana 0,5.
+// - `zakres` tylko przycina wartości odstające przed liczeniem rang, nie wyznacza skali.
+// - Rangi liczymy raz na warstwę: posortowane unikalne wartości z ich rangami (węzły), potem
+//   wyszukiwanie binarne. Przy więcej niż WEZLY_MAKS unikalnych wartościach bierzemy węzły
+//   w równych odstępach rang i interpolujemy liniowo między nimi (błąd < 0,5 punktu).
+//   Wartość z co najmniej 1/(WEZLY_MAKS − 1) adresów zawsze trafia do węzłów, więc remisy
+//   zostają remisami. Tablice są zwykłe (number[]), żeby skalę dało się zapisać w JSON.
+//
+// Warstwy z normą (`meta.norma`, np. PM2,5) zostają na skali odcinkowo liniowej na [od, do]:
+// - przedział to `meta.zakres`, a bez zakresu 5. i 95. percentyl danych;
+// - norma wewnątrz przedziału to punkt 50: przekroczenie przepisu zawsze daje ocenę poniżej
+//   połowy. Norma na brzegu przedziału (WHO PM2,5 = 5 przy zakresie 5–30) zostawia skalę liniową.
+//
+// Warstwy dyskretne (najwyżej MAKS_POZIOMOW różnych wartości: strefy 0/1, powódź 0–4) też
+// zostają na skali liniowej. Ranga kategorii nic nie mówi, a przy przewadze zer psuje ocenę:
+// 99,7% adresów bez zagrożenia powodzią Q100 dostałoby ok. 50, a przy Q10 (same zera) – wszyscy 50.
+//
+// Kierunki:
+// - `wiecej-lepiej` = 100 · u, `mniej-lepiej` = 100 − 100 · u (dokładne lustro).
+// - `optimum` (≈ w makiecie) = 100 w środku skali, 0 na obu brzegach. Na skali rangowej środek
+//   to mediana, więc ocena to odległość od mediany w rangach: 100 · (1 − 2 · |u − 0,5|).
 // - `neutralny` bez kierunku od użytkownika nie wchodzi do wyniku (ocena null).
 
 export interface Skala {
+  /** Skala liniowa: początek przedziału. Skala rangowa: najniższa wartość po przycięciu. */
   od: number
   do: number
   /** Punkt 50 na skali albo null, gdy norma nie leży wewnątrz przedziału. */
   norma: number | null
-  zrodlo: 'zakres' | 'percentyle' | 'brak'
+  zrodlo: 'zakres' | 'percentyle' | 'rangi' | 'brak'
+  /** Skala rangowa: rosnące wartości węzłów. */
+  wezly?: number[]
+  /** Skala rangowa: ranga 0–1 każdego węzła (średnia przy remisach). */
+  rangi?: number[]
 }
+
+/** Najwięcej węzłów skali rangowej; powyżej interpolujemy. */
+export const WEZLY_MAKS = 257
+/** Warstwa z najwyżej tyloma różnymi wartościami jest dyskretna i zostaje na skali liniowej. */
+export const MAKS_POZIOMOW = 5
 
 export function percentyl(posortowane: ArrayLike<number>, p: number): number {
   const n = posortowane.length
@@ -73,7 +105,62 @@ export function percentyl(posortowane: ArrayLike<number>, p: number): number {
   return a + (b - a) * (poz - d)
 }
 
-export function zbudujSkale(meta: WskaznikMeta, wartosci: readonly (number | null)[]): Skala {
+function posortowaneLiczby(wartosci: readonly (number | null)[], zakres?: [number, number]) {
+  const liczby: number[] = []
+  for (const w of wartosci) {
+    // Zmierzone zero to liczba – odpada tylko brak danych.
+    if (w === null || w === undefined || Number.isNaN(w)) continue
+    liczby.push(zakres ? Math.min(Math.max(w, zakres[0]), zakres[1]) : w)
+  }
+  return Float64Array.from(liczby).sort()
+}
+
+function liczbaPoziomow(posortowane: Float64Array, limit: number): number {
+  let poziomy = 0
+  for (let i = 0; i < posortowane.length; i++) {
+    if (i === 0 || posortowane[i] !== posortowane[i - 1]) poziomy++
+    if (poziomy > limit) break
+  }
+  return poziomy
+}
+
+function skalaRangowa(posortowane: Float64Array): Skala {
+  const n = posortowane.length
+  const wezly: number[] = []
+  const rangi: number[] = []
+  // Przy dużej liczbie unikalnych wartości bierzemy te, na które wypadają pozycje docelowe
+  // co (n − 1)/(WEZLY_MAKS − 1); pierwsza i ostatnia wartość zawsze są węzłami.
+  const wszystkie = liczbaPoziomow(posortowane, WEZLY_MAKS) <= WEZLY_MAKS
+  const krok = (n - 1) / (WEZLY_MAKS - 1)
+  let cel = 0
+  let i = 0
+  while (i < n) {
+    const v = posortowane[i] as number
+    let j = i
+    while (j + 1 < n && posortowane[j + 1] === v) j++
+    let bierz = wszystkie || j === n - 1
+    // Pozycje (i − 0,5; j + 0,5] należą do tej wartości – przedziały kolejnych wartości stykają się.
+    while (cel <= j + 0.5) {
+      bierz = true
+      cel += krok
+    }
+    if (bierz) {
+      wezly.push(v)
+      rangi.push(n > 1 ? (i + j) / 2 / (n - 1) : 0.5)
+    }
+    i = j + 1
+  }
+  return {
+    od: posortowane[0] as number,
+    do: posortowane[n - 1] as number,
+    norma: null,
+    zrodlo: 'rangi',
+    wezly,
+    rangi,
+  }
+}
+
+function skalaLiniowa(meta: WskaznikMeta, posortowane: () => Float64Array): Skala {
   let od: number
   let doo: number
   let zrodlo: Skala['zrodlo']
@@ -81,7 +168,7 @@ export function zbudujSkale(meta: WskaznikMeta, wartosci: readonly (number | nul
     ;[od, doo] = meta.zakres
     zrodlo = 'zakres'
   } else {
-    const liczby = Float64Array.from(wartosci.filter((w): w is number => w !== null)).sort()
+    const liczby = posortowane()
     od = percentyl(liczby, 0.05)
     doo = percentyl(liczby, 0.95)
     zrodlo = 'percentyle'
@@ -90,6 +177,53 @@ export function zbudujSkale(meta: WskaznikMeta, wartosci: readonly (number | nul
   const n = meta.norma?.wartosc
   const norma = n !== undefined && n > od && n < doo ? n : null
   return { od, do: doo, norma, zrodlo }
+}
+
+export function zbudujSkale(meta: WskaznikMeta, wartosci: readonly (number | null)[]): Skala {
+  if (meta.norma) return skalaLiniowa(meta, () => posortowaneLiczby(wartosci))
+  const liczby = posortowaneLiczby(wartosci, meta.zakres)
+  if (liczby.length === 0) return { od: Number.NaN, do: Number.NaN, norma: null, zrodlo: 'brak' }
+  // Wszystkie adresy mają taki sam poprawny pomiar: 50 jest uczciwsze od „brak danych”.
+  // Dla klas ze znanym zakresem (np. sama wartość 0 w strefie 0/1) zostaje skala liniowa.
+  if (!meta.zakres && liczby[0] === liczby[liczby.length - 1]) return skalaRangowa(liczby)
+  if (liczbaPoziomow(liczby, MAKS_POZIOMOW) <= MAKS_POZIOMOW) {
+    return skalaLiniowa(meta, () => liczby)
+  }
+  return skalaRangowa(liczby)
+}
+
+/** Pozycja wartości na skali, 0–1 (0 = początek, 1 = koniec); brak danych → null. */
+export function pozycjaNaSkali(wartosc: number | null | undefined, skala: Skala): number | null {
+  if (wartosc === null || wartosc === undefined || Number.isNaN(wartosc)) return null
+  if (skala.zrodlo === 'brak') return null
+  const { od, do: doo, norma, wezly, rangi } = skala
+  const x = Math.min(Math.max(wartosc, od), doo)
+  if (wezly && rangi) {
+    // Ostatni węzeł ≤ x (wyszukiwanie binarne), potem interpolacja do następnego.
+    let lo = 0
+    let hi = wezly.length - 1
+    while (lo < hi) {
+      const m = (lo + hi + 1) >> 1
+      if ((wezly[m] as number) <= x) lo = m
+      else hi = m - 1
+    }
+    const a = wezly[lo] as number
+    const ra = rangi[lo] as number
+    if (x === a || lo === wezly.length - 1) return ra
+    const b = wezly[lo + 1] as number
+    const rb = rangi[lo + 1] as number
+    return ra + ((rb - ra) * (x - a)) / (b - a)
+  }
+  // Skala liniowa: norma (jeśli jest) ląduje dokładnie na 0,5.
+  if (norma === null) return (x - od) / (doo - od)
+  if (x <= norma) return (0.5 * (x - od)) / (norma - od)
+  return 0.5 + (0.5 * (x - norma)) / (doo - norma)
+}
+
+function ocenaZPozycji(u: number, kierunek: KierunekOceny): number {
+  if (kierunek === 'wiecej-lepiej') return 100 * u
+  if (kierunek === 'mniej-lepiej') return 100 - 100 * u
+  return 100 * (1 - 2 * Math.abs(u - 0.5))
 }
 
 /** Kierunek, który faktycznie liczy ocenę; null = wskaźnik nie wchodzi do wyniku. */
@@ -122,20 +256,9 @@ export function ocenWartosc(
   skala: Skala,
   kierunek: KierunekOceny | null,
 ): number | null {
-  if (wartosc === null || wartosc === undefined || Number.isNaN(wartosc) || kierunek === null) {
-    return null
-  }
-  if (skala.zrodlo === 'brak') return null
-  // u = 0 na początku przedziału, 1 na końcu; norma (jeśli jest) ląduje dokładnie na 0,5.
-  const { od, do: doo, norma } = skala
-  const x = Math.min(Math.max(wartosc, od), doo)
-  let u: number
-  if (norma === null) u = (x - od) / (doo - od)
-  else if (x <= norma) u = (0.5 * (x - od)) / (norma - od)
-  else u = 0.5 + (0.5 * (x - norma)) / (doo - norma)
-  if (kierunek === 'mniej-lepiej') return 100 * (1 - u)
-  if (kierunek === 'wiecej-lepiej') return 100 * u
-  return 100 * (1 - 2 * Math.abs(u - 0.5))
+  if (kierunek === null) return null
+  const pozycja = pozycjaNaSkali(wartosc, skala)
+  return pozycja === null ? null : ocenaZPozycji(pozycja, kierunek)
 }
 
 // ── Wskaźnik przygotowany ────────────────────────────────────────────────────────────────

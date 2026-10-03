@@ -276,9 +276,10 @@ export function Metoda() {
           <li>
             <h3>2. Zamieniamy pomiar na ocenę 0–100</h3>
             <p>
-              Skala biegnie od najgorszej do najlepszej wartości w sensownym zakresie. Jeśli warstwa
-              nie ma zakresu, bierzemy przedział między 5. a 95. percentylem danych. Wartości poza
-              przedziałem przycinamy do 0 albo 100.
+              Warstwy bez normy oceniamy według miejsca pomiaru w rozkładzie adresów z danymi:
+              mediana daje 50 punktów, a wartości na krańcach 0 i 100. Remisy dostają tę samą ocenę.
+              W warstwach z normą oraz prostych klasach, takich jak strefy 0/1, używamy skali
+              liniowej. Bez podanego zakresu bierzemy przedział od 5. do 95. percentyla.
             </p>
             <p>
               Kierunek mówi, co jest lepsze. „Mniej lepiej" daje 100 przy najniższej wartości,

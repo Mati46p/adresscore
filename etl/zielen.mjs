@@ -1,9 +1,8 @@
-// Zieleń i upał: siatka 100 m z analizy MSIP „Narażenie na wysokie temperatury powietrza"
+// Zieleń: siatka 100 m z analizy MSIP „Narażenie na wysokie temperatury powietrza"
 // (projekt LIFE-IP EKOMALOPOLSKA, 2023) i drzewa z inwentaryzacji Zarządu Zieleni Miejskiej.
 // Źródło: usługi ArcGIS REST MSIP Kraków (EPSG:2178), licencja: Regulamin MSIP.
-// Liczy trzy wskaźniki dla każdego adresu z adresy.json:
+// Liczy dwa wskaźniki dla każdego adresu z adresy.json:
 //   zielen_udzial  – % pokrycia roślinnością oczka 100 m, w którym leży adres,
-//   upal_narazenie – wskaźnik narażenia na wysokie temperatury (1–5) tego oczka,
 //   drzewa_100m    – liczba żywych drzew z ewidencji ZZM w promieniu 100 m.
 // Siatka obejmuje tylko Kraków: adres poza nią dostaje null (brak danych), nie 0.
 // Uruchom: node etl/zielen.mjs. Surowe strony usług zapisuje w etl/.cache/zielen/.
@@ -49,7 +48,7 @@ async function wczytajSiatke() {
   const obiekty = []
   for (let od = 0; od <= maxFid; od += STRONA) {
     const where = encodeURIComponent(`FID>=${od} AND FID<${od + STRONA}`)
-    const url = `${URL_SIATKI}/query?where=${where}&outFields=FID,Zielen_Ges,SREDNIA&returnGeometry=true&f=json`
+    const url = `${URL_SIATKI}/query?where=${where}&outFields=FID,Zielen_Ges&returnGeometry=true&f=json`
     const strona = await pobierzJson(url, `siatka_${od}.json`)
     obiekty.push(...strona.features)
   }
@@ -117,13 +116,11 @@ console.log(
 )
 
 const zielen = []
-const upal = []
 const liczbaDrzew = []
 for (const a of adresy) {
   const [x, y] = proj4('EPSG:4326', 'EPSG:2178', [a.lon, a.lat])
   const o = siatka.oczkoPunktu(x, y)
   zielen.push(o?.Zielen_Ges ?? null)
-  upal.push(o?.SREDNIA ?? null)
   // Oczka przy granicy sięgają do sąsiednich gmin, ale ewidencja ZZM kończy się na granicy
   // Krakowa – poza miastem brak danych, nie zero drzew.
   const wKrakowie = o && a.gmina === 'Kraków'
@@ -154,23 +151,6 @@ zapiszWskaznik(
     zrodla: [zrodloSiatki],
   },
   zielen,
-)
-
-zapiszWskaznik(
-  {
-    id: 'upal_narazenie',
-    kategoria: 'spokoj',
-    nazwa: 'Narażenie na upał',
-    opis: 'Wskaźnik MSIP narażenia na wysokie temperatury powietrza w oczku 100 m: 1 = najmniejsze, 5 = największe. Średnia ważona punktów 1–5 za wysokość roślinności (25%), pokrycie budynkami (25%), wysokość budynków (20%), NDVI (15%) i pokrycie roślinnością (15%) – wagi odczytane z danych. Siatka MSIP obejmuje Kraków i oczka na jego granicy; dalej brak danych.',
-    jednostka: 'pkt (1–5)',
-    kierunek: 'mniej-lepiej',
-    rozdzielczosc: 'siatka',
-    rozmiar: '100 m',
-    zakres: [1, 5],
-    zadanie: 6,
-    zrodla: [zrodloSiatki],
-  },
-  upal,
 )
 
 zapiszWskaznik(

@@ -159,12 +159,42 @@ describe('ocena wskaźnika', () => {
     assert.equal(ocenWartosc(17.5, s, 'mniej-lepiej'), 50)
   })
 
-  it('bez zakresu skala z 5. i 95. percentyla', () => {
+  it('warstwa z normą bez zakresu używa 5. i 95. percentyla', () => {
     const wartosci = Array.from({ length: 101 }, (_, i) => i)
-    const s = zbudujSkale(meta({ id: 'p', zakres: undefined }), wartosci)
+    const s = zbudujSkale(
+      meta({ id: 'p', zakres: undefined, norma: { wartosc: 50, opis: '', zrodlo: '' } }),
+      wartosci,
+    )
     assert.equal(s.zrodlo, 'percentyle')
     assert.equal(s.od, 5)
     assert.equal(s.do, 95)
+  })
+
+  it('skośny rozkład bez normy ocenia medianę blisko 50 i kierunki są lustrzane', () => {
+    const wartosci = [...Array.from({ length: 101 }, (_, i) => i / 20), 80, null]
+    const s = zbudujSkale(meta({ id: 'kursy', zakres: [0, 80] }), wartosci)
+    assert.equal(s.zrodlo, 'rangi')
+    const mediana = ocenWartosc(2.5, s, 'wiecej-lepiej') as number
+    assert.ok(mediana > 45 && mediana < 55, `${mediana}`)
+    assert.ok((ocenWartosc(2.5, s, 'mniej-lepiej') as number) > 45)
+    for (const wartosc of [0, 1.2, 2.5, 5, 80]) {
+      const wiecej = ocenWartosc(wartosc, s, 'wiecej-lepiej') as number
+      const mniej = ocenWartosc(wartosc, s, 'mniej-lepiej') as number
+      assert.ok(Math.abs(wiecej + mniej - 100) < 1e-9)
+    }
+    assert.equal(ocenWartosc(null, s, 'mniej-lepiej'), null)
+  })
+
+  it('remisy mają jedną rangę, a stały pomiar nie staje się brakiem danych', () => {
+    const s = zbudujSkale(meta({ id: 'remisy', zakres: undefined }), [0, 0, 0, 1, 2, 3, 4, 5, 6])
+    assert.equal(s.zrodlo, 'rangi')
+    assert.equal(ocenWartosc(0, s, 'wiecej-lepiej'), 12.5)
+    const staly = zbudujSkale(meta({ id: 'staly', zakres: undefined }), [7, 7, 7, null])
+    assert.equal(staly.zrodlo, 'rangi')
+    assert.equal(ocenWartosc(7, staly, 'wiecej-lepiej'), 50)
+    assert.equal(ocenWartosc(null, staly, 'wiecej-lepiej'), null)
+    const bez = zbudujSkale(meta({ id: 'bez', zakres: undefined }), [null, null])
+    assert.equal(ocenWartosc(7, bez, 'wiecej-lepiej'), null)
   })
 
   it('optimum: 100 w środku, 0 na brzegach', () => {
