@@ -21,7 +21,7 @@ Ocena: pomysł 30%, związek z Smart City 20%, użyteczność 20%, design 20%, k
 - Dane: **pliki statyczne** liczone skryptem (Node + DuckDB spatial/h3) – licencja MSIP zakazuje
   ciągłego pośredniczenia w usługach miasta. Supabase tylko, gdy funkcja potrzebuje serwera.
 - 3D: obrysy EGiB + wysokości GUGiK LoD1 (sprawdzić rocznik 2025), OSM tylko jako tymczasowe.
-- Deploy: Vercel z gita, **tylko `main` i tylko commit z `[wdroz]`** w opisie (robi integrator).
+- Deploy: GitHub Actions (`.github/workflows/wdroz.yml`) z tokenem Vercela, **tylko `main` i tylko commit z `[wdroz]`** w opisie (robi integrator). Autodeploy z gita w Vercelu jest wyłączony – blokował commity autorów spoza zespołu Vercela.
 - Szablon repo sprzed 11:00 ujawniamy w opisie zgłoszenia.
 
 ## Etapy – każdy kończy się działającą aplikacją
