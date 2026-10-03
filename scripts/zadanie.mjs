@@ -39,13 +39,14 @@ function zadania() {
     '--limit',
     '200',
     '--json',
-    'number,title,labels,milestone',
+    'number,title,labels,milestone,assignees',
   )
   return JSON.parse(json)
     .map((z) => ({
       nr: z.number,
       tytul: z.title,
       etykiety: z.labels.map((l) => l.name),
+      przypisani: z.assignees.map((a) => a.login),
       etap: Number(/^E(\d)/.exec(z.milestone?.title ?? '')?.[1] ?? 9),
     }))
     .sort((a, b) => a.etap - b.etap || a.nr - b.nr)
@@ -76,7 +77,7 @@ function lista() {
   for (const t of zadania()) {
     const tor = t.etykiety.find((e) => e.startsWith('tor:')) ?? ''
     console.log(
-      `${z.has(t.nr) ? 'ZAJĘTE' : 'wolne '}  E${t.etap}  #${t.nr}  ${tor.padEnd(14)} ${t.tytul}`,
+      `${z.has(t.nr) ? 'ZAJĘTE' : 'wolne '}  E${t.etap}  #${t.nr}  ${tor.padEnd(14)} ${t.tytul}${t.przypisani.length ? '  @' + t.przypisani.join(',') : ''}`,
     )
   }
 }
@@ -84,9 +85,12 @@ function lista() {
 function wez(tor) {
   git('fetch', '-q', 'origin', 'main')
   const z = zajete()
+  // Zadanie przypisane komuś innemu ma właściciela – nie dublujemy cudzej pracy.
+  const ja = sprobuj(() => gh('api', 'user', '--jq', '.login')).out
   const kandydaci = zadania().filter(
     (t) =>
       !z.has(t.nr) &&
+      (t.przypisani.length === 0 || t.przypisani.includes(ja)) &&
       !t.etykiety.includes('zablokowane') &&
       (!tor || t.etykiety.includes(`tor:${tor}`)),
   )
