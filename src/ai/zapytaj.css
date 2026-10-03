@@ -1,0 +1,120 @@
+/* „Zapytaj o ten adres” (#17) – działa od 320 px; klasy z prefiksem zap-. */
+.zap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+.zap-h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+.zap-ukryte {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.zap-forma {
+  display: flex;
+  gap: 8px;
+}
+.zap-pole {
+  flex: 1;
+  min-width: 0;
+  /* 16 px – iOS nie przybliża strony przy fokusie. */
+  font-size: 16px;
+}
+.zap-przycisk {
+  flex: none;
+}
+.zap-przycisk:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.zap-przyklady {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.zap-przyklad {
+  font-size: 13px;
+  padding: 0 12px;
+}
+.zap-wynik:empty {
+  display: none;
+}
+.zap-czekam {
+  margin: 0;
+  color: var(--tekst-3);
+}
+.zap-odp {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  border-radius: var(--promien);
+  background: var(--powierzchnia-2);
+  border: 1px solid var(--linia);
+  overflow-wrap: anywhere;
+}
+.zap-linia {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  font-size: 16px;
+  line-height: 1.4;
+}
+.zap-warstwa {
+  color: var(--tekst-2);
+}
+.zap-wartosc {
+  font-weight: 600;
+  color: var(--tekst);
+}
+.zap-brak {
+  color: var(--tekst-3);
+  font-weight: 500;
+}
+.zap-opis {
+  margin: 0;
+  font-size: 14px;
+  color: var(--tekst-2);
+}
+.zap-nie-wiem {
+  margin: 0;
+  color: var(--tekst-2);
+  line-height: 1.5;
+}
+.zap-zrodlo {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--tekst-3);
+}
+.zap-kto {
+  font-size: 12px;
+  color: var(--tekst-3);
+  font-style: italic;
+}
+.zap-przypis {
+  margin: 0;
+  font-size: 12px;
+  color: var(--tekst-3);
+}
+@media (max-width: 420px) {
+  .zap-forma {
+    flex-direction: column;
+  }
+  .zap-przycisk {
+    justify-content: center;
+  }
+}
