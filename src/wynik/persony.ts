@@ -14,6 +14,11 @@ export type PersonaId =
   | 'rowerzysta'
   | 'zdalny'
   | 'aktywny'
+  | 'kierowca'
+  | 'budowa-domu'
+  | 'kultura'
+  | 'alergik'
+  | 'bezpieczenstwo'
   | 'od-zera'
 export type Tryb = 'kupuje' | 'wynajmuje' | 'biznes'
 
@@ -248,6 +253,111 @@ export const PERSONY: readonly Persona[] = [
       halas_ldwn: 2,
       sklep_odleglosc: 2,
       przystanek_odleglosc: 2,
+    },
+    wagaNowych: 0,
+  },
+  {
+    id: 'kierowca',
+    nazwa: 'Kierowca',
+    opis: 'Utwardzony dojazd, ładowarka EV i szybki wyjazd z miasta, bez strefy płatnego parkowania',
+    wagi: {
+      dojazd_utwardzony: 4,
+      drogi_gruntowe_300m: 3,
+      ladowarka_ev_odleglosc: 3,
+      spp_podstrefa: 3,
+      sct_w_strefie: 2,
+      lotnisko_czas_min: 2,
+      sklep_odleglosc: 2,
+      halas_ldwn: 2,
+      pm25_srednia: 1,
+      zielen_worldcover_100m: 2,
+      powodz_10proc: 3,
+      osuwisko_odleglosc: 1,
+    },
+    // Strefa płatnego parkowania i strefa czystego transportu utrudniają życie z autem.
+    kierunki: { spp_podstrefa: 'mniej-lepiej', sct_w_strefie: 'mniej-lepiej' },
+    wagaNowych: 0,
+  },
+  {
+    id: 'budowa-domu',
+    nazwa: 'Budowa domu',
+    opis: 'Uzbrojenie terenu, plan miejscowy i niskie ryzyka gruntowe',
+    wagi: {
+      uzbrojenie_prad_50m: 4,
+      uzbrojenie_woda_50m: 4,
+      uzbrojenie_kanalizacja_50m: 3,
+      uzbrojenie_gaz_50m: 2,
+      dojazd_utwardzony: 3,
+      mpzp_status: 3,
+      gmina_mpzp_pokrycie_pct: 1,
+      powodz_10proc: 4,
+      teren_osuwiskowy: 4,
+      osiadanie_mm_rok: 2,
+      szkola_podst_odleglosc: 2,
+      sklep_odleglosc: 2,
+      zielen_worldcover_100m: 2,
+    },
+    wagaNowych: 0,
+  },
+  {
+    id: 'kultura',
+    nazwa: 'Miłośnik kultury',
+    opis: 'Teatry, muzea, zabytki, biblioteki i dobra kuchnia w zasięgu spaceru',
+    wagi: {
+      kultura_odleglosc: 4,
+      zabytki_300m: 3,
+      zabytki_rejestr_500m: 3,
+      biblioteka_1200m: 3,
+      gastronomia_1200m: 3,
+      gastronomia_odleglosc: 2,
+      imprezy_stale_wpisy_500m_2026: 2,
+      przystanek_odleglosc: 3,
+      kursy_szczyt_h: 3,
+      rynek_czas_min: 3,
+      sklep_odleglosc: 2,
+      halas_ldwn: 1,
+    },
+    // Dla miłośnika kultury wydarzenia obok to zaleta, nie hałas.
+    kierunki: { imprezy_stale_wpisy_500m_2026: 'wiecej-lepiej' },
+    wagaNowych: 0,
+  },
+  {
+    id: 'alergik',
+    nazwa: 'Alergik i astmatyk',
+    opis: 'Czyste powietrze, mało palenisk, dobre przewietrzanie i przychodnia blisko',
+    wagi: {
+      pm25_srednia: 4,
+      pm10_srednia: 4,
+      no2_srednia: 3,
+      bap_srednia: 3,
+      paleniska_200m: 3,
+      przewietrzanie_klasa: 3,
+      emitent_odleglosc: 3,
+      azbest_budynki_100m: 2,
+      przychodnia_odleglosc: 3,
+      apteka_odleglosc: 3,
+      zielen_worldcover_100m: 2,
+      sklep_odleglosc: 2,
+    },
+    wagaNowych: 0,
+  },
+  {
+    id: 'bezpieczenstwo',
+    nazwa: 'Bezpieczeństwo przede wszystkim',
+    opis: 'Policja, straż i SOR blisko, oświetlone ulice, mało przestępstw i zagrożeń',
+    wagi: {
+      przestepstwa_1000_powiat_2025: 4,
+      wykrywalnosc_powiat_2025: 2,
+      policja_odleglosc: 3,
+      straz_pozarna_odleglosc: 3,
+      sor_odleglosc: 3,
+      defibrylator_odleglosc: 2,
+      oswietlenie_100m: 4,
+      seveso_odleglosc: 3,
+      powodz_10proc: 4,
+      teren_osuwiskowy: 2,
+      punkt_schronienia_odleglosc: 1,
+      sklep_odleglosc: 2,
     },
     wagaNowych: 0,
   },
