@@ -1,0 +1,292 @@
+{
+  "opis": "Wejście wskaźnika gmina_czyste_powietrze_wnioski_100_domow: dosłowne wiersze raportu NFOŚiGW „Czyste Powietrze w liczbach” (4 powiaty, wszystkie ich gminy) i rankingu gmin NFOŚiGW (14 gmin obszaru) z numerem strony PDF. Plik generuje etl/czyste-powietrze.mjs --odswiez (pdftotext -raw), nie edytuj ręcznie.",
+  "raport": {
+    "nazwa": "Raport NFOŚiGW – Czyste Powietrze w liczbach od 31 marca 2025 r. (Raport WoD nowego PPCP)",
+    "strona": "https://czystepowietrze.gov.pl/efekty-programu/raport-nfosigw-czyste-powietrze-w-liczbach-od-31-marca-2025",
+    "url": "https://czystepowietrze.gov.pl/efekty-programu/raport-nfosigw-czyste-powietrze-w-liczbach-od-31-marca-2025/Raport_WoD_nowego_PPCP_-_stan_na_12-12-2025.pdf",
+    "sha256": "37d9f5e3934171893c652271ffdb7c54f90ad243a651bc79e9faf6fcda448b27",
+    "pobrano": "2026-10-03",
+    "narzedzie": "pdftotext version 4.06 [www.xpdfreader.com] -raw",
+    "stan": "2025-12-12",
+    "fundusz": "WFOŚiGW w Krakowie",
+    "kontrola": {
+      "fundusze": 16,
+      "powiaty": 380,
+      "gminy": 2477
+    },
+    "lacznie": "46 521 63 52 6 372 18 100 565 3 892 21 496 104 31 933"
+  },
+  "ranking": {
+    "nazwa": "Ranking gmin NFOŚiGW w programie Czyste Powietrze",
+    "strona": "https://czystepowietrze.gov.pl/partnerzy/gminy/ranking-gmin/drugi-ranking-gmin",
+    "url": "https://czystepowietrze.gov.pl/wazne-komunikaty/ranking-gmin/ranking-gmin-01-04-2022-31-12-2023.pdf",
+    "sha256": "6b21912d42a9e85d7cdde5ea9d2d6a386b7ad73d1bdcac5b5e34ec8de672e564",
+    "pobrano": "2026-10-03",
+    "narzedzie": "pdftotext version 4.06 [www.xpdfreader.com] -raw",
+    "okresOd": "2022-04-01",
+    "okresDo": "2023-12-31",
+    "stan": "2023-12-31",
+    "wierszy": 2160,
+    "pominiete": 2
+  },
+  "powiaty": [
+    {
+      "nazwa": "krakowski",
+      "strona": 19,
+      "wiersz": "krakowski 521 0 0 34 0 1 0 20 144 1 442",
+      "gminy": [
+        {
+          "strona": 19,
+          "wiersz": "Czernichów | gmina wiejska 62 0 0 11 0 0 0 2 21 1 45"
+        },
+        {
+          "strona": 19,
+          "wiersz": "Igołomia-Wawrzeńczyce | gmina wiejska 32 0 0 3 0 0 0 1 2 0 32"
+        },
+        {
+          "strona": 19,
+          "wiersz": "Iwanowice | gmina wiejska 7 0 0 0 0 0 0 1 3 0 6"
+        },
+        {
+          "strona": 19,
+          "wiersz": "Jerzmanowice-Przeginia | gmina wiejska 28 0 0 0 0 0 0 0 11 0 26"
+        },
+        {
+          "strona": 19,
+          "wiersz": "Kocmyrzów-Luborzyca | gmina wiejska 31 0 0 2 0 0 0 1 7 0 26"
+        },
+        {
+          "strona": 19,
+          "wiersz": "Krzeszowice | gmina miejsko-wiejska 73 0 0 6 0 0 0 1 17 0 65"
+        },
+        {
+          "strona": 19,
+          "wiersz": "Liszki | gmina wiejska 29 0 0 0 0 0 0 1 13 0 26"
+        },
+        {
+          "strona": 19,
+          "wiersz": "Michałowice | gmina wiejska 15 0 0 1 0 0 0 0 3 0 13"
+        },
+        {
+          "strona": 19,
+          "wiersz": "Mogilany | gmina wiejska 17 0 0 2 0 0 0 5 1 0 11"
+        },
+        {
+          "strona": 19,
+          "wiersz": "Skała | gmina miejsko-wiejska 19 0 0 1 0 0 0 1 8 0 17"
+        },
+        {
+          "strona": 19,
+          "wiersz": "Skawina | gmina miejsko-wiejska 59 0 0 1 0 0 0 2 11 0 52"
+        },
+        {
+          "strona": 19,
+          "wiersz": "Słomniki | gmina miejsko-wiejska 31 0 0 1 0 0 0 0 18 0 20"
+        },
+        {
+          "strona": 19,
+          "wiersz": "Sułoszowa | gmina wiejska 10 0 0 0 0 0 0 0 7 0 9"
+        },
+        {
+          "strona": 19,
+          "wiersz": "Świątniki Górne | gmina miejsko-wiejska 14 0 0 1 0 0 0 1 5 0 12"
+        },
+        {
+          "strona": 19,
+          "wiersz": "Wielka Wieś | gmina wiejska 18 0 0 1 0 0 0 0 3 0 16"
+        },
+        {
+          "strona": 20,
+          "wiersz": "Zabierzów | gmina wiejska 37 0 0 3 0 0 0 3 9 0 30"
+        },
+        {
+          "strona": 20,
+          "wiersz": "Zielonki | gmina wiejska 39 0 0 1 0 1 0 1 5 0 36"
+        }
+      ]
+    },
+    {
+      "nazwa": "proszowicki",
+      "strona": 22,
+      "wiersz": "proszowicki 134 0 1 16 0 0 0 5 62 0 101",
+      "gminy": [
+        {
+          "strona": 22,
+          "wiersz": "Koniusza | gmina wiejska 26 0 0 1 0 0 0 1 9 0 23"
+        },
+        {
+          "strona": 22,
+          "wiersz": "Koszyce | gmina miejsko-wiejska 26 0 0 1 0 0 0 0 16 0 16"
+        },
+        {
+          "strona": 22,
+          "wiersz": "Nowe Brzesko | gmina miejsko-wiejska 28 0 0 6 0 0 0 0 15 0 17"
+        },
+        {
+          "strona": 22,
+          "wiersz": "Pałecznica | gmina wiejska 11 0 1 1 0 0 0 0 3 0 10"
+        },
+        {
+          "strona": 22,
+          "wiersz": "Proszowice | gmina miejsko-wiejska 36 0 0 7 0 0 0 2 15 0 30"
+        },
+        {
+          "strona": 22,
+          "wiersz": "Radziemice | gmina wiejska 7 0 0 0 0 0 0 2 4 0 5"
+        }
+      ]
+    },
+    {
+      "nazwa": "wielicki",
+      "strona": 24,
+      "wiersz": "wielicki 141 0 0 16 0 2 2 7 31 0 115",
+      "gminy": [
+        {
+          "strona": 24,
+          "wiersz": "Biskupice | gmina wiejska 10 0 0 2 0 0 0 0 5 0 7"
+        },
+        {
+          "strona": 24,
+          "wiersz": "Gdów | gmina wiejska 34 0 0 3 0 0 1 3 12 0 27"
+        },
+        {
+          "strona": 24,
+          "wiersz": "Kłaj | gmina wiejska 11 0 0 1 0 0 0 0 1 0 10"
+        },
+        {
+          "strona": 24,
+          "wiersz": "Niepołomice | gmina miejsko-wiejska 39 0 0 7 0 2 0 1 4 0 32"
+        },
+        {
+          "strona": 24,
+          "wiersz": "Wieliczka | gmina miejsko-wiejska 47 0 0 3 0 0 1 3 9 0 39"
+        }
+      ]
+    },
+    {
+      "nazwa": "Kraków",
+      "strona": 20,
+      "wiersz": "Kraków 139 0 0 2 0 0 0 0 0 0 139",
+      "gminy": [
+        {
+          "strona": 20,
+          "wiersz": "Kraków | gmina miejska 139 0 0 2 0 0 0 0 0 0 139"
+        }
+      ]
+    }
+  ],
+  "gminy": [
+    {
+      "teryt": "1206022",
+      "gmina": "Igołomia-Wawrzeńczyce",
+      "ranking": {
+        "strona": 1,
+        "wiersz": "22. małopolskie 1206022 Igołomia-Wawrzeńczyce (2) wiejska krakowski 2 137 265 12,40%"
+      }
+    },
+    {
+      "teryt": "1206052",
+      "gmina": "Kocmyrzów-Luborzyca",
+      "ranking": {
+        "strona": 18,
+        "wiersz": "608. małopolskie 1206052 Kocmyrzów-Luborzyca (2) wiejska krakowski 5 318 363 6,83%"
+      }
+    },
+    {
+      "teryt": "1206072",
+      "gmina": "Liszki",
+      "ranking": {
+        "strona": 51,
+        "wiersz": "1753. małopolskie 1206072 Liszki (2) wiejska krakowski 5 651 208 3,68%"
+      }
+    },
+    {
+      "teryt": "1206082",
+      "gmina": "Michałowice",
+      "ranking": {
+        "strona": 21,
+        "wiersz": "717. małopolskie 1206082 Michałowice (2) wiejska krakowski 3 983 259 6,50%"
+      }
+    },
+    {
+      "teryt": "1206092",
+      "gmina": "Mogilany",
+      "ranking": {
+        "strona": 39,
+        "wiersz": "1345. małopolskie 1206092 Mogilany (2) wiejska krakowski 4 801 228 4,75%"
+      }
+    },
+    {
+      "teryt": "1206113",
+      "gmina": "Skawina",
+      "ranking": {
+        "strona": 9,
+        "wiersz": "298. małopolskie 1206113 Skawina (3) miejsko-wiejska krakowski 8 531 698 8,18%"
+      }
+    },
+    {
+      "teryt": "1206143",
+      "gmina": "Świątniki Górne",
+      "ranking": {
+        "strona": 48,
+        "wiersz": "1651. małopolskie 1206143 Świątniki Górne (3) miejsko-wiejska krakowski 3 173 127 4,00%"
+      }
+    },
+    {
+      "teryt": "1206152",
+      "gmina": "Wielka Wieś",
+      "ranking": {
+        "strona": 40,
+        "wiersz": "1386. małopolskie 1206152 Wielka Wieś (2) wiejska krakowski 4 930 230 4,67%"
+      }
+    },
+    {
+      "teryt": "1206162",
+      "gmina": "Zabierzów",
+      "ranking": {
+        "strona": 43,
+        "wiersz": "1478. małopolskie 1206162 Zabierzów (2) wiejska krakowski 8 842 395 4,47%"
+      }
+    },
+    {
+      "teryt": "1206172",
+      "gmina": "Zielonki",
+      "ranking": {
+        "strona": 44,
+        "wiersz": "1496. małopolskie 1206172 Zielonki (2) wiejska krakowski 8 042 356 4,43%"
+      }
+    },
+    {
+      "teryt": "1214012",
+      "gmina": "Koniusza",
+      "ranking": {
+        "strona": 1,
+        "wiersz": "8. małopolskie 1214012 Koniusza (2) wiejska proszowicki 2 514 365 14,52%"
+      }
+    },
+    {
+      "teryt": "1219043",
+      "gmina": "Niepołomice",
+      "ranking": {
+        "strona": 39,
+        "wiersz": "1326. małopolskie 1219043 Niepołomice (3) miejsko-wiejska wielicki 8 866 426 4,80%"
+      }
+    },
+    {
+      "teryt": "1219053",
+      "gmina": "Wieliczka",
+      "ranking": {
+        "strona": 51,
+        "wiersz": "1767. małopolskie 1219053 Wieliczka (3) miejsko-wiejska wielicki 17 021 620 3,64%"
+      }
+    },
+    {
+      "teryt": "1261011",
+      "gmina": "Kraków",
+      "ranking": {
+        "strona": 59,
+        "wiersz": "2052. małopolskie 1261011 Kraków (1) miejska Kraków 41 172 1 019 2,47%"
+      }
+    }
+  ]
+}
