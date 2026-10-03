@@ -45,3 +45,8 @@ obwarzanka mogą leżeć blisko miejskiego wydarzenia; wykaz nie obejmuje ich gm
 `node --test etl/imprezy-stale.test.mjs` sprawdza katalog, punkt, heks i rozróżnienie
 zera od braku danych. Przy aktualnej bazie: 70 217/176 684 adresów ma pomiar (39,7%);
 większość pozostałych leży poza Krakowem. Plik jest mniejszy niż limit 2 MB.
+
+## Daty dla dużych obiektów
+
+Wykaz nie ma dat dziennych. Dni z wydarzeniem w TAURON Arenie, EXPO, ICE i na stadionach Cracovii
+i Wisły (z kalendarzy i terminarzy obiektów) liczy osobna warstwa: `etl/imprezy-obiekty.md`.
