@@ -32,14 +32,14 @@ const DEFINICJE = [
   {
     id: 'apteka_odleglosc',
     nazwa: 'Najbliższa apteka',
-    kategoria: 'spokoj',
+    kategoria: 'codziennosc',
     tagi: { amenity: ['pharmacy'] },
     zakres: [0, 3000],
   },
   {
     id: 'przychodnia_odleglosc',
     nazwa: 'Najbliższa przychodnia lub gabinet lekarski',
-    kategoria: 'spokoj',
+    kategoria: 'codziennosc',
     tagi: { amenity: ['clinic', 'doctors'], healthcare: ['clinic', 'doctor'] },
     zakres: [0, 5000],
   },

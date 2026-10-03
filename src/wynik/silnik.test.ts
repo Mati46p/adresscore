@@ -65,19 +65,18 @@ const budowy = wsk(
 const wszystkie = [halas, zielen, sklep, cena, budowy]
 const wagi = { halas: 2, zielen: 1, sklep: 1, cena: 4, budowy: 3 }
 
-describe('dobrowolne punktowanie kontekstu i stref 0/1', () => {
+describe('warstwy opcjonalne i strefy 0/1', () => {
   it('ludność NSP liczy się z kierunkiem biznesowym, ale przy wadze 0 nie zmienia mieszkania', () => {
     const ludnosc = wsk(
-      { id: 'ludnosc_1km', kategoria: 'kontekst', kierunek: 'neutralny', zakres: [0, 1000] },
+      { id: 'ludnosc_1km', kategoria: 'spolecznosc', kierunek: 'wiecej-lepiej', zakres: [0, 1000] },
       [0, 1000],
     )
     const baza = wsk({ id: 'baza', zakres: [0, 100] }, [50, 50])
-    const kierunki = { ludnosc_1km: 'wiecej-lepiej' as const }
-    assert.equal(wynikAdresu(1, [baza, ludnosc], { baza: 2, ludnosc_1km: 0 }, kierunki).wynik, 50)
-    const biznes = wynikAdresu(1, [ludnosc], { ludnosc_1km: 4 }, kierunki)
+    assert.equal(wynikAdresu(1, [baza, ludnosc], { baza: 2, ludnosc_1km: 0 }).wynik, 50)
+    const biznes = wynikAdresu(1, [ludnosc], { ludnosc_1km: 4 })
     assert.equal(biznes.wynik, 100)
-    assert.equal(biznes.warstwy[0]?.kategoria, 'codziennosc')
-    assert.equal(wynikAdresu(0, [ludnosc], { ludnosc_1km: 4 }, kierunki).wynik, 0)
+    assert.equal(biznes.warstwy[0]?.kategoria, 'spolecznosc')
+    assert.equal(wynikAdresu(0, [ludnosc], { ludnosc_1km: 4 }).wynik, 0)
   })
 
   it('strefa ocenia 1 i 0 zgodnie z wyborem, bez kierunku pozostaje neutralna', () => {
@@ -92,30 +91,19 @@ describe('dobrowolne punktowanie kontekstu i stref 0/1', () => {
     assert.equal(wynikiWszystkich([strefa], w, { sct_w_strefie: 'mniej-lepiej' }, 2)[1], 0)
   })
 
-  it('drzewa są kontekstem do chwili świadomego nadania wagi', () => {
-    const drzewa = wsk(
-      {
-        id: 'drzewa_100m',
-        kategoria: 'kontekst',
-        kierunek: 'wiecej-lepiej',
-        zakres: [0, 100],
-      },
+  it('kontekst nie liczy się nawet z wagą i kierunkiem od użytkownika', () => {
+    const bankomat = wsk(
+      { id: 'bankomat_odleglosc', kategoria: 'kontekst', kierunek: 'mniej-lepiej' },
       [0, 100],
     )
     const baza = wsk({ id: 'baza', zakres: [0, 100] }, [50, 50])
-    const bez = wynikAdresu(1, [baza, drzewa], { baza: 2, drzewa_100m: 0 })
-    const z = wynikAdresu(1, [baza, drzewa], { baza: 2, drzewa_100m: 2 })
-    assert.equal(bez.wynik, 50)
-    assert.equal(bez.warstwy[1]?.ocena, null)
-    assert.equal(z.wynik, 75)
-    assert.equal(z.warstwy[1]?.kategoria, 'codziennosc')
-    assert.equal(z.kategorie.find((k) => k.kategoria === 'codziennosc')?.ocena, 100)
-    assert.equal(
-      wynikAdresu(0, [drzewa], { drzewa_100m: 2 }, { drzewa_100m: 'mniej-lepiej' }).wynik,
-      100,
-    )
+    const z = wynikAdresu(0, [baza, bankomat], { baza: 2, bankomat_odleglosc: 4 })
+    assert.equal(z.wynik, 50)
+    assert.equal(z.pewnosc, 1)
+    assert.equal(z.warstwy[1]?.ocena, null)
+    assert.equal(z.warstwy[1]?.kategoria, 'kontekst')
     assert.deepEqual(
-      Array.from(wynikiWszystkich([drzewa], { drzewa_100m: 0 }, {}, 2)).map(Number.isNaN),
+      Array.from(wynikiWszystkich([bankomat], { bankomat_odleglosc: 4 }, {}, 2)).map(Number.isNaN),
       [true, true],
     )
   })
@@ -123,7 +111,7 @@ describe('dobrowolne punktowanie kontekstu i stref 0/1', () => {
   it('atrapa ceny jest zablokowana; realna cena działa dopiero po opt-in', () => {
     const m = {
       id: 'cena_m2_mediana',
-      kategoria: 'kontekst' as const,
+      kategoria: 'spolecznosc' as const,
       kierunek: 'neutralny' as const,
       zakres: [5000, 15000] as [number, number],
     }
@@ -163,13 +151,24 @@ describe('ocena wskaźnika', () => {
     assert.equal(ocenWartosc(95, halas.skala, 'mniej-lepiej'), 0)
   })
 
-  it('norma na brzegu zakresu nie zmienia skali liniowej', () => {
+  it('norma na brzegu zakresu ściska przedział do jednej połowy skali', () => {
+    // WHO PM2,5 = 5 µg/m³ przy zakresie 5–30: każdy pomiar powyżej normy to ocena poniżej 50.
     const s = zbudujSkale(
       meta({ id: 'pm', zakres: [5, 30], norma: { wartosc: 5, opis: '', zrodlo: '' } }),
       [],
     )
-    assert.equal(s.norma, null)
-    assert.equal(ocenWartosc(17.5, s, 'mniej-lepiej'), 50)
+    assert.equal(s.norma, 5)
+    assert.equal(ocenWartosc(5, s, 'mniej-lepiej'), 50)
+    assert.equal(ocenWartosc(17.5, s, 'mniej-lepiej'), 25)
+    assert.equal(ocenWartosc(30, s, 'mniej-lepiej'), 0)
+    // Norma powyżej zakresu: wszyscy ją spełniają, więc oceny od 50 w górę.
+    const wysoka = zbudujSkale(
+      meta({ id: 'pm', zakres: [5, 30], norma: { wartosc: 40, opis: '', zrodlo: '' } }),
+      [],
+    )
+    assert.equal(ocenWartosc(30, wysoka, 'mniej-lepiej'), 50)
+    assert.equal(ocenWartosc(5, wysoka, 'mniej-lepiej'), 100)
+    assert.equal(ocenWartosc(17.5, wysoka, 'mniej-lepiej'), 75)
   })
 
   it('warstwa z normą bez zakresu używa 5. i 95. percentyla', () => {
@@ -201,13 +200,75 @@ describe('ocena wskaźnika', () => {
   it('remisy mają jedną rangę, a stały pomiar nie staje się brakiem danych', () => {
     const s = zbudujSkale(meta({ id: 'remisy', zakres: undefined }), [0, 0, 0, 1, 2, 3, 4, 5, 6])
     assert.equal(s.zrodlo, 'rangi')
-    assert.equal(ocenWartosc(0, s, 'wiecej-lepiej'), 12.5)
+    // Najniższa wartość to kraniec rozkładu: 0 i 100, nie średnia ranga remisu (12,5).
+    assert.equal(ocenWartosc(0, s, 'wiecej-lepiej'), 0)
+    assert.equal(ocenWartosc(0, s, 'mniej-lepiej'), 100)
+    assert.equal(ocenWartosc(3, s, 'wiecej-lepiej'), 62.5)
     const staly = zbudujSkale(meta({ id: 'staly', zakres: undefined }), [7, 7, 7, null])
     assert.equal(staly.zrodlo, 'rangi')
     assert.equal(ocenWartosc(7, staly, 'wiecej-lepiej'), 50)
     assert.equal(ocenWartosc(null, staly, 'wiecej-lepiej'), null)
     const bez = zbudujSkale(meta({ id: 'bez', zakres: undefined }), [null, null])
     assert.equal(ocenWartosc(7, bez, 'wiecej-lepiej'), null)
+  })
+})
+
+describe('skala – kraniec rozkładu i jednostki administracyjne', () => {
+  // 60 adresów bez zagrożenia i 40 z liczbami 1–40: rozkład z przewagą zer jak azbest_budynki_100m.
+  const zera = [
+    ...Array.from({ length: 60 }, () => 0),
+    ...Array.from({ length: 40 }, (_, i) => i + 1),
+  ]
+
+  it('blok remisu na najlepszym krańcu daje 100, nie średnią rangę', () => {
+    const s = zbudujSkale(meta({ id: 'azbest', zakres: undefined }), zera)
+    assert.equal(s.zrodlo, 'rangi')
+    assert.equal(ocenWartosc(0, s, 'mniej-lepiej'), 100)
+    assert.equal(ocenWartosc(40, s, 'mniej-lepiej'), 0)
+    // Pierwszy adres z zagrożeniem spada poniżej połowy – ranga wnętrza bez zmian.
+    const jeden = ocenWartosc(1, s, 'mniej-lepiej') as number
+    assert.ok(jeden < 40 && jeden > 35, `${jeden}`)
+  })
+
+  it('blok z przycięcia do zakresu na krańcu daje 100', () => {
+    // Ponad połowa adresów dalej niż 500 m od osuwiska – po przycięciu remis na 500.
+    const odl = [
+      ...Array.from({ length: 50 }, (_, i) => i * 10),
+      ...Array.from({ length: 60 }, () => 2000),
+    ]
+    const s = zbudujSkale(meta({ id: 'osuwisko', zakres: [0, 500] }), odl)
+    assert.equal(ocenWartosc(2000, s, 'wiecej-lepiej'), 100)
+    assert.equal(ocenWartosc(500, s, 'wiecej-lepiej'), 100)
+    assert.equal(ocenWartosc(0, s, 'wiecej-lepiej'), 0)
+  })
+
+  it('kierunki zostają lustrzane także na krańcach', () => {
+    const s = zbudujSkale(meta({ id: 'azbest', zakres: undefined }), zera)
+    for (const v of [0, 1, 7, 20, 40]) {
+      const suma =
+        (ocenWartosc(v, s, 'mniej-lepiej') as number) +
+        (ocenWartosc(v, s, 'wiecej-lepiej') as number)
+      assert.ok(Math.abs(suma - 100) < 1e-9)
+    }
+  })
+
+  it('warstwa gminna jest liniowa od najniższej do najwyższej wartości', () => {
+    // Kraków (większość adresów) w środku – na rangach przesuwałby pozostałe gminy na krańce.
+    const wartosci = [
+      ...Array.from({ length: 80 }, () => 50),
+      ...[10, 20, 30, 40, 60, 70, 80, 90].flatMap((v) => [v, v]),
+    ]
+    const s = zbudujSkale(
+      meta({ id: 'gmina_x', rozdzielczosc: 'gmina', kierunek: 'wiecej-lepiej', zakres: [0, 100] }),
+      wartosci,
+    )
+    assert.equal(s.zrodlo, 'jednostki')
+    assert.equal(ocenWartosc(10, s, 'wiecej-lepiej'), 0)
+    assert.equal(ocenWartosc(50, s, 'wiecej-lepiej'), 50)
+    assert.equal(ocenWartosc(70, s, 'wiecej-lepiej'), 75)
+    assert.equal(ocenWartosc(90, s, 'wiecej-lepiej'), 100)
+    const jedna = zbudujSkale(meta({ id: 'p', rozdzielczosc: 'powiat' }), [7, 7, null])
+    assert.equal(ocenWartosc(7, jedna, 'wiecej-lepiej'), 50)
   })
 })
 

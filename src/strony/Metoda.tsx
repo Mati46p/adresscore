@@ -279,9 +279,12 @@ export function Metoda() {
             <h3>2. Zamieniamy pomiar na ocenę 0–100</h3>
             <p>
               Warstwy bez normy oceniamy według miejsca pomiaru w rozkładzie adresów z danymi:
-              mediana daje 50 punktów, a wartości na krańcach 0 i 100. Remisy dostają tę samą ocenę.
-              W warstwach z normą oraz prostych klasach, takich jak strefy 0/1, używamy skali
-              liniowej. Bez podanego zakresu bierzemy przedział od 5. do 95. percentyla.
+              mediana daje 50 punktów, a wartości na krańcach 0 i 100. Remisy dostają tę samą ocenę,
+              a remis na krańcu – pełne 0 albo 100: adres bez azbestu w pobliżu nie traci punktów
+              tylko dlatego, że takich adresów jest większość. W warstwach z normą oraz prostych
+              klasach, takich jak strefy 0/1, używamy skali liniowej. Bez podanego zakresu bierzemy
+              przedział od 5. do 95. percentyla. Norma to zawsze 50 punktów: przekroczenie daje
+              mniej. Warstwy gminne i powiatowe są liniowe od najsłabszej do najlepszej jednostki.
             </p>
             <p>
               Kierunek mówi, co jest lepsze. „Mniej lepiej" daje 100 przy najniższej wartości,

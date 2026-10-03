@@ -26,7 +26,7 @@ bo `src/kontrakty` czyta `import.meta.env`, którego Node nie ma.
 | `ocenyWarstwy(wskaznik, kierunki?)` | Daje oceny jednej warstwy dla mapy albo `null` dla warstwy bez kierunku. |
 | `grupujHeksy(h3[])`, `srednieHeksow(wartosci, grupy)` | Liczą średnią po heksie H3 r10. Heks bez danych = `NaN`. |
 | `mapaHeksow(srednie, grupy)` | Daje `Map<h3, number \| null>` – format propsa `heksy` w `MapaKrakowa`. |
-| `literaZWyniku(wynik)` | Daje literę A–G z `PROGI_LITER` (A ≥ 85, B ≥ 70, C ≥ 55, D ≥ 40, E ≥ 25, F ≥ 10). |
+| `literaZWyniku(wynik)` | Daje literę A–G z `PROGI_LITER` (A ≥ 75, B ≥ 65, C ≥ 55, D ≥ 45, E ≥ 35, F ≥ 25; skalibrowane na rozkładzie średniej z rang). |
 
 Zasady skali:
 

@@ -61,6 +61,12 @@ describe('persony', () => {
     for (const w of Object.values(wagi)) assert.equal(w, 0)
   })
 
+  it('od zera ignoruje domyślną wagę nowej warstwy, inne persony ją biorą', () => {
+    const nowa = [{ id: 'nowa_warstwa', kategoria: 'spokoj' as const, domyslnaWaga: 3 as const }]
+    assert.equal(ustawieniaPersony('od-zera', 'kupuje', nowa).wagi.nowa_warstwa, 0)
+    assert.equal(ustawieniaPersony('rodzina', 'wynajmuje', nowa).wagi.nowa_warstwa, 3)
+  })
+
   it('tryb nie zmienia automatycznie wagi społeczności', () => {
     const k = ustawieniaPersony('inwestor', 'kupuje', manifest).wagi.inwestycje_500m ?? 0
     const w = ustawieniaPersony('inwestor', 'wynajmuje', manifest).wagi.inwestycje_500m ?? 0

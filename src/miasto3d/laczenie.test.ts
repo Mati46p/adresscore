@@ -74,7 +74,7 @@ describe('budynkiOkolicy', () => {
     const a = wynik.find((b) => b.id === 'a')
     assert.deepEqual(a?.adresy, [0, 1])
     assert.equal(a?.wynik, 80)
-    assert.equal(a?.litera, 'B')
+    assert.equal(a?.litera, 'A')
   })
 
   it('adres bez danych i budynek bez adresu dają null, nigdy zero', () => {
