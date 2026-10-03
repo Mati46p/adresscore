@@ -18,7 +18,7 @@
   width: 100%;
   min-height: 44px;
   padding: 10px 12px;
-  border: 1px solid #b9c0c6;
+  border: 1px solid var(--ramka-pola, #8a939b);
   border-radius: 12px;
   background: #fff;
   color: #18202b;

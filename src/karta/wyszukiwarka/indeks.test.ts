@@ -53,6 +53,22 @@ test('pełne dopasowanie ulicy i numeru jest pierwsze', () => {
   assert.equal(tytuly('Grodzka 5')[0], 'Grodzka 5')
 })
 
+test('pełny numer: dokładny pierwszy, reszta numerycznie', () => {
+  const nry = ['104', '10', '1a', '2', '1', '12', '100']
+  const wi = zbudujIndeks(nry.map((n, k) => adres(k, 'Karmelicka', n)))
+  assert.deepEqual(
+    szukaj(wi, 'Karmelicka 1').map((w) => w.tytul),
+    [
+      'Karmelicka 1',
+      'Karmelicka 1a',
+      'Karmelicka 10',
+      'Karmelicka 12',
+      'Karmelicka 100',
+      'Karmelicka 104',
+    ],
+  )
+})
+
 test('odmiana ulicy', () => {
   assert.equal(tytuly('Grodzkiej 52')[0], 'Grodzka 52')
   assert.equal(tytuly('Floriańskiej 10')[0], 'Floriańska 10')

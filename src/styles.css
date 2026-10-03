@@ -8,7 +8,8 @@
   --tekst-2: #3d4652;
   --tekst-3: #5b6470;
   --ramka: #dde1e4;
-  --ramka-pola: #b9c0c6;
+  /* Ramka pól i przycisków: ≥ 3:1 z tłem (WCAG 1.4.11). Zwykłe ramki kart zostają jasne. */
+  --ramka-pola: #8a939b;
   --linia: #eef0f1;
   --akcent: #1f5c46;
   --akcent-hover: #163f31;
@@ -126,7 +127,7 @@ a:hover {
   padding: 0 14px;
   border-radius: 999px;
   background: var(--powierzchnia);
-  border: 1px solid var(--ramka);
+  border: 1px solid var(--ramka-pola);
   color: var(--tekst-2);
   font: inherit;
   font-size: 14px;
@@ -193,7 +194,7 @@ a:hover {
   grid-template-columns: minmax(320px, 440px) minmax(0, 1fr);
   height: calc(100dvh - var(--wys-naglowka));
 }
-.szukaj-panel {
+.szukaj-lewa {
   overflow-y: auto;
   background: var(--powierzchnia);
   border-right: 1px solid var(--ramka);
@@ -202,13 +203,28 @@ a:hover {
   flex-direction: column;
   gap: 24px;
 }
-.szukaj-mapa {
+.szukaj-wyszukaj {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.szukaj-filtry {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.szukaj-prawa {
   min-width: 0;
   padding: 20px 24px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 20px;
   overflow-y: auto;
+}
+.szukaj-mapa {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 .pasek-warstw {
   display: flex;
@@ -229,7 +245,9 @@ a:hover {
   inset: 0;
 }
 
-/* Telefon: mapa na górze, panel pod nią, całość przewija się jak zwykła strona. */
+/* Telefon: jedna kolumna – h1 i wyszukiwarka, warstwy, mapa, pasek adresu, filtry, ranking.
+   Kontenery lewej i prawej kolumny znikają (display: contents), żeby ich dzieci dało się
+   ułożyć naprzemiennie przez order. */
 @media (max-width: 860px) {
   .naglowek {
     padding: 10px 16px;
@@ -239,19 +257,52 @@ a:hover {
     flex-direction: column;
     height: auto;
   }
+  .szukaj-lewa,
+  .szukaj-prawa {
+    display: contents;
+  }
+  .szukaj-wyszukaj {
+    order: 1;
+    padding: 16px;
+    background: var(--powierzchnia);
+  }
   .szukaj-mapa {
-    order: -1;
+    order: 2;
     padding: 12px 16px;
+  }
+  .szukaj-filtry {
+    order: 3;
+    border-top: 1px solid var(--ramka);
+    background: var(--powierzchnia);
+    padding: 20px 16px;
+  }
+  .szukaj-ranking {
+    order: 4;
+    padding: 20px 16px;
+  }
+  .pasek-warstw {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    /* Przycięcie przy prawej krawędzi sygnalizuje, że pasek się przewija. */
+    mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+    /* Zapas wokół przycisków, żeby overflow nie uciął obrysu fokusu. */
+    padding: 4px 28px 4px 4px;
+    margin: -4px;
+  }
+  .pasek-warstw::-webkit-scrollbar {
+    display: none;
+  }
+  .pasek-warstw .seg {
+    flex: none;
+    scroll-snap-align: start;
+    white-space: nowrap;
   }
   .slot-mapy {
     flex: none;
-    height: 60dvh;
-  }
-  .szukaj-panel {
-    border-right: 0;
-    border-top: 1px solid var(--ramka);
-    padding: 20px 16px;
-    overflow: visible;
+    height: 50dvh;
+    min-height: 320px;
   }
 }
 
@@ -334,4 +385,9 @@ a:hover {
 }
 .wybrany-adres .seg {
   min-height: 44px;
+}
+
+/* Fokus programowy na h1 po zmianie ekranu: obrys tylko, gdy użytkownik jedzie klawiaturą. */
+h1[tabindex="-1"]:focus:not(:focus-visible) {
+  outline: none;
 }

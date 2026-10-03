@@ -7,7 +7,7 @@ import { dodajDoPorownania, hrefDla, przejdz, useStan } from '@/wynik/stan'
 import { useWynikAdresu } from '@/wynik/useWyniki'
 import { CoByToZmienilo } from '../CoByToZmienilo'
 import { Etykieta } from './Etykieta'
-import { KOLORY_ETYKIETY, type LiteraEtykiety } from './kolory'
+import type { LiteraEtykiety } from './kolory'
 import {
   liczbaPL,
   liczbyWarstw,
@@ -41,7 +41,9 @@ export function EkranOkolica() {
     return (
       <main className="tresc okol">
         <section className="karta okol-pusta">
-          <h1 className="okol-h1">Nie ma takiego adresu</h1>
+          <h1 className="okol-h1" tabIndex={-1}>
+            Nie ma takiego adresu
+          </h1>
           <p>Wybierz adres na mapie albo w wyszukiwarce, żeby zobaczyć jego kartę.</p>
           <a href={linkMapa} className="przycisk-glowny">
             Wróć do mapy
@@ -121,7 +123,6 @@ function Naglowek({
   const stan = useStan((s) => s)
   const [komunikat, setKomunikat] = useState('')
   const litera = wynik.litera as LiteraEtykiety | null
-  const kolor = litera ? KOLORY_ETYKIETY[litera].tlo : 'var(--brak-danych)'
   const { zDanymi, razem } = liczbyWarstw(wynik.warstwy)
   const procent = wynik.wynik === null ? 0 : Math.round(wynik.wynik)
   const pewnosc = Math.round(wynik.pewnosc * 100)
@@ -150,23 +151,12 @@ function Naglowek({
 
   return (
     <section className="karta okol-naglowek" aria-labelledby="h-adres">
-      <div>
-        <h1 id="h-adres" className="okol-h1">
-          {nazwa}
-        </h1>
-        <p className="okol-miejsce">
-          {miejsce}
-          {atrapa && <span className="atrapa">dane przykładowe</span>}
-        </p>
-      </div>
-
-      <div className="okol-wynik">
-        <Etykieta litera={litera} wynik={wynik.wynik} />
-        <div className="okol-liczba">
+      <div className="okol-glowa">
+        <div className="okol-tytul">
           <div
             className="okol-pierscien"
             style={{
-              background: `conic-gradient(${kolor} 0 ${procent}%, #e3e7e9 ${procent}% 100%)`,
+              background: `conic-gradient(var(--akcent) 0 ${procent}%, #e3e7e9 ${procent}% 100%)`,
             }}
           >
             <div className="okol-pierscien-srodek">
@@ -174,35 +164,54 @@ function Naglowek({
               <span className="okol-pierscien-podpis">na 100</span>
             </div>
           </div>
-          <div className="okol-pewnosc">
-            <span>
-              Dane dla {zDanymi} z {razem} warstw
-            </span>
-            <span
-              className="okol-pewnosc-pasek"
-              role="meter"
-              aria-label="Pewność wyniku"
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-valuenow={pewnosc}
-            >
-              <span style={{ width: `${pewnosc}%` }} />
-            </span>
-            <span className="mono okol-pewnosc-proc">pewność {pewnosc}%</span>
+          <div className="okol-nazwa">
+            {/* tabIndex=-1: Aplikacja przenosi tu fokus po zmianie ekranu. */}
+            <h1 id="h-adres" className="okol-h1" tabIndex={-1}>
+              {nazwa}
+            </h1>
+            <p className="okol-miejsce">
+              {miejsce}
+              {atrapa && <span className="atrapa">dane przykładowe</span>}
+            </p>
           </div>
+        </div>
+
+        <div className="okol-przyciski">
+          <button type="button" className="przycisk-glowny okol-przycisk" onClick={porownaj}>
+            {wPorownaniu ? 'Przejdź do porównania' : 'Porównaj'}
+          </button>
+          <button type="button" className="seg okol-przycisk" onClick={udostepnij}>
+            Udostępnij
+          </button>
+          <span role="status" className="okol-status">
+            {komunikat}
+          </span>
         </div>
       </div>
 
-      <div className="okol-przyciski">
-        <button type="button" className="przycisk-glowny okol-przycisk" onClick={porownaj}>
-          {wPorownaniu ? 'Przejdź do porównania' : 'Porównaj'}
-        </button>
-        <button type="button" className="seg okol-przycisk" onClick={udostepnij}>
-          Udostępnij
-        </button>
-        <span role="status" className="okol-status">
-          {komunikat}
-        </span>
+      <div className="okol-wynik">
+        <Etykieta litera={litera} wynik={wynik.wynik} />
+        <div className="okol-pewnosc">
+          <span>
+            Dane dla {zDanymi} z {razem} warstw
+          </span>
+          <span
+            className="okol-pewnosc-pasek"
+            role="meter"
+            aria-label="Pewność wyniku"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={pewnosc}
+          >
+            <span
+              style={{
+                width: `${pewnosc}%`,
+                background: wynik.pewnosc < 0.6 ? 'var(--ostrzezenie)' : 'var(--akcent)',
+              }}
+            />
+          </span>
+          <span className="mono okol-pewnosc-proc">pewność {pewnosc}%</span>
+        </div>
       </div>
     </section>
   )

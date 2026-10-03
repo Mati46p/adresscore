@@ -181,10 +181,7 @@ function pasujeMiejscowosc(q: string, mw: string): boolean {
 }
 
 function porownajNr(a: string, b: string): number {
-  const na = Number.parseInt(a, 10)
-  const nb = Number.parseInt(b, 10)
-  if (!Number.isNaN(na) && !Number.isNaN(nb) && na !== nb) return na - nb
-  return a < b ? -1 : a > b ? 1 : 0
+  return a.localeCompare(b, 'pl', { numeric: true })
 }
 
 function kolejnoscNr(u: Ulica): number[] {
@@ -287,7 +284,8 @@ function przebieg(
         const n = u.nry[k] as string
         let jakoscNr = 0
         if (n === nr) jakoscNr = 3
-        else if (n.startsWith(nr)) jakoscNr = /\d/.test(n.charAt(nr.length)) ? 1.5 : 2
+        // Reszta numerów w jednym koszyku, żeby kolejność była naturalna (1a, 10, 104), nie „po jakości”.
+        else if (n.startsWith(nr)) jakoscNr = 1
         if (jakoscNr === 0 || widziane.has(n)) continue
         widziane.add(n)
         lokalnie.push({ pozycja: u.pozycje[k] as number, wynik: wynik * 10 + jakoscNr, nr: n })

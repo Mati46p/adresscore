@@ -29,6 +29,7 @@ export function Ranking() {
   return (
     <section
       aria-labelledby="h-ranking"
+      className="szukaj-ranking"
       style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
     >
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>

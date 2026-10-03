@@ -63,11 +63,6 @@ export function PanelFiltrow() {
 
   return (
     <>
-      <div className="panel-wstep">
-        <h1>Znajdź okolicę w Krakowie</h1>
-        <p>Każda zmiana po lewej od razu przelicza kolory na mapie.</p>
-      </div>
-
       <section aria-labelledby="h-tryb" className="panel-sekcja">
         <h2 id="h-tryb" className="etykieta-sekcji">
           Czego szukasz
@@ -111,7 +106,7 @@ export function PanelFiltrow() {
         </div>
         <p className="panel-uwaga" aria-live="polite">
           {persona === 'wlasna'
-            ? 'Własne ustawienia – zmieniłeś wagi albo kierunki ręcznie.'
+            ? 'Własne ustawienia – wagi lub kierunki zmienione ręcznie.'
             : opisPersony}
         </p>
       </section>

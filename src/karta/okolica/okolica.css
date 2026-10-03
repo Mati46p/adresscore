@@ -8,7 +8,7 @@
 }
 .okol-h1 {
   margin: 0;
-  font-size: 34px;
+  font-size: 36px;
   letter-spacing: -0.02em;
   line-height: 1.15;
 }
@@ -50,15 +50,36 @@
   color: var(--tekst-2);
 }
 
-/* Nagłówek z etykietą */
+/* Nagłówek wg makiety: pierścień + nazwa + akcje w jednym rzędzie (z zawijaniem),
+   drabinka A–G kompaktowo pod spodem. */
 .okol-naglowek {
   display: flex;
   flex-direction: column;
   gap: 20px;
   padding: 24px;
 }
+.okol-glowa {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 24px;
+  align-items: center;
+  justify-content: space-between;
+}
+.okol-tytul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 24px;
+  align-items: center;
+  min-width: 0;
+}
+.okol-nazwa {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
 .okol-miejsce {
-  margin: 6px 0 0;
+  margin: 0;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
@@ -69,20 +90,22 @@
 .okol-wynik {
   display: flex;
   flex-wrap: wrap;
-  gap: 24px 40px;
+  gap: 16px 40px;
   align-items: center;
+  padding-top: 16px;
+  border-top: 1px solid var(--linia);
 }
 .okol-etykieta {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  width: 240px;
+  gap: 3px;
+  width: 200px;
   flex: none;
 }
 .okol-etykieta-wiersz {
   display: flex;
   align-items: center;
-  height: 32px;
+  height: 24px;
 }
 .okol-etykieta-pasek {
   display: flex;
@@ -91,28 +114,22 @@
   padding-left: 12px;
   font-family: var(--font-mono);
   font-weight: 500;
-  font-size: 18px;
+  font-size: 14px;
   /* Ścięty prawy koniec jak na etykiecie energetycznej. */
   clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%);
 }
 .okol-etykieta-strzalka {
   display: flex;
   align-items: center;
-  height: 36px;
+  height: 28px;
   margin-left: 6px;
-  padding: 0 10px 0 18px;
+  padding: 0 8px 0 16px;
   background: var(--tekst);
   color: #fff;
   font-family: var(--font-mono);
-  font-size: 24px;
+  font-size: 18px;
   font-weight: 500;
   clip-path: polygon(14px 0, 100% 0, 100% 100%, 14px 100%, 0 50%);
-}
-.okol-liczba {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  align-items: center;
 }
 .okol-pierscien {
   width: 120px;
@@ -146,7 +163,8 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  min-width: 180px;
+  flex: 1 1 200px;
+  max-width: 320px;
   font-size: 14px;
   color: var(--tekst-2);
 }
@@ -160,7 +178,7 @@
 .okol-pewnosc-pasek > span {
   display: block;
   height: 100%;
-  background: var(--tekst-3);
+  background: var(--akcent);
 }
 .okol-pewnosc-proc {
   font-size: 12px;
@@ -330,6 +348,12 @@
   font-size: 13px;
   color: var(--tekst);
 }
+.okol-zrodlo a {
+  /* Pionowy padding powiększa cel dotyku, a ujemny margines zostawia układ bez zmian. */
+  display: inline-block;
+  padding: 14px 0;
+  margin: -14px 0;
+}
 .okol-zrodlo {
   display: block;
   margin-top: 4px;
@@ -386,47 +410,47 @@
   color: var(--tekst-3);
 }
 
-/* Telefon: etykieta i wynik w pierwszym ekranie, dlatego drabinka obok pierścienia. */
+/* Telefon: pierścień, nazwa i drabinka mieszczą się w pierwszym ekranie (390×844). */
 @media (max-width: 860px) {
   .okol-naglowek {
     padding: 16px;
     gap: 14px;
   }
+  .okol-tytul {
+    flex-wrap: nowrap;
+    gap: 14px;
+  }
   .okol-h1 {
     font-size: 24px;
+    overflow-wrap: anywhere;
   }
   .okol-wynik {
     flex-wrap: nowrap;
     gap: 14px;
+    padding-top: 12px;
     align-items: flex-start;
   }
   .okol-etykieta {
-    width: 52%;
+    width: 46%;
     min-width: 0;
   }
   .okol-etykieta-wiersz {
-    height: 28px;
-  }
-  .okol-liczba {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-    min-width: 0;
+    height: 22px;
   }
   .okol-pierscien {
-    width: 104px;
-    height: 104px;
+    width: 88px;
+    height: 88px;
   }
   .okol-pierscien-srodek {
-    width: 80px;
-    height: 80px;
+    width: 68px;
+    height: 68px;
   }
   .okol-pierscien-wartosc {
-    font-size: 28px;
+    font-size: 26px;
   }
   .okol-pewnosc {
+    flex: 1 1 0;
     min-width: 0;
-    width: 100%;
     font-size: 13px;
   }
   .okol-kat {
