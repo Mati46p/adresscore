@@ -25,6 +25,7 @@
     "@supabase/supabase-js": "^2.117.2",
     "h3-js": "^4.5.0",
     "maplibre-gl": "^6.11.2",
+    "pmtiles": "4.5.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0"
   },
