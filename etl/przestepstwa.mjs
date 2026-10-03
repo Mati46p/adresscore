@@ -111,10 +111,10 @@ async function main() {
     {
       id: `przestepstwa_1000_powiat_${ROK}`,
       nazwa: `Przestępstwa stwierdzone na 1000 mieszkańców (powiat, ${ROK})`,
-      opis: `${zastrzezenie}Dane per rejon komisariatu KMP Kraków nie są jeszcze dostępne (BIP Krakowa niedostępny z ETL), dlatego cały Kraków ma jedną wartość.`,
+      opis: `${zastrzezenie}Dane per rejon komisariatu KMP Kraków nie są jeszcze dostępne (BIP Krakowa niedostępny z ETL), dlatego cały Kraków ma jedną wartość. Wskaźnik informacyjny – nie wpływa na wynik adresu.`,
       jednostka: 'na 1000 mieszkańców',
-      kategoria: 'bezpieczenstwo',
-      kierunek: 'mniej-lepiej',
+      kategoria: 'kontekst',
+      kierunek: 'neutralny',
       rozdzielczosc: 'rejon',
       zadanie: 68,
       zrodla: [
@@ -157,7 +157,7 @@ async function main() {
       })),
       komisariatyKrakow: {
         uwaga:
-          'Przypisanie dzielnic do komisariatów pochodzi ze stron KMP Kraków. Liczby przestępstw per komisariat („Informacja o stanie bezpieczeństwa”, BIP RMK) nie zostały pobrane – serwer bip.krakow.pl jest niedostępny z ETL. Wartości = null (brak danych, nie zero).',
+          'Przypisanie dzielnic do komisariatów pochodzi ze stron KMP Kraków. Liczby przestępstw per komisariat („Informacja o stanie bezpieczeństwa”, BIP RMK) nie zostały pobrane – serwer bip.krakow.pl (także przez web.archive.org) jest niedostępny z ETL, a BDL publikuje przestępstwa najniżej na poziomie powiatu. Wartości = null (brak danych, nie zero).',
         rejony: Object.values(komisariaty).map((k) => ({
           id: k.id,
           dzielnice: k.dzielnice,

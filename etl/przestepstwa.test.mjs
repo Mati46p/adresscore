@@ -36,3 +36,15 @@ test('wartość BDL: rok, brak = null, kontrola nazwy', () => {
   assert.equal(wartoscBdl(odp, 'C', 'x', 2025), null)
   assert.throws(() => wartoscBdl(odp, 'A', 'Powiat wielicki', 2025))
 })
+
+test('wskaźniki przestępstw są kontekstem i nie wpływają na wynik', async () => {
+  const { readFileSync } = await import('node:fs')
+  for (const id of ['przestepstwa_1000_powiat_2025', 'wykrywalnosc_powiat_2025']) {
+    const w = JSON.parse(
+      readFileSync(new URL(`../public/dane/wskazniki/${id}.json`, import.meta.url), 'utf8'),
+    )
+    const m = w.meta ?? w
+    assert.equal(m.kategoria, 'kontekst')
+    assert.equal(m.kierunek, 'neutralny')
+  }
+})

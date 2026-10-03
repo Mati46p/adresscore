@@ -21,7 +21,7 @@ Stan pobrania 2026-10-03:
 
 Wyniki:
 
-- `wskazniki/przestepstwa_1000_powiat_2025.json` – kategoria `bezpieczenstwo`, `mniej-lepiej`,
+- `wskazniki/przestepstwa_1000_powiat_2025.json` – kategoria `kontekst`, `neutralny` – decyzja użytkownika: informacja, nie wpływa na wynik,
 - `wskazniki/wykrywalnosc_powiat_2025.json` – kategoria `kontekst`, `neutralny`,
 - `przestepstwa_rejony_2025.json` – wiersze powiatów z URL zmiennych oraz rejony komisariatów Krakowa.
 
@@ -43,3 +43,14 @@ Liczb per komisariat (KMP Kraków, „Informacja o stanie bezpieczeństwa”, 9 
 statystyka.policja.pl publikuje tylko województwa (do 2021). W pliku rejonów wartości
 komisariatów są `null`. Gdy dokument będzie dostępny, wystarczy uzupełnić liczby per
 `KP …` i podzielić przez ludność dzielnic danego rejonu (rok i URL dokumentu w pliku).
+
+Próba z 2026-10-03 (kontynuacja #68), bez rezultatu liczbowego:
+
+- `bip.krakow.pl` (Raport o stanie Gminy, rozdział „Bezpieczeństwo publiczne”, np.
+  `plik.php?zid=71603`, `zid=193069`, `zid=108709`) – 503 / reset połączenia, także przez
+  `web.archive.org` (proxy zrywa połączenie, WebFetch zablokowany);
+- BDL: temat P4601 ma `availability.levels = [5]` – **brak poziomu gminy**, więc obwarzanek
+  zostaje na powiatach;
+- prasa ([portalsamorzadowy.pl](https://www.portalsamorzadowy.pl/wydarzenia-lokalne/policyjne-statystyki-nie-klamia-te-rejony-krakowa-lepiej-omijac,447490.html))
+  podaje dla 2022 r. wybrane kategorie tylko dla części komisariatów (KP I, II, III, VII, VIII)
+  – niepełne i nieoficjalne, nie zostały użyte.
