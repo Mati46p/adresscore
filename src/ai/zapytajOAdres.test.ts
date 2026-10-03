@@ -11,16 +11,21 @@ import {
   idTematu,
   listaWarstw,
   MAKS_ODPOWIEDZI,
+  MIN_PROPOZYCJI,
   NIE_WIEM,
+  nazwaProsta,
   odpowiedz,
   odpowiedzi,
+  PROG_BEZ_PROPOZYCJI,
   PROG_DRUGIEJ,
   PROG_PEWNOSCI,
   PROG_TEMATU,
+  propozycje,
   przetworz,
   przetworzWiele,
   regula,
   regulaWiele,
+  regulyZTematami,
   TEMATY,
   tematWarstwy,
   type WarstwaDanych,
@@ -28,6 +33,7 @@ import {
   wygladaNaZlozone,
   zapytajOAdres,
   zapytajOAdresWiele,
+  zapytajOAdresZPropozycjami,
   zapytanieJev,
 } from './zapytajOAdres.ts'
 
@@ -797,5 +803,223 @@ describe('zapytajOAdresWiele – całość z wstrzykniętym fetch', () => {
     const o = await zapytajOAdresWiele('Jaka będzie pogoda?', WSKAZNIKI, 0, { fetch: f })
     assert.equal(o.length, 1)
     assert.equal(o[0]?.rodzaj, 'nie-wiem')
+  })
+})
+
+// --- #156: dwie propozycje (R4) i tematy przy słabym wyborze głównym (R5) -----------------
+
+type OdpJev = Parameters<typeof przetworzWiele>[0]
+/** Odpowiedź pośrednika z rozkładem (#154) i ocenami tematów. */
+const zRozkladem = (
+  wybor: string,
+  pewnosc: number | null,
+  prawdopodobienstwa?: Record<string, number>,
+  tematy: Record<string, number> = {},
+): OdpJev => {
+  const o: OdpJev = {
+    [ID_PYTANIA]: {
+      typ: 'choice',
+      wybor,
+      pewnosc,
+      ...(prawdopodobienstwa && { prawdopodobienstwa }),
+    },
+  }
+  for (const [t, noul] of Object.entries(tematy)) o[`temat_${t}`] = { typ: 'noul', noul }
+  return o
+}
+
+describe('#156 R4 – dwie propozycje przy pewności 0,5–0,9', () => {
+  const rozklad = { halas_ldwn: 0.7, przystanek_odleglosc: 0.2, nie_wiem: 0.1 }
+
+  it('0,5–0,9 z rozkładem → dwie propozycje, warstwy jak dotąd', () => {
+    for (const p of [PROG_PEWNOSCI, 0.7, PROG_BEZ_PROPOZYCJI]) {
+      const r = przetworzWiele(zRozkladem('halas_ldwn', p, rozklad), LISTA, 'Jak tu jest?')
+      assert.deepEqual(r?.warstwy, ['halas_ldwn'])
+      assert.deepEqual(
+        r?.propozycje?.map((x) => x.warstwa),
+        ['halas_ldwn', 'przystanek_odleglosc'],
+        `pewność ${p}`,
+      )
+    }
+  })
+
+  it('> 0,9 → odpowiedź od razu, bez propozycji', () => {
+    const r = przetworzWiele(zRozkladem('halas_ldwn', 0.91, rozklad), LISTA, 'Jak głośno?')
+    assert.deepEqual(r, { warstwy: ['halas_ldwn'] })
+  })
+
+  it('< 0,5 albo brak pewności → reguły (null), mimo rozkładu', () => {
+    assert.equal(przetworzWiele(zRozkladem('halas_ldwn', 0.49, rozklad), LISTA, 'x'), null)
+    assert.equal(przetworzWiele(zRozkladem('halas_ldwn', null, rozklad), LISTA, 'x'), null)
+    assert.equal(propozycje(zRozkladem('halas_ldwn', 0.3, rozklad), LISTA), null)
+  })
+
+  it('nie_wiem i id spoza listy (także atrapa) nie są propozycjami', () => {
+    const o = zRozkladem('nie_wiem', 0.6, {
+      nie_wiem: 0.6,
+      nieznana_warstwa: 0.2,
+      sklep_atrapa: 0.1,
+      cena_m2_mediana: 0.06,
+      przystanek_odleglosc: 0.05,
+      halas_ldwn: 0.04,
+    })
+    assert.deepEqual(propozycje(o, LISTA), ['cena_m2_mediana', 'przystanek_odleglosc'])
+    // nie_wiem w paśmie: warstwy puste jak dotąd, propozycje obok.
+    const r = przetworzWiele(o, LISTA, 'Coś tu?')
+    assert.deepEqual(r?.warstwy, [])
+    assert.equal(r?.propozycje?.length, 2)
+  })
+
+  it(`tylko jedna warstwa z p ≥ ${MIN_PROPOZYCJI} → bez propozycji, jak dotąd`, () => {
+    const o = zRozkladem('halas_ldwn', 0.8, {
+      halas_ldwn: 0.8,
+      nie_wiem: 0.18,
+      cena_m2_mediana: 0.02,
+    })
+    assert.equal(propozycje(o, LISTA), null)
+    assert.deepEqual(przetworzWiele(o, LISTA, 'Jak głośno?'), { warstwy: ['halas_ldwn'] })
+    const nw = zRozkladem('nie_wiem', 0.7, {
+      nie_wiem: 0.7,
+      cena_m2_mediana: 0.29,
+      halas_ldwn: 0.01,
+    })
+    assert.deepEqual(przetworzWiele(nw, LISTA, 'Drogo?'), { warstwy: [] })
+  })
+
+  it('brak rozkładu → dokładnie jak dotąd', () => {
+    for (const p of [0.5, 0.7, 0.9, 0.95]) {
+      assert.deepEqual(przetworzWiele(zRozkladem('halas_ldwn', p), LISTA, 'Jak głośno?'), {
+        warstwy: ['halas_ldwn'],
+      })
+    }
+    // Rozkład bez sensownych liczb też nic nie zmienia.
+    const zle = zRozkladem('halas_ldwn', 0.7, { halas_ldwn: Number.NaN, przystanek_odleglosc: 7 })
+    assert.equal(propozycje(zle, LISTA), null)
+  })
+
+  it('każda propozycja ma własne dodatki z tematów (bez duplikatu tematu)', () => {
+    const o = zRozkladem(
+      'halas_ldwn',
+      0.7,
+      { halas_ldwn: 0.6, przystanek_odleglosc: 0.3, nie_wiem: 0.1 },
+      { komunikacja: 0.9, ceny: 0.8 },
+    )
+    const r = przetworzWiele(o, LISTA, 'Jak tu jest?')
+    assert.deepEqual(r?.warstwy, ['halas_ldwn', 'przystanek_odleglosc', 'cena_m2_mediana'])
+    assert.deepEqual(r?.propozycje, [
+      {
+        warstwa: 'halas_ldwn',
+        warstwy: ['halas_ldwn', 'przystanek_odleglosc', 'cena_m2_mediana'],
+      },
+      { warstwa: 'przystanek_odleglosc', warstwy: ['przystanek_odleglosc', 'cena_m2_mediana'] },
+    ])
+  })
+
+  it('całość: propozycje z danymi i nazwą prostymi słowami; wyraźne pytanie bez zmian', async () => {
+    const { f } = fetchZ({ odpowiedzi: zRozkladem('halas_ldwn', 0.7, rozklad), powod: null })
+    const w = await zapytajOAdresZPropozycjami('Jak tu jest?', WSKAZNIKI, 2, { fetch: f })
+    assert.deepEqual(
+      w.propozycje?.map((p) => [
+        p.nazwa,
+        p.odpowiedzi.map((o) => (o.rodzaj === 'warstwa' ? o.tekstWartosci : o.rodzaj)),
+      ]),
+      [
+        ['Najwyższe pasmo hałasu', ['57,5 dB']],
+        ['Najbliższy przystanek', ['1200 m']],
+      ],
+    )
+    for (const p of w.propozycje ?? [])
+      for (const o of p.odpowiedzi) assert.ok(o.rodzaj === 'warstwa' && o.zrodlo && o.rozdzielczosc)
+    // Bez kliknięcia: te same odpowiedzi co zapytajOAdresWiele.
+    const wiele = await zapytajOAdresWiele('Jak tu jest?', WSKAZNIKI, 2, { fetch: f })
+    assert.deepEqual(w.odpowiedzi, wiele)
+
+    const pewne = fetchZ({ odpowiedzi: zRozkladem('halas_ldwn', 0.95, rozklad), powod: null })
+    const j = await zapytajOAdresZPropozycjami('Jak głośno?', WSKAZNIKI, 2, { fetch: pewne.f })
+    assert.equal(j.propozycje, null)
+    assert.equal(j.odpowiedzi.length, 1)
+  })
+
+  it('nazwaProsta zdejmuje tylko dopisek w nawiasie na końcu', () => {
+    assert.equal(nazwaProsta('Najwyższe pasmo hałasu (LDWN)'), 'Najwyższe pasmo hałasu')
+    assert.equal(nazwaProsta('PM2,5 – średnia roczna'), 'PM2,5 – średnia roczna')
+    assert.equal(nazwaProsta('(X)'), '(X)')
+  })
+})
+
+describe('#156 R5 – tematy JEV nie przepadają przy słabym wyborze głównym', () => {
+  const pelna = listaWarstw(metasZDanych())
+
+  it('wybór < 0,5: reguły + tematy JEV ≥ progu, do 3, bez duplikatów, jeden na temat', () => {
+    const o = zRozkladem('zielen_worldcover_100m', 0.49, undefined, {
+      halas: 0.96,
+      bezpieczenstwo: 0.93,
+      ceny: 0.9,
+      zielen: 0.68,
+      powodz: PROG_TEMATU - 0.01,
+    })
+    const pytanie = 'Jak głośno?'
+    assert.deepEqual(regulaWiele(pytanie, pelna).warstwy, ['halas_ldwn'])
+    const r = regulyZTematami(o, pelna, pytanie)
+    assert.equal(r.tematyZJev, true)
+    assert.equal(r.warstwy.length, MAKS_ODPOWIEDZI)
+    assert.equal(new Set(r.warstwy).size, r.warstwy.length)
+    assert.equal(new Set(r.warstwy.map(tematWarstwy)).size, r.warstwy.length)
+    // Reguły pierwsze; hałas już jest, więc temat hałasu nic nie dokłada; dalej malejąco po noul.
+    assert.deepEqual(r.warstwy, ['halas_ldwn', 'oswietlenie_100m', 'cena_m2_mediana'])
+    assert.ok(!r.warstwy.some((w) => tematWarstwy(w) === 'powodz'))
+  })
+
+  it('bez tematów ≥ progu → dokładnie reguły', () => {
+    const o = zRozkladem('halas_ldwn', 0.3, undefined, { ceny: 0.5 })
+    const pytanie = 'Jak głośno i daleko do tramwaju?'
+    assert.deepEqual(regulyZTematami(o, pelna, pytanie), regulaWiele(pytanie, pelna))
+  })
+
+  it('całość: niska pewność → reguły + temat JEV, podpis „reguły i JEV”', async () => {
+    const { f, wywolania } = fetchZ({
+      odpowiedzi: zRozkladem('halas_ldwn', 0.3, {}, { ceny: 0.9 }),
+      powod: null,
+    })
+    const o = await zapytajOAdresWiele('Jak głośno?', WSKAZNIKI, 2, { fetch: f })
+    assert.equal(wywolania.length, 1)
+    assert.deepEqual(
+      o.map((x) => (x.rodzaj === 'warstwa' ? `${x.warstwa}/${x.zrodloOdpowiedzi}` : x.rodzaj)),
+      ['halas_ldwn/reguly-i-jev', 'cena_m2_mediana/reguly-i-jev'],
+    )
+  })
+
+  it('wybór spoza listy (odpowiedź null) → też reguły + tematy', async () => {
+    const { f } = fetchZ({
+      odpowiedzi: { [ID_PYTANIA]: null, temat_komunikacja: { typ: 'noul', noul: 0.8 } },
+      powod: null,
+    })
+    const r = await wybierzWarstwy('Jak tu z dojazdem?', pelna, { fetch: f })
+    assert.equal(r.zrodlo, 'zapas')
+    assert.deepEqual(r.wynik.warstwy, ['przystanek_odleglosc'])
+  })
+
+  it('+ #153: drugie wywołanie po drugi obiekt z tematu działa też tutaj', async () => {
+    const pytanie = 'Czy blisko jest przedszkole, a dla młodszego jakaś opieka na cały dzień?'
+    const { f, wywolania } = fetchKolejno(
+      {
+        odpowiedzi: zRozkladem('przedszkole_odleglosc', 0.4, undefined, { szkoly: 0.95 }),
+        powod: null,
+      },
+      {
+        odpowiedzi: { [ID_DRUGIEJ]: { typ: 'choice', wybor: 'zlobek_odleglosc', pewnosc: 0.88 } },
+        powod: null,
+      },
+    )
+    const r = await wybierzWarstwy(pytanie, pelna, { fetch: f })
+    assert.equal(r.zrodlo, 'zapas')
+    assert.deepEqual(r.wynik.warstwy, ['przedszkole_odleglosc', 'zlobek_odleglosc'])
+    assert.equal(wywolania.length, 2)
+  })
+
+  it('brak JEV (błąd pośrednika) → same reguły, jak dotąd', async () => {
+    const { f } = fetchZ({ odpowiedzi: null, powod: 'blad' })
+    const r = await wybierzWarstwy('Jak głośno?', pelna, { fetch: f })
+    assert.deepEqual(r.wynik, regulaWiele('Jak głośno?', pelna))
   })
 })

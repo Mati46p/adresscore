@@ -1131,6 +1131,70 @@ Jak to czytać:
 najpierw 10, potem pozostałe 20. Próg, zapas i kolejność liczyłem bez sieci. Zbiorów
 kontrolnych nie wołałem, a z nich czytałem tylko liczby zbiorcze. Zbioru nr 4 nie otwierałem.
 
+## Dwie propozycje i tematy przy słabym wyborze (#156)
+
+Pomiar z 2026-10-03. Dwie zmiany w „zapytaj o adres”, obie bez zmiany zapytania do JEV:
+
+- **R4 – dwie propozycje.** Pewność wyboru > 0,9 → odpowiedź od razu, jak dotąd. Pewność
+  0,5–0,9 i rozkład z JEV (`prawdopodobienstwa`, #154) → karta pyta „Chodziło Ci o…?” i pokazuje
+  dwa przyciski z dwiema najlepszymi warstwami (bez `nie_wiem` i bez id spoza listy). Klik
+  pokazuje odpowiedź tej warstwy z danych, ze źródłem i rozdzielczością. Pod 0,5 – reguły, jak
+  dotąd. Bez rozkładu – jak dotąd.
+- **Próg 0,05 dla propozycji (`MIN_PROPOZYCJI`).** Warstwa musi mieć p ≥ 0,05; gdy takich jest
+  mniej niż dwie, karta odpowiada jak dotąd. Na żywo druga warstwa „z sensem” miała 0,06–0,29,
+  a pozostałe 0,00–0,02 (np. „dług gminy” obok hałasu). Bez tego progu połowa propozycji byłaby
+  przypadkowa.
+- **R5 – tematy nie przepadają.** Gdy JEV odpowiedział, ale wyboru głównego nie bierzemy
+  (pewność < 0,5, brak pewności, wybór spoza listy), warstwy reguł łączą się z tematami JEV
+  o noul ≥ 0,6: do 3, bez duplikatów, najwyżej jedna na temat, plus druga warstwa z tematu
+  (#147, #153). Podpis: „pytanie rozpoznała reguła słów kluczowych, tematy dołożył JEV”.
+
+`warstwy` w wyniku (to, co liczy `pomiar.ts`) przy propozycjach są takie same jak bez nich,
+więc R4 nie zmienia liczb pomiaru. R5 je zmienia.
+
+**Pasma pewności – bez sieci, z zapisanych przebiegów** (pewność wyboru zapisana przy każdym
+pytaniu; teksty zbiorów kontrolnych nieczytane, tylko liczby):
+
+| Zbiór | > 0,9 | 0,5–0,9 (w tym `nie_wiem`) | < 0,5 (w tym `nie_wiem`) |
+|---|---|---|---|
+| Stary B (#147, 28) | 12 | 12 (1) | 4 (1) |
+| Kontrolny nr 1 (25) | 12 | 12 (3) | 1 (0) |
+| Kontrolny nr 2 (25) | 14 | 9 (1) | 2 (2) |
+| Kontrolny nr 3 (25) | 11 | 8 (0) | 6 (3) |
+| **Razem (103)** | **49 (48%)** | **41 (40%)** | **13 (13%)** |
+
+Zapisane przebiegi nie mają rozkładu, więc nie wiadomo, w ilu z 41 pytań w paśmie 0,5–0,9
+pojawiłyby się propozycje.
+
+**Na żywo, 19 wywołań** (stary B i moje zdania; jedno z nich odrzucone, 422, bo wysłałem
+zapytanie bez tłumaczenia pośrednika): 18 odpowiedzi, w paśmie 0,5–0,9 jest 11 z nich.
+
+- Propozycje pojawiły się w **6 z 11**: B10 (PM2,5 | benzo(a)piren), B11 (przychodnia
+  z udogodnieniem | przychodnia), B22 (hałas | przystanek), B27 (PM2,5 | przewietrzanie),
+  B28 (infrastruktura rowerowa | główna trasa rowerowa), B23 (zieleń 100 m | udział zieleni).
+- **We wszystkich 6 warstwa z wzorca jest wśród dwóch propozycji.** W B10 JEV wybrał PM2,5,
+  a wzorzec to benzo(a)piren, więc trafna jest druga propozycja. W B22 wzorzec ma obie warstwy.
+  B23 i B28 to dwie miary jednej rzeczy, więc wybór niewiele daje, ale też nie szkodzi.
+- 5 bez propozycji. W B03, B13 i B19 druga warstwa ma ≤ 0,02. W B04 („nie_wiem” 0,70) próg
+  przechodzi tylko cena (0,29), więc zostaje „nie wiem”, choć wzorzec to cena. „Gdzie zjeść
+  na mieście” (spoza zakresu) też zostaje przy „nie wiem”.
+
+**Pod 0,5 – czy propozycje by pomogły?** Bez sieci, 13 pytań z zapisanych przebiegów:
+pierwszy wybór JEV jest trafny w 6, a pierwsza warstwa reguł w 10. W 3 pytaniach reguły nic
+nie znajdują; tam JEV trafia w 1 (K3-B02), a R5 i tak odzyskuje 2 z 3 przez tematy. Na żywo:
+B16 (0,37, przystanek | kursy; reguły trafiają) i „Jak tu z dojazdem?” (0,34, przystanek |
+czas do Rynku; R5 dokłada przystanek z tematu komunikacji 0,70). **Dowód jest słaby, więc
+próg 0,5 zostaje.**
+
+**R5 – bez sieci, na tych samych 13 pytaniach pod 0,5:** wynik zmienia się w 5. Pokrycie
+pytań z tematami rośnie na zbiorze nr 2 z 50% do 100%, a na zbiorze nr 3 z 58% do 75%. Na
+starym B i zbiorze nr 1 zostaje 100%. Warstw trafnych do pokazanych było 12/12, a jest 16/17.
+Jedyny fałszywy dodatek to temat zdrowia (0,67) w K2-B09.
+
+Koszt: zero dodatkowych wywołań. Propozycje i odpowiedzi do nich liczą się z odpowiedzi na
+pierwsze wywołanie, a klik niczego nie wysyła. Model w wywołaniach na żywo to `jev-latest`
+sprzed #154; rozkład wyglądał tak samo, jak opisuje kontrakt #154.
+
 ## Na slajd
 
 Liczby pochodzą ze **zbioru kontrolnego nr 3** (#153). Napisał go na ślepo osobny agent AI, bez
