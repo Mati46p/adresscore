@@ -15,6 +15,7 @@ okręgu, w metrach. To odległość **w linii prostej**, nie czas ani długość
 z kursem w rozkładzie nie gwarantuje faktycznego przyjazdu pojazdu. Brak
 punktu w promieniu 16 km daje `null`. `wheelchair_boarding=0` i puste pole oznaczają brak
 informacji o dostępności, więc nie wpływają na wynik.
+Etykieta każdego adresu podaje nazwę i kod najbliższego stanowiska oraz zaokrągloną odległość.
 
 `kursy_szczyt_h` liczy planowe odjazdy 07:00–09:00 w najbliższą środę od dnia ETL, dzielone
 przez dwie godziny. Wybiera to samo, najbliższe stanowisko co wskaźnik odległości. Wspólny
@@ -24,6 +25,7 @@ wynosi mierzone `0`, a gdy adres nie ma punktu GTFS w 16 km, wynosi `null`. To c
 jednego stanowiska, nie całego zespołu przystankowego. Data wzorcowa jest podana w opisie
 wskaźnika. Czas do Rynku wymaga modelu połączeń, dojścia, oczekiwania i przesiadek; sama
 odległość ani liczba odjazdów nie daje wiarygodnego czasu podróży.
+Etykieta pokazuje to samo stanowisko i planowe kursy/h; `0` oznacza brak odjazdów w tym oknie.
 
 ZTP [określa GTFS jako dane otwarte](https://ztp.krakow.pl/wszystkie-aktualnosci/dane-otwarte/sprawdz-przystanki-infrastrukture-rowerowa-i-parkingi-pr-czyli-otwarte-dane.html).
 Przy samych archiwach nie ma odrębnej licencji. Stosujemy
@@ -37,3 +39,6 @@ trzeba zapewnić widoczną informację o przetworzeniu i odpowiedzialności mias
 ETL zatrzymuje się przy uciętym lub uszkodzonym ZIP i ponawia pobranie. Zaobserwowano, że
 archiwum A potrafi zakończyć transfer niekompletnym plikiem mimo odpowiedzi HTTP 200. Cache
 zachowuje SHA-256 i rozmiar, a odczyt dodatkowo sprawdza katalog ZIP.
+Ponieważ kontrakt `etykiety[i]` powtarza nazwę stanowiska przy każdym adresie, każdy wynikowy
+JSON ma około 10 MB zamiast zalecanych 2 MB. Po kompresji HTTP gzip jest to około 1–1,8 MB.
+Słownik etykiet z indeksami adresów wymagałby zmiany kontraktu przez integratora.

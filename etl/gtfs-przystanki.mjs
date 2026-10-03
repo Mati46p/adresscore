@@ -363,6 +363,10 @@ export async function generuj() {
     const klucz = p.kod || p.id
     odjazdyPoKodzie.set(klucz, (odjazdyPoKodzie.get(klucz) ?? 0) + p.odjazdySzczyt)
   }
+  const kursy = wyniki.map((w) =>
+    w ? (odjazdyPoKodzie.get(w.punkt.kod || w.punkt.id) ?? 0) / 2 : null,
+  )
+  const stanowisko = (w) => `${w.punkt.nazwa} (${w.punkt.kod || w.punkt.id})`
   const zrodla = feedy.map((f, i) => ({
     nazwa: `ZTP Kraków GTFS ${GRUPY[i]} (wydawca w feed_info: ${f.informacje.feed_publisher_name || 'nie podano'}; wersja ${f.informacje.feed_version || 'bez numeru'})`,
     url: f.url,
@@ -385,6 +389,7 @@ export async function generuj() {
       zrodla,
     },
     wyniki.map((w) => w?.metry ?? null),
+    wyniki.map((w) => (w ? `${stanowisko(w)}, ${Math.round(w.metry)} m w linii prostej` : null)),
   )
   zapiszWskaznik(
     {
@@ -399,10 +404,8 @@ export async function generuj() {
       zadanie: 5,
       zrodla,
     },
-    wyniki.map((w) => {
-      if (!w) return null
-      return (odjazdyPoKodzie.get(w.punkt.kod || w.punkt.id) ?? 0) / 2
-    }),
+    kursy,
+    wyniki.map((w, i) => (w ? `${stanowisko(w)}, ${kursy[i]} kursów/h 07:00–09:00` : null)),
   )
 }
 
