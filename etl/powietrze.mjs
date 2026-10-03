@@ -146,6 +146,21 @@ for (const [wskaznik, idWarstwy] of Object.entries(warstwy)) {
           dataDanych: rok,
           pobrano: dzis(),
         },
+        // Uzupełnienie (decyzja #63): wartość zostaje z GIOŚ, odczyt czujników to osobna
+        // warstwa kontekstowa powietrze_inpost_indeks (#80) bez wpływu na wynik.
+        ...(wskaznik.startsWith('PM')
+          ? [
+              {
+                nazwa:
+                  'Uzupełnienie: indeks z czujników paczkomatów InPost (migawka, źródło nieoficjalne) – warstwa „Powietrze – czujnik w paczkomacie”',
+                url: 'https://api-shipx-pl.easypack24.net/v1/points',
+                licencja:
+                  'Dane operatora prywatnego bez licencji otwartej; nie zmieniają wartości GIOŚ ani wyniku',
+                dataDanych: dzis(),
+                pobrano: dzis(),
+              },
+            ]
+          : []),
       ],
     },
     wartosci,

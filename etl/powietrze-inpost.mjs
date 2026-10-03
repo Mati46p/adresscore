@@ -116,23 +116,7 @@ async function main() {
 
   const opisZrodla =
     'Publiczne API punktów InPost (ShipX Points), pole air_index_level – indeks z czujnika wbudowanego w część paczkomatów. Dane prywatnego operatora, nie rejestr publiczny; InPost nie publikuje metodyki ani kalibracji czujników.'
-  writeFileSync(
-    join(DANE, 'inpost_powietrze.geojson'),
-    JSON.stringify({
-      type: 'FeatureCollection',
-      metadane: {
-        nazwa: 'Indeks powietrza z czujników paczkomatów InPost – Kraków i obwarzanek',
-        znaczenie: `${opisZrodla} Migawka z chwili pobrania, nie średnia roczna.`,
-        zrodlo: API,
-        pobrano: dzis(),
-        przetworzono:
-          'Województwo małopolskie, przycięte do prostokąta adresów projektu (+ ok. 2 km); tylko punkty z polem air_index_level.',
-        liczbaCzujnikow: features.length,
-      },
-      features,
-    }),
-  )
-
+  // Pozycji paczkomatów nie publikujemy – do repo trafiają wyłącznie wartości przy adresach.
   const indeks = new KDBush(features.length)
   for (const f of features) indeks.add(...f.geometry.coordinates)
   indeks.finish()
@@ -160,7 +144,7 @@ async function main() {
         },
       ],
     },
-    // Bez etykiet: plik musiałby przekroczyć 2 MB; nazwę paczkomatu niesie inpost_powietrze.geojson.
+    // Bez etykiet: plik musiałby przekroczyć 2 MB; pozycji paczkomatów celowo nie publikujemy.
     najblizsze.map((w) => w?.punkt.properties.wartosc ?? null),
   )
   console.log(
