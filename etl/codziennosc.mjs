@@ -4,7 +4,7 @@
 //   – publicznej szkoły podstawowej i przedszkola (SIO/RSPO, MEN, CC BY 4.0),
 //   – żłobka lub klubu dziecięcego (Rejestr Żłobków i Klubów Dziecięcych, MRPiPS, CC0 1.0),
 //   – gabinetu lekarza POZ (RPWDL, Centrum e-Zdrowia, CC BY 4.0),
-// oraz liczba rodzajów usług w promieniu 1200 m (≈ 15 min pieszo).
+// oraz liczba rodzajów usług w promieniu 1200 m w linii prostej.
 // Szkoły, apteki i POZ nie mają współrzędnych w rejestrach – geokodujemy adresy usługą GUGiK UUG.
 // Uruchom: node etl/codziennosc.mjs. Surowe dane trafiają do etl/.cache, drugi bieg ich nie pobiera.
 // Wynik: public/dane/wskazniki/{sklep,apteka,szkola_podst,przedszkole,zlobek,przychodnia}_odleglosc.json
@@ -37,7 +37,7 @@ const zrodlaDanych = ({ stanOsm, stanRpwdl }) => ({
   osm: zrodlo(
     'OpenStreetMap, ekstrakt Geofabrik – małopolskie (sklepy, gastronomia, banki, poczta, biblioteki)',
     'https://download.geofabrik.de/europe/poland/malopolskie.html',
-    'ODbL 1.0 – © współtwórcy OpenStreetMap',
+    'Open Database License (ODbL) 1.0, https://www.openstreetmap.org/copyright; © OpenStreetMap contributors',
     stanOsm ?? dzis(),
   ),
   // Stan SIO wynika z nazwy zasobu na dane.gov.pl, stan żłobków z daty zasobu (2026-09-30).
@@ -243,8 +243,8 @@ function zapiszUslugi15min(adresy, warstwy, osm, Z) {
     {
       id: 'uslugi_15min',
       kategoria: 'codziennosc',
-      nazwa: 'Usługi w 15 minut pieszo',
-      opis: `Liczba rodzajów usług (z ${rodzaje.length}) w promieniu 1200 m w linii prostej, czyli około 15 minut spaceru: ${rodzaje.map((r) => r.nazwa).join(', ')}. Każdy rodzaj liczy się raz, bez względu na liczbę punktów.`,
+      nazwa: 'Rodzaje usług w promieniu 1,2 km',
+      opis: `Liczba rodzajów usług (z ${rodzaje.length}) w promieniu 1200 m w linii prostej: ${rodzaje.map((r) => r.nazwa).join(', ')}. Każdy rodzaj liczy się raz, bez względu na liczbę punktów. Rzeczywista droga piesza i czas dojścia mogą być dłuższe.`,
       jednostka: 'rodzajów',
       kierunek: 'wiecej-lepiej',
       rozdzielczosc: 'adres',

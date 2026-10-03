@@ -176,10 +176,11 @@ export async function przychodniePoz() {
             k.Ulica as ulica, k.Budynek as nr,
             k."Kod pocztowy" as kod
      from ${csv('komorki.csv')} k
-     left join (select distinct "ID ZOZ" as id, Nazwa from ${csv('zaklady.csv')}) z on z.id = k."ID ZOZ"
+     left join (select "ID ZOZ" as id, min(Nazwa) as Nazwa from ${csv('zaklady.csv')} group by "ID ZOZ") z on z.id = k."ID ZOZ"
      where k.kodResortVIII = '0010' and k.Teryt like '12%'
        and k."Data zakończenia działalności komórki" is null
-       and k."Budynek" is not null`,
+       and k."Budynek" is not null
+     order by miejscowosc, ulica, nr, nazwa`,
   )
   return { ...(await zGeokodowaniem(w)), stan }
 }
