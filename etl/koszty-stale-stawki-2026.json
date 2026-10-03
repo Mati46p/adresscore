@@ -1,0 +1,193 @@
+{
+  "opis": "Stawki podatku od nieruchomości dla budynków mieszkalnych (zł od 1 m² powierzchni użytkowej) obowiązujące w 2026 r. w 14 gminach Krakowa i obwarzanka. Odczyt z uchwał rad gmin w Dzienniku Urzędowym Województwa Małopolskiego (ELI, edziennik.malopolska.uw.gov.pl). Przy każdej gminie: uchwała, daty i cytat. Porównanie z tekstem uchwał: node --use-system-ca etl/koszty-stale.mjs --sprawdz-eli",
+  "rok": 2026,
+  "sprawdzono": "2026-10-03",
+  "maksimum": {
+    "zlM2": 1.25,
+    "zrodlo": "Obwieszczenie Ministra Finansów i Gospodarki z 1 sierpnia 2025 r. w sprawie górnych granic stawek kwotowych podatków i opłat lokalnych na rok 2026 (M.P. 2025 poz. 726)"
+  },
+  "gminy": [
+    {
+      "teryt": "1261011",
+      "gmina": "Kraków",
+      "stawkaZlM2": 1.25,
+      "akt": {
+        "eli": "POL_WOJ_MP/2025/6495",
+        "tytul": "Uchwała Nr XXXIX/810/25 Rady Miasta Krakowa z dnia 29 października 2025 r. w sprawie określenia wysokości stawek podatku od nieruchomości.",
+        "dataUchwalenia": "2025-10-29",
+        "ogloszono": "2025-11-13",
+        "obowiazujeOd": "2026-01-01",
+        "cytat": "mieszkalnych – 1,25 zł od 1 m2 powierzchni użytkowej"
+      }
+    },
+    {
+      "teryt": "1206052",
+      "gmina": "Kocmyrzów-Luborzyca",
+      "stawkaZlM2": 0.84,
+      "akt": {
+        "eli": "POL_WOJ_MP/2025/5652",
+        "tytul": "Uchwała Nr XV/155/2025 Rady Gminy Kocmyrzów-Luborzyca z dnia 29 września 2025 r. w sprawie określenia wysokości stawek podatku od nieruchomości.",
+        "dataUchwalenia": "2025-09-29",
+        "ogloszono": "2025-10-06",
+        "obowiazujeOd": "2026-01-01",
+        "cytat": "mieszkalnych - 0,84 zł od 1 m2 powierzchni użytkowej"
+      }
+    },
+    {
+      "teryt": "1206082",
+      "gmina": "Michałowice",
+      "stawkaZlM2": 1.25,
+      "akt": {
+        "eli": "POL_WOJ_MP/2025/6255",
+        "tytul": "Uchwała Nr XXI/160/2025 Rady Gminy Michałowice z dnia 27 października 2025 r. w sprawie określenia wysokości stawek podatku od nieruchomości",
+        "dataUchwalenia": "2025-10-27",
+        "ogloszono": "2025-11-04",
+        "obowiazujeOd": "2026-01-01",
+        "cytat": "mieszkalnych – 1,25 zł od 1 m² powierzchni użytkowej"
+      }
+    },
+    {
+      "teryt": "1206072",
+      "gmina": "Liszki",
+      "stawkaZlM2": 1.12,
+      "akt": {
+        "eli": "POL_WOJ_MP/2024/7050",
+        "tytul": "Uchwała Nr VII/83/2024 Rady Gminy Liszki z dnia 30 października 2024 r. w sprawie określenia stawek podatku od nieruchomości",
+        "dataUchwalenia": "2024-10-30",
+        "ogloszono": "2024-11-14",
+        "obowiazujeOd": "2025-01-01",
+        "cytat": "mieszkalnych −od 1 m2 powierzchni użytkowej, 1,12 zł"
+      }
+    },
+    {
+      "teryt": "1206162",
+      "gmina": "Zabierzów",
+      "stawkaZlM2": 0.82,
+      "akt": {
+        "eli": "POL_WOJ_MP/2024/8293",
+        "tytul": "Uchwała Nr IX/60/2024 Rady Gminy Zabierzów z dnia 29 listopada 2024 r. w sprawie określenia wysokości stawek podatku od nieruchomości",
+        "dataUchwalenia": "2024-11-29",
+        "ogloszono": "2024-12-13",
+        "obowiazujeOd": "2025-01-01",
+        "cytat": "mieszkalnych – 0,82 zł od 1m² powierzchni użytkowej"
+      }
+    },
+    {
+      "teryt": "1206152",
+      "gmina": "Wielka Wieś",
+      "stawkaZlM2": 1.14,
+      "akt": {
+        "eli": "POL_WOJ_MP/2025/6228",
+        "tytul": "Uchwała Nr XX/195/2025 Rady Gminy Wielka Wieś z dnia 23 października 2025 r. w sprawie określenia wysokości stawek podatku od nieruchomości",
+        "dataUchwalenia": "2025-10-23",
+        "ogloszono": "2025-11-03",
+        "obowiazujeOd": "2026-01-01",
+        "cytat": "mieszkalnych - 1,14 zł od 1 m2 powierzchni użytkowej"
+      }
+    },
+    {
+      "teryt": "1219053",
+      "gmina": "Wieliczka",
+      "stawkaZlM2": 1.08,
+      "akt": {
+        "eli": "POL_WOJ_MP/2024/7222",
+        "tytul": "Uchwała Nr X/106/2024 Rady Miejskiej w Wieliczce z dnia 13 listopada 2024 r. w sprawie wysokości stawek podatku od nieruchomości",
+        "dataUchwalenia": "2024-11-13",
+        "ogloszono": "2024-11-22",
+        "obowiazujeOd": "2025-01-01",
+        "cytat": "mieszkalnych - 1,08 zł od 1 m2 powierzchni użytkowej"
+      }
+    },
+    {
+      "teryt": "1219043",
+      "gmina": "Niepołomice",
+      "stawkaZlM2": 0.89,
+      "akt": {
+        "eli": "POL_WOJ_MP/2025/6954",
+        "tytul": "Uchwała Nr XXII/243/25 Rady Miejskiej w Niepołomicach z dnia 27 listopada 2025 r. w sprawie określenia wysokości stawek podatku od nieruchomości.",
+        "dataUchwalenia": "2025-11-27",
+        "ogloszono": "2025-11-28",
+        "obowiazujeOd": "2026-01-01",
+        "cytat": "mieszkalnych - 0,89 zł od 1 m² powierzchni użytkowej"
+      }
+    },
+    {
+      "teryt": "1206113",
+      "gmina": "Skawina",
+      "stawkaZlM2": 1.13,
+      "akt": {
+        "eli": "POL_WOJ_MP/2025/6214",
+        "tytul": "Uchwała Nr XIX/230/25 Rady Miejskiej w Skawinie z dnia 29 października 2025 r. w sprawie określenia wysokości stawek podatku od nieruchomości",
+        "dataUchwalenia": "2025-10-29",
+        "ogloszono": "2025-11-03",
+        "obowiazujeOd": "2026-01-01",
+        "cytat": "mieszkalnych – 1,13 zł od 1 m² powierzchni użytkowej"
+      }
+    },
+    {
+      "teryt": "1206172",
+      "gmina": "Zielonki",
+      "stawkaZlM2": 1.25,
+      "akt": {
+        "eli": "POL_WOJ_MP/2025/6405",
+        "tytul": "Uchwała Nr XVIII/60/2025 Rady Gminy Zielonki z dnia 30 października 2025 r. w sprawie wysokości stawek podatku od nieruchomości",
+        "dataUchwalenia": "2025-10-30",
+        "ogloszono": "2025-11-06",
+        "obowiazujeOd": "2026-01-01",
+        "cytat": "mieszkalnych - 1,25 zł od 1 m2 powierzchni użytkowej"
+      }
+    },
+    {
+      "teryt": "1206143",
+      "gmina": "Świątniki Górne",
+      "stawkaZlM2": 0.77,
+      "akt": {
+        "eli": "POL_WOJ_MP/2025/6784",
+        "tytul": "Uchwała Nr XXIII/160/2025 Rady Miejskiej w Świątnikach Górnych z dnia 17 listopada 2025 r. w sprawie określenia wysokości stawek podatku od nieruchomości",
+        "dataUchwalenia": "2025-11-17",
+        "ogloszono": "2025-11-25",
+        "obowiazujeOd": "2026-01-01",
+        "cytat": "mieszkalnych – 0,77 zł od 1 m2 powierzchni użytkowej"
+      }
+    },
+    {
+      "teryt": "1214012",
+      "gmina": "Koniusza",
+      "stawkaZlM2": 0.72,
+      "akt": {
+        "eli": "POL_WOJ_MP/2024/7690",
+        "tytul": "Uchwała Nr VIII/48/2024 Rady Gminy Koniusza z dnia 28 listopada 2024 r. w sprawie stawek podatku od nieruchomości",
+        "dataUchwalenia": "2024-11-28",
+        "ogloszono": "2024-12-04",
+        "obowiazujeOd": "2025-01-01",
+        "cytat": "mieszkalnych - 0,72 zł od 1 m2 powierzchni użytkowej"
+      }
+    },
+    {
+      "teryt": "1206092",
+      "gmina": "Mogilany",
+      "stawkaZlM2": 0.95,
+      "akt": {
+        "eli": "POL_WOJ_MP/2024/8052",
+        "tytul": "Uchwała Nr IX / 68  /2024 Rady Gminy Mogilany z dnia 27 listopada 2024 r. w sprawie określenia wysokości stawek podatku od nieruchomości",
+        "dataUchwalenia": "2024-11-27",
+        "ogloszono": "2024-12-09",
+        "obowiazujeOd": "2025-01-01",
+        "cytat": "mieszkalnych – 0,95 zł od 1m² powierzchni użytkowej"
+      }
+    },
+    {
+      "teryt": "1206022",
+      "gmina": "Igołomia-Wawrzeńczyce",
+      "stawkaZlM2": 0.8,
+      "akt": {
+        "eli": "POL_WOJ_MP/2023/8287",
+        "tytul": "Uchwała Nr XLVI/329/2023 Rady Gminy Igołomia-Wawrzeńczyce z dnia 30 listopada 2023 r. w sprawie ustalenia stawek podatku od nieruchomości",
+        "dataUchwalenia": "2023-11-30",
+        "ogloszono": "2023-12-07",
+        "obowiazujeOd": "2024-01-01",
+        "cytat": "mieszkalnych – 0,80zł od 1m2 powierzchni użytkowej"
+      }
+    }
+  ]
+}
