@@ -460,14 +460,32 @@ export function wynikiWszystkich(
   kierunki: Kierunki | undefined,
   liczbaAdresow: number,
 ): Float32Array {
+  const wynik = new Float32Array(liczbaAdresow).fill(Number.NaN)
+  const { suma, sumaWag } = sumyWyniku(wskazniki, wagi, kierunki, liczbaAdresow)
+  for (let i = 0; i < liczbaAdresow; i++) {
+    const sw = sumaWag[i] as number
+    if (sw > 0) wynik[i] = (suma[i] as number) / sw
+  }
+  return wynik
+}
+
+/**
+ * Licznik i mianownik wyniku: wynik = suma / sumaWag (sumaWag 0 = brak danych).
+ * Osobno, bo symulator (#96) zmienia jedną warstwę pod adresem i przelicza wynik
+ * dokładnie z tych sum: suma' = suma − waga · stara ocena + waga · nowa ocena.
+ */
+export function sumyWyniku(
+  wskazniki: readonly WskaznikPrzygotowany[],
+  wagi: Wagi,
+  kierunki: Kierunki | undefined,
+  liczbaAdresow: number,
+): { suma: Float64Array; sumaWag: Float64Array } {
   const warstwy: { oceny: Float32Array; waga: number }[] = []
   for (const w of wskazniki) {
     const kierunek = kierunekEfektywny(w.meta, kierunki)
     const waga = wagaUzytkownika(wagi, w.meta.id)
     if (kierunek && waga > 0) warstwy.push({ oceny: ocenyWskaznika(w, kierunek), waga })
   }
-  const wynik = new Float32Array(liczbaAdresow).fill(Number.NaN)
-  if (warstwy.length === 0) return wynik
   const suma = new Float64Array(liczbaAdresow)
   const sumaWag = new Float64Array(liczbaAdresow)
   for (const { oceny, waga } of warstwy) {
@@ -481,11 +499,7 @@ export function wynikiWszystkich(
       }
     }
   }
-  for (let i = 0; i < liczbaAdresow; i++) {
-    const sw = sumaWag[i] as number
-    if (sw > 0) wynik[i] = (suma[i] as number) / sw
-  }
-  return wynik
+  return { suma, sumaWag }
 }
 
 /** Oceny jednej warstwy dla mapy (aktywna warstwa ≠ „wynik"). */
