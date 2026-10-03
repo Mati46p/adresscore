@@ -11,6 +11,7 @@ import {
   sekcja,
 } from '../src/wynik/kompakt.ts'
 import { zbudujKompakt } from './kompakt.mjs'
+import { maStalyNaglowek } from './lib/gzip.mjs'
 
 const komorki = [latLngToCell(50.061, 19.937, 10), latLngToCell(50.062, 19.939, 10)]
 const adresy = {
@@ -101,6 +102,14 @@ test('kompakt zachowuje heksy i wyłącza obszar, gdzie warstwy z danymi niosą 
   assert.ok(Number.isFinite(wynik.wartosc[ids.indexOf(komorki[1])]))
   // Równe wagi: połowa wagi ma dane (np. warstwa tylko-Kraków poza Krakowem) → heks zostaje (#148).
   assert.ok(Number.isFinite(policz(1).wartosc[ids.indexOf(komorki[0])]))
+})
+
+test('każdy plik gzip kompaktu ma nagłówek niezależny od systemu (#179)', () => {
+  const { pliki } = zbudujKompakt(adresy, warstwy)
+  const gzipy = [...pliki].filter(([sciezka]) => /\.(bin|json\.gz)$/.test(sciezka))
+  // heksy, szukaj, id, 2 warstwy, 2 filtry i kafle: żaden nie może pominąć wspólnej funkcji
+  assert.ok(gzipy.length >= 8, `plików gzip: ${gzipy.length}`)
+  for (const [sciezka, bufor] of gzipy) assert.ok(maStalyNaglowek(bufor), sciezka)
 })
 
 const katalog = new URL('../public/dane/kompakt/', import.meta.url)

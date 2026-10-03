@@ -24,13 +24,17 @@
 // Format .bin: gzip( 'AKS1' | u32 LE długość nagłówka | nagłówek JSON | sekcje po 8 bajtów ).
 // Sekcje wielobajtowe mają przetasowane bajty (płaszczyzny), bo gzip ściska je lepiej.
 // Dekoder: src/wynik/kompakt.ts.
+//
+// Każdy gzip ma nagłówek niezależny od systemu (etl/lib/gzip.mjs): nazwy plików niosą skrót ich
+// bajtów, więc bez tego ten sam kompakt policzony na macOS, Linuksie i Windowsie dostawał inne
+// nazwy, a `--sprawdz` zwracał 1 na czystym main (#179). Nie wołaj tu `gzipSync` wprost.
 import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { gzipSync } from 'node:zlib'
 import { cellToParent } from 'h3-js'
 import { ocenyWskaznika, przygotujWskaznik } from '../src/wynik/silnik.ts'
+import { gzipDeterministyczny } from './lib/gzip.mjs'
 
 export const FORMAT = 2
 /** Rozdzielczość kafla adresów: r7 to ok. 450 adresów (najwyżej ~2700) w Krakowie. */
@@ -84,7 +88,7 @@ export function zapakuj(naglowek, sekcje) {
     czesci.push(Buffer.from(bajty.buffer, bajty.byteOffset, bajty.byteLength))
     czesci.push(Buffer.alloc(wyrownaj(bajty.byteLength) - bajty.byteLength))
   }
-  return gzipSync(Buffer.concat(czesci), { level: 9 })
+  return gzipDeterministyczny(Buffer.concat(czesci))
 }
 
 // ── Kolumny ──────────────────────────────────────────────────────────────────────────────
@@ -418,7 +422,7 @@ export function zbudujKompakt(plikAdresow, plikiWskaznikow) {
     }
     const plik = dodaj(
       `kafle/${klucz}`,
-      gzipSync(Buffer.from(JSON.stringify(tresc)), { level: 9 }),
+      gzipDeterministyczny(Buffer.from(JSON.stringify(tresc))),
       'json.gz',
     )
     kafle.push({ h3: klucz, od, n: doo - od, plik: plik.plik })
@@ -526,7 +530,7 @@ function main() {
   writeFileSync(sciezkaIndeksu, indeksJson)
 
   const kb = (b) => `${(b / 1024).toFixed(0)} KB`
-  const gz = (b) => gzipSync(b, { level: 9 }).length
+  const gz = (b) => gzipDeterministyczny(b).length
   const kafleGz = indeks.kafle.map((x) => pliki.get(x.plik).length)
   const warstwy = Object.values(indeks.wskazniki).map((w) => w.heksy.bajty)
   const sumaW = warstwy.reduce((a, b) => a + b, 0)

@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs'
-import { gunzipSync, gzipSync } from 'node:zlib'
+import { gunzipSync } from 'node:zlib'
+import { gzipDeterministyczny, maStalyNaglowek } from '../etl/lib/gzip.mjs'
 import { hashAdresu, kluczUlicy, slugAdresu, slugUlicy } from '../src/wynik/slug.ts'
 
 const DOMENA = 'https://adresscore.pl'
@@ -43,10 +44,14 @@ for (let i = 0; i < c.id.length; i++) {
 const meta = { wersjaAdresow: zrodlo.wersja, adresy, ulice: [...ulice.values()] }
 const tresc = JSON.stringify(meta)
 const plikIndeksu = new URL('../api/_seo-index.json.gz', import.meta.url)
-// Bajty gzipa zależą od wersji zlib i systemu, więc przy tej samej treści nie przepisujemy
-// pliku – inaczej każdy build brudzi drzewo i `pnpm zadanie scal` odmawia.
-const poprzedni = existsSync(plikIndeksu) ? gunzipSync(readFileSync(plikIndeksu)).toString() : null
-if (poprzedni !== tresc) writeFileSync(plikIndeksu, gzipSync(tresc, { level: 9 }))
+// Nagłówek gzip jest stały (etl/lib/gzip.mjs), więc system nie zmienia bajtów (#179). Strumień
+// deflate zależy jednak od wersji zlib, dlatego przy tej samej treści i tym samym nagłówku nie
+// przepisujemy pliku – inaczej każdy build brudzi drzewo i `pnpm zadanie scal` odmawia. Plik ze
+// starym nagłówkiem (bajt systemu z maszyny, która go zrobiła) przepisujemy raz, mimo tej treści.
+const poprzedni = existsSync(plikIndeksu) ? readFileSync(plikIndeksu) : null
+const aktualny =
+  poprzedni !== null && maStalyNaglowek(poprzedni) && gunzipSync(poprzedni).toString() === tresc
+if (!aktualny) writeFileSync(plikIndeksu, gzipDeterministyczny(tresc))
 
 const url = (sciezka) => `<url><loc>${DOMENA}${sciezka}</loc></url>`
 const xml = (tresc) =>
