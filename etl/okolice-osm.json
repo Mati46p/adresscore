@@ -1,0 +1,2991 @@
+{
+  "opis": "Migawka miejsc OSM (place=neighbourhood, place=quarter z nazwą) wokół Krakowa, z której etl/okolice.mjs liczy słownik potocznych nazw. Generuje ją `node etl/okolice.mjs --pobierz`, nie edytuj ręcznie.",
+  "zrodlo": "OpenStreetMap przez Overpass API",
+  "url": "https://overpass-api.de/api/interpreter",
+  "licencja": "ODbL 1.0, © współtwórcy OpenStreetMap",
+  "znacznik": "2026-10-03T21:58:48Z",
+  "pobrano": "2026-10-03",
+  "zapytanie": "[out:json][timeout:120];\n(\n  node[\"place\"~\"^(neighbourhood|quarter)$\"][\"name\"](49.95,19.78,50.14,20.23);\n  way[\"place\"~\"^(neighbourhood|quarter)$\"][\"name\"](49.95,19.78,50.14,20.23);\n  relation[\"place\"~\"^(neighbourhood|quarter)$\"][\"name\"](49.95,19.78,50.14,20.23);\n);\nout geom;",
+  "miejsca": [
+    {
+      "osm": "node/31885518",
+      "nazwa": "Wróżenice",
+      "place": "quarter",
+      "lon": 20.185764,
+      "lat": 50.113145
+    },
+    {
+      "osm": "node/31887560",
+      "nazwa": "Wadów",
+      "place": "quarter",
+      "lon": 20.123841,
+      "lat": 50.098424
+    },
+    {
+      "osm": "node/31888173",
+      "nazwa": "Stryjów",
+      "place": "neighbourhood",
+      "lon": 20.143378,
+      "lat": 50.058368
+    },
+    {
+      "osm": "node/31888935",
+      "nazwa": "Nowy Prokocim",
+      "place": "neighbourhood",
+      "lon": 20.005717,
+      "lat": 50.015505
+    },
+    {
+      "osm": "node/31891102",
+      "nazwa": "Łuczanowice",
+      "place": "quarter",
+      "lon": 20.10944,
+      "lat": 50.10867
+    },
+    {
+      "osm": "node/31891126",
+      "nazwa": "Lubocza",
+      "place": "quarter",
+      "lon": 20.087139,
+      "lat": 50.095634
+    },
+    {
+      "osm": "node/31893754",
+      "nazwa": "Kantorowice",
+      "place": "quarter",
+      "lon": 20.056019,
+      "lat": 50.110638
+    },
+    {
+      "osm": "node/31894840",
+      "nazwa": "Grębałów",
+      "place": "quarter",
+      "lon": 20.073753,
+      "lat": 50.097651
+    },
+    {
+      "osm": "node/31895128",
+      "nazwa": "Przylasek",
+      "place": "neighbourhood",
+      "lon": 20.128196,
+      "lat": 50.050445
+    },
+    {
+      "osm": "node/31895995",
+      "nazwa": "Dłubnia",
+      "place": "neighbourhood",
+      "lon": 20.04054,
+      "lat": 50.095704
+    },
+    {
+      "osm": "node/31900285",
+      "nazwa": "Tonie",
+      "place": "quarter",
+      "lon": 19.897893,
+      "lat": 50.112834
+    },
+    {
+      "osm": "node/31901091",
+      "nazwa": "Mydlniki",
+      "place": "quarter",
+      "lon": 19.846184,
+      "lat": 50.083655
+    },
+    {
+      "osm": "node/31901462",
+      "nazwa": "Łobzów",
+      "place": "quarter",
+      "lon": 19.907778,
+      "lat": 50.07527
+    },
+    {
+      "osm": "node/31901716",
+      "nazwa": "Kostrze",
+      "place": "quarter",
+      "lon": 19.855478,
+      "lat": 50.032859
+    },
+    {
+      "osm": "node/31903052",
+      "nazwa": "Piaski Nowe",
+      "place": "neighbourhood",
+      "lon": 19.973145,
+      "lat": 50.012897
+    },
+    {
+      "osm": "node/264336170",
+      "nazwa": "Nowy Kleparz",
+      "place": "neighbourhood",
+      "lon": 19.935905,
+      "lat": 50.074565
+    },
+    {
+      "osm": "node/270501590",
+      "nazwa": "Tyniec",
+      "place": "quarter",
+      "lon": 19.809024,
+      "lat": 50.015736
+    },
+    {
+      "osm": "node/287551445",
+      "nazwa": "Rżąka",
+      "place": "quarter",
+      "lon": 20.009245,
+      "lat": 50.00701
+    },
+    {
+      "osm": "node/682435338",
+      "nazwa": "Zesławice",
+      "place": "quarter",
+      "lon": 20.041828,
+      "lat": 50.104802
+    },
+    {
+      "osm": "node/945333611",
+      "nazwa": "Kosocice",
+      "place": "quarter",
+      "lon": 19.993603,
+      "lat": 49.995376
+    },
+    {
+      "osm": "node/945333621",
+      "nazwa": "Rajsko",
+      "place": "quarter",
+      "lon": 19.968968,
+      "lat": 49.987191
+    },
+    {
+      "osm": "node/945333632",
+      "nazwa": "Soboniowice",
+      "place": "quarter",
+      "lon": 19.989781,
+      "lat": 49.980001
+    },
+    {
+      "osm": "node/965257171",
+      "nazwa": "Wróblowice",
+      "place": "quarter",
+      "lon": 19.946826,
+      "lat": 49.981269
+    },
+    {
+      "osm": "node/1088844393",
+      "nazwa": "Olszanica",
+      "place": "quarter",
+      "lon": 19.834246,
+      "lat": 50.072606
+    },
+    {
+      "osm": "node/1159658751",
+      "nazwa": "Stradom",
+      "place": "quarter",
+      "lon": 19.94065,
+      "lat": 50.052978
+    },
+    {
+      "osm": "node/1258916607",
+      "nazwa": "Holendry",
+      "place": "neighbourhood",
+      "lon": 20.114047,
+      "lat": 50.048925
+    },
+    {
+      "osm": "node/1417676816",
+      "nazwa": "Osiedle \"Kurdwanów Nowy\"",
+      "place": "neighbourhood",
+      "lon": 19.953993,
+      "lat": 50.008773
+    },
+    {
+      "osm": "node/1617943504",
+      "nazwa": "Osiedle Podwawelskie",
+      "place": "neighbourhood",
+      "lon": 19.930429,
+      "lat": 50.043795
+    },
+    {
+      "osm": "node/1617943506",
+      "nazwa": "Salwator",
+      "place": "neighbourhood",
+      "lon": 19.912965,
+      "lat": 50.05284
+    },
+    {
+      "osm": "node/1843994579",
+      "nazwa": "Beszcz",
+      "place": "neighbourhood",
+      "lon": 19.996427,
+      "lat": 50.062097
+    },
+    {
+      "osm": "node/1892198365",
+      "nazwa": "Czarna Wieś",
+      "place": "quarter",
+      "lon": 19.914694,
+      "lat": 50.065842
+    },
+    {
+      "osm": "node/1892198369",
+      "nazwa": "Nowa Wieś",
+      "place": "quarter",
+      "lon": 19.921722,
+      "lat": 50.071132
+    },
+    {
+      "osm": "node/1933057630",
+      "nazwa": "Węgrzynowice",
+      "place": "quarter",
+      "lon": 20.155992,
+      "lat": 50.111791
+    },
+    {
+      "osm": "node/2063702469",
+      "nazwa": "Barycz",
+      "place": "neighbourhood",
+      "lon": 20.005996,
+      "lat": 49.988986
+    },
+    {
+      "osm": "node/2075922400",
+      "nazwa": "Małe Błonia",
+      "place": "quarter",
+      "lon": 19.894834,
+      "lat": 50.068833
+    },
+    {
+      "osm": "node/2075922403",
+      "nazwa": "Półwsie Zwierzynieckie",
+      "place": "neighbourhood",
+      "lon": 19.918968,
+      "lat": 50.055165
+    },
+    {
+      "osm": "node/2075941630",
+      "nazwa": "Bodzów",
+      "place": "quarter",
+      "lon": 19.87111,
+      "lat": 50.040807
+    },
+    {
+      "osm": "node/2075941658",
+      "nazwa": "Pychowice",
+      "place": "quarter",
+      "lon": 19.893153,
+      "lat": 50.034917
+    },
+    {
+      "osm": "node/2075941663",
+      "nazwa": "Skotniki",
+      "place": "quarter",
+      "lon": 19.874371,
+      "lat": 50.016739
+    },
+    {
+      "osm": "node/2075957336",
+      "nazwa": "Kobierzyn",
+      "place": "quarter",
+      "lon": 19.891927,
+      "lat": 50.008501
+    },
+    {
+      "osm": "node/2075961613",
+      "nazwa": "Kliny Zacisze",
+      "place": "neighbourhood",
+      "lon": 19.89728,
+      "lat": 49.999828
+    },
+    {
+      "osm": "node/2075969083",
+      "nazwa": "Sidzina",
+      "place": "quarter",
+      "lon": 19.872219,
+      "lat": 49.98827
+    },
+    {
+      "osm": "node/2075975123",
+      "nazwa": "Dębniki Zachód",
+      "place": "neighbourhood",
+      "lon": 19.905889,
+      "lat": 50.041233
+    },
+    {
+      "osm": "node/2075975124",
+      "nazwa": "Dębniki",
+      "place": "quarter",
+      "lon": 19.927037,
+      "lat": 50.051861
+    },
+    {
+      "osm": "node/2075977521",
+      "nazwa": "Zakrzówek",
+      "place": "quarter",
+      "lon": 19.918334,
+      "lat": 50.041406
+    },
+    {
+      "osm": "node/2075993648",
+      "nazwa": "Łagiewniki",
+      "place": "quarter",
+      "lon": 19.939369,
+      "lat": 50.022561
+    },
+    {
+      "osm": "node/2076003858",
+      "nazwa": "Stare Podgórze",
+      "place": "quarter",
+      "lon": 19.94931,
+      "lat": 50.04442
+    },
+    {
+      "osm": "node/2076009986",
+      "nazwa": "Płaszów",
+      "place": "quarter",
+      "lon": 19.992624,
+      "lat": 50.03998
+    },
+    {
+      "osm": "node/2076012435",
+      "nazwa": "Zabłocie",
+      "place": "quarter",
+      "lon": 19.973502,
+      "lat": 50.051091
+    },
+    {
+      "osm": "node/2076081899",
+      "nazwa": "Bielany",
+      "place": "quarter",
+      "lon": 19.82141,
+      "lat": 50.040144
+    },
+    {
+      "osm": "node/2076081912",
+      "nazwa": "Wola Justowska",
+      "place": "quarter",
+      "lon": 19.868795,
+      "lat": 50.066726
+    },
+    {
+      "osm": "node/2078017435",
+      "nazwa": "Żabiniec",
+      "place": "quarter",
+      "lon": 19.941743,
+      "lat": 50.085931
+    },
+    {
+      "osm": "node/2078042005",
+      "nazwa": "Olsza II",
+      "place": "neighbourhood",
+      "lon": 19.961472,
+      "lat": 50.081416
+    },
+    {
+      "osm": "node/2078042010",
+      "nazwa": "Rakowice",
+      "place": "quarter",
+      "lon": 19.975198,
+      "lat": 50.076003
+    },
+    {
+      "osm": "node/2078061213",
+      "nazwa": "Kleparz",
+      "place": "quarter",
+      "lon": 19.94199,
+      "lat": 50.07004
+    },
+    {
+      "osm": "node/2078061214",
+      "nazwa": "Osiedle Oficerskie",
+      "place": "quarter",
+      "lon": 19.964808,
+      "lat": 50.070273
+    },
+    {
+      "osm": "node/2078069055",
+      "nazwa": "Kazimierz",
+      "place": "quarter",
+      "lon": 19.944947,
+      "lat": 50.051855
+    },
+    {
+      "osm": "node/2078069056",
+      "nazwa": "Nowy Świat",
+      "place": "quarter",
+      "lon": 19.932423,
+      "lat": 50.05766
+    },
+    {
+      "osm": "node/2078088568",
+      "nazwa": "Dąbie",
+      "place": "neighbourhood",
+      "lon": 19.979142,
+      "lat": 50.059437
+    },
+    {
+      "osm": "node/2078088584",
+      "nazwa": "Kujawy",
+      "place": "quarter",
+      "lon": 20.097477,
+      "lat": 50.058279
+    },
+    {
+      "osm": "node/2078088588",
+      "nazwa": "Mogiła Wschód",
+      "place": "neighbourhood",
+      "lon": 20.085578,
+      "lat": 50.058723
+    },
+    {
+      "osm": "node/2078088593",
+      "nazwa": "Mogiła",
+      "place": "quarter",
+      "lon": 20.06149,
+      "lat": 50.062723
+    },
+    {
+      "osm": "node/2078088607",
+      "nazwa": "Pleszów",
+      "place": "quarter",
+      "lon": 20.108313,
+      "lat": 50.06958
+    },
+    {
+      "osm": "node/2078092492",
+      "nazwa": "Branice",
+      "place": "quarter",
+      "lon": 20.1397,
+      "lat": 50.068705
+    },
+    {
+      "osm": "node/2078114594",
+      "nazwa": "Kościelniki",
+      "place": "quarter",
+      "lon": 20.179712,
+      "lat": 50.095469
+    },
+    {
+      "osm": "node/2078114596",
+      "nazwa": "Przylasek Rusiecki",
+      "place": "quarter",
+      "lon": 20.160986,
+      "lat": 50.054058
+    },
+    {
+      "osm": "node/2078114597",
+      "nazwa": "Ruszcza",
+      "place": "quarter",
+      "lon": 20.146305,
+      "lat": 50.08771
+    },
+    {
+      "osm": "node/2078389861",
+      "nazwa": "Prokocim",
+      "place": "quarter",
+      "lon": 19.992174,
+      "lat": 50.022675
+    },
+    {
+      "osm": "node/2078389863",
+      "nazwa": "Przewóz",
+      "place": "quarter",
+      "lon": 20.06218,
+      "lat": 50.041742
+    },
+    {
+      "osm": "node/2078389864",
+      "nazwa": "Rybitwy",
+      "place": "quarter",
+      "lon": 20.035421,
+      "lat": 50.042891
+    },
+    {
+      "osm": "node/2078395475",
+      "nazwa": "Kozłówka",
+      "place": "quarter",
+      "lon": 19.982524,
+      "lat": 50.018646
+    },
+    {
+      "osm": "node/2078395478",
+      "nazwa": "Wola Duchacka",
+      "place": "quarter",
+      "lon": 19.960343,
+      "lat": 50.020718
+    },
+    {
+      "osm": "node/2078397949",
+      "nazwa": "Cegielniana",
+      "place": "quarter",
+      "lon": 19.931121,
+      "lat": 50.025892
+    },
+    {
+      "osm": "node/2143435339",
+      "nazwa": "Chwalców",
+      "place": "neighbourhood",
+      "lon": 20.164139,
+      "lat": 50.037425
+    },
+    {
+      "osm": "node/3009680079",
+      "nazwa": "Bagienki",
+      "place": "neighbourhood",
+      "lon": 19.808408,
+      "lat": 49.967863
+    },
+    {
+      "osm": "node/3009680101",
+      "nazwa": "Bagno",
+      "place": "neighbourhood",
+      "lon": 19.83204,
+      "lat": 50.007619
+    },
+    {
+      "osm": "node/3009688065",
+      "nazwa": "Azory",
+      "place": "quarter",
+      "lon": 19.907222,
+      "lat": 50.085235
+    },
+    {
+      "osm": "node/3009689239",
+      "nazwa": "Bania",
+      "place": "neighbourhood",
+      "lon": 19.93513,
+      "lat": 49.995642
+    },
+    {
+      "osm": "node/3009689369",
+      "nazwa": "Bardynówka",
+      "place": "neighbourhood",
+      "lon": 19.841389,
+      "lat": 49.960556
+    },
+    {
+      "osm": "node/3009689621",
+      "nazwa": "Bogucice",
+      "place": "neighbourhood",
+      "lon": 20.049815,
+      "lat": 49.996951
+    },
+    {
+      "osm": "node/3009690410",
+      "nazwa": "Bieżanów",
+      "place": "quarter",
+      "lon": 20.028403,
+      "lat": 50.014627
+    },
+    {
+      "osm": "node/3009690799",
+      "nazwa": "Borek Fałęcki",
+      "place": "quarter",
+      "lon": 19.926568,
+      "lat": 50.014301
+    },
+    {
+      "osm": "node/3009691224",
+      "nazwa": "Bronowice Małe",
+      "place": "quarter",
+      "lon": 19.877543,
+      "lat": 50.08806
+    },
+    {
+      "osm": "node/3009691225",
+      "nazwa": "Bronowice Wielkie",
+      "place": "quarter",
+      "lon": 19.882222,
+      "lat": 50.094444
+    },
+    {
+      "osm": "node/3009691610",
+      "nazwa": "Brzyzek",
+      "place": "neighbourhood",
+      "lon": 19.87674,
+      "lat": 50.006918
+    },
+    {
+      "osm": "node/3009692286",
+      "nazwa": "Budzyń",
+      "place": "neighbourhood",
+      "lon": 19.893832,
+      "lat": 50.111292
+    },
+    {
+      "osm": "node/3009692337",
+      "nazwa": "Bugaj",
+      "place": "neighbourhood",
+      "lon": 20.07618,
+      "lat": 50.046037
+    },
+    {
+      "osm": "node/3009692338",
+      "nazwa": "Bugaj",
+      "place": "neighbourhood",
+      "lon": 20.090226,
+      "lat": 50.099487
+    },
+    {
+      "osm": "node/3009692843",
+      "nazwa": "Błonie",
+      "place": "neighbourhood",
+      "lon": 20.174554,
+      "lat": 50.06985
+    },
+    {
+      "osm": "node/3009692948",
+      "nazwa": "Błonie-Beszcz",
+      "place": "neighbourhood",
+      "lon": 20.000584,
+      "lat": 50.055369
+    },
+    {
+      "osm": "node/3009695443",
+      "nazwa": "Chałupki Górne",
+      "place": "neighbourhood",
+      "lon": 20.125733,
+      "lat": 50.054612
+    },
+    {
+      "osm": "node/3009695461",
+      "nazwa": "Chałupki",
+      "place": "neighbourhood",
+      "lon": 20.129336,
+      "lat": 50.050183
+    },
+    {
+      "osm": "node/3009695520",
+      "nazwa": "Chełm",
+      "place": "quarter",
+      "lon": 19.849019,
+      "lat": 50.067532
+    },
+    {
+      "osm": "node/3009695570",
+      "nazwa": "Chlebiczna",
+      "place": "neighbourhood",
+      "lon": 19.875278,
+      "lat": 49.986389
+    },
+    {
+      "osm": "node/3009696036",
+      "nazwa": "Cichy Kącik",
+      "place": "neighbourhood",
+      "lon": 19.904572,
+      "lat": 50.064952
+    },
+    {
+      "osm": "node/3009697207",
+      "nazwa": "Cło",
+      "place": "neighbourhood",
+      "lon": 20.185504,
+      "lat": 50.080465
+    },
+    {
+      "osm": "node/3009697795",
+      "nazwa": "Dolne Korabniki",
+      "place": "neighbourhood",
+      "lon": 19.845,
+      "lat": 49.973611
+    },
+    {
+      "osm": "node/3009698526",
+      "nazwa": "Dwór",
+      "place": "neighbourhood",
+      "lon": 19.916553,
+      "lat": 49.98594
+    },
+    {
+      "osm": "node/3009700829",
+      "nazwa": "Dąbrowy",
+      "place": "neighbourhood",
+      "lon": 19.895711,
+      "lat": 49.983444
+    },
+    {
+      "osm": "node/3009701029",
+      "nazwa": "Dębca",
+      "place": "neighbourhood",
+      "lon": 19.820877,
+      "lat": 49.962363
+    },
+    {
+      "osm": "node/3009701302",
+      "nazwa": "Falbówki",
+      "place": "neighbourhood",
+      "lon": 19.8225,
+      "lat": 49.960278
+    },
+    {
+      "osm": "node/3009702106",
+      "nazwa": "Gaik",
+      "place": "neighbourhood",
+      "lon": 19.912925,
+      "lat": 49.990047
+    },
+    {
+      "osm": "node/3009702133",
+      "nazwa": "Gaj",
+      "place": "neighbourhood",
+      "lon": 19.95977,
+      "lat": 49.971974
+    },
+    {
+      "osm": "node/3009702137",
+      "nazwa": "Gaj",
+      "place": "neighbourhood",
+      "lon": 20.057808,
+      "lat": 50.014473
+    },
+    {
+      "osm": "node/3009702314",
+      "nazwa": "Galatowski Koniec",
+      "place": "neighbourhood",
+      "lon": 19.919167,
+      "lat": 49.987222
+    },
+    {
+      "osm": "node/3009702605",
+      "nazwa": "Golikówka",
+      "place": "neighbourhood",
+      "lon": 20.023484,
+      "lat": 50.046999
+    },
+    {
+      "osm": "node/3009702770",
+      "nazwa": "Gibkówka",
+      "place": "neighbourhood",
+      "lon": 19.947834,
+      "lat": 49.988888
+    },
+    {
+      "osm": "node/3009702912",
+      "nazwa": "Glinki",
+      "place": "neighbourhood",
+      "lon": 20.021943,
+      "lat": 50.000561
+    },
+    {
+      "osm": "node/3009703383",
+      "nazwa": "Gościniec",
+      "place": "neighbourhood",
+      "lon": 20.027167,
+      "lat": 49.986805
+    },
+    {
+      "osm": "node/3009703610",
+      "nazwa": "Grabie-Kątek",
+      "place": "neighbourhood",
+      "lon": 20.172923,
+      "lat": 50.043529
+    },
+    {
+      "osm": "node/3009704051",
+      "nazwa": "Grobla",
+      "place": "neighbourhood",
+      "lon": 20.223483,
+      "lat": 50.041017
+    },
+    {
+      "osm": "node/3009704416",
+      "nazwa": "Gubałówka",
+      "place": "neighbourhood",
+      "lon": 19.820278,
+      "lat": 49.964444
+    },
+    {
+      "osm": "node/3009704981",
+      "nazwa": "Górka Narodowa",
+      "place": "quarter",
+      "lon": 19.958116,
+      "lat": 50.100328
+    },
+    {
+      "osm": "node/3009705036",
+      "nazwa": "Górka Kościelnicka",
+      "place": "neighbourhood",
+      "lon": 20.170402,
+      "lat": 50.107609
+    },
+    {
+      "osm": "node/3009706574",
+      "nazwa": "Górne Korabniki",
+      "place": "neighbourhood",
+      "lon": 19.850278,
+      "lat": 49.964722
+    },
+    {
+      "osm": "node/3009709372",
+      "nazwa": "Jagielnia",
+      "place": "neighbourhood",
+      "lon": 19.842222,
+      "lat": 49.979167
+    },
+    {
+      "osm": "node/3009710417",
+      "nazwa": "Jemiołki",
+      "place": "neighbourhood",
+      "lon": 20.004403,
+      "lat": 50.024203
+    },
+    {
+      "osm": "node/3009711108",
+      "nazwa": "Kaczeńce",
+      "place": "neighbourhood",
+      "lon": 19.937286,
+      "lat": 49.999293
+    },
+    {
+      "osm": "node/3009711337",
+      "nazwa": "Kaczorówka",
+      "place": "neighbourhood",
+      "lon": 19.907217,
+      "lat": 50.107091
+    },
+    {
+      "osm": "node/3009711376",
+      "nazwa": "Kaim",
+      "place": "neighbourhood",
+      "lon": 20.041924,
+      "lat": 50.006847
+    },
+    {
+      "osm": "node/3009713022",
+      "nazwa": "Kliniec",
+      "place": "neighbourhood",
+      "lon": 19.982431,
+      "lat": 50.008873
+    },
+    {
+      "osm": "node/3009713031",
+      "nazwa": "Kliny",
+      "place": "quarter",
+      "lon": 19.912174,
+      "lat": 49.999983
+    },
+    {
+      "osm": "node/3009713422",
+      "nazwa": "Kazimierz",
+      "place": "neighbourhood",
+      "lon": 20.214991,
+      "lat": 50.035745
+    },
+    {
+      "osm": "node/3009713594",
+      "nazwa": "Klasno",
+      "place": "neighbourhood",
+      "lon": 20.050985,
+      "lat": 49.978559
+    },
+    {
+      "osm": "node/3009714498",
+      "nazwa": "Kolonia Górne Korabniki",
+      "place": "neighbourhood",
+      "lon": 19.847346,
+      "lat": 49.954275
+    },
+    {
+      "osm": "node/3009715539",
+      "nazwa": "Kolonia",
+      "place": "neighbourhood",
+      "lon": 20.059775,
+      "lat": 49.993252
+    },
+    {
+      "osm": "node/3009716127",
+      "nazwa": "Koniasta",
+      "place": "neighbourhood",
+      "lon": 19.838157,
+      "lat": 49.968897
+    },
+    {
+      "osm": "node/3009716128",
+      "nazwa": "Koniaste Doły",
+      "place": "neighbourhood",
+      "lon": 19.841972,
+      "lat": 49.968138
+    },
+    {
+      "osm": "node/3009716280",
+      "nazwa": "Kopalina",
+      "place": "neighbourhood",
+      "lon": 19.98862,
+      "lat": 49.97519
+    },
+    {
+      "osm": "node/3009716281",
+      "nazwa": "Kopalina",
+      "place": "neighbourhood",
+      "lon": 20.016626,
+      "lat": 49.996472
+    },
+    {
+      "osm": "node/3009716342",
+      "nazwa": "Kopanina",
+      "place": "neighbourhood",
+      "lon": 20.10532,
+      "lat": 50.058286
+    },
+    {
+      "osm": "node/3009716460",
+      "nazwa": "Kopeć",
+      "place": "neighbourhood",
+      "lon": 19.905312,
+      "lat": 50.105465
+    },
+    {
+      "osm": "node/3009716514",
+      "nazwa": "Korabniki",
+      "place": "neighbourhood",
+      "lon": 19.851968,
+      "lat": 49.968369
+    },
+    {
+      "osm": "node/3009716967",
+      "nazwa": "Koszutka",
+      "place": "neighbourhood",
+      "lon": 20.021746,
+      "lat": 49.990234
+    },
+    {
+      "osm": "node/3009717807",
+      "nazwa": "Koło Tynieckie",
+      "place": "neighbourhood",
+      "lon": 19.832778,
+      "lat": 50.031667
+    },
+    {
+      "osm": "node/3009717989",
+      "nazwa": "Krakówka",
+      "place": "neighbourhood",
+      "lon": 19.939464,
+      "lat": 49.980822
+    },
+    {
+      "osm": "node/3009718334",
+      "nazwa": "Krowodrza Górka",
+      "place": "quarter",
+      "lon": 19.929975,
+      "lat": 50.088769
+    },
+    {
+      "osm": "node/3009718528",
+      "nazwa": "Krzemionki",
+      "place": "neighbourhood",
+      "lon": 20.17704,
+      "lat": 50.09987
+    },
+    {
+      "osm": "node/3009718545",
+      "nazwa": "Krzesławice",
+      "place": "quarter",
+      "lon": 20.054732,
+      "lat": 50.08399
+    },
+    {
+      "osm": "node/3009718702",
+      "nazwa": "Krzyżowa",
+      "place": "neighbourhood",
+      "lon": 20.013792,
+      "lat": 49.978082
+    },
+    {
+      "osm": "node/3009718966",
+      "nazwa": "Księdzowe Pole",
+      "place": "neighbourhood",
+      "lon": 20.077318,
+      "lat": 50.038719
+    },
+    {
+      "osm": "node/3009720128",
+      "nazwa": "Kółko",
+      "place": "neighbourhood",
+      "lon": 20.222816,
+      "lat": 50.048955
+    },
+    {
+      "osm": "node/3009720496",
+      "nazwa": "Kępa Grabska",
+      "place": "neighbourhood",
+      "lon": 20.153363,
+      "lat": 50.047387
+    },
+    {
+      "osm": "node/3009720666",
+      "nazwa": "Kłosów",
+      "place": "neighbourhood",
+      "lon": 20.06439,
+      "lat": 49.975389
+    },
+    {
+      "osm": "node/3009720945",
+      "nazwa": "Lasowe Domy",
+      "place": "neighbourhood",
+      "lon": 19.978333,
+      "lat": 49.996111
+    },
+    {
+      "osm": "node/3009720961",
+      "nazwa": "Lasówka",
+      "place": "neighbourhood",
+      "lon": 20.015121,
+      "lat": 50.040475
+    },
+    {
+      "osm": "node/3009720976",
+      "nazwa": "Lazaret",
+      "place": "neighbourhood",
+      "lon": 19.976434,
+      "lat": 50.008088
+    },
+    {
+      "osm": "node/3009720994",
+      "nazwa": "Lednica Dolna",
+      "place": "neighbourhood",
+      "lon": 20.074185,
+      "lat": 49.980245
+    },
+    {
+      "osm": "node/3009721008",
+      "nazwa": "Lekarka",
+      "place": "neighbourhood",
+      "lon": 20.072697,
+      "lat": 49.990427
+    },
+    {
+      "osm": "node/3009721288",
+      "nazwa": "Lesisko",
+      "place": "neighbourhood",
+      "lon": 20.043834,
+      "lat": 50.056055
+    },
+    {
+      "osm": "node/3009722062",
+      "nazwa": "Luboń",
+      "place": "neighbourhood",
+      "lon": 19.984583,
+      "lat": 49.996563
+    },
+    {
+      "osm": "node/3009722099",
+      "nazwa": "Ludwinów",
+      "place": "quarter",
+      "lon": 19.93041,
+      "lat": 50.044521
+    },
+    {
+      "osm": "node/3009726096",
+      "nazwa": "Moczydło",
+      "place": "neighbourhood",
+      "lon": 19.789819,
+      "lat": 50.118183
+    },
+    {
+      "osm": "node/3009726514",
+      "nazwa": "Nadwodzie",
+      "place": "neighbourhood",
+      "lon": 19.803056,
+      "lat": 50.118611
+    },
+    {
+      "osm": "node/3009727009",
+      "nazwa": "Na Możdżyniach",
+      "place": "neighbourhood",
+      "lon": 20.009444,
+      "lat": 49.998056
+    },
+    {
+      "osm": "node/3009727375",
+      "nazwa": "Na Grobli",
+      "place": "neighbourhood",
+      "lon": 19.804859,
+      "lat": 50.015199
+    },
+    {
+      "osm": "node/3009727996",
+      "nazwa": "Nad Potokiem",
+      "place": "neighbourhood",
+      "lon": 20.01134,
+      "lat": 50.012495
+    },
+    {
+      "osm": "node/3009728383",
+      "nazwa": "Nawsie",
+      "place": "neighbourhood",
+      "lon": 19.795069,
+      "lat": 50.115446
+    },
+    {
+      "osm": "node/3009728433",
+      "nazwa": "Niebyła",
+      "place": "neighbourhood",
+      "lon": 19.961464,
+      "lat": 49.987865
+    },
+    {
+      "osm": "node/3009728637",
+      "nazwa": "Niwy",
+      "place": "neighbourhood",
+      "lon": 19.972636,
+      "lat": 49.992355
+    },
+    {
+      "osm": "node/3009729307",
+      "nazwa": "Nowa Wieś",
+      "place": "neighbourhood",
+      "lon": 20.167609,
+      "lat": 50.066348
+    },
+    {
+      "osm": "node/3009730640",
+      "nazwa": "Obczar",
+      "place": "neighbourhood",
+      "lon": 19.84578,
+      "lat": 49.981703
+    },
+    {
+      "osm": "node/3009730956",
+      "nazwa": "Ogrody Płaszów",
+      "place": "neighbourhood",
+      "lon": 19.992967,
+      "lat": 50.047981
+    },
+    {
+      "osm": "node/3009731059",
+      "nazwa": "Nowy Prokocim",
+      "place": "neighbourhood",
+      "lon": 20.004504,
+      "lat": 50.017951
+    },
+    {
+      "osm": "node/3009731452",
+      "nazwa": "Opatkowice-Łysa Góra",
+      "place": "neighbourhood",
+      "lon": 19.930894,
+      "lat": 49.986794
+    },
+    {
+      "osm": "node/3009731998",
+      "nazwa": "Osiedle Adama Asnyka",
+      "place": "neighbourhood",
+      "lon": 20.068583,
+      "lat": 49.982798
+    },
+    {
+      "osm": "node/3009731999",
+      "nazwa": "Osiedle Awaryjne",
+      "place": "neighbourhood",
+      "lon": 19.796111,
+      "lat": 49.9725
+    },
+    {
+      "osm": "node/3009732140",
+      "nazwa": "Osiedle Boża Wola",
+      "place": "neighbourhood",
+      "lon": 20.064988,
+      "lat": 49.981522
+    },
+    {
+      "osm": "node/3009732187",
+      "nazwa": "Osiedle 2 Pułku Lotniczego",
+      "place": "neighbourhood",
+      "lon": 20.007208,
+      "lat": 50.077641
+    },
+    {
+      "osm": "node/3009732193",
+      "nazwa": "Osiedle Dywizjonu 303",
+      "place": "neighbourhood",
+      "lon": 20.006742,
+      "lat": 50.084815
+    },
+    {
+      "osm": "node/3009732361",
+      "nazwa": "Osiedle Karola Szymanowskiego",
+      "place": "neighbourhood",
+      "lon": 20.041103,
+      "lat": 49.987499
+    },
+    {
+      "osm": "node/3009732370",
+      "nazwa": "Osiedle Kościuszkowskie",
+      "place": "neighbourhood",
+      "lon": 20.013952,
+      "lat": 50.082842
+    },
+    {
+      "osm": "node/3009732400",
+      "nazwa": "Osiedle Leśników",
+      "place": "neighbourhood",
+      "lon": 20.202083,
+      "lat": 50.029588
+    },
+    {
+      "osm": "node/3009732430",
+      "nazwa": "Osiedle Medyków",
+      "place": "neighbourhood",
+      "lon": 19.995425,
+      "lat": 50.012991
+    },
+    {
+      "osm": "node/3009732493",
+      "nazwa": "Osiedle Radziszowskie",
+      "place": "neighbourhood",
+      "lon": 19.816502,
+      "lat": 49.957998
+    },
+    {
+      "osm": "node/3009732502",
+      "nazwa": "Osiedle Nowy Bieżanów-Północ",
+      "place": "neighbourhood",
+      "lon": 20.019126,
+      "lat": 50.017428
+    },
+    {
+      "osm": "node/3009732638",
+      "nazwa": "Osiedle Przyszłość",
+      "place": "neighbourhood",
+      "lon": 20.042994,
+      "lat": 49.9904
+    },
+    {
+      "osm": "node/3009732661",
+      "nazwa": "Osiedle Robotnicze",
+      "place": "neighbourhood",
+      "lon": 19.908682,
+      "lat": 50.045676
+    },
+    {
+      "osm": "node/3009732662",
+      "nazwa": "Meksyk",
+      "place": "neighbourhood",
+      "lon": 20.099065,
+      "lat": 50.068836
+    },
+    {
+      "osm": "node/3009732689",
+      "nazwa": "Osiedle Henryka Sienkiewicza",
+      "place": "neighbourhood",
+      "lon": 20.068444,
+      "lat": 49.986196
+    },
+    {
+      "osm": "node/3009732763",
+      "nazwa": "Osiedle za Dworem",
+      "place": "neighbourhood",
+      "lon": 19.867774,
+      "lat": 50.015108
+    },
+    {
+      "osm": "node/3009732977",
+      "nazwa": "Osiedle Tysiąclecia",
+      "place": "neighbourhood",
+      "lon": 20.001234,
+      "lat": 50.091715
+    },
+    {
+      "osm": "node/3009733017",
+      "nazwa": "Osiedle Widok Zarzecze",
+      "place": "neighbourhood",
+      "lon": 19.884959,
+      "lat": 50.074445
+    },
+    {
+      "osm": "node/3009733027",
+      "nazwa": "Osiedle Wincentego Pola",
+      "place": "neighbourhood",
+      "lon": 20.073056,
+      "lat": 49.985
+    },
+    {
+      "osm": "node/3009733040",
+      "nazwa": "Osiedle Wojskowe",
+      "place": "neighbourhood",
+      "lon": 19.819326,
+      "lat": 50.044139
+    },
+    {
+      "osm": "node/3009733115",
+      "nazwa": "Osiedle Złotego Wieku",
+      "place": "neighbourhood",
+      "lon": 20.002283,
+      "lat": 50.096467
+    },
+    {
+      "osm": "node/3009733117",
+      "nazwa": "Osiedle Sienkiewicza",
+      "place": "neighbourhood",
+      "lon": 19.797796,
+      "lat": 50.118504
+    },
+    {
+      "osm": "node/3009733127",
+      "nazwa": "Osiedle Rzepnik",
+      "place": "neighbourhood",
+      "lon": 19.836111,
+      "lat": 49.983889
+    },
+    {
+      "osm": "node/3009733216",
+      "nazwa": "Podstawie",
+      "place": "neighbourhood",
+      "lon": 20.171556,
+      "lat": 50.069735
+    },
+    {
+      "osm": "node/3009733706",
+      "nazwa": "Podgórki",
+      "place": "neighbourhood",
+      "lon": 19.820209,
+      "lat": 49.996061
+    },
+    {
+      "osm": "node/3009734497",
+      "nazwa": "Podgórki Tynieckie",
+      "place": "neighbourhood",
+      "lon": 19.842813,
+      "lat": 50.008375
+    },
+    {
+      "osm": "node/3009734631",
+      "nazwa": "Pasieka",
+      "place": "neighbourhood",
+      "lon": 19.785736,
+      "lat": 50.119188
+    },
+    {
+      "osm": "node/3009734705",
+      "nazwa": "Pasternik Drugi",
+      "place": "neighbourhood",
+      "lon": 20.184704,
+      "lat": 50.045272
+    },
+    {
+      "osm": "node/3009734706",
+      "nazwa": "Pasternik Pierwszy",
+      "place": "neighbourhood",
+      "lon": 20.195572,
+      "lat": 50.042588
+    },
+    {
+      "osm": "node/3009734780",
+      "nazwa": "Pastwiska",
+      "place": "neighbourhood",
+      "lon": 19.83943,
+      "lat": 50.018406
+    },
+    {
+      "osm": "node/3009735647",
+      "nazwa": "Piasek",
+      "place": "quarter",
+      "lon": 19.930448,
+      "lat": 50.0675
+    },
+    {
+      "osm": "node/3009735678",
+      "nazwa": "Piaski Wielkie",
+      "place": "quarter",
+      "lon": 19.975579,
+      "lat": 50.007609
+    },
+    {
+      "osm": "node/3009735704",
+      "nazwa": "Piaski",
+      "place": "neighbourhood",
+      "lon": 19.815548,
+      "lat": 50.014218
+    },
+    {
+      "osm": "node/3009735706",
+      "nazwa": "Piaski",
+      "place": "neighbourhood",
+      "lon": 20.227323,
+      "lat": 50.029494
+    },
+    {
+      "osm": "node/3009735718",
+      "nazwa": "Piaski",
+      "place": "neighbourhood",
+      "lon": 19.785797,
+      "lat": 50.116804
+    },
+    {
+      "osm": "node/3009735989",
+      "nazwa": "Piekiełko",
+      "place": "neighbourhood",
+      "lon": 20.116963,
+      "lat": 50.056208
+    },
+    {
+      "osm": "node/3009737343",
+      "nazwa": "Pobabie",
+      "place": "neighbourhood",
+      "lon": 19.80597,
+      "lat": 50.113076
+    },
+    {
+      "osm": "node/3009738212",
+      "nazwa": "Pod Lasem",
+      "place": "neighbourhood",
+      "lon": 19.82581,
+      "lat": 49.997688
+    },
+    {
+      "osm": "node/3009738817",
+      "nazwa": "Podbory Skawińskie",
+      "place": "neighbourhood",
+      "lon": 19.785556,
+      "lat": 49.969167
+    },
+    {
+      "osm": "node/3009738818",
+      "nazwa": "Podbory",
+      "place": "neighbourhood",
+      "lon": 19.801991,
+      "lat": 49.980819
+    },
+    {
+      "osm": "node/3009738821",
+      "nazwa": "Podborze",
+      "place": "neighbourhood",
+      "lon": 20.21254,
+      "lat": 50.012969
+    },
+    {
+      "osm": "node/3009738986",
+      "nazwa": "Pode Cłem",
+      "place": "neighbourhood",
+      "lon": 20.172731,
+      "lat": 50.079793
+    },
+    {
+      "osm": "node/3009739007",
+      "nazwa": "Podedworze",
+      "place": "neighbourhood",
+      "lon": 19.834148,
+      "lat": 50.028443
+    },
+    {
+      "osm": "node/3009739424",
+      "nazwa": "Podkoniasta",
+      "place": "neighbourhood",
+      "lon": 19.845391,
+      "lat": 49.967377
+    },
+    {
+      "osm": "node/3009739990",
+      "nazwa": "Podlesie",
+      "place": "neighbourhood",
+      "lon": 20.023405,
+      "lat": 49.980752
+    },
+    {
+      "osm": "node/3009739997",
+      "nazwa": "Podlesie",
+      "place": "neighbourhood",
+      "lon": 19.980549,
+      "lat": 50.013157
+    },
+    {
+      "osm": "node/3009740176",
+      "nazwa": "Podlipki",
+      "place": "neighbourhood",
+      "lon": 19.843611,
+      "lat": 49.988056
+    },
+    {
+      "osm": "node/3009740644",
+      "nazwa": "Podwierzbie",
+      "place": "neighbourhood",
+      "lon": 20.066389,
+      "lat": 50.047778
+    },
+    {
+      "osm": "node/3009741104",
+      "nazwa": "Pokrzywki",
+      "place": "neighbourhood",
+      "lon": 19.958705,
+      "lat": 49.976062
+    },
+    {
+      "osm": "node/3009741106",
+      "nazwa": "Pokrzywnica",
+      "place": "neighbourhood",
+      "lon": 19.947943,
+      "lat": 49.974319
+    },
+    {
+      "osm": "node/3009741112",
+      "nazwa": "Pokusa",
+      "place": "neighbourhood",
+      "lon": 19.982384,
+      "lat": 49.993575
+    },
+    {
+      "osm": "node/3009741537",
+      "nazwa": "Poręba",
+      "place": "neighbourhood",
+      "lon": 19.988577,
+      "lat": 50.006804
+    },
+    {
+      "osm": "node/3009741966",
+      "nazwa": "Potrzask",
+      "place": "neighbourhood",
+      "lon": 20.050992,
+      "lat": 50.013455
+    },
+    {
+      "osm": "node/3009742650",
+      "nazwa": "Przegorzały",
+      "place": "quarter",
+      "lon": 19.874077,
+      "lat": 50.05095
+    },
+    {
+      "osm": "node/3009743014",
+      "nazwa": "Przylasek Wyciąski",
+      "place": "neighbourhood",
+      "lon": 20.181969,
+      "lat": 50.057088
+    },
+    {
+      "osm": "node/3009746625",
+      "nazwa": "Rogatka Warszawska",
+      "place": "neighbourhood",
+      "lon": 19.950025,
+      "lat": 50.081829
+    },
+    {
+      "osm": "node/3009746631",
+      "nazwa": "Rogatka",
+      "place": "neighbourhood",
+      "lon": 20.002001,
+      "lat": 50.03877
+    },
+    {
+      "osm": "node/3009747938",
+      "nazwa": "Rędzina",
+      "place": "neighbourhood",
+      "lon": 19.876423,
+      "lat": 50.010677
+    },
+    {
+      "osm": "node/3009748154",
+      "nazwa": "Sadka",
+      "place": "neighbourhood",
+      "lon": 19.987969,
+      "lat": 50.010606
+    },
+    {
+      "osm": "node/3009748247",
+      "nazwa": "Samborek",
+      "place": "neighbourhood",
+      "lon": 19.805833,
+      "lat": 49.986944
+    },
+    {
+      "osm": "node/3009748434",
+      "nazwa": "Siarczana Góra",
+      "place": "neighbourhood",
+      "lon": 19.957133,
+      "lat": 49.994463
+    },
+    {
+      "osm": "node/3009748458",
+      "nazwa": "Sidzina-Zagumnie",
+      "place": "neighbourhood",
+      "lon": 19.870811,
+      "lat": 49.989315
+    },
+    {
+      "osm": "node/3009748460",
+      "nazwa": "Sidziska",
+      "place": "neighbourhood",
+      "lon": 19.89732,
+      "lat": 49.985487
+    },
+    {
+      "osm": "node/3009749161",
+      "nazwa": "Skotnica",
+      "place": "neighbourhood",
+      "lon": 19.900556,
+      "lat": 50.107778
+    },
+    {
+      "osm": "node/3009749191",
+      "nazwa": "Skotniki Sieczkowskie",
+      "place": "neighbourhood",
+      "lon": 19.861173,
+      "lat": 50.005842
+    },
+    {
+      "osm": "node/3009751829",
+      "nazwa": "Solówki",
+      "place": "neighbourhood",
+      "lon": 19.889548,
+      "lat": 49.984956
+    },
+    {
+      "osm": "node/3009752665",
+      "nazwa": "Stara Wieś",
+      "place": "neighbourhood",
+      "lon": 19.999444,
+      "lat": 50.021667
+    },
+    {
+      "osm": "node/3009753258",
+      "nazwa": "Stare Miasto",
+      "place": "neighbourhood",
+      "lon": 19.829619,
+      "lat": 49.975446
+    },
+    {
+      "osm": "node/3009757265",
+      "nazwa": "Szwaby",
+      "place": "neighbourhood",
+      "lon": 19.860278,
+      "lat": 49.976667
+    },
+    {
+      "osm": "node/3009757267",
+      "nazwa": "Szwaby",
+      "place": "neighbourhood",
+      "lon": 19.976817,
+      "lat": 49.985243
+    },
+    {
+      "osm": "node/3009759173",
+      "nazwa": "Turówka",
+      "place": "neighbourhood",
+      "lon": 20.050066,
+      "lat": 49.98782
+    },
+    {
+      "osm": "node/3009759581",
+      "nazwa": "Ugorek",
+      "place": "neighbourhood",
+      "lon": 19.983806,
+      "lat": 50.079034
+    },
+    {
+      "osm": "node/3009760713",
+      "nazwa": "Wesoła",
+      "place": "quarter",
+      "lon": 19.95114,
+      "lat": 50.063935
+    },
+    {
+      "osm": "node/3009760765",
+      "nazwa": "Wiatrowskie",
+      "place": "neighbourhood",
+      "lon": 19.929745,
+      "lat": 49.993752
+    },
+    {
+      "osm": "node/3009760847",
+      "nazwa": "Wieczysta",
+      "place": "neighbourhood",
+      "lon": 19.981944,
+      "lat": 50.073611
+    },
+    {
+      "osm": "node/3009762484",
+      "nazwa": "Witkowice",
+      "place": "quarter",
+      "lon": 19.945856,
+      "lat": 50.103561
+    },
+    {
+      "osm": "node/3009762577",
+      "nazwa": "Wiśniowa",
+      "place": "neighbourhood",
+      "lon": 19.955941,
+      "lat": 50.083715
+    },
+    {
+      "osm": "node/3009762601",
+      "nazwa": "Wodka",
+      "place": "neighbourhood",
+      "lon": 19.881111,
+      "lat": 50.009444
+    },
+    {
+      "osm": "node/3009763084",
+      "nazwa": "Wola Rusiecka",
+      "place": "neighbourhood",
+      "lon": 20.136233,
+      "lat": 50.053413
+    },
+    {
+      "osm": "node/3009763574",
+      "nazwa": "Wolica",
+      "place": "quarter",
+      "lon": 20.194993,
+      "lat": 50.063047
+    },
+    {
+      "osm": "node/3009764129",
+      "nazwa": "Wyciąże",
+      "place": "quarter",
+      "lon": 20.164518,
+      "lat": 50.069763
+    },
+    {
+      "osm": "node/3009764930",
+      "nazwa": "Wyrwisko",
+      "place": "neighbourhood",
+      "lon": 19.825555,
+      "lat": 49.963252
+    },
+    {
+      "osm": "node/3009765685",
+      "nazwa": "Wężowiec",
+      "place": "neighbourhood",
+      "lon": 20.200833,
+      "lat": 50.031086
+    },
+    {
+      "osm": "node/3009766948",
+      "nazwa": "Za Osiedlem",
+      "place": "neighbourhood",
+      "lon": 20.040869,
+      "lat": 50.030946
+    },
+    {
+      "osm": "node/3009767208",
+      "nazwa": "Zaborze",
+      "place": "neighbourhood",
+      "lon": 19.91113,
+      "lat": 50.017821
+    },
+    {
+      "osm": "node/3009767597",
+      "nazwa": "Zadory",
+      "place": "neighbourhood",
+      "lon": 20.058001,
+      "lat": 49.989443
+    },
+    {
+      "osm": "node/3009767621",
+      "nazwa": "Zadworze",
+      "place": "neighbourhood",
+      "lon": 19.918148,
+      "lat": 49.983224
+    },
+    {
+      "osm": "node/3009767625",
+      "nazwa": "Zadworze",
+      "place": "neighbourhood",
+      "lon": 19.906111,
+      "lat": 50.114444
+    },
+    {
+      "osm": "node/3009768583",
+      "nazwa": "Zagrody",
+      "place": "neighbourhood",
+      "lon": 20.210853,
+      "lat": 50.036864
+    },
+    {
+      "osm": "node/3009768596",
+      "nazwa": "Zagrody",
+      "place": "neighbourhood",
+      "lon": 20.184111,
+      "lat": 50.095893
+    },
+    {
+      "osm": "node/3009768705",
+      "nazwa": "Zagumnie",
+      "place": "neighbourhood",
+      "lon": 19.980719,
+      "lat": 50.044684
+    },
+    {
+      "osm": "node/3009769081",
+      "nazwa": "Zagórze",
+      "place": "neighbourhood",
+      "lon": 19.820065,
+      "lat": 50.010976
+    },
+    {
+      "osm": "node/3009769212",
+      "nazwa": "Zakamycze",
+      "place": "quarter",
+      "lon": 19.829421,
+      "lat": 50.05713
+    },
+    {
+      "osm": "node/3009769224",
+      "nazwa": "Zakarczmie",
+      "place": "neighbourhood",
+      "lon": 19.909361,
+      "lat": 49.983762
+    },
+    {
+      "osm": "node/3009769281",
+      "nazwa": "Zakościele",
+      "place": "neighbourhood",
+      "lon": 20.220046,
+      "lat": 50.027393
+    },
+    {
+      "osm": "node/3009769689",
+      "nazwa": "Zalesie",
+      "place": "neighbourhood",
+      "lon": 19.94412,
+      "lat": 49.98503
+    },
+    {
+      "osm": "node/3009769694",
+      "nazwa": "Zalesie",
+      "place": "neighbourhood",
+      "lon": 20.103223,
+      "lat": 50.046729
+    },
+    {
+      "osm": "node/3009770010",
+      "nazwa": "Zamłynie",
+      "place": "neighbourhood",
+      "lon": 19.920354,
+      "lat": 49.991356
+    },
+    {
+      "osm": "node/3009770014",
+      "nazwa": "Zamłynie",
+      "place": "neighbourhood",
+      "lon": 19.798893,
+      "lat": 50.119318
+    },
+    {
+      "osm": "node/3009770230",
+      "nazwa": "Zapiaski",
+      "place": "neighbourhood",
+      "lon": 19.838996,
+      "lat": 50.011858
+    },
+    {
+      "osm": "node/3009773681",
+      "nazwa": "Łazy Pólnocne",
+      "place": "neighbourhood",
+      "lon": 20.031667,
+      "lat": 50.028056
+    },
+    {
+      "osm": "node/3009774003",
+      "nazwa": "Łutnia",
+      "place": "neighbourhood",
+      "lon": 20.069181,
+      "lat": 50.041027
+    },
+    {
+      "osm": "node/3009774041",
+      "nazwa": "Łysa Góra",
+      "place": "neighbourhood",
+      "lon": 19.826541,
+      "lat": 49.958382
+    },
+    {
+      "osm": "node/3009774046",
+      "nazwa": "Łysa Góra",
+      "place": "neighbourhood",
+      "lon": 19.935567,
+      "lat": 49.988334
+    },
+    {
+      "osm": "node/3009774591",
+      "nazwa": "Łęg",
+      "place": "quarter",
+      "lon": 20.023889,
+      "lat": 50.059722
+    },
+    {
+      "osm": "node/3009775553",
+      "nazwa": "Świdowa",
+      "place": "neighbourhood",
+      "lon": 20.213493,
+      "lat": 50.044884
+    },
+    {
+      "osm": "node/3080635507",
+      "nazwa": "Rynek",
+      "place": "neighbourhood",
+      "lon": 19.826496,
+      "lat": 49.975126
+    },
+    {
+      "osm": "node/3118090440",
+      "nazwa": "Osiedle Ruczaj-Zaborze",
+      "place": "neighbourhood",
+      "lon": 19.919368,
+      "lat": 50.031003
+    },
+    {
+      "osm": "node/3299555446",
+      "nazwa": "Osiedle Władysława Łokietka",
+      "place": "neighbourhood",
+      "lon": 19.916495,
+      "lat": 50.103694
+    },
+    {
+      "osm": "node/3300610434",
+      "nazwa": "Osiedle Tęcza",
+      "place": "neighbourhood",
+      "lon": 19.930886,
+      "lat": 50.119721
+    },
+    {
+      "osm": "node/3441928831",
+      "nazwa": "Opatkowice",
+      "place": "quarter",
+      "lon": 19.913575,
+      "lat": 49.987219
+    },
+    {
+      "osm": "node/3441928998",
+      "nazwa": "Osiedle Za Fortem",
+      "place": "neighbourhood",
+      "lon": 19.899908,
+      "lat": 49.99774
+    },
+    {
+      "osm": "node/3441929116",
+      "nazwa": "Bania",
+      "place": "neighbourhood",
+      "lon": 19.933362,
+      "lat": 49.997025
+    },
+    {
+      "osm": "node/3441929117",
+      "nazwa": "Jugowice",
+      "place": "quarter",
+      "lon": 19.926444,
+      "lat": 50.003724
+    },
+    {
+      "osm": "node/3441929118",
+      "nazwa": "Kurdwanów",
+      "place": "quarter",
+      "lon": 19.955091,
+      "lat": 50.008245
+    },
+    {
+      "osm": "node/3441929119",
+      "nazwa": "Lusina",
+      "place": "neighbourhood",
+      "lon": 19.931061,
+      "lat": 49.981762
+    },
+    {
+      "osm": "node/3441929120",
+      "nazwa": "Zbydniowice",
+      "place": "quarter",
+      "lon": 19.95815,
+      "lat": 49.972798
+    },
+    {
+      "osm": "node/4035362025",
+      "nazwa": "Dom Nad Łąkami",
+      "place": "neighbourhood",
+      "lon": 19.871665,
+      "lat": 49.97904
+    },
+    {
+      "osm": "node/4090652730",
+      "nazwa": "Osiedle Liszki",
+      "place": "neighbourhood",
+      "lon": 19.780859,
+      "lat": 50.040019
+    },
+    {
+      "osm": "node/4146655163",
+      "nazwa": "Moczydło",
+      "place": "neighbourhood",
+      "lon": 20.212504,
+      "lat": 50.039653
+    },
+    {
+      "osm": "node/4146655164",
+      "nazwa": "Na Wzgórzu",
+      "place": "neighbourhood",
+      "lon": 20.206206,
+      "lat": 50.032336
+    },
+    {
+      "osm": "node/4146655165",
+      "nazwa": "Cierpisówka",
+      "place": "neighbourhood",
+      "lon": 20.204758,
+      "lat": 50.026016
+    },
+    {
+      "osm": "node/4146670149",
+      "nazwa": "Załęcze",
+      "place": "neighbourhood",
+      "lon": 20.009742,
+      "lat": 50.056981
+    },
+    {
+      "osm": "node/4146670150",
+      "nazwa": "Stare Wiślisko",
+      "place": "neighbourhood",
+      "lon": 20.054361,
+      "lat": 50.058837
+    },
+    {
+      "osm": "node/4146670151",
+      "nazwa": "Brackie",
+      "place": "neighbourhood",
+      "lon": 20.073146,
+      "lat": 50.06035
+    },
+    {
+      "osm": "node/4146670152",
+      "nazwa": "Zawsie",
+      "place": "neighbourhood",
+      "lon": 20.018979,
+      "lat": 50.060018
+    },
+    {
+      "osm": "node/4146670153",
+      "nazwa": "Kopań",
+      "place": "neighbourhood",
+      "lon": 20.040446,
+      "lat": 50.058796
+    },
+    {
+      "osm": "node/4146670154",
+      "nazwa": "Klitówka",
+      "place": "neighbourhood",
+      "lon": 20.047035,
+      "lat": 50.060597
+    },
+    {
+      "osm": "node/4146670155",
+      "nazwa": "Habina",
+      "place": "neighbourhood",
+      "lon": 20.031199,
+      "lat": 50.05968
+    },
+    {
+      "osm": "node/4146670156",
+      "nazwa": "Kopaniec",
+      "place": "neighbourhood",
+      "lon": 20.073809,
+      "lat": 50.061785
+    },
+    {
+      "osm": "node/4146670157",
+      "nazwa": "Stara Mogiła",
+      "place": "neighbourhood",
+      "lon": 20.068604,
+      "lat": 50.066131
+    },
+    {
+      "osm": "node/4146670158",
+      "nazwa": "Zapusta",
+      "place": "neighbourhood",
+      "lon": 20.035662,
+      "lat": 50.060728
+    },
+    {
+      "osm": "node/4146672389",
+      "nazwa": "Isep",
+      "place": "neighbourhood",
+      "lon": 20.020308,
+      "lat": 50.055538
+    },
+    {
+      "osm": "node/4146672390",
+      "nazwa": "Szafrańskie",
+      "place": "neighbourhood",
+      "lon": 20.008174,
+      "lat": 50.051164
+    },
+    {
+      "osm": "node/4146672391",
+      "nazwa": "Zatyka",
+      "place": "neighbourhood",
+      "lon": 20.004612,
+      "lat": 50.05107
+    },
+    {
+      "osm": "node/4146672392",
+      "nazwa": "Strękówka",
+      "place": "neighbourhood",
+      "lon": 20.013817,
+      "lat": 50.050971
+    },
+    {
+      "osm": "node/4146723959",
+      "nazwa": "Kamieniec",
+      "place": "neighbourhood",
+      "lon": 20.03317,
+      "lat": 49.971085
+    },
+    {
+      "osm": "node/4146723960",
+      "nazwa": "Nad Stawami",
+      "place": "neighbourhood",
+      "lon": 20.034079,
+      "lat": 49.97878
+    },
+    {
+      "osm": "node/4146723961",
+      "nazwa": "Ochronka",
+      "place": "neighbourhood",
+      "lon": 20.07122,
+      "lat": 49.981974
+    },
+    {
+      "osm": "node/4146723962",
+      "nazwa": "Stare Drogi",
+      "place": "neighbourhood",
+      "lon": 20.04019,
+      "lat": 49.978371
+    },
+    {
+      "osm": "node/4146723963",
+      "nazwa": "Pod Świętym Sebastianem",
+      "place": "neighbourhood",
+      "lon": 20.065302,
+      "lat": 49.977115
+    },
+    {
+      "osm": "node/4146723964",
+      "nazwa": "Kolonia Górnicza \"Niwa\"",
+      "place": "neighbourhood",
+      "lon": 20.068476,
+      "lat": 49.980628
+    },
+    {
+      "osm": "node/4146723965",
+      "nazwa": "Górsko",
+      "place": "neighbourhood",
+      "lon": 20.058115,
+      "lat": 49.981138
+    },
+    {
+      "osm": "node/4146723966",
+      "nazwa": "Pod Baranem",
+      "place": "neighbourhood",
+      "lon": 20.060657,
+      "lat": 49.972423
+    },
+    {
+      "osm": "node/4146763335",
+      "nazwa": "Brzozowy Zagajnik",
+      "place": "neighbourhood",
+      "lon": 20.090047,
+      "lat": 50.016599
+    },
+    {
+      "osm": "node/4146763336",
+      "nazwa": "Stara Wieś",
+      "place": "neighbourhood",
+      "lon": 20.103523,
+      "lat": 50.01178
+    },
+    {
+      "osm": "node/4146763337",
+      "nazwa": "Za Murem",
+      "place": "neighbourhood",
+      "lon": 20.121995,
+      "lat": 50.01327
+    },
+    {
+      "osm": "node/4146763338",
+      "nazwa": "Trzy Domy",
+      "place": "neighbourhood",
+      "lon": 20.115046,
+      "lat": 50.020906
+    },
+    {
+      "osm": "node/4146763339",
+      "nazwa": "Gajsko",
+      "place": "neighbourhood",
+      "lon": 20.097042,
+      "lat": 50.012166
+    },
+    {
+      "osm": "node/4146763340",
+      "nazwa": "Nad Rzeką",
+      "place": "neighbourhood",
+      "lon": 20.105025,
+      "lat": 50.013504
+    },
+    {
+      "osm": "node/4146763341",
+      "nazwa": "Nowy Świat",
+      "place": "neighbourhood",
+      "lon": 20.097858,
+      "lat": 50.008167
+    },
+    {
+      "osm": "node/4146763342",
+      "nazwa": "Wezyrówka",
+      "place": "neighbourhood",
+      "lon": 20.119119,
+      "lat": 50.008926
+    },
+    {
+      "osm": "node/4146763343",
+      "nazwa": "Mała Góra",
+      "place": "neighbourhood",
+      "lon": 20.097206,
+      "lat": 50.015397
+    },
+    {
+      "osm": "node/4146763344",
+      "nazwa": "Zakątek",
+      "place": "neighbourhood",
+      "lon": 20.116029,
+      "lat": 50.007271
+    },
+    {
+      "osm": "node/4146777794",
+      "nazwa": "Na Cuplu",
+      "place": "neighbourhood",
+      "lon": 20.011344,
+      "lat": 50.048079
+    },
+    {
+      "osm": "node/4146777795",
+      "nazwa": "Grąby",
+      "place": "neighbourhood",
+      "lon": 20.040973,
+      "lat": 50.055113
+    },
+    {
+      "osm": "node/4146777796",
+      "nazwa": "Lasówka Łęska",
+      "place": "neighbourhood",
+      "lon": 20.030098,
+      "lat": 50.052682
+    },
+    {
+      "osm": "node/4168136068",
+      "nazwa": "Piaski",
+      "place": "neighbourhood",
+      "lon": 19.813688,
+      "lat": 50.122952
+    },
+    {
+      "osm": "node/4326775837",
+      "nazwa": "Osiedle Leśna Polana",
+      "place": "neighbourhood",
+      "lon": 19.79694,
+      "lat": 50.103239
+    },
+    {
+      "osm": "node/5047791633",
+      "nazwa": "Osiedle TBS",
+      "place": "neighbourhood",
+      "lon": 19.838904,
+      "lat": 49.982919
+    },
+    {
+      "osm": "node/5127062289",
+      "nazwa": "Księże Łąki",
+      "place": "neighbourhood",
+      "lon": 19.824395,
+      "lat": 49.985829
+    },
+    {
+      "osm": "node/5181340160",
+      "nazwa": "Osiedle Szuwarowa",
+      "place": "neighbourhood",
+      "lon": 19.904339,
+      "lat": 50.01974
+    },
+    {
+      "osm": "node/5223821020",
+      "nazwa": "Uzdrowisko Swoszowice",
+      "place": "neighbourhood",
+      "lon": 19.934558,
+      "lat": 49.991853
+    },
+    {
+      "osm": "node/5408548309",
+      "nazwa": "Bogucianka",
+      "place": "neighbourhood",
+      "lon": 19.811978,
+      "lat": 50.009432
+    },
+    {
+      "osm": "node/6277371649",
+      "nazwa": "Szutry",
+      "place": "neighbourhood",
+      "lon": 19.988989,
+      "lat": 50.026127
+    },
+    {
+      "osm": "node/6824287925",
+      "nazwa": "Kąty",
+      "place": "neighbourhood",
+      "lon": 19.899141,
+      "lat": 50.113466
+    },
+    {
+      "osm": "node/6958723164",
+      "nazwa": "Nowe Czarnochowice",
+      "place": "neighbourhood",
+      "lon": 20.056229,
+      "lat": 50.003544
+    },
+    {
+      "osm": "node/7070408266",
+      "nazwa": "Podgórki",
+      "place": "neighbourhood",
+      "lon": 19.811107,
+      "lat": 50.013248
+    },
+    {
+      "osm": "node/7100129107",
+      "nazwa": "Złocień",
+      "place": "quarter",
+      "lon": 20.051172,
+      "lat": 50.021714
+    },
+    {
+      "osm": "node/7575867447",
+      "nazwa": "Olsza",
+      "place": "quarter",
+      "lon": 19.966456,
+      "lat": 50.082175
+    },
+    {
+      "osm": "node/8661764768",
+      "nazwa": "Kliny Poranne",
+      "place": "neighbourhood",
+      "lon": 19.912465,
+      "lat": 49.995031
+    },
+    {
+      "osm": "node/8859773010",
+      "nazwa": "Osiedle Niepodległości",
+      "place": "neighbourhood",
+      "lon": 20.023593,
+      "lat": 50.080682
+    },
+    {
+      "osm": "node/8859773011",
+      "nazwa": "Osiedle Albertyńskie",
+      "place": "neighbourhood",
+      "lon": 20.017628,
+      "lat": 50.081431
+    },
+    {
+      "osm": "node/8859815219",
+      "nazwa": "Osiedle Avia",
+      "place": "neighbourhood",
+      "lon": 20.0045,
+      "lat": 50.080123
+    },
+    {
+      "osm": "node/9003418410",
+      "nazwa": "Osiedle Oświecenia",
+      "place": "neighbourhood",
+      "lon": 19.99133,
+      "lat": 50.093454
+    },
+    {
+      "osm": "node/9308411361",
+      "nazwa": "Osiedle Akademickie",
+      "place": "neighbourhood",
+      "lon": 19.994655,
+      "lat": 50.085244
+    },
+    {
+      "osm": "node/9389481904",
+      "nazwa": "Osiedle Dębowe",
+      "place": "neighbourhood",
+      "lon": 19.925989,
+      "lat": 49.974147
+    },
+    {
+      "osm": "node/9389481906",
+      "nazwa": "Osiedle Wysokie",
+      "place": "neighbourhood",
+      "lon": 20.019504,
+      "lat": 50.089354
+    },
+    {
+      "osm": "node/9865545383",
+      "nazwa": "Osiedle Mardimex",
+      "place": "neighbourhood",
+      "lon": 20.058746,
+      "lat": 49.99131
+    },
+    {
+      "osm": "node/9961139061",
+      "nazwa": "Ruczaj",
+      "place": "quarter",
+      "lon": 19.906169,
+      "lat": 50.024967
+    },
+    {
+      "osm": "node/9961480177",
+      "nazwa": "Kombinat",
+      "place": "quarter",
+      "lon": 20.081034,
+      "lat": 50.071629
+    },
+    {
+      "osm": "node/9961480178",
+      "nazwa": "Olszyny",
+      "place": "quarter",
+      "lon": 19.873667,
+      "lat": 49.980675
+    },
+    {
+      "osm": "node/9963373089",
+      "nazwa": "Zwierzyniec",
+      "place": "quarter",
+      "lon": 19.905681,
+      "lat": 50.055155
+    },
+    {
+      "osm": "node/9963373090",
+      "nazwa": "Zalew Nowohucki",
+      "place": "quarter",
+      "lon": 20.049105,
+      "lat": 50.082012
+    },
+    {
+      "osm": "node/9963373091",
+      "nazwa": "Wzgórza Krzesławickie",
+      "place": "quarter",
+      "lon": 20.051336,
+      "lat": 50.09823
+    },
+    {
+      "osm": "node/9963373092",
+      "nazwa": "Swoszowice",
+      "place": "quarter",
+      "lon": 19.942811,
+      "lat": 49.992381
+    },
+    {
+      "osm": "node/9963373093",
+      "nazwa": "Stare Miasto",
+      "place": "quarter",
+      "lon": 19.935679,
+      "lat": 50.061409
+    },
+    {
+      "osm": "node/9963373094",
+      "nazwa": "Przedmieście Warszawskie",
+      "place": "quarter",
+      "lon": 19.949884,
+      "lat": 50.077689
+    },
+    {
+      "osm": "node/9963373095",
+      "nazwa": "Prądnik Czerwony",
+      "place": "quarter",
+      "lon": 19.961965,
+      "lat": 50.08986
+    },
+    {
+      "osm": "node/9963373096",
+      "nazwa": "Prądnik Biały",
+      "place": "quarter",
+      "lon": 19.928791,
+      "lat": 50.094623
+    },
+    {
+      "osm": "node/9963373097",
+      "nazwa": "Nowa Huta",
+      "place": "quarter",
+      "lon": 20.037217,
+      "lat": 50.072704
+    },
+    {
+      "osm": "node/9963373098",
+      "nazwa": "Mistrzejowice",
+      "place": "quarter",
+      "lon": 20.013313,
+      "lat": 50.096592
+    },
+    {
+      "osm": "node/9963373099",
+      "nazwa": "Las Wolski",
+      "place": "quarter",
+      "lon": 19.849892,
+      "lat": 50.054053
+    },
+    {
+      "osm": "node/9963373101",
+      "nazwa": "Kabel",
+      "place": "quarter",
+      "lon": 19.973745,
+      "lat": 50.030516
+    },
+    {
+      "osm": "node/9963373102",
+      "nazwa": "Grzegórzki",
+      "place": "quarter",
+      "lon": 19.964218,
+      "lat": 50.059288
+    },
+    {
+      "osm": "node/9963373103",
+      "nazwa": "Dąbie",
+      "place": "quarter",
+      "lon": 19.981255,
+      "lat": 50.06331
+    },
+    {
+      "osm": "node/9963373104",
+      "nazwa": "Czyżyny",
+      "place": "quarter",
+      "lon": 20.010481,
+      "lat": 50.072456
+    },
+    {
+      "osm": "node/9963373105",
+      "nazwa": "Bronowice",
+      "place": "quarter",
+      "lon": 19.889147,
+      "lat": 50.078439
+    },
+    {
+      "osm": "node/9963373106",
+      "nazwa": "Błonia",
+      "place": "quarter",
+      "lon": 19.910145,
+      "lat": 50.059729
+    },
+    {
+      "osm": "node/9963373107",
+      "nazwa": "Bieńczyce",
+      "place": "quarter",
+      "lon": 20.030737,
+      "lat": 50.086639
+    },
+    {
+      "osm": "node/9963373108",
+      "nazwa": "Białe Morza",
+      "place": "quarter",
+      "lon": 19.939671,
+      "lat": 50.009946
+    },
+    {
+      "osm": "node/11075012240",
+      "nazwa": "Osiedle Złotej Jesieni",
+      "place": "neighbourhood",
+      "lon": 20.025661,
+      "lat": 50.091097
+    },
+    {
+      "osm": "node/12202880309",
+      "nazwa": "Ogrody",
+      "place": "neighbourhood",
+      "lon": 20.030775,
+      "lat": 50.043628
+    },
+    {
+      "osm": "node/12202880310",
+      "nazwa": "Kopanina",
+      "place": "neighbourhood",
+      "lon": 20.047165,
+      "lat": 50.04272
+    },
+    {
+      "osm": "node/12202880311",
+      "nazwa": "Niwy Rybickie",
+      "place": "neighbourhood",
+      "lon": 20.050866,
+      "lat": 50.048022
+    },
+    {
+      "osm": "node/12202880312",
+      "nazwa": "Jeziorko",
+      "place": "neighbourhood",
+      "lon": 20.074379,
+      "lat": 50.042298
+    },
+    {
+      "osm": "node/12299634013",
+      "nazwa": "Osiedle Tadeusza Kościuszki",
+      "place": "neighbourhood",
+      "lon": 20.042946,
+      "lat": 49.992106
+    },
+    {
+      "osm": "node/12460663487",
+      "nazwa": "Zabłocie",
+      "place": "neighbourhood",
+      "lon": 20.173979,
+      "lat": 50.095511
+    },
+    {
+      "osm": "node/12460663488",
+      "nazwa": "Błonia",
+      "place": "neighbourhood",
+      "lon": 20.172151,
+      "lat": 50.086383
+    },
+    {
+      "osm": "node/12460769270",
+      "nazwa": "Las Kościelnicki",
+      "place": "neighbourhood",
+      "lon": 20.202299,
+      "lat": 50.055936
+    },
+    {
+      "osm": "node/12460769271",
+      "nazwa": "Rogów",
+      "place": "neighbourhood",
+      "lon": 20.206571,
+      "lat": 50.050313
+    },
+    {
+      "osm": "node/13205386261",
+      "nazwa": "Zawodzie",
+      "place": "neighbourhood",
+      "lon": 19.944907,
+      "lat": 50.096971
+    },
+    {
+      "osm": "node/13205386262",
+      "nazwa": "Gajszcza",
+      "place": "neighbourhood",
+      "lon": 19.953072,
+      "lat": 50.097572
+    },
+    {
+      "osm": "node/13205386263",
+      "nazwa": "Zadęby",
+      "place": "neighbourhood",
+      "lon": 19.952673,
+      "lat": 50.107
+    },
+    {
+      "osm": "node/13205386264",
+      "nazwa": "Ogrody",
+      "place": "neighbourhood",
+      "lon": 19.946143,
+      "lat": 50.101518
+    },
+    {
+      "osm": "node/13205386265",
+      "nazwa": "Bularnia",
+      "place": "neighbourhood",
+      "lon": 19.94284,
+      "lat": 50.095081
+    },
+    {
+      "osm": "node/13205386266",
+      "nazwa": "Zasady",
+      "place": "neighbourhood",
+      "lon": 19.937789,
+      "lat": 50.090069
+    },
+    {
+      "osm": "node/13205386267",
+      "nazwa": "Duchackie",
+      "place": "neighbourhood",
+      "lon": 19.93371,
+      "lat": 50.101089
+    },
+    {
+      "osm": "node/13690838840",
+      "nazwa": "Osiedle Bohaterów Września",
+      "place": "neighbourhood",
+      "lon": 20.009532,
+      "lat": 50.099259
+    },
+    {
+      "osm": "node/13690883858",
+      "nazwa": "Osiedle Piastów",
+      "place": "neighbourhood",
+      "lon": 20.016131,
+      "lat": 50.099664
+    },
+    {
+      "osm": "way/54965761",
+      "nazwa": "Osiedle Jagiellońskie",
+      "place": "neighbourhood",
+      "lon": 20.024273,
+      "lat": 50.088444,
+      "obrys": "20.023309 50.087553,20.02429 50.08711,20.024418 50.087068,20.024535 50.087014,20.024645 50.086923,20.025101 50.086651,20.025533 50.086878,20.025753 50.086802,20.025461 50.086653,20.025416 50.08663,20.025388 50.086616,20.025034 50.086434,20.025525 50.086033,20.026158 50.086242,20.026112 50.086377,20.02622 50.086429,20.026035 50.086771,20.027105 50.087287,20.026888 50.08768,20.027349 50.088059,20.02689 50.088813,20.026668 50.089053,20.025753 50.089551,20.024172 50.089935,20.022938 50.090204,20.021845 50.090123,20.021751 50.090028,20.020871 50.088027,20.022323 50.087865,20.022383 50.08796,20.023415 50.087689,20.023309 50.087553"
+    },
+    {
+      "osm": "way/54965765",
+      "nazwa": "Osiedle Na Lotnisku",
+      "place": "neighbourhood",
+      "lon": 20.016816,
+      "lat": 50.08688,
+      "obrys": "20.018442 50.087877,20.017667 50.088021,20.017543 50.087968,20.017529 50.087927,20.017402 50.087886,20.017263 50.087871,20.015798 50.087909,20.015815 50.08798,20.015862 50.088116,20.015893 50.088185,20.015772 50.088208,20.015701 50.08822,20.015283 50.08829,20.015271 50.088292,20.015258 50.088294,20.014825 50.088364,20.014718 50.08838,20.013877 50.086307,20.013849 50.086233,20.013849 50.086214,20.013834 50.086172,20.013815 50.086126,20.016984 50.085594,20.017399 50.085552,20.018467 50.085541,20.018788 50.086273,20.01941 50.086165,20.019994 50.087555,20.019452 50.087711,20.018724 50.087818,20.018442 50.087877"
+    },
+    {
+      "osm": "way/54965767",
+      "nazwa": "Osiedle Józefa Strusia",
+      "place": "neighbourhood",
+      "lon": 20.010629,
+      "lat": 50.087968,
+      "obrys": "20.014033 50.088526,20.014147 50.08837,20.013643 50.088207,20.013724 50.087646,20.0136 50.087432,20.013196 50.086528,20.007448 50.087513,20.007187 50.087773,20.007226 50.087903,20.007385 50.088335,20.007347 50.088514,20.007381 50.08852,20.007413 50.088525,20.00781 50.088751,20.008691 50.089253,20.009197 50.089391,20.009312 50.089422,20.009348 50.089339,20.009469 50.089335,20.009557 50.089223,20.009576 50.089197,20.009934 50.08931,20.009968 50.089259,20.010174 50.088982,20.010367 50.088722,20.011358 50.089023,20.011383 50.089031,20.011405 50.08903,20.011444 50.089024,20.011506 50.088939,20.011894 50.089054,20.012156 50.088678,20.012369 50.088372,20.013146 50.08861,20.013193 50.088624,20.013342 50.088669,20.013462 50.088519,20.013923 50.088644,20.014033 50.088526"
+    },
+    {
+      "osm": "way/54965770",
+      "nazwa": "Osiedle Kolorowe",
+      "place": "neighbourhood",
+      "lon": 20.024464,
+      "lat": 50.074515,
+      "obrys": "20.021143 50.075665,20.023851 50.077057,20.024335 50.076712,20.024723 50.076485,20.025056 50.076444,20.02517 50.076646,20.02544 50.076599,20.025564 50.076666,20.025421 50.076373,20.025502 50.07632,20.025484 50.076262,20.025333 50.075727,20.025368 50.075686,20.025705 50.075796,20.025788 50.075761,20.025848 50.075681,20.026013 50.075565,20.026049 50.075564,20.026049 50.075655,20.026219 50.075654,20.026218 50.075589,20.026314 50.075587,20.026412 50.07558,20.026616 50.075501,20.026627 50.0755,20.026625 50.075495,20.028107 50.075351,20.028108 50.075356,20.028116 50.075356,20.028173 50.075353,20.028292 50.075346,20.028491 50.075438,20.028527 50.075435,20.028548 50.075527,20.028722 50.07551,20.028707 50.075442,20.029456 50.075379,20.029346 50.074951,20.029575 50.07493,20.029484 50.074611,20.029312 50.073849,20.028905 50.072581,20.019558 50.073551,20.018969 50.073683,20.018897 50.073701,20.018821 50.073731,20.018762 50.073766,20.018593 50.073889,20.018482 50.074127,20.01854 50.074229,20.018902 50.074492,20.021143 50.075665"
+    },
+    {
+      "osm": "way/54965778",
+      "nazwa": "Osiedle Albertyńskie",
+      "place": "neighbourhood",
+      "lon": 20.018759,
+      "lat": 50.081686,
+      "obrys": "20.02154 50.08219,20.022638 50.082866,20.02181 50.08349,20.02133 50.083819,20.019538 50.084326,20.019163 50.084354,20.018443 50.083736,20.017915 50.083282,20.016533 50.082219,20.016171 50.081835,20.015797 50.081399,20.015726 50.080825,20.015816 50.079914,20.01587 50.079815,20.018085 50.07927,20.01897 50.079066,20.019005 50.079124,20.019707 50.078989,20.019912 50.079587,20.019944 50.079797,20.020367 50.08088,20.01938 50.081271,20.019718 50.081709,20.020446 50.081533,20.02071 50.082359,20.02154 50.08219"
+    },
+    {
+      "osm": "way/54965781",
+      "nazwa": "Osiedle Słoneczne",
+      "place": "neighbourhood",
+      "lon": 20.041925,
+      "lat": 50.077419,
+      "obrys": "20.039768 50.078631,20.039185 50.076773,20.042614 50.076334,20.045111 50.076963,20.044648 50.077719,20.043784 50.078109,20.039768 50.078631"
+    },
+    {
+      "osm": "way/54965784",
+      "nazwa": "Osiedle Szkolne",
+      "place": "neighbourhood",
+      "lon": 20.047866,
+      "lat": 50.077475,
+      "obrys": "20.046954 50.075012,20.04494 50.078224,20.047513 50.080708,20.048331 50.080366,20.047652 50.079598,20.048178 50.079415,20.048548 50.079278,20.048695 50.078848,20.048835 50.07872,20.049561 50.07749,20.049869 50.076998,20.049907 50.07695,20.051285 50.077308,20.051868 50.076406,20.050271 50.075892,20.046954 50.075012"
+    },
+    {
+      "osm": "way/54965791",
+      "nazwa": "Osiedle Centrum D",
+      "place": "neighbourhood",
+      "lon": 20.034436,
+      "lat": 50.072837,
+      "obrys": "20.032626 50.072221,20.036265 50.071831,20.036375 50.072684,20.035409 50.07328,20.035049 50.073442,20.033823 50.074291,20.033581 50.074156,20.033118 50.073415,20.032783 50.072873,20.032626 50.072221"
+    },
+    {
+      "osm": "way/54965804",
+      "nazwa": "Osiedle Zgody",
+      "place": "neighbourhood",
+      "lon": 20.034931,
+      "lat": 50.076372,
+      "obrys": "20.032571 50.075866,20.031449 50.076704,20.03359 50.07784,20.034518 50.077147,20.038221 50.076635,20.037732 50.075168,20.032571 50.075866"
+    },
+    {
+      "osm": "way/54969441",
+      "nazwa": "Osiedle Teatralne",
+      "place": "neighbourhood",
+      "lon": 20.031811,
+      "lat": 50.079495,
+      "obrys": "20.030968 50.077149,20.028117 50.079349,20.028072 50.079477,20.029773 50.08038,20.031372 50.081242,20.031418 50.081203,20.032014 50.08154,20.032589 50.081836,20.033849 50.080866,20.035398 50.079669,20.035756 50.079388,20.035394 50.079196,20.035306 50.079149,20.03508 50.079023,20.034862 50.079188,20.030968 50.077149"
+    },
+    {
+      "osm": "way/54969442",
+      "nazwa": "Osiedle Szklane Domy",
+      "place": "neighbourhood",
+      "lon": 20.043507,
+      "lat": 50.075588,
+      "obrys": "20.041928 50.074701,20.044243 50.07533,20.044548 50.074912,20.044843 50.074703,20.046276 50.07509,20.045247 50.076726,20.042276 50.076,20.041051 50.076166,20.040675 50.074868,20.041928 50.074701"
+    },
+    {
+      "osm": "way/55367354",
+      "nazwa": "Osiedle Handlowe",
+      "place": "neighbourhood",
+      "lon": 20.031539,
+      "lat": 50.073894,
+      "obrys": "20.033811 50.074434,20.033529 50.07427,20.033364 50.074095,20.033065 50.073556,20.032684 50.072912,20.032515 50.072241,20.029596 50.072522,20.03013 50.074771,20.030191 50.075032,20.030997 50.07549,20.03134 50.075373,20.031976 50.075735,20.033811 50.074434"
+    },
+    {
+      "osm": "way/55368157",
+      "nazwa": "Osiedle Centrum C",
+      "place": "neighbourhood",
+      "lon": 20.036412,
+      "lat": 50.074156,
+      "obrys": "20.034569 50.07451,20.03674 50.072904,20.037413 50.072928,20.03758 50.073472,20.037429 50.073491,20.037785 50.074611,20.037898 50.074597,20.037959 50.074784,20.035169 50.075159,20.035066 50.074909,20.034885 50.0747,20.034569 50.07451"
+    },
+    {
+      "osm": "way/55369739",
+      "nazwa": "Osiedle Zielone",
+      "place": "neighbourhood",
+      "lon": 20.042746,
+      "lat": 50.079736,
+      "obrys": "20.044597 50.078422,20.040802 50.078958,20.040906 50.079302,20.040022 50.07949,20.040553 50.081118,20.042757 50.080837,20.043361 50.080698,20.044164 50.080402,20.045894 50.079649,20.044597 50.078422"
+    },
+    {
+      "osm": "way/55371328",
+      "nazwa": "Osiedle Sportowe",
+      "place": "neighbourhood",
+      "lon": 20.043687,
+      "lat": 50.081474,
+      "obrys": "20.047179 50.08092,20.046028 50.079799,20.043705 50.080799,20.043028 50.080975,20.040564 50.081309,20.041257 50.083024,20.042848 50.082754,20.047179 50.08092"
+    },
+    {
+      "osm": "way/55373691",
+      "nazwa": "Osiedle Górali",
+      "place": "neighbourhood",
+      "lon": 20.037489,
+      "lat": 50.080483,
+      "obrys": "20.039406 50.079523,20.038429 50.079584,20.038336 50.079257,20.036197 50.079521,20.034693 50.080661,20.036478 50.08162,20.036574 50.081645,20.039937 50.081198,20.039406 50.079523"
+    },
+    {
+      "osm": "way/55374220",
+      "nazwa": "Osiedle Krakowiaków",
+      "place": "neighbourhood",
+      "lon": 20.037235,
+      "lat": 50.082728,
+      "obrys": "20.040091 50.08143,20.040004 50.081385,20.036296 50.081875,20.03445 50.080894,20.032944 50.082063,20.03746 50.084533,20.038692 50.084607,20.040658 50.08318,20.040091 50.08143"
+    },
+    {
+      "osm": "way/55379505",
+      "nazwa": "Osiedle Niepodległości",
+      "place": "neighbourhood",
+      "lon": 20.022596,
+      "lat": 50.080837,
+      "obrys": "20.019944 50.079797,20.020367 50.08088,20.01938 50.081271,20.019718 50.081709,20.020446 50.081533,20.02071 50.082359,20.02154 50.08219,20.022638 50.082866,20.025834 50.080352,20.024453 50.079289,20.023943 50.079182,20.021614 50.079696,20.021404 50.079728,20.021198 50.07973,20.020721 50.079714,20.019944 50.079797"
+    },
+    {
+      "osm": "way/55380299",
+      "nazwa": "Osiedle Urocze",
+      "place": "neighbourhood",
+      "lon": 20.036747,
+      "lat": 50.078,
+      "obrys": "20.036121 50.079181,20.033752 50.077924,20.034537 50.077339,20.038542 50.076788,20.039154 50.078775,20.036121 50.079181"
+    },
+    {
+      "osm": "way/55380483",
+      "nazwa": "Osiedle 2 Pułku Lotniczego",
+      "place": "neighbourhood",
+      "lon": 20.008894,
+      "lat": 50.07737,
+      "obrys": "20.014453 50.078638,20.014203 50.078211,20.014015 50.077957,20.013153 50.078127,20.012486 50.077168,20.012099 50.076698,20.011658 50.076161,20.011344 50.075598,20.012781 50.0753,20.01219 50.074194,20.010098 50.074597,20.008637 50.074886,20.008496 50.074916,20.008339 50.074949,20.008014 50.075048,20.007799 50.07503,20.007424 50.074906,20.007123 50.074806,20.004596 50.075297,20.003681 50.075978,20.003782 50.076199,20.004682 50.076146,20.004657 50.076644,20.004642 50.076989,20.004915 50.077564,20.005141 50.077912,20.003799 50.07828,20.003386 50.078644,20.003563 50.078753,20.003784 50.078901,20.004519 50.078667,20.005088 50.07854,20.005368 50.079042,20.005846 50.079823,20.00603 50.079834,20.006539 50.079727,20.006729 50.080344,20.007857 50.080102,20.008088 50.080052,20.008471 50.079971,20.010253 50.079599,20.011819 50.079241,20.012847 50.079042,20.012994 50.079012,20.013085 50.079001,20.013216 50.079446,20.013339 50.079733,20.013485 50.079697,20.013729 50.080068,20.013908 50.079998,20.014151 50.07987,20.014644 50.079617,20.014792 50.079603,20.014732 50.079172,20.014453 50.078638"
+    },
+    {
+      "osm": "way/107758087",
+      "nazwa": "Osiedle Willowe",
+      "place": "neighbourhood",
+      "lon": 20.050048,
+      "lat": 50.072231,
+      "obrys": "20.04623 50.071978,20.046738 50.073164,20.047268 50.073301,20.047522 50.073447,20.047935 50.073586,20.053702 50.072562,20.053534 50.072054,20.053153 50.070823,20.051 50.071193,20.050953 50.071071,20.04623 50.071978"
+    },
+    {
+      "osm": "way/107758088",
+      "nazwa": "Osiedle Czyżyny",
+      "place": "neighbourhood",
+      "lon": 20.011254,
+      "lat": 50.072164,
+      "obrys": "20.005117 50.073429,20.007515 50.07422,20.00803 50.074172,20.007941 50.073869,20.007748 50.073889,20.007667 50.073609,20.008517 50.073502,20.00859 50.073807,20.008545 50.073811,20.008567 50.073909,20.008525 50.073913,20.008532 50.073943,20.008255 50.07397,20.008296 50.074153,20.009769 50.074022,20.009909 50.07398,20.010719 50.073904,20.011249 50.073859,20.01157 50.073829,20.011769 50.073804,20.011799 50.073801,20.012192 50.073646,20.012328 50.07379,20.012703 50.073756,20.013249 50.073702,20.014112 50.073625,20.014033 50.073305,20.014472 50.073271,20.014742 50.073251,20.015219 50.073051,20.0164 50.072951,20.016635 50.072721,20.016433 50.0721,20.016392 50.07193,20.016005 50.07124,20.015766 50.070946,20.015441 50.070662,20.015291 50.070568,20.01495 50.070387,20.014829 50.070343,20.014728 50.070344,20.014586 50.070331,20.014538 50.070327,20.014498 50.070324,20.014497 50.070334,20.014437 50.070331,20.014367 50.070328,20.014362 50.070328,20.014149 50.070334,20.014101 50.070335,20.014069 50.070336,20.013988 50.070338,20.013935 50.07034,20.013441 50.070352,20.013431 50.070256,20.013499 50.070228,20.013501 50.070177,20.013509 50.070165,20.013513 50.070116,20.013522 50.070115,20.013533 50.07003,20.013062 50.069921,20.012949 50.069895,20.012742 50.07019,20.012144 50.070134,20.011786 50.070148,20.008871 50.070549,20.007717 50.070683,20.007842 50.071001,20.00729 50.071051,20.007576 50.07107,20.007823 50.071858,20.007169 50.071966,20.007293 50.072649,20.005276 50.072805,20.005117 50.073429"
+    },
+    {
+      "osm": "way/107758089",
+      "nazwa": "Osiedle Stalowe",
+      "place": "neighbourhood",
+      "lon": 20.050921,
+      "lat": 50.074182,
+      "obrys": "20.053766 50.072768,20.047706 50.073862,20.047578 50.073935,20.047199 50.074524,20.050481 50.075414,20.050741 50.075046,20.052522 50.075505,20.053645 50.073759,20.05376 50.073517,20.053825 50.07336,20.053842 50.073198,20.053836 50.073053,20.053812 50.072914,20.053766 50.072768"
+    },
+    {
+      "osm": "way/126902654",
+      "nazwa": "Osiedle Wolfganga Amadeusa Mozarta",
+      "place": "neighbourhood",
+      "lon": 19.953245,
+      "lat": 50.09422,
+      "obrys": "19.953666 50.0951,19.953336 50.09514,19.953325 50.095142,19.953316 50.095143,19.95329 50.095146,19.953241 50.095152,19.953213 50.095155,19.952429 50.095252,19.952419 50.095253,19.952317 50.095235,19.952259 50.095241,19.952179 50.095251,19.952118 50.095242,19.952082 50.095235,19.952046 50.095222,19.952008 50.095205,19.951972 50.095186,19.95194 50.095165,19.951917 50.095143,19.951895 50.095118,19.951879 50.095098,19.951868 50.095074,19.951812 50.094905,19.951759 50.094879,19.951707 50.094715,19.95177 50.094707,19.95175 50.094655,19.951724 50.09458,19.951702 50.09452,19.951635 50.094529,19.951582 50.09436,19.951614 50.09434,19.951908 50.094159,19.951952 50.094132,19.951984 50.094116,19.952277 50.093926,19.952758 50.093632,19.953557 50.093101,19.953872 50.092897,19.953907 50.092876,19.954602 50.093773,19.955012 50.094414,19.954683 50.094498,19.953524 50.094645,19.953666 50.0951"
+    },
+    {
+      "osm": "way/132887069",
+      "nazwa": "Osiedle Kolejowe",
+      "place": "neighbourhood",
+      "lon": 20.039929,
+      "lat": 50.026091,
+      "obrys": "20.039214 50.025813,20.03938 50.025797,20.039862 50.025806,20.040235 50.025779,20.04035 50.0258,20.040607 50.026449,20.040194 50.026508,20.040101 50.026291,20.039775 50.026291,20.039462 50.02632,20.039392 50.026309,20.03936 50.026276,20.03929 50.02602,20.039236 50.025893,20.039214 50.025813"
+    },
+    {
+      "osm": "way/172466126",
+      "nazwa": "Osiedle Wandy",
+      "place": "neighbourhood",
+      "lon": 20.0498,
+      "lat": 50.070283,
+      "obrys": "20.05183 50.068915,20.051654 50.068944,20.051705 50.069066,20.046116 50.070083,20.046794 50.071642,20.051074 50.070869,20.051183 50.071085,20.053212 50.070736,20.052544 50.068769,20.052448 50.068756,20.051813 50.068869,20.05183 50.068915"
+    },
+    {
+      "osm": "way/172470294",
+      "nazwa": "Osiedle Hutnicze",
+      "place": "neighbourhood",
+      "lon": 20.045271,
+      "lat": 50.073209,
+      "obrys": "20.046833 50.074497,20.042763 50.07342,20.043316 50.072575,20.043791 50.072405,20.04623 50.071978,20.046738 50.073164,20.047268 50.073301,20.047522 50.073447,20.046833 50.074497"
+    },
+    {
+      "osm": "way/184611522",
+      "nazwa": "Osiedle Dywizjonu 303",
+      "place": "neighbourhood",
+      "lon": 20.00739,
+      "lat": 50.083264,
+      "obrys": "20.011699 50.082679,20.012971 50.085006,20.006851 50.086378,20.004727 50.086788,20.004442 50.086806,20.003817 50.086838,20.0036 50.08754,20.003224 50.087554,20.002932 50.087478,20.003203 50.08664,20.003048 50.086545,20.002693 50.086341,20.002167 50.085902,20.001706 50.085423,20.001315 50.084686,20.001191 50.084523,20.001035 50.084317,20.000818 50.084088,20.000413 50.084268,19.999425 50.083379,19.999215 50.082915,19.999762 50.082775,19.99972 50.082725,20.001267 50.082371,20.00275 50.082017,20.002633 50.081817,20.002763 50.081787,20.006568 50.080929,20.007267 50.080775,20.007311 50.080766,20.007341 50.080759,20.007577 50.080706,20.007682 50.080683,20.00771 50.080676,20.007732 50.08067,20.00814 50.080576,20.008805 50.08042,20.010401 50.080047,20.013216 50.079446,20.013339 50.079733,20.013485 50.079697,20.013729 50.080068,20.013908 50.079998,20.014151 50.07987,20.014644 50.079617,20.014792 50.079603,20.014816 50.079696,20.014903 50.080211,20.014937 50.081639,20.013653 50.08194,20.013049 50.082332,20.011699 50.082679"
+    },
+    {
+      "osm": "way/253224341",
+      "nazwa": "Osiedle Kazimierzowskie",
+      "place": "neighbourhood",
+      "lon": 20.023119,
+      "lat": 50.085265,
+      "obrys": "20.022677 50.085721,20.022642 50.085618,20.023352 50.085396,20.02339 50.085451,20.023749 50.085335,20.024066 50.08517,20.024028 50.085137,20.024163 50.085059,20.024181 50.085096,20.024337 50.085124,20.02454 50.08529,20.024819 50.08531,20.024839 50.085312,20.025048 50.085327,20.025104 50.085331,20.025331 50.085348,20.025541 50.085364,20.025608 50.085339,20.025702 50.08528,20.025716 50.085192,20.025729 50.085127,20.026105 50.085159,20.026187 50.084742,20.025783 50.08467,20.025833 50.084456,20.026119 50.084475,20.026137 50.084463,20.026498 50.084539,20.026815 50.083986,20.026375 50.083871,20.025234 50.083742,20.025074 50.083705,20.024617 50.08357,20.023826 50.08309,20.02233 50.084252,20.021042 50.08503,20.020135 50.085726,20.020667 50.087002,20.02107 50.087175,20.021224 50.087342,20.021544 50.087372,20.021566 50.087378,20.021584 50.087384,20.0216 50.087395,20.021607 50.087404,20.021631 50.087458,20.021938 50.087409,20.022046 50.087428,20.022119 50.087417,20.022155 50.087406,20.022174 50.087389,20.022253 50.087402,20.022276 50.087324,20.022193 50.087312,20.022178 50.087277,20.022645 50.087367,20.022658 50.087339,20.022771 50.087074,20.02278 50.087054,20.022781 50.08705,20.022742 50.087041,20.022725 50.087038,20.022756 50.086963,20.022867 50.086983,20.022895 50.086939,20.023157 50.086991,20.023306 50.086645,20.022813 50.086545,20.022942 50.086334,20.023932 50.086448,20.024026 50.086439,20.024088 50.08642,20.024104 50.086414,20.024119 50.086395,20.024183 50.086313,20.024154 50.086224,20.024567 50.086281,20.024674 50.08598,20.023126 50.085757,20.022677 50.085721"
+    },
+    {
+      "osm": "way/426866279",
+      "nazwa": "Osiedle Avia",
+      "place": "neighbourhood",
+      "lon": 20.004548,
+      "lat": 50.079988,
+      "obrys": "20.005088 50.07854,20.004519 50.078667,20.003784 50.078901,20.003563 50.078753,20.003403 50.078869,20.003345 50.078849,20.003118 50.078976,20.002691 50.079181,20.003917 50.081423,20.00636 50.080879,20.006292 50.080442,20.00603 50.079834,20.005846 50.079823,20.005368 50.079042,20.005088 50.07854"
+    },
+    {
+      "osm": "way/429357646",
+      "nazwa": "Osiedle Krakowskie Przedmieście",
+      "place": "neighbourhood",
+      "lon": 19.834626,
+      "lat": 50.109909,
+      "obrys": "19.835936 50.110623,19.835933 50.110718,19.835527 50.110716,19.835515 50.110255,19.835525 50.109973,19.835885 50.10997,19.835874 50.109702,19.835465 50.10972,19.835383 50.109765,19.834808 50.109798,19.834731 50.110298,19.834953 50.110311,19.834872 50.111346,19.83467 50.111344,19.834694 50.11119,19.833767 50.111208,19.833626 50.111767,19.83373 50.111902,19.83266 50.11178,19.832595 50.11177,19.832601 50.111695,19.832611 50.111663,19.832676 50.111502,19.832972 50.110602,19.833259 50.109709,19.833391 50.109643,19.833552 50.108921,19.833588 50.108602,19.83445 50.108496,19.83557 50.108405,19.835581 50.108462,19.836422 50.108379,19.836619 50.110618,19.835936 50.110623"
+    },
+    {
+      "osm": "way/458253311",
+      "nazwa": "Osiedle Orlińskiego",
+      "place": "neighbourhood",
+      "lon": 20.001647,
+      "lat": 50.080653,
+      "obrys": "20.003724 50.081083,20.002691 50.079181,20.002444 50.078734,20.002286 50.078446,20.001853 50.078553,20.001546 50.078809,20.002386 50.079351,20.000956 50.080515,20.000909 50.080379,20.000862 50.080389,20.000163 50.080541,20.000117 50.080551,20.000072 50.080703,20.000325 50.081308,20.000238 50.081468,20.000045 50.081415,19.999844 50.081392,19.998963 50.081459,19.998987 50.082134,20.003724 50.081083"
+    },
+    {
+      "osm": "way/1456926372",
+      "nazwa": "Osiedle Srebne Uroczysko",
+      "place": "neighbourhood",
+      "lon": 19.84527,
+      "lat": 50.022127,
+      "obrys": "19.844124 50.021994,19.845239 50.021479,19.846302 50.022441,19.845584 50.022741,19.84475 50.022294,19.844124 50.021994"
+    },
+    {
+      "osm": "relation/6398378",
+      "nazwa": "Bronowice Residence IV",
+      "place": "neighbourhood",
+      "lon": 19.900589,
+      "lat": 50.094901
+    },
+    {
+      "osm": "relation/14532123",
+      "nazwa": "Osiedle Przy Arce",
+      "place": "neighbourhood",
+      "lon": 20.027608,
+      "lat": 50.08237
+    },
+    {
+      "osm": "relation/16876582",
+      "nazwa": "Miasteczko Studenckie AGH",
+      "place": "neighbourhood",
+      "lon": 19.904082,
+      "lat": 50.068391
+    }
+  ]
+}
