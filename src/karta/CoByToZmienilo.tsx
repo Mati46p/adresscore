@@ -109,7 +109,7 @@ export function CoByToZmienilo({ warstwy }: CoByToZmieniloProps) {
               <div className="dzialanie-liczby">
                 <div>
                   <strong>{liczba.format(scenariusz.godzinyRocznie)} h</strong>
-                  <span>orientacyjnie mniej w drodze rocznie</span>
+                  <span>różnica czasu w uproszczonym modelu na rok</span>
                 </div>
                 <div>
                   <strong>{kwota.format(scenariusz.wartoscCzasuRocznie)}</strong>
@@ -132,6 +132,15 @@ export function CoByToZmienilo({ warstwy }: CoByToZmieniloProps) {
                   <>
                     {' '}
                     · {zrodlo.nazwa}, stan {zrodlo.dataDanych}
+                  </>
+                )}
+                {zrodlo?.url.startsWith('https://') && (
+                  <>
+                    {' '}
+                    ·{' '}
+                    <a href={zrodlo.url} target="_blank" rel="noreferrer">
+                      Otwórz źródło
+                    </a>
                   </>
                 )}
               </p>
@@ -175,9 +184,9 @@ export function CoByToZmienilo({ warstwy }: CoByToZmieniloProps) {
               Wartość czasu = godziny × Twoja stawka.
             </p>
             <p>
-              Odległość w danych może być mierzona w linii prostej. Rzeczywista trasa i czas marszu
-              mogą być dłuższe. To hipotetyczny scenariusz, nie obietnica nowej inwestycji ani
-              oszczędności gotówkowej.
+              Odległość w danych może być mierzona w linii prostej. Model nie uwzględnia sieci ulic,
+              czasu oczekiwania ani innych podróży. Wynik nie przewiduje rzeczywistej oszczędności,
+              nowej inwestycji ani wydatków gotówkowych.
             </p>
           </div>
         )}

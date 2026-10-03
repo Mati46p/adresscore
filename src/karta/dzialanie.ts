@@ -53,7 +53,7 @@ export interface ScenariuszDzialania {
   celMetry: number
   roznicaMetry: number
   ocena: number | null
-  /** Dolne oszacowanie czasu według odległości w linii prostej. */
+  /** Różnica czasu w uproszczonym modelu odległości. */
   godzinyRocznie: number
   /** Wartość czasu; nie oznacza oszczędności gotówkowej. */
   wartoscCzasuRocznie: number
@@ -82,7 +82,7 @@ export function normalizujZalozenia(zalozenia: ZalozeniaDzialania): ZalozeniaDzi
 
 /**
  * Scenariusze tylko dla mierzalnych, słabszych warstw. Nie zgadujemy kosztu inwestycji
- * ani przyszłego wyniku – pokazujemy czas przemieszczania wynikający z jawnych założeń.
+ * ani przyszłego wyniku – pokazujemy model czasu wynikający z jawnych założeń.
  * Brak danych lub niezgodna jednostka = brak scenariusza.
  */
 export function policzScenariusze(
