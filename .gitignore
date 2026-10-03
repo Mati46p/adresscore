@@ -1,12 +1,35 @@
+# Zależności i build
 node_modules
 dist
-.vercel
+*.tsbuildinfo
+coverage
+
+# Sekrety i lokalne środowisko (wzór .env.example zostaje w repo)
 .env
 .env.*
 !.env.example
+.vercel
+
+# Supabase lokalnie
 supabase/.temp
 supabase/.branches
+
+# Logi i okna nocne
 *.log
 .noc
+
+# Claude Code: worktree'e agentów i lokalne ustawienia (polecenia projektu zostają w repo)
+.claude/worktrees/
+.claude/settings.local.json
+
+# Surowe pobrania ETL (powtarzalne skryptem, bywają setki MB)
+etl/.cache/
+
+# Robocze warianty wizualne
 docs/warianty/
-etl/.cache
+
+# Systemowe i edytorów
+.DS_Store
+Thumbs.db
+*.swp
+.idea
