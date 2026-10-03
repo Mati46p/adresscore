@@ -1,5 +1,5 @@
-// Symulator inwestycji, tryb „Miasto” (#96–#98): urzędnik stawia przystanek, sklep, punkt
-// zdrowia albo schron i widzi, ile adresów awansuje o literę i ile wychodzi z luki.
+// Symulator inwestycji, tryb „Miasto” (#96–#98): urzędnik stawia obiekt publiczny (przystanek,
+// szkołę, przedszkole, POZ, AED, plac zabaw…) i widzi, ile adresów awansuje o literę i ile wychodzi z luki.
 // Liczy worker (`useSymulacja`), obiekty żyją w URL (`a=`, `b=`) – link idzie do radnego
 // albo do wniosku w budżecie obywatelskim.
 import { type JSX, useState } from 'react'
@@ -15,14 +15,16 @@ import type { WskaznikPrzygotowany } from '@/wynik/silnik'
 import { useStan, ustawSymulacje } from '@/wynik/stan'
 import {
   definicjaObiektu,
+  GRUPY_OBIEKTOW,
   type Obiekt,
   pustyWynik,
+  type SugestiaMiejsca,
   TYPY_OBIEKTOW,
   type TypObiektu,
   type WynikSymulacji,
 } from '@/wynik/symulacja'
 import { MAKS_OBIEKTOW, obiektyDoTekstu, obiektyZTekstu } from '@/wynik/symulacjaUrl'
-import { useSymulacja } from '@/wynik/useSymulacja'
+import { sugerujWTle, useSymulacja } from '@/wynik/useSymulacja'
 import { policzWyniki } from '@/wynik/useWyniki'
 import { BilansSymulacji } from './BilansSymulacji'
 import './symulator.css'
@@ -41,7 +43,7 @@ function lukiBazowe(wskaznik: WskaznikPrzygotowany, dane: Dane): Map<string, Lic
   return heksy
 }
 
-const wspolrzedne = (o: Obiekt) =>
+const wspolrzedne = (o: Pick<Obiekt, 'lon' | 'lat'>) =>
   `${o.lat.toFixed(5).replace('.', ',')}° N, ${o.lon.toFixed(5).replace('.', ',')}° E`
 
 export function EkranSymulatora(): JSX.Element {
@@ -55,6 +57,9 @@ export function EkranSymulatora(): JSX.Element {
   const [edytowany, setEdytowany] = useState<Wariant>('a')
   const [srodek, setSrodek] = useState<[number, number] | null>(null)
   const [skopiowano, setSkopiowano] = useState(false)
+  const [sugestia, setSugestia] = useState<
+    { stan: 'liczy' } | { stan: 'gotowa'; typ: TypObiektu; s: SugestiaMiejsca | null } | null
+  >(null)
 
   const obiekty: Record<Wariant, Obiekt[]> = {
     a: obiektyZTekstu(symulacja.a),
@@ -77,12 +82,18 @@ export function EkranSymulatora(): JSX.Element {
     if (lista.length >= MAKS_OBIEKTOW) return
     zapisz(edytowany, [...lista, { typ, lon, lat }])
   }
+  const podpowiedzMiejsce = async () => {
+    if (!baza) return
+    setSugestia({ stan: 'liczy' })
+    const s = await sugerujWTle(baza, typ, obiekty[edytowany])
+    setSugestia({ stan: 'gotowa', typ, s })
+  }
   const klucz = (w: Wariant, i: number) => `${w}-${i}`
   const zKlucza = (k: string): [Wariant, number] => [k[0] as Wariant, Number(k.slice(2))]
 
   // Mapa: luka warstwy wybranego typu (gdy ma próg) albo wynik łączny (punkt zdrowia – bez progu).
   const definicja = definicjaObiektu(typ)
-  const wskaznik = dane?.wskazniki.find((w) => w.meta.id === definicja.warstwa) ?? null
+  const wskaznik = dane?.wskazniki.find((w) => w.meta.id === definicja.warstwy[0]) ?? null
   const prog = wskaznik && !wskaznik.niedostepny ? progLuki(wskaznik.meta) : null
   const lukiPrzed = dane && wskaznik && prog ? lukiBazowe(wskaznik, dane) : null
   const lukiPo = new Map(lukiPrzed ?? [])
@@ -136,33 +147,50 @@ export function EkranSymulatora(): JSX.Element {
         <div className="symulator-wstep">
           <h1>Symulator inwestycji dla miasta</h1>
           <p>
-            Postaw na mapie przystanek, sklep, punkt zdrowia albo punkt schronienia i zobacz, ile
-            adresów awansuje o literę i ile wychodzi z luki w usługach.
+            Postaw na mapie obiekt publiczny – przystanek, szkołę, przedszkole, punkt zdrowia, AED
+            czy plac zabaw – i zobacz, ile adresów awansuje o literę i ile wychodzi z luki w
+            usługach. Obiekt uciążliwy pokaże koszt inwestycji. Lokalizację sklepu sprawdzisz w
+            trybie „Biznes”.
           </p>
         </div>
 
         <fieldset className="symulator-grupa">
           <legend>Co stawiasz</legend>
-          <div className="symulator-typy">
-            {TYPY_OBIEKTOW.map((d) => (
-              <button
-                key={d.typ}
-                type="button"
-                className="seg symulator-typ"
-                aria-pressed={typ === d.typ}
-                disabled={Boolean(wylaczone[d.typ])}
-                title={wylaczone[d.typ]}
-                onClick={() => setTyp(d.typ)}
-              >
-                <span className="symulator-typ__znak" aria-hidden="true">
-                  {d.znak}
-                </span>
-                {d.nazwa}
-              </button>
-            ))}
-          </div>
+          {GRUPY_OBIEKTOW.map((g) => (
+            <div key={g.id} className="symulator-typy-grupa">
+              <p className="symulator-typy-tytul" id={`typy-${g.id}`}>
+                {g.nazwa}
+              </p>
+              <div className="symulator-typy" role="group" aria-labelledby={`typy-${g.id}`}>
+                {TYPY_OBIEKTOW.filter((d) => d.grupa === g.id).map((d) => (
+                  <button
+                    key={d.typ}
+                    type="button"
+                    className="seg symulator-typ"
+                    aria-pressed={typ === d.typ}
+                    disabled={Boolean(wylaczone[d.typ])}
+                    title={wylaczone[d.typ]}
+                    onClick={() => {
+                      setTyp(d.typ)
+                      setSugestia(null)
+                    }}
+                  >
+                    <span
+                      className="symulator-typ__znak"
+                      aria-hidden="true"
+                      data-dlugi={d.znak.length > 1 ? '' : undefined}
+                    >
+                      {d.znak}
+                    </span>
+                    {d.nazwa}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
           <p className="symulator-podpowiedz">
-            Kliknij mapę, żeby postawić. Znacznik przeciągnij albo przesuń strzałkami, Delete usuwa.
+            Kliknij mapę, żeby postawić: {definicja.nazwa.toLowerCase()}. Znacznik przeciągnij albo
+            przesuń strzałkami, Delete usuwa.
           </p>
           <button
             type="button"
@@ -172,6 +200,49 @@ export function EkranSymulatora(): JSX.Element {
           >
             Postaw w środku widoku
           </button>
+          {!definicja.negatywny && (
+            <button
+              type="button"
+              className="seg"
+              disabled={
+                !baza ||
+                Boolean(wylaczone[typ]) ||
+                sugestia?.stan === 'liczy' ||
+                obiekty[edytowany].length >= MAKS_OBIEKTOW
+              }
+              onClick={() => void podpowiedzMiejsce()}
+            >
+              {sugestia?.stan === 'liczy' ? 'Szukam miejsca…' : 'Podpowiedz najlepsze miejsce'}
+            </button>
+          )}
+          {sugestia?.stan === 'gotowa' && sugestia.typ === typ && (
+            <div className="symulator-sugestia" role="status">
+              {sugestia.s ? (
+                <>
+                  <p>
+                    Najwięcej zyskuje miejsce {wspolrzedne(sugestia.s)}:{' '}
+                    {sugestia.s.wynik.awans - wynikEdytowany.awans} adresów z lepszą literą,{' '}
+                    {sugestia.s.wynik.luki.reduce((x, l) => x + l.wychodzi, 0) -
+                      wynikEdytowany.luki.reduce((x, l) => x + l.wychodzi, 0)}{' '}
+                    wychodzi z luki (sprawdzono {sugestia.s.sprawdzone} miejsc, siatka ~250 m).
+                  </p>
+                  <button
+                    type="button"
+                    className="seg"
+                    onClick={() => {
+                      const m = sugestia.s
+                      if (m) postaw(m.lon, m.lat)
+                      setSugestia(null)
+                    }}
+                  >
+                    Postaw tutaj
+                  </button>
+                </>
+              ) : (
+                <p>Nie ma miejsca, w którym ten obiekt coś by poprawił.</p>
+              )}
+            </div>
+          )}
         </fieldset>
 
         <fieldset className="symulator-grupa">
@@ -267,8 +338,13 @@ export function EkranSymulatora(): JSX.Element {
             przesuwa wszystkim percentyli.
           </p>
           <p>
-            Liczymy adresy, nie mieszkańców: ludność mamy tylko w siatkach (GUS NSP 2021 – 1 km,
-            zameldowania MSIP – 100 m), więc przypisanie mieszkańców do adresu byłoby zgadywaniem.
+            Liczymy adresy. Mieszkańcy to szacunek: zameldowania stałe MSIP (heksagony o boku 100 m,
+            stan 30.06.2024) podzielone równo między adresy heksagonu – tylko Kraków, a zameldowanie
+            to nie zamieszkanie.
+          </p>
+          <p>
+            Zasięg jednego obiektu ograniczamy do 8 km – przy warstwach o dłuższej skali
+            (kąpielisko, zakład Seveso) dalsze adresy pomijamy.
           </p>
           {wskaznik && (
             <p>

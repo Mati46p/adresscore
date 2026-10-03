@@ -1,13 +1,16 @@
 // Obiekty symulatora w linku (#98). Uruchom: node --test src/wynik/
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import type { Obiekt } from './symulacja.ts'
+import { type Obiekt, TYPY_OBIEKTOW } from './symulacja.ts'
 import { MAKS_OBIEKTOW, obiektyDoTekstu, obiektyZTekstu } from './symulacjaUrl.ts'
 import { czytajHash, zapiszHash } from './url.ts'
 
 const obiekty: Obiekt[] = [
   { typ: 'przystanek', lon: 19.9372, lat: 50.0614 },
-  { typ: 'sklep', lon: 19.90001, lat: 50.05 },
+  { typ: 'przedszkole', lon: 19.90001, lat: 50.05 },
+  { typ: 'aed', lon: 19.95, lat: 50.07 },
+  { typ: 'kolej', lon: 19.96, lat: 50.08 },
+  { typ: 'szkola_kampus', lon: 19.97, lat: 50.09 },
   { typ: 'zdrowie', lon: 20.01234, lat: 50.08765 },
   { typ: 'schron', lon: 19.8, lat: 50.1 },
 ]
@@ -37,5 +40,16 @@ describe('obiekty w URL', () => {
   it('parametry symulacji poza ekranem symulatora nie trafiają do stanu', () => {
     assert.equal(czytajHash('#/?a=p:19.9,50.0').symulacja, undefined)
     assert.equal(czytajHash('#/symulator').symulacja?.a, '')
+  })
+})
+
+describe('typy obiektów w linku', () => {
+  it('kody są unikalne, a sklep (dział biznesu) nie wraca jako inny typ', () => {
+    const kody = TYPY_OBIEKTOW.map((d) => d.kod)
+    assert.equal(new Set(kody).size, kody.length)
+    for (const k of kody) assert.match(k, /^[a-z]{1,2}$/)
+    assert.ok(!kody.includes('s'))
+    assert.ok(!TYPY_OBIEKTOW.some((d) => d.warstwy.includes('sklep_odleglosc')))
+    assert.deepEqual(obiektyZTekstu('s:19.90000,50.05000'), [])
   })
 })

@@ -16,7 +16,9 @@ import {
   definicjaObiektu,
   type Obiekt,
   przygotujBaze,
+  sugerujMiejsce,
   symuluj,
+  szacujMieszkancow,
   TYPY_OBIEKTOW,
   type WynikSymulacji,
 } from './symulacja.ts'
@@ -68,7 +70,7 @@ interface Miasto {
 
 /**
  * Siatka `bok × bok` adresów co `krok` m wokół Rynku, trzy dzielnice pasami. Istniejące
- * przystanki, sklepy i punkty schronienia w kilku miejscach; odległości policzone naprawdę,
+ * przystanki, przedszkola i punkty schronienia w kilku miejscach; odległości policzone naprawdę,
  * część adresów bez danych.
  */
 function miasto(bok: number, krok: number, ziarno = 7): Miasto {
@@ -95,7 +97,7 @@ function miasto(bok: number, krok: number, ziarno = 7): Miasto {
   const najblizszy = (ps: { lon: number; lat: number }[], a: AdresSym) =>
     Math.min(...ps.map((p) => odleglosc(p.lon, p.lat, a.lon, a.lat)))
   const przystanki = punkty(6)
-  const sklepy = punkty(4)
+  const przedszkola = punkty(4)
   const schrony = punkty(2)
   const pliki = [
     {
@@ -103,8 +105,8 @@ function miasto(bok: number, krok: number, ziarno = 7): Miasto {
       wartosci: adresy.map((a, i) => (i % 97 === 0 ? null : najblizszy(przystanki, a))),
     },
     {
-      meta: meta('sklep_odleglosc', { zakres: [0, 1500] }),
-      wartosci: adresy.map((a) => najblizszy(sklepy, a)),
+      meta: meta('przedszkole_odleglosc', { zakres: [0, 1500] }),
+      wartosci: adresy.map((a) => najblizszy(przedszkola, a)),
     },
     {
       meta: meta('przychodnia_odleglosc', { zakres: [0, 3000] }),
@@ -127,7 +129,12 @@ function miasto(bok: number, krok: number, ziarno = 7): Miasto {
   return {
     adresy,
     wskazniki: pliki.map((p) => przygotujWskaznik({ ...p, wersjaAdresow: 'test' })),
-    wagi: { przystanek_odleglosc: 4, sklep_odleglosc: 3, przychodnia_odleglosc: 2, zielen: 2 },
+    wagi: {
+      przystanek_odleglosc: 4,
+      przedszkole_odleglosc: 3,
+      przychodnia_odleglosc: 2,
+      zielen: 2,
+    },
   }
 }
 
@@ -143,7 +150,7 @@ function baza(m: Miasto): BazaSymulacji {
 /** Pełne przeliczenie: każda warstwa od nowa ze starą skalą – wzorzec dla przyrostu. */
 function pelnePrzeliczenie(m: Miasto, obiekty: readonly Obiekt[]) {
   const nowe = m.wskazniki.map((w): WskaznikPrzygotowany => {
-    const moje = obiekty.filter((o) => definicjaObiektu(o.typ).warstwa === w.meta.id)
+    const moje = obiekty.filter((o) => definicjaObiektu(o.typ).warstwy.includes(w.meta.id))
     if (moje.length === 0) return w
     const wartosci = w.wartosci.map((v, i) => {
       if (v === null) return null
@@ -170,7 +177,7 @@ describe('symulacja – przyrost zgodny z pełnym przeliczeniem (#96)', () => {
   const obiekty: Obiekt[] = [
     { typ: 'przystanek', lon: RYNEK.lon + 300 * M_LON, lat: RYNEK.lat - 200 * M_LAT },
     { typ: 'przystanek', lon: RYNEK.lon - 600 * M_LON, lat: RYNEK.lat + 500 * M_LAT },
-    { typ: 'sklep', lon: RYNEK.lon - 900 * M_LON, lat: RYNEK.lat - 900 * M_LAT },
+    { typ: 'przedszkole', lon: RYNEK.lon - 900 * M_LON, lat: RYNEK.lat - 900 * M_LAT },
     { typ: 'schron', lon: RYNEK.lon - 500 * M_LON, lat: RYNEK.lat },
   ]
   const wynik = symuluj(b, obiekty)
@@ -208,14 +215,14 @@ describe('symulacja – przyrost zgodny z pełnym przeliczeniem (#96)', () => {
       assert.equal(l.przed, policzLuki(stara, m.adresy)?.razem.wLuce)
     }
     assert.deepEqual(wynik.luki.map((l) => l.warstwa).sort(), [
+      'przedszkole_odleglosc',
       'przystanek_odleglosc',
       'punkt_schronienia_odleglosc',
-      'sklep_odleglosc',
     ])
   })
 
   it('heksy: luki i średni wynik jak w pełnym przeliczeniu', () => {
-    for (const id of ['przystanek_odleglosc', 'sklep_odleglosc']) {
+    for (const id of ['przystanek_odleglosc', 'przedszkole_odleglosc']) {
       const nowa = pelne.nowe.find((w) => w.meta.id === id) as WskaznikPrzygotowany
       const wzor = policzLuki(nowa, m.adresy)
       assert.ok(wzor)
@@ -275,7 +282,7 @@ describe('symulacja – obiekt nie pogarsza (#96)', () => {
   const m = miasto(40, 50, 11)
   const b = baza(m)
   it('przy domyślnych kierunkach nikt nie spada, adres przy obiekcie nie traci', () => {
-    for (const def of TYPY_OBIEKTOW) {
+    for (const def of TYPY_OBIEKTOW.filter((d) => !d.negatywny)) {
       for (const [dx, dy] of [
         [0, 0],
         [400, -300],
@@ -301,8 +308,8 @@ describe('bilans domyka się (#98)', () => {
   const scenariusze: Obiekt[][] = [
     [{ typ: 'przystanek', lon: RYNEK.lon, lat: RYNEK.lat }],
     [
-      { typ: 'sklep', lon: RYNEK.lon - 800 * M_LON, lat: RYNEK.lat + 100 * M_LAT },
-      { typ: 'sklep', lon: RYNEK.lon + 800 * M_LON, lat: RYNEK.lat - 100 * M_LAT },
+      { typ: 'przedszkole', lon: RYNEK.lon - 800 * M_LON, lat: RYNEK.lat + 100 * M_LAT },
+      { typ: 'przedszkole', lon: RYNEK.lon + 800 * M_LON, lat: RYNEK.lat - 100 * M_LAT },
       { typ: 'przystanek', lon: RYNEK.lon + 200 * M_LON, lat: RYNEK.lat + 900 * M_LAT },
       { typ: 'schron', lon: RYNEK.lon - 300 * M_LON, lat: RYNEK.lat - 300 * M_LAT },
     ],
@@ -342,7 +349,7 @@ describe('bilans domyka się (#98)', () => {
 describe('warstwy niedostępne', () => {
   it('typ obiektu z warstwą-atrapą albo bez pliku jest wyłączony z powodem', () => {
     const m = miasto(10, 50)
-    const bez = m.wskazniki.filter((w) => w.meta.id !== 'sklep_odleglosc')
+    const bez = m.wskazniki.filter((w) => w.meta.id !== 'przedszkole_odleglosc')
     const atrapa = bez.map((w) =>
       w.meta.id === 'przystanek_odleglosc' ? { ...w, meta: { ...w.meta, atrapa: true } } : w,
     )
@@ -352,9 +359,9 @@ describe('warstwy niedostępne', () => {
       wskazniki: atrapa,
       wagi: m.wagi,
     })
-    assert.match(b.wylaczone.sklep ?? '', /brak warstwy/)
+    assert.match(b.wylaczone.przedszkole ?? '', /brak warstwy/)
     assert.match(b.wylaczone.przystanek ?? '', /atrapa/)
-    assert.equal(symuluj(b, [{ typ: 'sklep', lon: RYNEK.lon, lat: RYNEK.lat }]).zasieg, 0)
+    assert.equal(symuluj(b, [{ typ: 'przedszkole', lon: RYNEK.lon, lat: RYNEK.lat }]).zasieg, 0)
   })
   it('punkt zdrowia nie ma progu luki – tylko litery', () => {
     assert.equal(progLuki(meta('przychodnia_odleglosc')), null)
@@ -373,5 +380,97 @@ describe('wydajność (#96: < 200 ms dla obiektu w centrum)', () => {
     const ms = performance.now() - t0
     assert.ok(w.zasieg > 1000)
     assert.ok(ms < 200, `${ms.toFixed(1)} ms`)
+  })
+})
+
+/** Miasto z dodatkowymi warstwami: boisko, plac zabaw, szkoła, emitent i zameldowania. */
+function miastoRozszerzone(): Miasto {
+  const m = miasto(30, 60, 5)
+  const stala = (id: string, v: number, dodatki: Partial<WskaznikMeta> = {}) =>
+    przygotujWskaznik({
+      meta: meta(id, { zakres: [0, 3000], ...dodatki }),
+      wartosci: m.adresy.map(() => v),
+      wersjaAdresow: 'test',
+    })
+  return {
+    adresy: m.adresy,
+    wskazniki: [
+      ...m.wskazniki,
+      stala('szkola_podst_odleglosc', 3500, { zakres: [0, 5000] }),
+      stala('plac_zabaw_odleglosc', 2500),
+      stala('sport_odleglosc', 2500),
+      stala('emitent_odleglosc', 2900, { kierunek: 'wiecej-lepiej', kategoria: 'bezpieczenstwo' }),
+      przygotujWskaznik({
+        meta: meta('gestosc_zaludnienia_100m', {
+          kierunek: 'wiecej-lepiej',
+          jednostka: 'os./ha',
+          rozdzielczosc: 'siatka',
+        }),
+        wartosci: m.adresy.map((a) => (a.dzielnica ? 100 : null)),
+        wersjaAdresow: 'test',
+      }),
+    ],
+    wagi: {
+      ...m.wagi,
+      szkola_podst_odleglosc: 3,
+      plac_zabaw_odleglosc: 2,
+      sport_odleglosc: 2,
+      emitent_odleglosc: 3,
+    },
+  }
+}
+
+describe('obiekty złożone, uciążliwe i mieszkańcy', () => {
+  const m = miastoRozszerzone()
+  const b = baza(m)
+  const tu = { lon: RYNEK.lon, lat: RYNEK.lat }
+
+  it('obiekt złożony zmienia wszystkie swoje warstwy i wychodzi z luk każdej z nich', () => {
+    const w = symuluj(b, [{ typ: 'szkola_kampus', ...tu }])
+    const sama = symuluj(b, [{ typ: 'szkola', ...tu }])
+    assert.ok(w.awans >= sama.awans)
+    assert.deepEqual(w.luki.map((l) => l.warstwa).sort(), [
+      'plac_zabaw_odleglosc',
+      'szkola_podst_odleglosc',
+    ])
+    assert.ok(w.luki.every((l) => l.wychodzi > 0))
+  })
+
+  it('obiekt uciążliwy tylko pogarsza i jest policzony w bilansie', () => {
+    const w = symuluj(b, [{ typ: 'emitent', ...tu }])
+    assert.equal(w.awans, 0)
+    assert.ok(w.spadek > 0)
+    assert.equal(w.uciazliwe, 1)
+    assert.equal(sugerujMiejsce(b, 'emitent', []), null)
+  })
+
+  it('szacunek mieszkańców: gęstość × pole heksagonu po równo, bez danych = NaN', () => {
+    const lon = Float64Array.from([19.9, 19.9001, 19.95, 19.96])
+    const lat = Float64Array.from([50.06, 50.0601, 50.06, 50.06])
+    const est = szacujMieszkancow([10, 10, 10, null], lon, lat)
+    const heksagon = (10 * 3 * Math.sqrt(3) * 100 * 100) / 2 / 10_000
+    assert.ok(Math.abs((est[0] as number) - heksagon / 2) < 1e-3)
+    assert.ok(Math.abs((est[2] as number) - heksagon) < 1e-3)
+    assert.ok(Number.isNaN(est[3] as number))
+  })
+
+  it('mieszkańcy w bilansie: tylko adresy z szacunkiem, reszta policzona osobno', () => {
+    const w = symuluj(b, [{ typ: 'szkola', ...tu }])
+    assert.ok(w.mieszkancy.wychodzi > 0)
+    const luka = w.luki.find((l) => l.warstwa === 'szkola_podst_odleglosc')
+    assert.ok(luka && Math.abs(luka.mieszkancyWychodzi - w.mieszkancy.wychodzi) < 1e-6)
+    // Wieliczka (bez dzielnicy) nie ma zameldowań – jej adresy idą do „bez szacunku”.
+    assert.ok(w.mieszkancy.adresyBezSzacunku > 0)
+  })
+
+  it('sugestia miejsca daje co najmniej tyle, co obiekt w losowym punkcie', () => {
+    const s = sugerujMiejsce(b, 'szkola', [])
+    assert.ok(s)
+    const zysk = (w: WynikSymulacji) => w.awans + w.luki.reduce((x, l) => x + l.wychodzi, 0)
+    const naRogu = symuluj(b, [
+      { typ: 'szkola', lon: RYNEK.lon + 800 * M_LON, lat: RYNEK.lat + 800 * M_LAT },
+    ])
+    assert.ok(zysk(s.wynik) >= zysk(naRogu))
+    assert.ok(s.sprawdzone > 0)
   })
 })

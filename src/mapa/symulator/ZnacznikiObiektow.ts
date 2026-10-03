@@ -1,4 +1,4 @@
-// Obiekty symulatora na mapie (#97): hipotetyczny przystanek, sklep, punkt zdrowia, schron.
+// Obiekty symulatora na mapie (#97): hipotetyczny przystanek, szkoła, punkt zdrowia, AED itd.
 // Romb, nie koło jak znaczniki z rejestrów – od razu widać, że obiektu nie ma naprawdę.
 //
 // - Mysz i dotyk: przeciągnięcie przesuwa (`onPrzesun` po puszczeniu).
@@ -14,7 +14,7 @@ export interface ObiektNaMapie {
   klucz: string
   lon: number
   lat: number
-  /** Jedna litera w rombie. */
+  /** 1–2 znaki w rombie. */
   znak: string
   /** Pełny opis dla czytnika ekranu i dymka, np. „Hipotetyczny przystanek, wariant A”. */
   opis: string
@@ -53,6 +53,7 @@ interface Wpis {
 function opiszPrzycisk(p: HTMLButtonElement, o: ObiektNaMapie) {
   p.querySelector('.mapa-obiekt__znak')?.replaceChildren(o.znak)
   p.classList.toggle('mapa-obiekt--b', o.wariant === 'b')
+  p.classList.toggle('mapa-obiekt--dlugi', o.znak.length > 1)
   p.setAttribute(
     'aria-label',
     `${o.opis}. Strzałki przesuwają o ${KROK_M} m, z Shift o ${KROK_SHIFT_M} m, Delete usuwa.`,

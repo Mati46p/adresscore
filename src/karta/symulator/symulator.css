@@ -53,6 +53,14 @@
   flex-wrap: wrap;
   gap: 6px;
 }
+.symulator-typy-grupa {
+  display: grid;
+  gap: 4px;
+}
+.symulator-typy-tytul {
+  font-size: 13px;
+  color: var(--tekst-2);
+}
 .symulator-typ {
   display: inline-flex;
   align-items: center;
@@ -255,4 +263,15 @@
     padding: 20px 16px;
     overflow: visible;
   }
+}
+.symulator-typ__znak[data-dlugi] {
+  font-size: 7px;
+  letter-spacing: -0.02em;
+}
+.symulator-sugestia {
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--tekst-2);
 }

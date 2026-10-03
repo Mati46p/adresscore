@@ -40,6 +40,10 @@
     sans-serif;
 }
 
+.mapa-obiekt--dlugi .mapa-obiekt__znak {
+  font-size: 11px;
+}
+
 .mapa-obiekt:active {
   cursor: grabbing;
 }
