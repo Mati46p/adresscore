@@ -109,6 +109,27 @@ const WYKLUCZONY = jestWykluczony(WARTOSC)
 const zrodloHeksow = (res: number) => `heksy-r${res}`
 const SZRAFURA = 'szrafura-braku'
 
+/** Widocznosc nakladki nie zmienia danych ani wybranej warstwy wyniku. */
+function ustawWidocznoscHeksow(mapa: MapaLibre, widoczne: boolean) {
+  const visibility = widoczne ? 'visible' : 'none'
+  for (const { res } of POZIOMY) {
+    const id = zrodloHeksow(res)
+    for (const warstwa of [id, `${id}-szrafura`, `${id}-linia`, `${id}-obrys-braku`]) {
+      if (mapa.getLayer(warstwa)) mapa.setLayoutProperty(warstwa, 'visibility', visibility)
+    }
+  }
+  // Mgla i granica zasiegu tez przeslaniaja podklad podczas ogladania ulic.
+  for (const warstwa of ['mgla', 'obrys']) {
+    if (mapa.getLayer(warstwa)) mapa.setLayoutProperty(warstwa, 'visibility', visibility)
+  }
+  // OSM ma bardziej czytelne nazwy ulic, gdy nie musi pozostawac tlem dla kolorowych heksow.
+  if (mapa.getLayer('osm')?.type === 'raster') {
+    mapa.setPaintProperty('osm', 'raster-saturation', widoczne ? -0.7 : 0)
+    mapa.setPaintProperty('osm', 'raster-brightness-min', widoczne ? 0.12 : 0)
+    mapa.setPaintProperty('osm', 'raster-contrast', widoczne ? -0.1 : 0)
+  }
+}
+
 export const POLSKIE_NAPISY = {
   'NavigationControl.ZoomIn': 'Przybliż',
   'NavigationControl.ZoomOut': 'Oddal',
@@ -151,10 +172,13 @@ export function MapaKrakowa({
   const geometriaRef = useRef<Geometria | null>(null)
   const znacznikRef = useRef<Marker | null>(null)
   const podpisMglyRef = useRef<Marker | null>(null)
+  const dymekRef = useRef<Popup | null>(null)
   const onKlikRef = useRef(onKlik)
   const wybranyRef = useRef(wybrany)
   const [gotowa, setGotowa] = useState(false)
   const [legenda, setLegenda] = useState<HTMLElement | null>(null)
+  const [pokazHeksy, setPokazHeksy] = useState(true)
+  const pokazHeksyRef = useRef(pokazHeksy)
   // Wejście z wybranym adresem (link, powrót z karty) pomija intro – kamera od razu przy adresie.
   const [etap, setEtap] = useState<Etap>(() =>
     !wybrany && introDoPokazania() ? 'polska' : 'miasto',
@@ -190,6 +214,7 @@ export function MapaKrakowa({
     setLegenda(kontrolkaLegendy.el)
 
     const dymek = new Popup({ closeButton: false, closeOnClick: false, className: 'mapa-dymek' })
+    dymekRef.current = dymek
 
     mapa.on('load', () => {
       mapa.addImage(SZRAFURA, obrazSzrafury(), { pixelRatio: 2 })
@@ -292,6 +317,7 @@ export function MapaKrakowa({
 
     return () => {
       dymek.remove()
+      if (dymekRef.current === dymek) dymekRef.current = null
       mapa.remove()
       if (mapaRef.current === mapa) mapaRef.current = null
       geometriaRef.current = null
@@ -331,6 +357,20 @@ export function MapaKrakowa({
     [],
   )
 
+  useEffect(() => {
+    pokazHeksyRef.current = pokazHeksy
+    const mapa = mapaRef.current
+    if (!mapa || !gotowa) return
+    ustawWidocznoscHeksow(mapa, pokazHeksy)
+    if (legenda) legenda.hidden = !pokazHeksy
+    const podpisMgly = podpisMglyRef.current?.getElement()
+    if (podpisMgly) podpisMgly.hidden = !pokazHeksy
+    if (!pokazHeksy) {
+      mapa.getCanvas().style.cursor = ''
+      dymekRef.current?.remove()
+    }
+  }, [gotowa, legenda, pokazHeksy])
+
   function zastosujHeksy(
     mapa: MapaLibre,
     heksy: ReadonlyMap<string, number | null>,
@@ -359,6 +399,7 @@ export function MapaKrakowa({
         el.className = 'mapa-mgla-podpis'
         el.textContent = 'poza Krakowem – brak danych'
         el.setAttribute('aria-hidden', 'true')
+        el.hidden = !pokazHeksyRef.current
         // Nad północną krawędzią: na wąskim ekranie bok obszaru bywa tuż przy brzegu mapy.
         const [[minX], [maxX, maxY]] = g.granice
         podpisMglyRef.current = new Marker({ element: el, anchor: 'bottom', offset: [0, -10] })
@@ -470,6 +511,23 @@ export function MapaKrakowa({
         role="region"
         aria-label={`Mapa Krakowa – ${podpisWarstwy}`}
       />
+      {etap === 'miasto' && (
+        <div className="mapa-ustawienia" role="group" aria-label="Ustawienia mapy">
+          <span className="mapa-ustawienia__tytul">Ustawienia mapy</span>
+          <button
+            type="button"
+            className="mapa-ustawienia__przelacznik"
+            aria-pressed={pokazHeksy}
+            onClick={() => setPokazHeksy((wartosc) => !wartosc)}
+          >
+            <span className="mapa-ustawienia__znacznik" aria-hidden="true" />
+            Pokaż heksy
+          </button>
+          {!pokazHeksy && (
+            <span className="mapa-ustawienia__podpowiedz">Przeglądaj ulice na mapie</span>
+          )}
+        </div>
+      )}
       {etap !== 'miasto' && (
         <IntroPolski
           lot={etap === 'lot'}
@@ -480,6 +538,7 @@ export function MapaKrakowa({
         />
       )}
       {legenda &&
+        pokazHeksy &&
         createPortal(
           <>
             <div className="mapa-legenda__tytul">{podpisWarstwy}</div>
