@@ -18,6 +18,11 @@ BRANZE = {
     "kawiarnia": ("Kawiarnia", 900),
     "przychodnia": ("Przychodnia lub gabinet", 1200),
     "paczkomat": ("Automat paczkowy", 800),
+    "kwiaciarnia": ("Kwiaciarnia", 1000),
+    "kosmetyczka": ("Salon kosmetyczny", 900),
+    "weterynarz": ("Gabinet weterynaryjny", 1500),
+    "silownia": ("Siłownia lub fitness", 1500),
+    "restauracja": ("Restauracja lub fast food", 900),
 }
 
 
@@ -25,6 +30,7 @@ def branze(tags):
     shop = tags.get("shop")
     amenity = tags.get("amenity")
     healthcare = tags.get("healthcare")
+    leisure = tags.get("leisure")
     return [
         *(['sklep'] if shop in {'supermarket', 'convenience', 'grocery'} else []),
         *(['apteka'] if amenity == 'pharmacy' else []),
@@ -33,6 +39,11 @@ def branze(tags):
         *(['kawiarnia'] if amenity == 'cafe' or shop == 'coffee' else []),
         *(['przychodnia'] if amenity in {'clinic', 'doctors'} or healthcare in {'clinic', 'doctor'} else []),
         *(['paczkomat'] if amenity == 'parcel_locker' else []),
+        *(['kwiaciarnia'] if shop in {'florist', 'garden_centre'} else []),
+        *(['kosmetyczka'] if shop in {'beauty', 'cosmetics'} else []),
+        *(['weterynarz'] if amenity == 'veterinary' else []),
+        *(['silownia'] if leisure in {'fitness_centre', 'sports_centre'} and tags.get('sport') in {None, 'fitness', 'yoga', 'crossfit'} else []),
+        *(['restauracja'] if amenity in {'restaurant', 'fast_food'} else []),
     ]
 
 
