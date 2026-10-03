@@ -27,21 +27,16 @@ const sprobuj = (fn) => {
 }
 
 function zadania() {
+  // REST zamiast `gh issue list`: GraphQL jest zablokowany w sesjach Claude'a w chmurze.
   const json = gh(
-    'issue',
-    'list',
-    '-R',
-    REPO,
-    '--state',
-    'open',
-    '--label',
-    'gotowe',
-    '--limit',
-    '200',
-    '--json',
-    'number,title,labels,milestone,assignees',
+    'api',
+    '--paginate',
+    '--slurp',
+    `repos/${REPO}/issues?state=open&labels=gotowe&per_page=100`,
   )
   return JSON.parse(json)
+    .flat()
+    .filter((z) => !z.pull_request)
     .map((z) => ({
       nr: z.number,
       tytul: z.title,
@@ -51,6 +46,13 @@ function zadania() {
       etap: Number(/^E(\d+)/.exec(z.milestone?.title ?? '')?.[1] ?? 99),
     }))
     .sort((a, b) => a.etap - b.etap || a.nr - b.nr)
+}
+
+const komentarz = (nr, tresc) =>
+  gh('api', '-X', 'POST', `repos/${REPO}/issues/${nr}/comments`, '-f', `body=${tresc}`)
+function etykiety(nr, dodaj, usun) {
+  gh('api', '-X', 'POST', `repos/${REPO}/issues/${nr}/labels`, '-f', `labels[]=${dodaj}`)
+  sprobuj(() => gh('api', '-X', 'DELETE', `repos/${REPO}/issues/${nr}/labels/${usun}`))
 }
 
 function zajete() {
@@ -109,30 +111,8 @@ function wez(tor) {
     const push = sprobuj(() => git('push', '-q', 'origin', `${commit}:refs/heads/zajete/${t.nr}`))
     if (!push.ok) continue
     const galaz = `feat/${t.nr}-${slug(t.tytul)}`
-    sprobuj(() =>
-      gh(
-        'issue',
-        'edit',
-        String(t.nr),
-        '-R',
-        REPO,
-        '--add-label',
-        'w-toku',
-        '--remove-label',
-        'gotowe',
-      ),
-    )
-    sprobuj(() =>
-      gh(
-        'issue',
-        'comment',
-        String(t.nr),
-        '-R',
-        REPO,
-        '--body',
-        `W toku: ${KTO}, gałąź \`${galaz}\`.`,
-      ),
-    )
+    sprobuj(() => etykiety(t.nr, 'w-toku', 'gotowe'))
+    sprobuj(() => komentarz(t.nr, `W toku: ${KTO}, gałąź \`${galaz}\`.`))
     console.log(JSON.stringify({ nr: t.nr, tytul: t.tytul, galaz }))
     return
   }
@@ -165,7 +145,19 @@ function scal() {
     const push = sprobuj(() => git('push', 'origin', 'HEAD:main'))
     if (push.ok) {
       sprobuj(() => git('push', '-q', 'origin', '--delete', `zajete/${nr}`))
-      sprobuj(() => gh('issue', 'close', nr, '-R', REPO, '--comment', `Scalone do main (${KTO}).`))
+      sprobuj(() => komentarz(nr, `Scalone do main (${KTO}).`))
+      sprobuj(() =>
+        gh(
+          'api',
+          '-X',
+          'PATCH',
+          `repos/${REPO}/issues/${nr}`,
+          '-f',
+          'state=closed',
+          '-f',
+          'state_reason=completed',
+        ),
+      )
       console.log(`Scalone #${nr} do main (próba ${proba}).`)
       return
     }
@@ -176,19 +168,7 @@ function scal() {
 
 function zwolnij(nr) {
   sprobuj(() => git('push', '-q', 'origin', '--delete', `zajete/${nr}`))
-  sprobuj(() =>
-    gh(
-      'issue',
-      'edit',
-      String(nr),
-      '-R',
-      REPO,
-      '--add-label',
-      'gotowe',
-      '--remove-label',
-      'w-toku',
-    ),
-  )
+  sprobuj(() => etykiety(nr, 'gotowe', 'w-toku'))
   console.log(`Zwolnione #${nr}`)
 }
 

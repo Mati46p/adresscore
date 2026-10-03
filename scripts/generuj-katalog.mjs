@@ -1,5 +1,5 @@
-import { readFileSync, writeFileSync } from 'node:fs'
-import { gzipSync } from 'node:zlib'
+import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs'
+import { gunzipSync, gzipSync } from 'node:zlib'
 import { hashAdresu, kluczUlicy, slugAdresu, slugUlicy } from '../src/wynik/slug.ts'
 
 const DOMENA = 'https://adresscore.pl'
@@ -41,8 +41,12 @@ for (let i = 0; i < c.id.length; i++) {
 }
 
 const meta = { wersjaAdresow: zrodlo.wersja, adresy, ulice: [...ulice.values()] }
-const skompresowane = gzipSync(JSON.stringify(meta), { level: 9 })
-writeFileSync(new URL('../api/_seo-index.json.gz', import.meta.url), skompresowane)
+const tresc = JSON.stringify(meta)
+const plikIndeksu = new URL('../api/_seo-index.json.gz', import.meta.url)
+// Bajty gzipa zależą od wersji zlib i systemu, więc przy tej samej treści nie przepisujemy
+// pliku – inaczej każdy build brudzi drzewo i `pnpm zadanie scal` odmawia.
+const poprzedni = existsSync(plikIndeksu) ? gunzipSync(readFileSync(plikIndeksu)).toString() : null
+if (poprzedni !== tresc) writeFileSync(plikIndeksu, gzipSync(tresc, { level: 9 }))
 
 const url = (sciezka) => `<url><loc>${DOMENA}${sciezka}</loc></url>`
 const xml = (tresc) =>
@@ -68,5 +72,5 @@ writeFileSync(
   `<?xml version="1.0" encoding="UTF-8"?>\n<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${pliki.map((p) => `<sitemap><loc>${DOMENA}/${p}</loc></sitemap>`).join('')}</sitemapindex>\n`,
 )
 console.log(
-  `Katalog: ${adresy.length} adresów, ${ulice.size} ulic; indeks ${(skompresowane.length / 1024 / 1024).toFixed(1)} MiB, ${pliki.length} map witryny`,
+  `Katalog: ${adresy.length} adresów, ${ulice.size} ulic; indeks ${(statSync(plikIndeksu).size / 1024 / 1024).toFixed(1)} MiB, ${pliki.length} map witryny`,
 )
