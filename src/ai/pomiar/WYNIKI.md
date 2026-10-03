@@ -2371,28 +2371,287 @@ Przeliczenia bez sieci nic nie kosztowały. Skrypty i surowe przebiegi są poza 
 Zmiana persony z #164 (wagi profili) nie wpływa na te liczby. Pomiar porównuje profil,
 potrzeby i poziomy kategorii, a nie wagi.
 
+## Pomiar #172 i #173 na zbiorze nr 7 (#174)
+
+Pomiar z 2026-10-03, model `jev-1.13.0`. Zmierzyłem obie zmiany na świeżym zbiorze, każdą
+osobno. W kodzie aplikacji nic nie zmieniałem. Niczego też nie cofałem: tu są tylko liczby
+i rekomendacja.
+
+### Zbiór nr 7 i to, że jest starszy niż zmiany
+
+`kontrolny7-opisz.json` ma 120 opisów, a `kontrolny7-zapytaj.json` 150 pytań: 113 pojedynczych,
+25 złożonych i 12 spoza zakresu.
+
+- Napisały je na ślepo dwa osobne agenty AI, bez dostępu do kodu i poprzednich zbiorów. Cechy
+  pod te zmiany: `lagodne` (30 opisów, cel #172) i `przypadkowe_slowo` (60 pytań, cel #173).
+- Pliki weszły bajt w bajt osobnym commitem `d3beb77`, zanim poszło pierwsze wywołanie.
+  - #172 (`59a58c5`, 23:15) wszedł po nim.
+  - #173 (`3a9580b`, 23:02:21) wszedł o 2 s wcześniej, bo wyścig wygrał przy rebase
+    w `zadanie scal`. Pliki zbioru leżały gotowe od 22:57–22:58.
+  - Diff #173 nie dotyka zbioru nr 7, a próg 0,7 wybrano na zbiorach nr 2–6 (patrz „Próg tematu
+    (#173)”, gdzie zbiór nr 7 jest wprost oznaczony jako nieotwierany).
+- Tekstów nie czytałem. Z pozycji widziałem tylko id, cechy i etykiety w liczbach zbiorczych.
+
+### #171 a etykiety zbioru nr 7
+
+#171 (`c810b48`) usunął i połączył warstwy, a zbiór nr 7 (jak nr 1–6) ma stare id. Przy ocenie,
+i tylko tam, mapuję stare id na następcę według `etl/uprosc-kryteria.mjs`. Plików zbioru nie
+zmieniałem.
+
+- `halas_obwarzanek_lden` → `halas_ldwn`;
+- `inwestycje_500m_obwarzanek` → `inwestycje_500m`;
+- `powodz_1proc`, `powodz_02proc` i `gmina_powodz_powierzchnia_pct` → `powodz_10proc`;
+- `bankomat_poczta_odleglosc` i `uslugi_15min` nie mają jasnego następcy (usunięta albo
+  rozbita na trzy warstwy).
+
+Wpływ na zbiór nr 7:
+
+- 17 pytań ma zmapowany wzorzec: K7-B001, B007, B024, B052, B062, B082, B091, B094, B107, B108,
+  B114, B132, B136, B141, B143, B144 i B145.
+- **K7-B033 jest wyłączone z wyniku nagłówkowego.** Jego wzorzec wskazywał tylko warstwy bez
+  następcy. Dlatego B liczę na 149 pytaniach.
+- W K7-B134 jedna z grup tematu straciła warstwę bez następcy. Reszta grupy zostaje.
+- Wszystkie cztery przebiegi mają te same dane po #171: `public/dane` jest identyczne we
+  wszystkich drzewach, a lista dla JEV ma 118 warstw.
+- Bez mapowania liczby są prawie te same, np. warstwa główna R3 to 141/150 zamiast 141/149.
+  Mapowanie niczego tu nie rozstrzyga.
+
+### Metoda: cztery osobne drzewa kodu
+
+| Przebieg | Kod | Co |
+|---|---|---|
+| **R0** | `c810b48` (BASE: `main` tuż przed pierwszą ze zmian) | bez zmian |
+| **R1** | BASE + cherry-pick `59a58c5` | tylko #172 |
+| **R2** | `3a9580b` (= BASE + #173, rodzicem jest BASE) | tylko #173 |
+| **R3** | `59a58c5` (`main` z oboma) | #172 i #173 |
+| **R3b** | jak R3 | A/A wersji końcowej |
+
+- Każde drzewo wyeksportowałem z gita (`git archive`) do osobnego katalogu. Każdy przebieg to
+  `pomiar.ts --na-zywo --zbior kontrolny7` z własnego drzewa, a więc z własnymi zapytaniami
+  i własnym przetwarzaniem.
+- Wspólny jest tylko pomiar: `pomiar.ts` i pliki zbioru z `d3beb77` w każdym drzewie (#172
+  i #173 pomiaru nie zmieniały). Wspólny jest też pośrednik `api/_jev.js`.
+- Cherry-pick #172 na BASE miał konflikt tylko w `WYNIKI.md` (sama dokumentacja). Wziąłem wersję
+  z #172. Zmienione linie kodu są identyczne z `59a58c5` (diff 328 = 328 linii).
+- Zapytania do JEV są we wszystkich czterech drzewach identyczne (skrót sha256 zapytań dla
+  wszystkich 270 pozycji). Obie zmiany zmieniają więc tylko to, jak kod czyta odpowiedź (#173:
+  także to, kiedy rusza drugie wywołanie).
+- #164 (`be7103e`, wagi profili) leży między BASE a R3, ale zapytań nie zmienia (ten sam skrót).
+- Pięć przebiegów szło równolegle, o tej samej porze.
+- Przedziały to 95% Wilsona. „Zyski / straty” to porównanie sparowane z R0 na tych samych
+  pozycjach, a p to dokładny test McNemara.
+- R0b (A/A wersji bazowej) się nie zmieścił w budżecie. Zastępują go dwie rzeczy:
+  - A/A na prawdziwych parach. Część A (opisz siebie) ma w R0 i R2 identyczny kod, a w R1 i R3
+    też identyczny. To dwa czyste A/A części A: bazowy i po #172;
+  - dla B te same zapisane odpowiedzi JEV z par przebiegów, przetworzone kodem każdej wersji,
+    bez sieci. Odtworzenie R3/R3b kodem R3 daje dokładnie te same 6 przeskoków co na żywo.
+
+### Wynik (JEV = to, co widzi użytkownik)
+
+**A – „opisz siebie”** (120 opisów):
+
+| | Reguły | R0 bez zmian | R1 tylko #172 | R2 tylko #173 | **R3 oba** | R3b (A/A) |
+|---|---|---|---|---|---|---|
+| Profil | 72% [63–79%] (86) | 78% [69–84%] (93) | 82% [74–88%] (98) | 80% [72–86%] (96) | **80% [72–86%] (96)** | 78% [70–85%] (94) |
+| Cały opis dokładnie | 35% [27–44%] (42) | 57% [48–65%] (68) | 60% [51–68%] (72) | 57% [48–65%] (68) | **58% [49–67%] (70)** | 57% [48–65%] (68) |
+| Potrzeby (10) P / R / F1 | 59 / 71 / 64% | 78 / 94 / 85% | 78 / 94 / 85% | 76 / 92 / 83% | 80 / 93 / 86% | 78 / 94 / 85% |
+| Kategorie ważne P / R / F1 | 73 / 80 / 76% | 91 / 77 / 83% | 91 / 81 / 85% | 90 / 77 / 83% | 92 / 80 / 86% | 91 / 82 / 86% |
+| „Nic” tam, gdzie trzeba | 10/14 | 14/14 | 14/14 | 14/14 | 14/14 | 14/14 |
+| Bramka zamknięta | – | 11 | 10 | 11 | 12 | 10 |
+| Zapas (reguły) | – | 13 | 11 | 13 | 9 | 11 |
+
+**B – „zapytaj o adres”** (149 pytań: 112 pojedynczych, 25 złożonych, 12 spoza zakresu):
+
+| | Reguły | R0 bez zmian | R1 tylko #172 | R2 tylko #173 | **R3 oba** | R3b (A/A) |
+|---|---|---|---|---|---|---|
+| Warstwa główna od razu | 42% [34–50%] (62) | 94% [89–97%] (140) | 94% [89–97%] (140) | 93% [88–96%] (139) | **95% [90–97%] (141)** | 94% [89–97%] (140) |
+| Pojedyncze – warstwa główna | 38/112 | 103/112 | 103/112 | 102/112 | 104/112 | 103/112 |
+| Złożone – choć jeden temat | 17/25 | 25/25 | 25/25 | 25/25 | 25/25 | 25/25 |
+| Spoza → „nie wiem”, bez warstw | 7/12 | 12/12 | 12/12 | 12/12 | 12/12 | 12/12 |
+| Pokrycie złożonych | 55% | 69% | 73% | 69% | 69% | 69% |
+| Złożone z kompletem | 8/25 | 9/25 | 11/25 | 9/25 | 9/25 | 9/25 |
+| Precyzja warstw | 54% [46–62%] | 86% [80–90%] | 89% [83–93%] | 89% [84–93%] | **94% [89–97%]** | 93% [88–96%] |
+| **Pojedyncze z fałszywym dodatkiem** | 9 (8%) | 13 (12% [7–19%]) | 11 (10%) | 8 (7% [4–13%]) | **4 (4% [1–9%])** | 5 (4%) |
+| Fałszywe warstwy (wszystkie pytania w zakresie) | 13 | 18 | 15 | 10 | **6** | 7 |
+| Średnio warstw na odpowiedź | 1,01 | 1,23 | 1,19 | 1,16 | 1,11 | 1,11 |
+| Surowy wybór JEV (bez progu) | – | 141 | 140 | 139 | 141 | 140 |
+| Pewność < 0,5 | – | 11 | 11 | 11 | 11 | 11 |
+| Z propozycjami / wzorzec wśród dwóch | – | 22 / 22 | 29 / 27 | 25 / 25 | 30 / 29 | 29 / 28 |
+| – z tego przy pewności < 0,5 (#172) | – | 0 | 11 | 0 | 11 | 11 |
+| **Po kliknięciu propozycji** | – | 95% [90–97%] (141) | 98% [94–99%] (146) | 95% [91–98%] (142) | **99% [95–100%] (147)** | 99% (147) |
+| Drugie wywołanie | – | 14 | 13 | 12 | 12 | 12 |
+
+**Cechy** (liczby pozycji; przy n ≤ 30 jedna pozycja to co najmniej 3 pp):
+
+| Cecha | n | Reguły | R0 | R1 | R2 | **R3** | R3b |
+|---|---|---|---|---|---|---|---|
+| A `lagodne`: profil / dokładnie | 30 | 23 / 5 | 23 / 15 | 25 / 17 | 23 / 15 | **23 / 15** | 24 / 16 |
+| A `lagodne`: kategorie F1 / potrzeby F1 | 30 | 77 / 53% | 80 / 83% | 79 / 83% | 79 / 83% | 79 / 83% | 79 / 83% |
+| B `przypadkowe_slowo`: główna / z fałszywym dodatkiem | 59 | 18 / 5 | 56 / 5 | 57 / 5 | 55 / 3 | **57 / 3** | 57 / 3 |
+| B `jeden_temat`: główna / z fałszywym dodatkiem | 99 | 32 / 8 | 92 / 7 | 92 / 8 | 91 / 5 | **93 / 4** | 92 / 4 |
+| B `niejednoznaczne`: główna / z fałszywym dodatkiem | 13 | 6 / 1 | 11 / 6 | 11 / 3 | 11 / 3 | **11 / 0** | 11 / 1 |
+| B `zlozone`: pokrycie | 25 | 55% | 69% | 73% | 69% | 69% | 69% |
+| B `bliska_pomylka`: główna | 10 | 2 | 7 | 7 | 7 | 7 | 7 |
+
+W pozostałych cechach A (`profil_glowny`, `bliska_pomylka`, `domownik`, `w_imieniu`,
+`nikt_nie_szuka`, `bez_sygnalu`) wersje różnią się o 0–2 pozycje, czyli tyle co R3 i R3b.
+
+**Sparowane względem R0** (zyski / straty, p McNemara):
+
+| | R0 → R1 (#172) | R0 → R2 (#173) | **R0 → R3 (oba)** | R0 → R3b |
+|---|---|---|---|---|
+| A: profil | +5 / −0, p = 0,063 | +5 / −2, p = 0,45 | +4 / −1, p = 0,38 | +4 / −3, p = 1 |
+| A: dokładnie | +4 / −0, p = 0,13 | +3 / −3, p = 1 | +4 / −2, p = 0,69 | +3 / −3, p = 1 |
+| A: kategorie ważne dokładnie | +5 / −2, p = 0,45 | +3 / −2, p = 1 | +6 / −3, p = 0,51 | +6 / −2, p = 0,29 |
+| A `lagodne`: dokładnie | +2 / −0, p = 0,5 | +1 / −1, p = 1 | +0 / −0 | +2 / −1, p = 1 |
+| A `lagodne`: kategorie dokładnie | +0 / −1 | +0 / −1 | +0 / −1 | +0 / −1 |
+| B: warstwa główna | +2 / −2, p = 1 | +0 / −1, p = 1 | +2 / −1, p = 1 | +2 / −2, p = 1 |
+| **B: pojedyncze bez fałszywego dodatku** | +5 / −3, p = 0,73 | +5 / −0, p = 0,063 | **+9 / −0, p = 0,004** | +8 / −0, p = 0,008 |
+| B `przypadkowe_slowo`: bez fałszywej warstwy | +1 / −1 | +2 / −0, p = 0,5 | +2 / −0, p = 0,5 | +2 / −0, p = 0,5 |
+| B: złożone z kompletem | +2 / −0, p = 0,5 | +0 / −0 | +0 / −0 | +0 / −0 |
+| **B: po kliknięciu** | +5 / −0, p = 0,063 | +1 / −0, p = 1 | **+6 / −0, p = 0,031** | +6 / −0, p = 0,031 |
+
+Część A ma w R0 i R2 **ten sam kod**, więc kolumna R0 → R2 dla A to czysty szum: profil +5 / −2,
+„dokładnie” +3 / −3. Zyski profilu w R0 → R1 to te same pozycje (A012, A017, A023, A046), które
+„zyskuje” R2 bez żadnej zmiany w A. To nie jest skutek #172.
+
+### Stabilność (A/A)
+
+**A – pary przebiegów z identycznym kodem części A:**
+
+| Para | Kod A | Odpowiedź końcowa inna | w tym tylko kategorie | wybór profilu inny | „dokładnie” zmienione |
+|---|---|---|---|---|---|
+| R0 / R2 | bazowy | 16/120 | 7 | 2 | 6 |
+| R1 / R3 | #172 | 11/120 | 2 | 2 | 6 |
+| R3 / R3b | #172 | 17/120 | 6 | 1 | 8 |
+
+**B – te same odpowiedzi JEV, przetworzone kodem każdej wersji** (bez sieci; drugie wywołanie
+nie jest zapisane, więc w przeliczeniu go nie ma):
+
+| Para odpowiedzi | kod R0 | kod R1 (#172) | kod R2 (#173) | **kod R3 (oba)** |
+|---|---|---|---|---|
+| R3 / R3b | 13 | 11 | 9 | **6** (na żywo też 6) |
+| R0 / R2 | 9 | 8 | 10 | 9 |
+| R1 / R3 | 14 | 12 | 10 | 9 |
+| **Razem na 450 par** | **36** | 31 | 29 | **24** |
+| w tym inna warstwa główna | 6 | 4 | 6 | 4 |
+
+- **Wybór JEV prawie się nie zmienia między przebiegami:** w R3 i R3b profil różni się w 1/120,
+  a warstwa w 1/150. Pewność wyboru warstwy różni się średnio o 0,014, maksymalnie o 0,15.
+- **A: stabilność po #172 nie jest lepsza ponad szum.** Odpowiedź inna: 16 w parze bazowej
+  wobec 11 i 17 w parach po #172. Przeskoki z kategorii: 7 wobec 2 i 6. Większość przeskoków
+  (9–11 na parę) to potrzeby i profil, a tych #172 nie zmienia.
+- **B: przeskoki spadają z 36 do 24 na 450 par.** Więcej daje tu #173 (mniej doklejek przy
+  progu tematu) niż #172. Inna warstwa główna to 6 → 4 przypadki.
+- **Wersja końcowa, na żywo:** 23 z 270 pozycji (8,5%) różni się między R3 a R3b: 17 w A
+  i 6 w B. W B tylko 2 różnią się warstwami, a 4 – samymi propozycjami. Wynik nagłówkowy waha
+  się o 0–2 pozycje (A „dokładnie” 70 / 68, B 141 / 140).
+
+### Opóźnienie i wywołania
+
+| Przebieg | A p50 / p95 / max | B p50 / p95 / max (czas pytania, z drugim wywołaniem) |
+|---|---|---|
+| R0 | 277 / 355 / 786 ms | 351 / 649 / 763 ms |
+| R1 | 281 / 359 / 610 ms | 346 / 613 / 776 ms |
+| R2 | 290 / 370 / 632 ms | 351 / 594 / 689 ms |
+| R3 | 288 / 391 / 635 ms | 353 / 619 / 796 ms |
+| R3b | 293 / 344 / 676 ms | 351 / 615 / 697 ms |
+
+- Opóźnienie nie zależy od wersji, bo zapytania są te same.
+- **Dwa pierwsze timeouty pośrednika** (806 i 810 ms, w R1 i R3b) po 702 wywołaniach bez
+  timeoutu w #170. Oba ponowione z odczekaniem. Odpowiedzi nie zginęły, a nieudane próby nie są
+  liczone jako odpowiedzi. Zapas do limitu 800 ms jest naprawdę mały – to potwierdza (b) z #170.
+
+**Wywołania na żywo: 1415** (R0 – 284, R1 – 284, R2 – 282, R3 – 282, R3b – 283, licznik
+`pomiar.ts`). To 1413 udanych i 2 ponowienia po timeoucie. Budżet 1400 przekroczyłem o 15, bo
+źle oszacowałem drugie wywołania (12–14 na przebieg zamiast ok. 9). Przebieg samych reguł i całe
+przeliczenie bez sieci nic nie kosztowały.
+
+### Decyzja – z danych, bez cofania
+
+**#173 (`PROG_TEMATU` 0,6 → 0,7): ZOSTAJE.**
+
+- Cel się poprawia ponad szum. Pojedyncze pytania z fałszywym dodatkiem: 13 → 8 sam (+5 / −0,
+  p = 0,063), 13 → 4 z #172 (+9 / −0, p = 0,004; w powtórce R3b +8 / −0, p = 0,008).
+  Fałszywe warstwy 18 → 10 (sam) i → 6 (z oboma). Precyzja 86% → 89% → 94%.
+- W `przypadkowe_slowo` 5 → 3 (+2 / −0, n = 59, to za mało na istotność). W `niejednoznaczne`
+  6 → 3, a z oboma 0.
+- Bez straty: pokrycie złożonych 69% → 69%, komplet 9 → 9, warstwa główna 140 → 139 (−1,
+  p = 1; K7-B031 to pozycja przy progu). Mniej drugich wywołań (14 → 12) i stabilniejsze B.
+- Przewidywanie z #173 („mniej więcej o połowę mniej”) się sprawdziło: 13 → 8 sam, 13 → 4 razem.
+
+**#172 (poziomy kategorii z rozkładu, słaby wybór z propozycjami, granica 0,86): według reguły
+„cel ponad szum” – rekomendacja cofnięcia części o kategoriach. Część B (słaby wybór
+z propozycjami) ma dowody za, choć na granicy istotności.**
+
+- **Cel – stabilność – nie jest lepszy ponad szum na zbiorze nr 7.**
+  - A: odpowiedź inna 16 (kod bazowy) wobec 11 i 17 (#172).
+  - B: 36 → 31 na 450 par samym #172. Warstwa główna przeskakuje 6 → 4 razy.
+- **`lagodne` bez zmian:** „dokładnie” 15 → 17 w R1, ale 15 w R3 i 16 w R3b. Kategorie
+  dokładnie +0 / −1 we wszystkich wersjach (K7-A052), kategorie F1 80% → 79%.
+- **A ogółem w granicach szumu:** „dokładnie” +4 / −0 (p = 0,13), ale czysty szum (R0 → R2,
+  ten sam kod A) daje +3 / −3. Profil +5 / −0 to te same pozycje, które zmienia szum. Pełność
+  kategorii 77% → 81% (R3 80%, R3b 82%) to jedyny spójny ruch w A, bez straty precyzji.
+- **Żadnej istotnej straty:** warstwa główna +2 / −2, fałszywe dodatki 13 → 11, potrzeby bez
+  zmian, bramka 11 → 10.
+- **Słaby wybór (0,25–0,5) z dwiema propozycjami** to jedyny wyraźny zysk.
+  - Wszystkie 11 pytań z pewnością < 0,5 ma teraz propozycje (było 0).
+  - Po kliknięciu: +5 / −0 (p = 0,063) sam, +6 / −0 (p = 0,031) z #173. R3b powtarza to samo.
+  - Warstwa główna od razu się nie zmienia.
+- **Rekomendacja:** jeśli trzymamy się reguły z #174 dosłownie, #172 nie pokazał poprawy celu
+  ponad szum i powinien zostać cofnięty. Uczciwszy podział:
+  - część o kategoriach (`poziomKategorii`, progi 3,55 / 2,65 / 1,2 / 0,7) cofnąć albo zostawić
+    jako neutralną. Nic nie psuje, ale też niczego nie dowiodła;
+  - słaby wybór z propozycjami i granicę 0,86 zostawić. Zysk po kliknięciu powtarza się w R1,
+    R3 i R3b bez ani jednej straty.
+
+  Decyzja należy do właściciela – tu niczego nie cofałem.
+
+### Bez sieci, do powtórzenia
+
+Przebiegi są w `przebiegi/k7-r0-174.json`, `k7-r1-174.json`, `k7-r2-174.json`, `k7-r3-174.json`
+i `k7-r3b-174.json`. `pomiar.ts --zbior kontrolny7 --z-pliku <plik>` odtwarza z nich liczby
+zbiorcze, bez mapowania #171. Mapowanie #171, porównania sparowane, przeskoki A/A
+i przetworzenie odpowiedzi kodem innych wersji robiły skrypty poza repo (scratchpad), tak jak
+w #170.
+
 ## Na slajd
 
-**Zbiór kontrolny nr 6 (#170).** To 150 opisów i 150 pytań, które napisały na ślepo osobne agenty
-AI, bez dostępu do kodu. Wersję końcową zmierzyliśmy na nim raz. W nawiasach podajemy 95%
-przedział ufności.
+**Zbiór kontrolny nr 7 (#174).** To 120 opisów i 150 pytań, które napisały na ślepo osobne
+agenty AI, bez dostępu do kodu. Wersję końcową (po #172 i #173) zmierzyliśmy na nim w dwóch
+osobnych przebiegach (liczby z pierwszego, drugi różni się o 0–2 pozycje). W nawiasach podajemy
+95% przedział ufności.
 
-- Na pytanie o adres JEV wskazuje właściwe dane od razu w **97%** pytań (93–99%). Reguły słów
-  kluczowych robią to w 37% (29–45%).
-- Profil szukającego, np. rodzina, senior albo inwestor, JEV trafia w **85%** opisów (79–90%),
-  a reguły w 72% (64–79%).
-- Cały opis, czyli profil razem z kompletem potrzeb, JEV rozumie dokładnie w **61%** (53–69%),
-  a reguły w 47% (39–55%).
-- Z potrzeb wymienionych w opisie JEV wyłapuje 84%, a reguły 69%.
-- Odpowiedź przychodzi zwykle po ok. 0,3 s, a w 95% przypadków przed upływem 0,55 s.
-  Z 702 wywołań tego dnia żadne nie przekroczyło limitu 0,8 s (pomiar lokalny, nie z produkcji).
-- Słabe strony: w pytaniach o kilka rzeczy naraz komplet tematów JEV daje tylko w 23% (12–41%).
-  Do co siódmego prostego pytania dokłada też zbędną warstwę.
+- Na pytanie o adres JEV wskazuje właściwe dane od razu w **95%** pytań (90–97%). Reguły słów
+  kluczowych robią to w 42% (34–50%). Gdy JEV nie jest pewny, pokazuje dwie propozycje. Z nimi
+  właściwe dane są w **99%** pytań (95–100%).
+- Do prostego pytania JEV dokłada zbędną warstwę już tylko w **4%** pytań (1–9%), czyli 4 na
+  112. Przed #173 było to 12%.
+- Cały opis, czyli profil razem z kompletem potrzeb, JEV rozumie dokładnie w **58%** (49–67%),
+  a reguły w 35% (27–44%).
+- Z potrzeb wymienionych w opisie JEV wyłapuje 93%, a reguły 71%.
+- Profil szukającego JEV trafia w 80% opisów (72–86%), a reguły w 72% (63–79%). Na tym zbiorze
+  ta różnica nie jest istotna (p = 0,15). Na zbiorze nr 6 była (85% wobec 72%).
+- Odpowiedź przychodzi zwykle po ok. 0,3 s, a w 95% przypadków przed upływem 0,4 s (opis) i 0,65 s
+  (pytanie). Z 1415 wywołań 2 przekroczyły limit 0,8 s i poszły ponownie (pomiar lokalny,
+  nie z produkcji).
+- Słabe strony: w pytaniach o kilka rzeczy naraz komplet tematów JEV daje tylko w 36% (20–55%).
+  Między dwoma identycznymi przebiegami ok. 8% odpowiedzi różni się szczegółem (głównie potrzeba
+  albo poziom kategorii przy progu).
 
-Zbiory pisały agenty AI, a nie ludzie. Wynik zależy od zbioru: na zbiorach nr 4 i 5 „dokładnie”
-wyniosło 33% i 75%. Dlatego zawsze podajemy go z nazwą zbioru.
+Zbiory pisały agenty AI, a nie ludzie. Wynik zależy od zbioru: „dokładnie” wyniosło 33%, 75%,
+61% i 58% na zbiorach nr 4–7. Dlatego zawsze podajemy go z nazwą zbioru.
 
 ### Wcześniej (historia, zastąpione zdaniami wyżej)
+
+**Wersja z #170 (zbiór kontrolny nr 6, 150 opisów i 150 pytań, przed #172 i #173):**
+
+- warstwa główna od razu: 97% (93–99%), reguły 37% (29–45%);
+- profil: 85% (79–90%), reguły 72% (64–79%);
+- cały opis dokładnie: 61% (53–69%), reguły 47% (39–55%);
+- potrzeby: 84%, reguły 69%;
+- komplet tematów w pytaniach złożonych: 23% (12–41%); zbędna warstwa do co siódmego prostego
+  pytania.
 
 **Po #163 (zbiór kontrolny nr 5, 40 opisów i 35 pytań).** Osobne przebiegi w #170 dały 94%
 warstwy głównej i 75% „dokładnie”. Wspólne zapytanie z #163 dało 97% i 78%.
@@ -2426,6 +2685,11 @@ bez nowych wywołań:
 | `przebiegi/aa-170-r1.json`, `aa-170-r2.json` | A/A na końcowym zapytaniu, pełne zbiory do strojenia (format własnego skryptu: wszystkie wywołania, czasy, `usage`) | #170 |
 | `przebiegi/latencja-170.json` | opóźnienie końcowego zapytania: wszystkie wywołania z przebiegów A/A i powtórek, podsumowanie | #170 |
 | `przebiegi/k2-173.json`, `k4-173.json`, `k5-173.json` | zbiory nr 2, 4 i 5 (B), próg tematu 0,7 – sprawdzian na żywo na zbiorach użytych | #173 |
+| `przebiegi/k7-r0-174.json` | zbiór kontrolny nr 7 (120 + 150), kod BASE `c810b48` – bez #172 i #173 | #174 |
+| `przebiegi/k7-r1-174.json` | zbiór kontrolny nr 7, BASE + #172 (cherry-pick `59a58c5`) | #174 |
+| `przebiegi/k7-r2-174.json` | zbiór kontrolny nr 7, BASE + #173 (`3a9580b`) | #174 |
+| `przebiegi/k7-r3-174.json` | zbiór kontrolny nr 7, `main` z #172 i #173 (`59a58c5`), wynik nagłówkowy | #174 |
+| `przebiegi/k7-r3b-174.json` | zbiór kontrolny nr 7, powtórka R3 (A/A wersji końcowej) | #174 |
 
 Przebiegów zbioru nr 1 (#147, #150) nie zapisywaliśmy pozycja po pozycji – są tylko liczby
 zbiorcze powyżej. Raport z przeglądu projektu JEV (nazwy warstw, prawdopodobieństwa, profil,
