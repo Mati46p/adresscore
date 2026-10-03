@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 import { gunzipSync } from 'node:zlib'
 import handler from '../api/seo.js'
+import { maStalyNaglowek } from '../etl/lib/gzip.mjs'
 import { odczytajPreferencje, polaczPreferencje, zapiszPreferencje } from '../src/wynik/sesja.ts'
 import { czytajHash } from '../src/wynik/url.ts'
 
@@ -39,6 +40,11 @@ test('indeks i sitemapy obejmują wszystkie adresy bez kolizji', () => {
     return n + ile
   }, 0)
   assert.equal(suma, indeks.adresy.length)
+})
+
+test('indeks SEO ma nagłówek gzip niezależny od systemu, więc build nie brudzi drzewa (#179)', () => {
+  const gz = readFileSync(new URL('../api/_seo-index.json.gz', import.meta.url))
+  assert.ok(maStalyNaglowek(gz))
 })
 
 test('serwer zwraca unikalny HTML i kanoniczny URL bez ustawień', () => {

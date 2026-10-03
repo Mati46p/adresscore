@@ -113,6 +113,18 @@ test('każdy plik gzip kompaktu ma nagłówek niezależny od systemu (#179)', ()
 })
 
 const katalog = new URL('../public/dane/kompakt/', import.meta.url)
+test('dostarczone pliki gzip kompaktu mają nagłówek niezależny od systemu (#179)', {
+  skip: !existsSync(katalog),
+}, () => {
+  const indeks = JSON.parse(readFileSync(new URL('indeks.json', katalog), 'utf8'))
+  const wskazniki = Object.values(indeks.wskazniki)
+  const pliki = [indeks.heksy, indeks.szukaj, indeks.id, ...indeks.kafle]
+    .concat(wskazniki.flatMap((w) => [w.heksy, w.filtr]))
+    .map((x) => x.plik)
+  assert.ok(pliki.length > 2 * wskazniki.length, `plików gzip: ${pliki.length}`)
+  for (const plik of pliki) assert.ok(maStalyNaglowek(readFileSync(new URL(plik, katalog))), plik)
+})
+
 test('dostarczony kompakt odpowiada bieżącym plikom wskaźników', {
   skip: !existsSync(katalog),
 }, async () => {
