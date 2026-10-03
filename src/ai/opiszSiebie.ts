@@ -223,8 +223,9 @@ export interface Potrzeba {
   kierunki?: Readonly<Record<string, KierunekOceny>>
 }
 
-// Kolejność = kolejność pytań do JEV i chipów „zrozumiałem”. Najwyżej 10 z twierdzeniem
-// (limit 16 pytań: 1 profil + 3 kategorie + 10 potrzeb + 2 twierdzenia bramki, #153).
+// Kolejność = kolejność pytań do JEV i chipów „zrozumiałem”. #183: 16 z twierdzeniem, razem
+// 22 pytania (1 profil + 3 kategorie + 16 potrzeb + 2 twierdzenia bramki); limit pośrednika
+// podniesiony z 16 do 32 (`LIMITY.pytan` w api/_jev.js – nasz limit, JEV ma tylko 64k tokenów).
 // #147: każde twierdzenie to jeden warunek – JEV obniża ocenę, gdy tekst spełnia tylko część
 // koniunkcji („nie ma samochodu i jeździ komunikacją” → „Nie mam samochodu” 0,58 w #18).
 // Pozostałe twierdzenia nie mają „i”. Próba ich zaostrzenia (dzieci, pies, praca w centrum,
@@ -538,6 +539,231 @@ export const POTRZEBY: readonly Potrzeba[] = [
     ],
     kategorie: { spolecznosc: 3 },
     wskazniki: { frekwencja_samorzad_2024: 3 },
+  },
+  // ── #183: sześć nowych potrzeb (id ze słownika zbioru nr 8) ──────────────────────────────
+  // Na końcu tabeli: kolejność pytań do JEV dla starych potrzeb się nie zmienia, a przy dwóch
+  // potrzebach z przeciwnym kierunkiem tej samej warstwy wygrywa wcześniejsza (`cisza` przed
+  // `zycie_nocne`). Każda ma twierdzenie z kryteriami #163 o przyszłym mieszkańcu (#162).
+  // Nachodzą na stare i tak zostaje: `auto` / `bez_samochodu` (wykluczają się, w tekście
+  // rozstrzyga przeczenie), `wozek` / `zdrowie` (te same słowa w regułach), `student` /
+  // `singiel` (to samo słowo „student”).
+  {
+    id: 'auto',
+    etykieta: 'samochód',
+    twierdzenie: 'Osoba na co dzień jeździ własnym samochodem.',
+    kryteria: {
+      prawda: {
+        co: 'Ktoś, kto zamieszka w szukanym mieszkaniu, ma samochód i z niego korzysta: dojeżdża autem, wozi nim dzieci albo szuka miejsca do parkowania lub garażu.',
+        przyklady: [
+          'Do pracy w Skawinie jeżdżę autem, pod blokiem musi się dać zaparkować.',
+          'Mamy dwa samochody, garaż albo miejsce postojowe to podstawa.',
+        ],
+      },
+      falsz: {
+        co: 'Nikt, kto tam zamieszka, nie ma samochodu albo nim na co dzień nie jeździ (auto stoi, a dojeżdża rowerem lub komunikacją, o parkowaniu nie pisze); auto było kiedyś albo ma je ktoś, kto tam nie zamieszka.',
+        przyklady: ['Samochód sprzedałem, przesiadam się na tramwaj.'],
+      },
+    },
+    wzorce: [
+      {
+        // „parkow” bez dalszej końcówki to też „parków” (park) – stąd pełne formy parkowania.
+        // Przeczenie PO słowie („auta nie mam”, „na auto mnie nie stać”) gasi lookahead.
+        re: /\b((?<!stac mnie na )(samochod\w*|auto|autem|auta|autko)\b(?! (nie|mnie nie|juz nie|sprzedal))|parking|parkowan|parkowac|zaparkow|miejsc\w* postojow|garaz)/,
+      },
+    ],
+    kategorie: { transport: 3 },
+    // Dojazd drogą utwardzoną (3) i mało dróg gruntowych w 300 m (2): auto pod dom bez błota.
+    // Poza strefą płatnego parkowania (1, neutralna – z kierunkiem „0 = lepiej”): w SPP postój
+    // płatny (abonament mieszkańca) i miejsc mało; tylko Kraków, 14% adresów w strefie.
+    // Ładowarka EV (1): dotyczy tylko aut elektrycznych. Bez P+R (opis warstwy: parking dla
+    // dojeżdżających spoza miasta) i bez SCT (77% adresów Krakowa w strefie, wjazd zależy od
+    // pojazdu, którego nie znamy). Warstwy dojazdu do głównej drogi nie ma.
+    wskazniki: {
+      dojazd_utwardzony: 3,
+      drogi_gruntowe_300m: 2,
+      spp_podstrefa: 1,
+      ladowarka_ev_odleglosc: 1,
+    },
+    kierunki: { spp_podstrefa: 'mniej-lepiej' },
+  },
+  {
+    id: 'wozek',
+    etykieta: 'wózek, bez barier',
+    twierdzenie: 'Osoba porusza się na wózku albo ma ograniczoną sprawność ruchową.',
+    kryteria: {
+      prawda: {
+        co: 'Ktoś, kto zamieszka w szukanym mieszkaniu, jeździ na wózku inwalidzkim, chodzi o kulach, o lasce albo z balkonikiem albo ma trudność z chodzeniem i potrzebuje dróg bez barier.',
+        przyklady: [
+          'Mąż jeździ na wózku, wysokie krawężniki to dla nas koniec spaceru.',
+          'Po operacji biodra chodzę o kulach i daleko nie dojdę.',
+        ],
+      },
+      falsz: {
+        co: 'Wózek dziecięcy albo na zakupy; niepełnosprawność kogoś, kto tam nie zamieszka; dawna kontuzja, która już minęła.',
+        przyklady: ['Spacerujemy z wózkiem, przyda się park dla małego.'],
+      },
+    },
+    wzorce: [
+      {
+        // Wózek dziecięcy („z wózkiem”, „wózek z dzieckiem”, „spacerowy”) to nie bariera ruchowa;
+        // osoba na wózku pisze „na wózku” albo „wózek inwalidzki”.
+        re: /\b((?<!\bz )woz(ek|ka|ku|kiem|ki)\b(?! (dzieciec|spacerow|gleboki|z dzieck|z dziecm|dla dzieck|z malu|z cork|z syn|z wnuk|na zakupy))|inwalidz|niepelnospraw|o kulach|balkonik|chodzik|o lasce|ograniczon\w* (mobilnosc|sprawnosc|ruchow)|trudno\w* (mi |jej |mu )?(chodzi|chodze)|krawezn)/,
+      },
+      // „bez barier” samo jest przeczeniem – „bez” go nie gasi.
+      { re: /\b(bez barier|barier\w* architekton)/, negowalny: false },
+    ],
+    kategorie: { codziennosc: 4 },
+    // Obniżone krawężniki (4) i przychodnia ze zgłoszonym podjazdem lub windą (4) służą wprost
+    // osobie na wózku. Przystanek blisko (3), sklep (3) – krótkie dojścia. Dojazd utwardzony (3):
+    // po gruncie wózek nie przejedzie. Ławki (2): odpoczynek przy chodzeniu o kulach. Warstwy
+    // spadków terenu nie ma; OSM zna krawężniki i ławki nierówno.
+    wskazniki: {
+      obnizone_krawezniki_300m: 4,
+      przychodnia_bez_barier_odleglosc: 4,
+      przystanek_odleglosc: 3,
+      sklep_odleglosc: 3,
+      dojazd_utwardzony: 3,
+      lawki_300m: 2,
+    },
+  },
+  {
+    id: 'praca_zdalna',
+    etykieta: 'praca zdalna',
+    twierdzenie: 'Osoba pracuje zdalnie z domu.',
+    kryteria: {
+      prawda: {
+        co: 'Ktoś, kto zamieszka w szukanym mieszkaniu, pracuje z domu na stałe albo przez część tygodnia (praca zdalna, hybrydowa, home office, własna działalność w domu).',
+        przyklady: ['Pracuję zdalnie, więc cały dzień siedzę w mieszkaniu.'],
+      },
+      falsz: {
+        co: 'Osoba codziennie dojeżdża do biura, pracowała zdalnie tylko kiedyś albo tekst o pracy w domu nie mówi.',
+        przyklady: ['Codziennie na ósmą jeżdżę do biura na Zabłociu.'],
+      },
+    },
+    wzorce: [
+      {
+        // „hybryd” samo to też auto hybrydowe – tylko praca hybrydowa.
+        // „kiedyś pracowałem zdalnie” – czas przeszły to nie praca zdalna.
+        re: /\b((?<!pracowal\w* )zdaln|home office|homeoffice|remote|freelanc|prac\w* hybryd|hybrydow\w* (prac|tryb|model)|w hybrydzie|prac\w* z domu|prac\w* w domu|z domu prac\w*)/,
+      },
+    ],
+    kategorie: { spokoj: 3 },
+    // Cały dzień w domu: hałas za dnia (3), zieleń na przerwę (2 + 2), słońce w grudniu (2 – światło
+    // w pokoju do pracy; tylko część adresów ma dane). Usługi w zasięgu spaceru: sklep (2),
+    // gastronomia (2, kawiarnia) i paczkomat (2). „Mniej wagi na dojazd” się tu nie da – potrzeby
+    // tylko podnoszą wagi (maksimum, #177).
+    wskazniki: {
+      halas_ldwn: 3,
+      zielen_worldcover_100m: 2,
+      zielen_udzial: 2,
+      slonce_grudzien_h: 2,
+      sklep_odleglosc: 2,
+      gastronomia_odleglosc: 2,
+      paczkomat_odleglosc: 2,
+    },
+  },
+  {
+    id: 'zycie_nocne',
+    etykieta: 'życie nocne',
+    twierdzenie: 'Osoba chce mieć blisko knajpy, bary albo kluby.',
+    kryteria: {
+      prawda: {
+        co: 'Osoba, która tam zamieszka, lubi wychodzić wieczorem i chce mieć w pobliżu bary, puby, knajpy albo kluby.',
+        przyklady: ['Lubię wyskoczyć wieczorem na piwo, fajnie mieć knajpy pod ręką.'],
+      },
+      falsz: {
+        co: 'Osoba nie chce knajp ani nocnego hałasu w pobliżu, życie nocne jej nie interesuje albo było ważne tylko kiedyś; praca w knajpie to nie to samo.',
+        przyklady: ['Bary pod oknem to dla mnie koszmar, chcę spokoju.'],
+      },
+    },
+    wzorce: [
+      {
+        // Praca w knajpie („dorabiam w knajpie”) to nie życie nocne.
+        re: /\b((?<!(pracuje|robie|dorabiam|pracowac) w )knajp|pub(y|ow|ach|ie)?\b|bar(y|ow|ach|ze)?\b|klub(y|ow|ach|ie)?\b(?! (sport|fitness|senior|malucha|dzieciec|pilkarsk))|zycie nocne|nocne zycie|zycia nocnego|zyciem nocnym|wyjsc\w* wieczor|na miasto)/,
+      },
+    ],
+    kategorie: { codziennosc: 3 },
+    // Bary, puby i kluby w 300 m (4, neutralna – „więcej = lepiej”); `cisza` daje jej kierunek
+    // przeciwny i przy obu potrzebach wygrywa (wcześniej w tabeli): lokale nie pod oknem, a reszta
+    // poniżej i tak ciągnie w żywą okolicę. Gastronomia (3), kultura (2) i czas do Rynku (3) –
+    // tam jest życie nocne Krakowa i stamtąd się wraca.
+    wskazniki: {
+      zycie_nocne_300m: 4,
+      gastronomia_odleglosc: 3,
+      kultura_odleglosc: 2,
+      rynek_czas_min: 3,
+    },
+    kierunki: { zycie_nocne_300m: 'wiecej-lepiej' },
+  },
+  {
+    id: 'sport',
+    etykieta: 'sport',
+    twierdzenie: 'Osoba regularnie uprawia sport.',
+    kryteria: {
+      prawda: {
+        co: 'Osoba, która tam zamieszka, regularnie biega, trenuje, chodzi na siłownię albo basen, gra w piłkę lub tenisa i chce to robić blisko domu.',
+        przyklady: ['Biegam trzy razy w tygodniu, przydałyby się trasy w zieleni.'],
+      },
+      falsz: {
+        co: 'Sport uprawia ktoś, kto tam nie zamieszka, osoba ćwiczyła tylko kiedyś albo jeździ rowerem jedynie do pracy (to dojazd, nie sport).',
+        przyklady: ['Kiedyś grałem w piłkę, teraz już tylko oglądam.'],
+      },
+    },
+    wzorce: [
+      {
+        re: /\b(sport|silowni|silownia|biegam|biegan|jogging|trening|trenuj|fitness|basen|plywa|crossfit|joga|jogi|tenis|kort|boisk|pilk\w* nozn|gram w pilke|wspinacz|rolki|rolkach)/,
+      },
+    ],
+    kategorie: { codziennosc: 3 },
+    // Obiekty sportowe ZIS (3; tylko Kraków, wykaz 181 obiektów, nie pełny spis), siłownia
+    // plenerowa (3), zieleń do biegania (3 + 2), infrastruktura rowerowa (2) i kąpielisko
+    // (1; tylko w sezonie, 8 miejsc na cały obszar).
+    wskazniki: {
+      sport_odleglosc: 3,
+      silownia_plenerowa_odleglosc: 3,
+      zielen_udzial: 3,
+      zielen_worldcover_100m: 2,
+      rower_infrastruktura_odleglosc: 2,
+      kapielisko_odleglosc: 1,
+    },
+  },
+  {
+    id: 'student',
+    etykieta: 'student',
+    twierdzenie: 'Osoba studiuje.',
+    kryteria: {
+      prawda: {
+        co: 'Osoba, która tam zamieszka, jest teraz studentem albo zaczyna studia (także gdy mieszkania szukają dla niej rodzice).',
+        przyklady: ['Syn od października zaczyna studia na Politechnice, szukamy mu kawalerki.'],
+      },
+      falsz: {
+        co: 'Osoba studiowała kiedyś i skończyła, wykłada na uczelni, studiuje ktoś, kto tam nie zamieszka, albo mieszkanie jest pod wynajem dla studentów.',
+        przyklady: ['Kupuję kawalerkę pod wynajem dla studentów.'],
+      },
+    },
+    wzorce: [
+      {
+        // „pod wynajem dla studentów”, „po studiach” – to nie student.
+        re: /\b((?<!(dla|wynajmuje|wynajme|wynajac|wynajmowac) )student|studiuj|(?<!po )studiach|(?<!(skonczyl\w*|po) )studia\b|akademik)/,
+      },
+    ],
+    // #183: na zbiorach 1–7 osoba, która sama studiuje, ma w złocie Singla 9 razy na 12
+    // (pozostałe 3 – null, współlokatorzy), żadnego innego profilu. Reguły i tak dawały Singla
+    // przez słowo „student” w potrzebie `singiel`.
+    persona: 'singiel',
+    kategorie: { transport: 3 },
+    // Akademik (3, neutralny – z kierunkiem): warstwy uczelni nie ma, a domy studenckie stoją
+    // przy kampusach (AGH, UJ, UEK, PK). Przystanek i kursy w szczycie (3 + 3) – tani dojazd na
+    // zajęcia, czas do Rynku (2) – większość uczelni w centrum. Mediana ceny m² (2): sprzedaż,
+    // nie najem, tylko Kraków – przybliżenie kosztu, nic lepszego nie ma.
+    wskazniki: {
+      akademik_odleglosc: 3,
+      przystanek_odleglosc: 3,
+      kursy_szczyt_h: 3,
+      rynek_czas_min: 2,
+      cena_m2_mediana: 2,
+    },
+    kierunki: { akademik_odleglosc: 'mniej-lepiej' },
   },
 ]
 

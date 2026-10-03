@@ -2865,6 +2865,134 @@ Ograniczenia:
 - Etykiety zbiorów ułożyły agenty AI.
 - Persona null liczymy jako Rodzinę, czyli profil domyślny.
 
+## Nowe potrzeby (#183)
+
+Sześć nowych potrzeb, z id ze słownika zbioru nr 8: `auto`, `wozek`, `praca_zdalna`,
+`zycie_nocne`, `sport`, `student`. Każda ma twierdzenie dla JEV z kryteriami prawda/fałsz (#163)
+pisanymi o przyszłym mieszkańcu (#162), wiersz w tabeli POTRZEBY (warstwy, wagi 1–4, kierunek tylko
+dla warstw neutralnych) i reguły zapasowe z przeczeniami. Wiersze są na końcu tabeli, więc kolejność
+starych pytań się nie zmienia. Główny pomiar zrobi #184 na zbiorze nr 8. Niżej są tylko sprawdzenia
+celowane.
+
+| Potrzeba | Warstwy (waga) | Kierunek nadany |
+|---|---|---|
+| auto | dojazd utwardzony (3), drogi gruntowe w 300 m (2), SPP (1), ładowarka EV (1) | SPP: 0 = lepiej |
+| wozek | obniżone krawężniki (4), przychodnia bez barier (4), przystanek (3), sklep (3), dojazd utwardzony (3), ławki (2) | – |
+| praca_zdalna | hałas (3), zieleń 100 m (2), udział zieleni (2), słońce w grudniu (2), sklep, gastronomia, paczkomat (po 2) | – |
+| zycie_nocne | bary i kluby w 300 m (4), gastronomia (3), czas do Rynku (3), kultura (2) | bary: więcej = lepiej |
+| sport | obiekty sportowe ZIS (3), siłownia plenerowa (3), udział zieleni (3), zieleń 100 m (2), infrastruktura rowerowa (2), kąpielisko (1) | – |
+| student | akademik (3), przystanek (3), kursy w szczycie (3), czas do Rynku (2), mediana ceny m² (2) | akademik: mniej = lepiej |
+
+Czego nie ma w danych: dojazdu do głównej drogi, spadków terenu, uczelni (akademik to
+przybliżenie, bo domy studenckie stoją przy kampusach) i ceny najmu (mediana ceny m² to cena
+sprzedaży, tylko w Krakowie). P+R i SCT pominięte. P+R według opisu warstwy służy dojeżdżającym
+spoza miasta. W SCT jest 77% adresów Krakowa, a prawo wjazdu zależy od pojazdu, którego nie znamy.
+Dla pracy zdalnej „mniej wagi na dojazd” nie da się zapisać, bo potrzeby tylko podnoszą wagi
+(maksimum, #177).
+
+**Nachodzenie na siebie zostaje:**
+- `wozek` i `zdrowie`: reguła `zdrowie` dalej łapie „wózek”, też dziecięcy.
+- `student` i `singiel`: to samo słowo „student”.
+- `auto` i `bez_samochodu`: wykluczają się, rozstrzyga przeczenie.
+- `zycie_nocne` i `cisza`: przeciwne kierunki dla barów w 300 m. Przy obu potrzebach wygrywa
+  `cisza`, bo jest wcześniej w tabeli. Zostaje sama gastronomia, kultura i czas do Rynku: lokale
+  blisko, ale nie pod oknem. To jedyny wyjątek w teście sprzecznych kierunków.
+- `koszty`, `kolej` i `sasiedzi` (fc3c399) są bez zmian i bez dublowania.
+
+**Profil.** Tylko `student` → Singiel. Na zbiorach 1–7 osoba, która sama studiuje, ma w złocie
+Singla 9 razy na 12, w pozostałych 3 przypadkach null (współlokatorzy) i ani razu innego profilu.
+
+### Limit pośrednika: 16 → 32 pytań
+
+„Opisz siebie” ma teraz 22 pytania: 1 profil, 3 kategorie, 16 potrzeb i 2 twierdzenia bramki.
+`LIMITY.pytan` w `api/_jev.js` podniosłem z 16 do 32. To nasz limit, bo JEV ogranicza tylko
+liczbę tokenów (64 tys.). Bezpiecznik znaków (60 tys.) zostaje.
+
+Pomiar na żywo, `wolajJev` z timeoutem 5 s, żeby zobaczyć pełny rozkład:
+
+| | Pytań | Ciało żądania do JEV | Opóźnienie |
+|---|---|---|---|
+| 16 tekstów celowanych | 22 | 8016–8044 znaków | p50 288 ms, śr. 298 ms, max 440 ms |
+| 4 te same teksty, stare pytania | 16 | 4536–4564 znaków | śr. 282 ms (22 pytania na tych samych tekstach: śr. 291 ms) |
+
+Ciało żądania jest o ok. 3,5 tys. znaków (+76%) większe. Opóźnienie praktycznie się nie zmienia:
++9 ms średnio na parze, to mniej niż szum. Żadne z 20 wywołań nie przekroczyło 800 ms (timeout
+pośrednika). Zapas do 800 ms jest taki sam jak w #174, więc ryzyko pojedynczych timeoutów też.
+
+### Rozpoznanie na żywo (20 wywołań)
+
+16 tekstów: 7 z nową potrzebą w złocie, 9 typowych pomyłek („near miss”) i 1 kontrolny bez nowych
+potrzeb. Próg potrzeby to 0,6.
+
+| Tekst | Złoto | noul nowej potrzeby | Wynik końcowy | Reguły |
+|---|---|---|---|---|
+| Dojeżdżam samochodem…, potrzebuję miejsca parkingowego | auto | auto 0,95 | auto | auto |
+| Mąż porusza się na wózku…, bez barier | wozek | wozek 0,96 | wozek | wozek |
+| Pracuję zdalnie, cały dzień siedzę w domu… | praca_zdalna | 0,99 | praca_zdalna | praca_zdalna |
+| Lubię wieczorem wyjść na piwo, knajpy i kluby… | zycie_nocne | 0,97 | zycie_nocne | zycie_nocne |
+| Biegam codziennie rano… basen | sport | 0,97 | sport (bramka zamknięta, ≥ 0,9 zostaje) | sport |
+| Córka… zaczyna studia na AGH, szukamy jej kawalerki | student | 0,94 | student, Singiel | student |
+| Jestem studentką UEK, mieszkam sama i nie mam auta | student, nie auto | student 0,98, auto 0,02 | bez_samochodu, student | student |
+| **Mam auto, ale na co dzień jeżdżę rowerem** | nie auto | auto 0,04 | rower | auto ✗ |
+| **Kiedyś studiowałem w Krakowie…** | nie student | 0,03 | – | – |
+| Spacerujemy z wózkiem, mała ma pół roku | nie wozek | 0,04 | dzieci, zieleń | – (po poprawce) |
+| Kiedyś pracowałem zdalnie, teraz… do biura | nie praca_zdalna | 0,03 | – | – (po poprawce) |
+| Nie chcę knajp pod oknem… | nie zycie_nocne | 0,02 | – | – |
+| Kiedyś grałem w piłkę… | nie sport | 0,02 | – | – |
+| Kupuję mieszkanie pod wynajem dla studentów | nie student | 0,05 | inwestycja | – |
+| Dorabiam w knajpie na Kazimierzu… | nie zycie_nocne | **0,63** | – (bramka zamknięta) | – |
+| Mam dwoje dzieci i psa… rowerem (kontrola) | żadna nowa | maks. 0,23 | dzieci, pies, rower | – |
+
+- **JEV:** 7/7 trafień (wszystkie ≥ 0,94). Na 9 pomyłkach 8 razy ≤ 0,05. Wyjątek to praca
+  w knajpie: 0,63, tuż nad progiem. Kryteria mówią wprost „praca w knajpie to nie to samo”. Tu
+  potrzebę i tak odcięła bramka, ale przy otwartej bramce (z „szukam”) by przeszła. Przykładu pod
+  to zdanie nie dopisałem, bo to byłoby strojenie pod test. Na tekstach bez nowej potrzeby w złocie
+  najwyższe noul to 0,44 (życie nocne przy „studentce”) i 0,42 (auto przy „jeżdżę do biura”).
+- **Reguły:** 7/7 trafień. Pierwszy przebieg łapał 3 pomyłki: wózek dziecięcy („z wózkiem”), czas
+  przeszły („pracowałem zdalnie”) i „mam auto, ale jeżdżę rowerem”. Dwie pierwsze poprawiłem we
+  wzorcach (bez „z wózkiem”, bez „pracował… zdalnie”), obie mają test. Trzecia zostaje, bo reguła
+  nie odróżni „mam auto, ale…”. Reguły to tylko zapas.
+- **Bramka:** zamknęła się na 5 tekstach bez słowa „szukam” (opis samej czynności). To zachowanie
+  sprzed #183 (#162), nie nowych pytań. W #184 trzeba to policzyć osobno.
+
+Wywołania na żywo: **20** (16 + 4 sparowane), bez ponowień.
+
+### Spełnienie potrzeby bez sieci (`spelnienie.ts --syntetyczne`)
+
+`spelnienie.ts` dostał wskaźniki spełnienia sześciu nowych potrzeb (MIARY) i 25 przypadków
+syntetycznych (`SYNTETYCZNE`), po 4–5 na potrzebę, z różnymi profilami i potrzebami bazowymi.
+Efekt krańcowy to zmiana top 100 adresów po dodaniu nowej potrzeby do profilu i potrzeb bazowych,
+liczona bieżącą tabelą i bieżącym składaniem:
+
+| Nowa potrzeba | Wskaźnik | Mediana zmiany | Lepiej / gorzej / bez zmian |
+|---|---|---|---|
+| auto | dojazd utwardzony (% top) | ↑ +1 pp | 2 / 0 / 2 |
+| auto | w strefie płatnego parkowania (% top) | ↑ −38 pp | 4 / 0 / 0 |
+| wozek | obniżone krawężniki w 300 m | ↑ +3,5 szt. | 3 / 0 / 1 |
+| wozek | przychodnia bez barier | ↑ −139 m | 4 / 0 / 0 |
+| praca_zdalna | hałas > 50 dB (% top) | ↑ −15 pp | 2 / 0 / 2 |
+| praca_zdalna | zieleń w 100 m | ↑ +20 pp | 2 / 2 / 0 |
+| zycie_nocne | bar w 300 m (% top) | ↑ +1 pp | 3 / 0 / 1 |
+| zycie_nocne | gastronomia | ↑ −6 m | 4 / 0 / 0 |
+| sport | obiekt sportowy ZIS | ↑ −311 m | 4 / 0 / 0 |
+| sport | siłownia plenerowa | ↑ −67 m | 4 / 0 / 0 |
+| student | akademik | ↑ −66 m | 5 / 0 / 0 |
+| student | kursy w szczycie | ↑ +3 kursy/h | 3 / 1 / 1 |
+
+- Wszystkie potrzeby przesuwają top we właściwą stronę. Wyjątki:
+  - zieleń przy pracy zdalnej, gdy profil (Rodzina, pies) już ją waży na 4: −1 do −1,5 pp,
+    w granicach remisów;
+  - kursy u studenta z rowerem: −2.
+- `zycie_nocne` przy `cisza` (S16): bar w 300 m 0% przed i po, bo cisza wygrywa z założenia.
+  Gastronomia i tak się przybliża (−8,5 m).
+- **SPP z wagą 2 było za mocne.** Warstwa 0/1 robi skok wyniku: u Singla z pracą w centrum (S02)
+  auto wyrzucało cały top ze strefy i z top samego profilu zostawał 1%. Przy wadze 1 zostaje 52%,
+  a odsetek top w SPP i tak spada z 99% do 51%. Zostaje 1.
+- Najmocniej przestawiają top sport u Singla (S17: 5% wspólnego top) i praca zdalna u Singla (S09:
+  15%, top wychodzi z hałaśliwego centrum). Tak ma być, bo profil Singla nie ma tych warstw.
+
+Bez sieci, do powtórzenia: `node src/ai/pomiar/spelnienie.ts --syntetyczne`.
+
 ## Na slajd
 
 **Zbiór kontrolny nr 7 (#174).** To 120 opisów i 150 pytań, które napisały na ślepo osobne

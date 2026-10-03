@@ -3,6 +3,7 @@
 // Użycie (z katalogu repo, potrzebna historia git z BAZA; ok. 40 s):
 //   node src/ai/pomiar/spelnienie.ts            # tabele markdown na stdout (do WYNIKI.md)
 //   node src/ai/pomiar/spelnienie.ts --top 300  # inny rozmiar „najlepszych adresów” (domyślnie 100)
+//   node src/ai/pomiar/spelnienie.ts --syntetyczne  # #183: nowe potrzeby na przypadkach syntetycznych
 //
 // Dla opisów ze zbioru wzorcowego i zbiorów kontrolnych nr 1–7 bierzemy WZORCOWY profil
 // i WZORCOWE potrzeby (etykiety, nie odpowiedź JEV) i liczymy wagi na kilka sposobów:
@@ -145,7 +146,71 @@ export const MIARY: Readonly<Record<string, readonly Miara[]>> = {
     { id: 'kursy_szczyt_h', lepiej: 'wiecej' },
     { id: 'rynek_czas_min', lepiej: 'mniej' },
   ],
+  // #183: nowe potrzeby. Warstwy 0/1 i „zwykle zero” jako odsetek top z wartością > 0.
+  auto: [
+    { id: 'dojazd_utwardzony', lepiej: 'wiecej', powyzej: 0 },
+    { id: 'spp_podstrefa', lepiej: 'mniej', powyzej: 0 },
+  ],
+  wozek: [
+    { id: 'obnizone_krawezniki_300m', lepiej: 'wiecej' },
+    { id: 'przychodnia_bez_barier_odleglosc', lepiej: 'mniej' },
+  ],
+  praca_zdalna: [
+    { id: 'halas_ldwn', lepiej: 'mniej', powyzej: 50 },
+    { id: 'zielen_worldcover_100m', lepiej: 'wiecej' },
+  ],
+  zycie_nocne: [
+    { id: 'zycie_nocne_300m', lepiej: 'wiecej', powyzej: 0 },
+    { id: 'gastronomia_odleglosc', lepiej: 'mniej' },
+  ],
+  sport: [
+    { id: 'sport_odleglosc', lepiej: 'mniej' },
+    { id: 'silownia_plenerowa_odleglosc', lepiej: 'mniej' },
+  ],
+  student: [
+    { id: 'akademik_odleglosc', lepiej: 'mniej' },
+    { id: 'kursy_szczyt_h', lepiej: 'wiecej' },
+  ],
 }
+
+/**
+ * #183: przypadki syntetyczne – złote potrzeby nowych id nie istnieją jeszcze w zbiorach 1–7
+ * (zbiór nr 8 jest ślepy). Profil i potrzeby bazowe jak w typowych opisach; liczymy efekt
+ * krańcowy: profil + potrzeby bazowe → to samo + nowa potrzeba.
+ */
+interface Syntetyczny {
+  id: string
+  persona: PersonaId | null
+  bazowe: string[]
+  nowa: string
+}
+export const SYNTETYCZNE: readonly Syntetyczny[] = [
+  { id: 'S01', persona: 'rodzina', bazowe: ['dzieci'], nowa: 'auto' },
+  { id: 'S02', persona: 'singiel', bazowe: ['praca_centrum'], nowa: 'auto' },
+  { id: 'S03', persona: null, bazowe: ['zielen', 'cisza'], nowa: 'auto' },
+  { id: 'S04', persona: 'senior', bazowe: ['zdrowie'], nowa: 'auto' },
+  { id: 'S05', persona: 'senior', bazowe: ['zdrowie'], nowa: 'wozek' },
+  { id: 'S06', persona: null, bazowe: [], nowa: 'wozek' },
+  { id: 'S07', persona: 'rodzina', bazowe: ['dzieci'], nowa: 'wozek' },
+  { id: 'S08', persona: 'singiel', bazowe: ['bez_samochodu'], nowa: 'wozek' },
+  { id: 'S09', persona: 'singiel', bazowe: [], nowa: 'praca_zdalna' },
+  { id: 'S10', persona: 'rodzina', bazowe: ['dzieci'], nowa: 'praca_zdalna' },
+  { id: 'S11', persona: null, bazowe: ['pies'], nowa: 'praca_zdalna' },
+  { id: 'S12', persona: 'singiel', bazowe: ['bez_samochodu', 'sklepy'], nowa: 'praca_zdalna' },
+  { id: 'S13', persona: 'singiel', bazowe: [], nowa: 'zycie_nocne' },
+  { id: 'S14', persona: 'singiel', bazowe: ['bez_samochodu'], nowa: 'zycie_nocne' },
+  { id: 'S15', persona: null, bazowe: ['praca_centrum'], nowa: 'zycie_nocne' },
+  { id: 'S16', persona: 'singiel', bazowe: ['cisza'], nowa: 'zycie_nocne' },
+  { id: 'S17', persona: 'singiel', bazowe: [], nowa: 'sport' },
+  { id: 'S18', persona: 'rodzina', bazowe: ['dzieci'], nowa: 'sport' },
+  { id: 'S19', persona: null, bazowe: ['rower'], nowa: 'sport' },
+  { id: 'S20', persona: 'senior', bazowe: ['zielen'], nowa: 'sport' },
+  { id: 'S21', persona: 'singiel', bazowe: ['singiel'], nowa: 'student' },
+  { id: 'S22', persona: 'singiel', bazowe: ['bez_samochodu'], nowa: 'student' },
+  { id: 'S23', persona: null, bazowe: ['koszty'], nowa: 'student' },
+  { id: 'S24', persona: 'rodzina', bazowe: ['dzieci'], nowa: 'student' },
+  { id: 'S25', persona: 'singiel', bazowe: ['rower'], nowa: 'student' },
+]
 
 // ── Wagi ──────────────────────────────────────────────────────────────────────────────────
 
@@ -289,6 +354,45 @@ const przebiegi = (p: Pozycja): Record<Wariant, Przebieg> => ({
   nowa: licz('nowa', nowa, p.persona, p.potrzeby),
 })
 
+if (argv.includes('--syntetyczne')) {
+  console.log(
+    `#183 – przypadki syntetyczne: ${SYNTETYCZNE.length}, adresy: ${N}, top: ${TOP}. Efekt krańcowy nowej potrzeby (bieżąca tabela i składanie). ↑ = lepiej dla potrzeby.\n`,
+  )
+  console.log(
+    '| Przypadek | Profil | Potrzeby bazowe | Nowa | Wskaźnik | Bez | Z nową | Zmiana | Top wspólne (%) |',
+  )
+  console.log('|---|---|---|---|---|---|---|---|---|')
+  const zbiorczo = new Map<string, number[]>()
+  for (const c of SYNTETYCZNE) {
+    const bez = licz('nowa', nowa, c.persona, c.bazowe)
+    const z = licz('nowa', nowa, c.persona, [...c.bazowe, c.nowa])
+    for (const m of MIARY[c.nowa] ?? []) {
+      const a = miaraTop(bez.top, m)
+      const b = miaraTop(z.top, m)
+      const klucz = `${c.nowa}|${m.id}`
+      zbiorczo.set(klucz, [...(zbiorczo.get(klucz) ?? []), b - a])
+      console.log(
+        `| ${c.id} | ${c.persona ?? 'domyślny'} | ${c.bazowe.join(', ') || '–'} | ${c.nowa} | ${m.id} (${jednostka(m)}) | ${f(a)} | ${f(b)} | ${znak(m, b - a)} ${f(b - a)} | ${f(100 * wspolne(bez.top, z.top), 0)} |`,
+      )
+    }
+  }
+  console.log(
+    '\n| Nowa potrzeba | Wskaźnik | Mediana zmiany | Przypadki lepiej / gorzej / bez zmian |',
+  )
+  console.log('|---|---|---|---|')
+  for (const [klucz, zmiany] of zbiorczo) {
+    const [potrzeba, id] = klucz.split('|') as [string, string]
+    const m = (MIARY[potrzeba] ?? []).find((x) => x.id === id) as Miara
+    const d = mediana(zmiany)
+    const ok = zmiany.filter((z) => Math.abs(z) > 1e-9 && lepsze(m, z)).length
+    const zle = zmiany.filter((z) => Math.abs(z) > 1e-9 && !lepsze(m, z)).length
+    console.log(
+      `| ${potrzeba} | ${id} (${jednostka(m)}) | ${znak(m, d)} ${f(d)} | ${ok} / ${zle} / ${zmiany.length - ok - zle} |`,
+    )
+  }
+  process.exit(0)
+}
+
 const wiersze = POZYCJE.map((p) => ({ p, w: przebiegi(p) }))
 
 console.log(
@@ -302,6 +406,7 @@ console.log(
 console.log('|---|---|---|---|---|---|---|---|---|')
 for (const [potrzeba, miary] of Object.entries(MIARY)) {
   const moje = wiersze.filter((x) => x.p.potrzeby.includes(potrzeba))
+  if (moje.length === 0) continue // #183: nowe potrzeby nie mają jeszcze złota w zbiorach 1–7
   for (const m of miary) {
     const [a, b, s, c] = WARIANTY.map((v) => mediana(moje.map((x) => miaraTop(x.w[v].top, m))))
     console.log(
@@ -317,6 +422,7 @@ console.log('| Potrzeba | Wskaźnik | Stara | Stara tabela, nowe składanie | No
 console.log('|---|---|---|---|---|')
 for (const [potrzeba, miary] of Object.entries(MIARY)) {
   const moje = POZYCJE.filter((p) => p.potrzeby.includes(potrzeba))
+  if (moje.length === 0) continue
   for (const m of miary) {
     const kolumna = (t: Tabela) => {
       const zmiany = moje.map((p) => {

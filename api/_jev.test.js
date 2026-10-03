@@ -2,7 +2,15 @@
 // Pośrednik JEV bez sieci – fetch wstrzykiwany, klucz testowy z obiektu env.
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { MODEL_JEV, obsluz, sprawdzZapytanie, URL_JEV, utworzLimiter, wolajJev } from './_jev.js'
+import {
+  LIMITY,
+  MODEL_JEV,
+  obsluz,
+  sprawdzZapytanie,
+  URL_JEV,
+  utworzLimiter,
+  wolajJev,
+} from './_jev.js'
 import handler from './jev.js'
 
 const CIALO = {
@@ -286,11 +294,22 @@ describe('sprawdzZapytanie', () => {
       {
         stan: 'x',
         pytania: Object.fromEntries(
-          Array.from({ length: 17 }, (_, i) => [`p${i}`, { typ: 'noul', polecenie: 'p' }]),
+          Array.from({ length: 33 }, (_, i) => [`p${i}`, { typ: 'noul', polecenie: 'p' }]),
         ),
       },
     ]
     for (const c of zle) assert.ok(sprawdzZapytanie(c).blad, JSON.stringify(c))
+  })
+
+  it('#183: limit 32 pytań – 32 przechodzi, 33 nie (było 16)', () => {
+    const n = (k) =>
+      Object.fromEntries(
+        Array.from({ length: k }, (_, i) => [`p${i}`, { typ: 'noul', polecenie: 'p' }]),
+      )
+    assert.equal(LIMITY.pytan, 32)
+    assert.equal(sprawdzZapytanie({ stan: 'x', pytania: n(22) }).blad, undefined)
+    assert.equal(Object.keys(sprawdzZapytanie({ stan: 'x', pytania: n(32) }).pytania).length, 32)
+    assert.equal(sprawdzZapytanie({ stan: 'x', pytania: n(33) }).blad, 'Od 1 do 32 pytań')
   })
 })
 

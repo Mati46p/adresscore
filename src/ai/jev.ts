@@ -35,7 +35,7 @@ export type PytanieJev =
 export interface ZapytanieJev {
   /** Tekst użytkownika (pośrednik przycina do 2000 znaków). */
   stan: string
-  /** Do 16 pytań; id i klucze opcji: litery, cyfry, `_`, `-`. */
+  /** Do 32 pytań (#183, `LIMITY.pytan` pośrednika); id i klucze opcji: litery, cyfry, `_`, `-`. */
   pytania: Record<string, PytanieJev>
 }
 

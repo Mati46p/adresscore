@@ -61,6 +61,8 @@ const WSKAZNIKI = [
 const BIEZACE = { wagi: { halas_ldwn: 1, przystanek_odleglosc: 2 }, kierunki: {} }
 
 const [NIKT, NIEAKTUALNA] = BRAMKA.map((b) => b.id) as [string, string]
+/** #183: nowe potrzeby – id ze słownika zbioru nr 8. */
+const NOWE_183 = ['auto', 'wozek', 'praca_zdalna', 'zycie_nocne', 'sport', 'student'] as const
 const noul = (x: number): OdpowiedzJev => ({ typ: 'noul', noul: x })
 
 describe('zapytanieOpiszSiebie', () => {
@@ -79,7 +81,7 @@ describe('zapytanieOpiszSiebie', () => {
     assert.equal(z.stan, 'Mam psa')
   })
 
-  it('#147/#153: najwyżej 16 pytań (limit pośrednika) – bez „Przyszłości” i „Codzienności”', async () => {
+  it('#147/#153/#183: 22 pytania (limit pośrednika 32) – bez „Przyszłości” i „Codzienności”', async () => {
     // Plik JS pośrednika bez typów – import dynamiczny, jak w pomiar.ts.
     const sciezka = new URL('../../api/_jev.js', import.meta.url).href
     const { LIMITY, sprawdzZapytanie } = (await import(sciezka)) as {
@@ -87,8 +89,8 @@ describe('zapytanieOpiszSiebie', () => {
       sprawdzZapytanie: (c: unknown) => { blad?: string }
     }
     assert.ok(ids.length <= LIMITY.pytan, `${ids.length} pytań`)
-    assert.equal(LIMITY.pytan, 16)
-    assert.equal(ids.length, 16)
+    assert.equal(LIMITY.pytan, 32)
+    assert.equal(ids.length, 22)
     assert.ok(!ids.includes('kat_przyszlosc'))
     assert.ok(!ids.includes('kat_codziennosc'))
     for (const b of BRAMKA)
@@ -112,7 +114,14 @@ describe('zapytanieOpiszSiebie', () => {
     const zKryteriami = Object.entries(z.pytania)
       .filter(([, p]) => p.typ === 'noul' && p.kryteria)
       .map(([id]) => id)
-    assert.deepEqual(zKryteriami, ['p_dzieci', 'p_bez_samochodu', NIKT, NIEAKTUALNA])
+    assert.deepEqual(zKryteriami, [
+      'p_dzieci',
+      'p_bez_samochodu',
+      // #183: każda nowa potrzeba ma kryteria od początku.
+      ...NOWE_183.map((id) => `p_${id}`),
+      NIKT,
+      NIEAKTUALNA,
+    ])
     // Twierdzenia są te same co przed #163 – kryteria tylko dochodzą.
     assert.equal(
       BRAMKA[0].twierdzenie,
@@ -141,8 +150,8 @@ describe('zapytanieOpiszSiebie', () => {
       if (p.twierdzenie) assert.doesNotMatch(p.twierdzenie, /\si\s/, `${p.id}: ${p.twierdzenie}`)
   })
 
-  it('mieści się w limitach pośrednika (≤ 16 pytań, id i polecenia)', () => {
-    assert.ok(ids.length <= 16)
+  it('mieści się w limitach pośrednika (≤ 32 pytań, id i polecenia)', () => {
+    assert.ok(ids.length <= 32)
     for (const [id, p] of Object.entries(z.pytania)) {
       assert.match(id, /^[a-z0-9_-]{1,40}$/i)
       assert.ok(p.polecenie.length <= 300, id)
@@ -162,7 +171,7 @@ describe('zapytanieOpiszSiebie', () => {
     ])
   })
 
-  it('#155: opcje profilu mówią, kim jest osoba, a nie, co ceni (≤ 16 pytań bez zmian)', () => {
+  it('#155: opcje profilu mówią, kim jest osoba, a nie, co ceni (≤ 32 pytań)', () => {
     const profil = z.pytania[ID_PROFILU]
     assert.equal(profil?.typ, 'choice')
     const kryteria = (profil?.typ === 'choice' ? profil.kryteria : {}) as Record<string, string>
@@ -174,7 +183,7 @@ describe('zapytanieOpiszSiebie', () => {
     // Opisy z UI („Komunikacja i sklepy pod ręką”) nie trafiają do JEV.
     const opisy = Object.values(kryteria)
     for (const p of PERSONY) for (const o of opisy) assert.ok(!o.includes(p.opis), p.id)
-    assert.ok(ids.length <= 16)
+    assert.ok(ids.length <= 32)
     for (const o of opisy) assert.ok(o.length <= 120)
   })
 
@@ -709,10 +718,15 @@ describe('zRegul – parser po polsku', () => {
     ['Córka idzie do przedszkola, chcemy park obok', ['dzieci', 'zielen'], 'rodzina'],
     ['Mam astmę, smog to dla mnie problem', ['powietrze'], null],
     ['Kupuję mieszkanie pod wynajem jako inwestycję', ['inwestycja'], 'inwestor'],
-    ['Student, mieszkam sam, lubię mieć sklep pod domem', ['sklepy', 'singiel'], 'singiel'],
+    [
+      'Student, mieszkam sam, lubię mieć sklep pod domem',
+      ['sklepy', 'singiel', 'student'],
+      'singiel',
+    ],
     ['Boję się powodzi, poprzednie mieszkanie zalało', ['bezpieczenstwo'], null],
     ['Często latam służbowo, lotnisko musi być blisko', ['lotnisko'], null],
-    ['Szukam miejsca z miejscem parkingowym', [], null],
+    // #183: parking to potrzeba `auto` (przed #183 – nic).
+    ['Szukam miejsca z miejscem parkingowym', ['auto'], null],
     ['Babcia z wnukami, spokojna okolica', ['senior', 'cisza'], 'senior'],
     ['Lubię dobrą kawę', [], null],
     // Warstwy z nocy 3/4.10 (#136, #138–#142): tylko reguły, bez nowych pytań do JEV.
@@ -859,9 +873,13 @@ describe('#177: tabela POTRZEBY a manifest warstw', () => {
   })
 
   it('dwie potrzeby nie dają tej samej warstwie sprzecznych kierunków', () => {
+    // #183: jedyny wyjątek – bary w 300 m: „cisza” chce mniej, „życie nocne” więcej. Przy obu
+    // potrzebach wygrywa wcześniejsza w tabeli (cisza), test niżej to pilnuje.
+    const WYJATKI = new Set(['zycie_nocne:zycie_nocne_300m'])
     const kierunki = new Map<string, string>()
     for (const p of POTRZEBY)
       for (const [id, k] of Object.entries(p.kierunki ?? {})) {
+        if (WYJATKI.has(`${p.id}:${id}`)) continue
         assert.ok(!kierunki.has(id) || kierunki.get(id) === k, `${p.id}: ${id}`)
         kierunki.set(id, k)
       }
@@ -922,5 +940,171 @@ describe('#177: wagiZeZrozumienia – składanie z potrzeb', () => {
     assert.equal(u.wagi.kapielisko_odleglosc, 0)
     assert.equal(u.wagi.zielen_udzial, 0)
     assert.equal(u.wagi.teren_osuwiskowy, 0)
+  })
+})
+
+describe('#183: nowe potrzeby – auto, wózek, praca zdalna, życie nocne, sport, student', () => {
+  const potrzeba = (id: string) => {
+    const p = POTRZEBY.find((x) => x.id === id)
+    assert.ok(p, id)
+    return p
+  }
+
+  it('są w tabeli na końcu, w tej kolejności, każda z twierdzeniem i kryteriami prawda/fałsz', () => {
+    assert.deepEqual(
+      POTRZEBY.slice(-NOWE_183.length).map((p) => p.id),
+      [...NOWE_183],
+    )
+    for (const id of NOWE_183) {
+      const p = potrzeba(id)
+      assert.ok(p.twierdzenie, id)
+      assert.ok(p.kryteria?.prawda && p.kryteria.falsz, id)
+      assert.doesNotMatch(p.twierdzenie ?? '', /\si\s/, id)
+      assert.ok(Object.keys(p.wskazniki).length >= 3, id)
+    }
+  })
+
+  it('każda warstwa nowej potrzeby jest w manifeście, nie jest atrapą i liczy się w silniku', () => {
+    for (const id of NOWE_183) {
+      const p = potrzeba(id)
+      for (const w of Object.keys(p.wskazniki)) {
+        const meta = MANIFEST.get(w)
+        assert.ok(meta, `${id}: ${w}`)
+        assert.ok(!meta.atrapa, `${id}: ${w} to atrapa`)
+        assert.notEqual(meta.kategoria, 'kontekst', `${id}: ${w}`)
+        assert.notEqual(kierunekEfektywny(meta, p.kierunki), null, `${id}: ${w}`)
+      }
+    }
+  })
+
+  it('kierunki nadaje tylko warstwom neutralnym', () => {
+    for (const id of NOWE_183)
+      for (const w of Object.keys(potrzeba(id).kierunki ?? {}))
+        assert.equal(MANIFEST.get(w)?.kierunek, 'neutralny', `${id}: ${w}`)
+    assert.deepEqual(potrzeba('auto').kierunki, { spp_podstrefa: 'mniej-lepiej' })
+    assert.deepEqual(potrzeba('zycie_nocne').kierunki, { zycie_nocne_300m: 'wiecej-lepiej' })
+    assert.deepEqual(potrzeba('student').kierunki, { akademik_odleglosc: 'mniej-lepiej' })
+  })
+
+  it('zapytanie: 22 pytania, nowe twierdzenia po starych, przed bramką, z kryteriami w pośredniku', async () => {
+    const z = zapytanieOpiszSiebie('Mam auto i psa')
+    const ids = Object.keys(z.pytania)
+    assert.equal(ids.length, 22)
+    assert.deepEqual(
+      ids.slice(-8, -2),
+      NOWE_183.map((id) => `p_${id}`),
+    )
+    const sciezka = new URL('../../api/_jev.js', import.meta.url).href
+    const { sprawdzZapytanie, LIMITY } = (await import(sciezka)) as {
+      LIMITY: { pytan: number; pytaniaZnakow: number }
+      sprawdzZapytanie: (c: unknown) => {
+        blad?: string
+        pytania: Record<string, { criteria?: { true?: unknown; false?: unknown } }>
+      }
+    }
+    const api = sprawdzZapytanie(z)
+    assert.equal(api.blad, undefined)
+    for (const id of NOWE_183) {
+      const c = api.pytania[`p_${id}`]?.criteria
+      assert.ok(c?.true && c.false, id)
+    }
+    // Rozmiar: daleko od bezpiecznika znaków (60 tys.).
+    assert.ok(JSON.stringify(api.pytania).length < LIMITY.pytaniaZnakow / 3)
+  })
+
+  const PRZYPADKI: [string, string[], string | null][] = [
+    // auto
+    ['Dojeżdżam autem do pracy, potrzebuję miejsca parkingowego', ['auto', 'praca_centrum'], null],
+    ['Mamy dwa samochody i szukamy domu z garażem', ['auto'], null],
+    ['Nie mam samochodu', ['bez_samochodu'], null],
+    ['Auta nie mam, wszędzie tramwajem', ['bez_samochodu'], null],
+    ['Na auto mnie nie stać', [], null],
+    ['Chcę mieszkać blisko parków', ['zielen'], null],
+    // wozek
+    ['Jeżdżę na wózku, potrzebuję obniżonych krawężników', ['wozek', 'zdrowie'], null],
+    ['Tata chodzi o kulach', ['wozek', 'zdrowie'], null],
+    // Wózek dziecięcy: bez `wozek`; `zdrowie` łapie „wózek” jak przed #183 (stara reguła).
+    [
+      'Spacerujemy z wózkiem dziecięcym, przyda się park',
+      ['zielen', 'zdrowie', 'dzieci'],
+      'rodzina',
+    ],
+    ['Chodzę z wózkiem z dzieckiem', ['zdrowie', 'dzieci'], 'rodzina'],
+    ['Ważne, żeby było bez barier', ['wozek'], null],
+    // praca_zdalna
+    ['Pracuję zdalnie z domu', ['praca_zdalna'], null],
+    ['Mam home office trzy dni w tygodniu', ['praca_zdalna'], null],
+    ['Nie pracuję zdalnie', [], null],
+    ['Kiedyś pracowałem zdalnie, teraz jeżdżę do biura', [], null],
+    ['Spacerujemy z wózkiem, mała ma pół roku', ['zielen', 'zdrowie'], null],
+    ['Mama jeździ na wózku inwalidzkim', ['wozek', 'zdrowie'], null],
+    ['Mam auto, ale na co dzień jeżdżę rowerem', ['auto', 'rower'], null], // reguła tego nie odróżni – JEV tak (0,04)
+    ['Jeżdżę hybrydą', [], null], // auto hybrydowe to nie praca hybrydowa
+    // zycie_nocne
+    ['Lubię knajpy i kluby w okolicy', ['zycie_nocne'], null],
+    ['Nie chcę knajp pod oknem', [], null],
+    ['Dorabiam w knajpie', [], null],
+    ['Chodzę do klubu fitness', ['sport'], null],
+    ['Szukam miejsca bez barów', [], null],
+    // sport
+    ['Biegam i chodzę na siłownię', ['sport'], null],
+    ['Gram w tenisa, basen blisko byłby super', ['sport'], null],
+    ['Nie uprawiam sportu', [], null],
+    // student
+    ['Jestem studentką UJ', ['student', 'singiel'], 'singiel'],
+    ['Syn idzie na studia', ['student', 'dzieci'], 'rodzina'],
+    // Bez `student`; `singiel` łapie „student” jak przed #183, profil i tak Inwestor.
+    ['Kupuję pod wynajem dla studentów', ['inwestycja', 'singiel'], 'inwestor'],
+    ['Pierwsza praca po studiach', [], null],
+    ['Kiedyś studiowałem w Krakowie', [], null],
+    ['Nie jestem studentem', [], null],
+  ]
+  for (const [zdanie, potrzeby, persona] of PRZYPADKI) {
+    it(`reguły: ${zdanie}`, () => {
+      const z = zRegul(zdanie)
+      assert.deepEqual([...z.potrzeby].sort(), [...potrzeby].sort())
+      assert.equal(z.persona, persona)
+    })
+  }
+
+  it('JEV: noul ≥ progu dodaje nową potrzebę i jej warstwy; student pewny → Singiel pod progiem profilu', () => {
+    const odp: Record<string, OdpowiedzJev | null> = {
+      profil: { typ: 'choice', wybor: 'singiel', pewnosc: 0.7 },
+      p_auto: noul(0.85),
+      p_wozek: noul(0.2),
+      p_student: noul(0.95),
+      [NIKT]: noul(0.05),
+      [NIEAKTUALNA]: noul(0.05),
+    }
+    const z = przetworzOdpowiedzi(odp, 'Studiuję na AGH, dojeżdżam autem')
+    assert.ok(z)
+    assert.deepEqual(z.potrzeby, ['auto', 'student'])
+    assert.equal(z.persona, 'singiel')
+    assert.equal(z.wskazniki.dojazd_utwardzony, 3)
+    assert.equal(z.wskazniki.akademik_odleglosc, 3)
+    assert.equal(z.wskazniki.obnizone_krawezniki_300m, undefined)
+  })
+
+  it('składanie: kierunek z nowej potrzeby trafia do warstwy neutralnej; przy „ciszy” wygrywa cisza', () => {
+    const WARSTWY_183 = [
+      { id: 'zycie_nocne_300m', kategoria: 'spokoj' },
+      { id: 'gastronomia_odleglosc', kategoria: 'codziennosc' },
+      { id: 'spp_podstrefa', kategoria: 'transport' },
+      { id: 'halas_ldwn', kategoria: 'spokoj' },
+    ] as const
+    const nocne = wagiZeZrozumienia(zRegul('Lubię knajpy'), 'kupuje', WARSTWY_183, BIEZACE)
+    assert.equal(nocne.wagi.zycie_nocne_300m, 4)
+    assert.equal(nocne.kierunki.zycie_nocne_300m, 'wiecej-lepiej')
+    const oba = wagiZeZrozumienia(
+      zRegul('Lubię knajpy, ale w mieszkaniu ma być cicho'),
+      'kupuje',
+      WARSTWY_183,
+      BIEZACE,
+    )
+    assert.equal(oba.kierunki.zycie_nocne_300m, 'mniej-lepiej')
+    assert.equal(oba.wagi.gastronomia_odleglosc, 3)
+    const auto = wagiZeZrozumienia(zRegul('Mam samochód'), 'kupuje', WARSTWY_183, BIEZACE)
+    assert.equal(auto.wagi.spp_podstrefa, 1)
+    assert.equal(auto.kierunki.spp_podstrefa, 'mniej-lepiej')
   })
 })
