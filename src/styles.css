@@ -320,3 +320,18 @@ a:hover {
   padding: 24px;
   color: var(--tekst-2);
 }
+
+.wybrany-adres {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--ramka);
+  border-radius: var(--promien);
+  background: #fff;
+}
+.wybrany-adres .seg {
+  min-height: 44px;
+}

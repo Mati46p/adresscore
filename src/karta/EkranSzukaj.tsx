@@ -1,14 +1,23 @@
-import { MapaPolski } from '@/components/MapaPolski'
+import { MapaKrakowa } from '@/mapa/MapaKrakowa'
 import { useDane } from '@/wynik/dane'
-import { pokazOkolice, useStan, ustawWarstwe } from '@/wynik/stan'
+import { pokazOkolice, useStan, ustawWarstwe, wybierzAdres } from '@/wynik/stan'
+import { useWyniki } from '@/wynik/useWyniki'
 import { PanelFiltrow } from './panel/PanelFiltrow'
 import { Ranking } from './Ranking'
+import { najblizszyAdres } from './wyszukiwarka/najblizszy'
 import { Wyszukiwarka } from './wyszukiwarka/Wyszukiwarka'
+
+// Stała, bo nowa pusta mapa przy każdym renderze wymuszałaby przemalowanie warstwy heksów.
+const BRAK_HEKSOW: ReadonlyMap<string, number | null> = new Map()
 
 /** Ekran 1 wg docs/makieta/Main.dc.html: panel filtrów po lewej, mapa po prawej. */
 export function EkranSzukaj() {
   const dane = useDane()
   const warstwa = useStan((s) => s.warstwa)
+  const wybrany = useStan((s) => s.wybrany)
+  const wyniki = useWyniki()
+  const adres = dane.stan === 'gotowe' && wybrany !== null ? dane.adresy[wybrany] : undefined
+  const wynikWybranego = adres && wyniki ? wyniki.naAdres[adres.i] : undefined
   // Przełącznik pokazuje tylko warstwy, które coś oceniają – kontekst nie ma skali 0–100.
   const warstwy =
     dane.stan === 'gotowe'
@@ -50,10 +59,33 @@ export function EkranSzukaj() {
             </button>
           ))}
         </div>
-        {/* TODO #13: <MapaKrakowa heksy={wyniki.heksy} podpisWarstwy={wyniki.podpis} wybrany=… onKlik=… /> */}
         <div className="slot-mapy" data-slot="mapa">
-          <MapaPolski />
+          <MapaKrakowa
+            heksy={wyniki?.heksy ?? BRAK_HEKSOW}
+            podpisWarstwy={wyniki?.podpis ?? 'Twój wynik'}
+            wybrany={adres ? { lon: adres.lon, lat: adres.lat } : null}
+            onKlik={(lon, lat) => {
+              if (dane.stan !== 'gotowe') return
+              wybierzAdres(najblizszyAdres(dane.adresy, lon, lat))
+            }}
+          />
         </div>
+        {adres && (
+          <div className="wybrany-adres" role="status">
+            <span>
+              <strong>
+                {adres.ulica ?? adres.miejscowosc} {adres.nr}
+              </strong>
+              {' · '}
+              {wynikWybranego === undefined || Number.isNaN(wynikWybranego)
+                ? 'brak danych'
+                : `${wyniki?.podpis}: ${Math.round(wynikWybranego)}`}
+            </span>
+            <button type="button" className="seg wlaczony" onClick={() => pokazOkolice(adres.i)}>
+              Otwórz kartę
+            </button>
+          </div>
+        )}
         <Ranking />
       </section>
     </main>

@@ -88,8 +88,8 @@ Stan i hash synchronizują się w obie strony. Zmiana ekranu albo adresu dodaje 
 | Slot | Plik | Zadanie | Stan |
 |---|---|---|---|
 | Panel filtrów | `src/karta/panel/PanelFiltrow.tsx` | #36 | stub: tryb i persony działają, wagi do zrobienia |
-| Wyszukiwarka | `src/karta/wyszukiwarka/Wyszukiwarka.tsx` | #11 | do podpięcia w `EkranSzukaj` |
-| Mapa | `src/mapa/MapaKrakowa.tsx` | #13 | do podpięcia w `EkranSzukaj`, teraz `MapaPolski` |
+| Wyszukiwarka | `src/karta/wyszukiwarka/Wyszukiwarka.tsx` | #11 | podpięta w `EkranSzukaj` |
+| Mapa | `src/mapa/MapaKrakowa.tsx` | #13 | podpięta w `EkranSzukaj` |
 | Karta okolicy | `src/karta/okolica/EkranOkolica.tsx` | #12 | stub z wynikiem i kategoriami |
 | Porównanie | `src/karta/porownanie/EkranPorownanie.tsx` | #48 | stub z listą |
 
