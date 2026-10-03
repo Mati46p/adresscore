@@ -5,9 +5,11 @@ import {
   type Adres,
   type Manifest,
   type PlikAdresow,
+  type PlikOkolic,
   rozwinAdresy,
   wczytajAdresy,
   wczytajManifest,
+  wczytajOkolice,
   wczytajWskaznik,
 } from '@/kontrakty'
 import {
@@ -31,6 +33,11 @@ export interface Dane {
   /** Id warstw pominiętych (inna wersja adresów albo błąd pobrania) z powodem. */
   pominiete: { id: string; powod: string }[]
   grupyHeksow: GrupyHeksow
+  /**
+   * Okolice adresów (jednostki SIM i miejscowości, #185). null = plik się nie wczytał albo jest
+   * z innej wersji adresów – okolicą zostaje wtedy dzielnica Krakowa albo gmina (`okolicaAdresu`).
+   */
+  okolice: PlikOkolic | null
 }
 
 export type StanDanych =
@@ -42,6 +49,11 @@ async function wczytajWszystko(): Promise<Dane> {
   const [plikAdresow, manifest] = await Promise.all([wczytajAdresy(), wczytajManifest()])
   const pominiete: Dane['pominiete'] = []
   const n = plikAdresow.kolumny.id.length
+  // Okolice ładują się równolegle ze wskaźnikami. Brak pliku nie blokuje mapy: zapas to dzielnica/gmina.
+  const okolicePlik = wczytajOkolice(plikAdresow.wersja, n).catch((e: unknown) => {
+    console.warn(`Okolice (okolice.json) bez danych: ${String(e)}`)
+    return null
+  })
   const wskazniki = await Promise.all(
     manifest.wskazniki.map(async ({ wersjaAdresow, ...meta }) => {
       const pomin = (powod: string) => {
@@ -74,6 +86,7 @@ async function wczytajWszystko(): Promise<Dane> {
     wskazniki,
     pominiete,
     grupyHeksow: grupujHeksy(plikAdresow.kolumny.h3),
+    okolice: await okolicePlik,
   }
 }
 

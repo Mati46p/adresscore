@@ -2,7 +2,13 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { describe, it } from 'node:test'
-import type { Adres, PlikAdresow, PlikWskaznika, WskaznikMeta } from '../kontrakty/index.ts'
+import type {
+  Adres,
+  PlikAdresow,
+  PlikOkolic,
+  PlikWskaznika,
+  WskaznikMeta,
+} from '../kontrakty/index.ts'
 import {
   JEDNOSTKA_LUKI,
   type LiczbyLuki,
@@ -13,6 +19,7 @@ import {
   stanLuki,
   type WynikLuk,
 } from './luki.ts'
+import { plikOkolic } from './okoliceTestowe.ts'
 import { grupujHeksy, wskaznikNiedostepny } from './silnik.ts'
 
 type AdresLuki = Pick<Adres, 'dzielnica' | 'gmina' | 'h3'>
@@ -126,6 +133,71 @@ describe('okolice', () => {
   })
 })
 
+// Okolice z okolice.json (#185): id, nazwy i rodzaje z pliku, null = szara okolica „brak”.
+describe('okolice z okolice.json', () => {
+  // Adresy z `adresy` wyżej: 0–1 Stare Miasto, 2 Kazimierz, 3–4 Swoszowice, 5 Liszki, 6 Kaszów, 7 bez okolicy.
+  const kolumna = [
+    'sim-101',
+    'sim-101',
+    'sim-102',
+    'sim-1002',
+    'sim-1002',
+    'm-1206063-liszki',
+    'm-1206063-kaszow',
+    null,
+  ]
+  const okolice = plikOkolic(kolumna)
+
+  it('jednostka SIM: id, numer i dzielnica z pliku zamiast dzielnicy adresu', () => {
+    const a = { dzielnica: 'I Stare Miasto', gmina: 'Kraków' }
+    assert.deepEqual(okolicaAdresu(a, 2, okolice), {
+      id: 'sim-102',
+      nazwa: 'Kazimierz',
+      typ: 'sim',
+      numer: 'I.2',
+      dzielnica: 'I Stare Miasto',
+    })
+  })
+
+  it('miejscowość poza Krakowem niesie gminę (nazwy miejscowości powtarzają się między gminami)', () => {
+    assert.deepEqual(okolicaAdresu({ dzielnica: null, gmina: 'Liszki' }, 5, okolice), {
+      id: 'm-1206063-liszki',
+      nazwa: 'Liszki',
+      typ: 'miejscowosc',
+      gmina: 'Liszki',
+    })
+  })
+
+  it('null w kolumnie to okolica „brak” (szara), nie zero i nie zapas z dzielnicy', () => {
+    const a = { dzielnica: 'I Stare Miasto', gmina: 'Kraków' }
+    const brak = okolicaAdresu(a, 7, okolice)
+    assert.equal(brak.id, 'brak')
+    assert.equal(brak.typ, 'brak')
+    // Adres poza kolumną (plik krótszy niż lista) też nie dostaje cudzej okolicy.
+    assert.equal(okolicaAdresu(a, kolumna.length, okolice).id, 'brak')
+  })
+
+  it('bez pliku (null, undefined, brak indeksu) zapas: dzielnica albo gmina', () => {
+    const a = { dzielnica: 'I Stare Miasto', gmina: 'Kraków' }
+    for (const wynik of [
+      okolicaAdresu(a, 0, null),
+      okolicaAdresu(a, 0, undefined),
+      okolicaAdresu(a, undefined, okolice),
+    ]) {
+      assert.deepEqual(wynik, {
+        id: 'dzielnica:I Stare Miasto',
+        nazwa: 'I Stare Miasto',
+        typ: 'dzielnica',
+      })
+    }
+  })
+
+  it('ten sam adres daje ten sam obiekt (widoki okolic liczone raz na plik)', () => {
+    const a = { dzielnica: 'I Stare Miasto', gmina: 'Kraków' }
+    assert.equal(okolicaAdresu(a, 0, okolice), okolicaAdresu(a, 1, okolice))
+  })
+})
+
 describe('policzLuki', () => {
   const w = policzLuki(sklep, adresy) as WynikLuk
 
@@ -169,6 +241,75 @@ describe('policzLuki', () => {
     for (let k = 1; k < w.okolice.length; k++) {
       assert.ok((w.okolice[k - 1]?.wLuce ?? 0) >= (w.okolice[k]?.wLuce ?? 0))
     }
+  })
+
+  it('z okolice.json: jednostki SIM i miejscowości, adres bez okolicy w szarej okolicy „brak”', () => {
+    const okolice = plikOkolic([
+      'sim-101',
+      'sim-101',
+      'sim-102',
+      'sim-1002',
+      'sim-1002',
+      'm-1206063-liszki',
+      'm-1206063-kaszow',
+      null,
+    ])
+    const z = policzLuki(sklep, adresy, undefined, okolice) as WynikLuk
+    sprawdzWszystkieJednostki(z, adresy.length)
+    assert.deepEqual(
+      z.razem,
+      { wszystkie: 8, wLuce: 3, bezLuki: 2, brakDanych: 3, udzial: 3 / 8 },
+      'razem nie zależy od podziału na okolice',
+    )
+    const okolica = (id: string) => z.okolice.find((o) => o.id === id)
+    assert.deepEqual(okolica('sim-1002'), {
+      id: 'sim-1002',
+      nazwa: 'Swoszowice',
+      typ: 'sim',
+      numer: 'X.2',
+      dzielnica: 'X Swoszowice',
+      wszystkie: 2,
+      wLuce: 1,
+      bezLuki: 0,
+      brakDanych: 1,
+      udzial: 1 / 2,
+    })
+    assert.equal(okolica('sim-101')?.udzial, 0)
+    assert.equal(okolica('sim-102')?.udzial, 1)
+    assert.equal(okolica('m-1206063-liszki')?.typ, 'miejscowosc')
+    // Same adresy bez danych w okolicy: szara (udział null), nie „bez luki”.
+    assert.equal(okolica('m-1206063-kaszow')?.udzial, null)
+    const brak = okolica('brak')
+    assert.equal(brak?.typ, 'brak')
+    assert.equal(brak?.wszystkie, 1)
+    assert.equal(brak?.udzial, null)
+    // Zapas dzielnica/gmina nie miesza się z id z pliku.
+    assert.ok(!z.okolice.some((o) => o.id.startsWith('dzielnica:') || o.id.startsWith('gmina:')))
+  })
+
+  it('plik okolic nie zmienia heksów ani sum, tylko podział na okolice', () => {
+    const okolice = plikOkolic([
+      'sim-101',
+      'sim-101',
+      'sim-101',
+      'sim-1002',
+      'sim-1002',
+      null,
+      null,
+      null,
+    ])
+    const z = policzLuki(sklep, adresy, undefined, okolice) as WynikLuk
+    assert.deepEqual([...z.heksy], [...w.heksy])
+    assert.deepEqual(z.razem, w.razem)
+    assert.deepEqual(
+      z.okolice.map((o) => o.wszystkie).sort((x, y) => x - y),
+      [2, 3, 3],
+    )
+  })
+
+  it('okolice: null i undefined dają to samo co brak pliku (zapas)', () => {
+    assert.deepEqual(policzLuki(sklep, adresy, undefined, null)?.okolice, w.okolice)
+    assert.deepEqual(policzLuki(sklep, adresy, undefined, undefined)?.okolice, w.okolice)
   })
 
   it('heksy z grupami z useDane i bez nich dają to samo', () => {
@@ -231,8 +372,27 @@ describe('policzLuki na prawdziwych danych', () => {
     h3: k.h3[i] ?? '',
   }))
   const grupy = grupujHeksy(k.h3)
+  const okolice = czytaj<PlikOkolic>('okolice.json')
 
   for (const id of Object.keys(PROGI_LUK)) {
+    it(`${id}: z okolice.json 123 jednostki SIM i miejscowości, liczba adresów jak w pliku`, () => {
+      const plik = czytaj<PlikWskaznika>(`wskazniki/${id}.json`)
+      const w = policzLuki(plik, prawdziwe, grupy, okolice)
+      if (plik.meta.atrapa) {
+        assert.equal(w, null)
+        return
+      }
+      assert.ok(w)
+      sprawdzWszystkieJednostki(w, prawdziwe.length)
+      assert.equal(w.okolice.filter((o) => o.typ === 'sim').length, 123)
+      assert.ok(w.okolice.some((o) => o.typ === 'miejscowosc'))
+      // Każdy adres ma okolicę z pliku: ani zapasu z dzielnicy, ani szarej okolicy „brak”.
+      assert.ok(w.okolice.every((o) => o.typ === 'sim' || o.typ === 'miejscowosc'))
+      for (const o of w.okolice) {
+        assert.equal(o.wszystkie, okolice.okolice[o.id]?.liczbaAdresow, o.id)
+      }
+    })
+
     it(`${id}: sumy się zgadzają w każdej okolicy i heksie`, () => {
       const plik = czytaj<PlikWskaznika>(`wskazniki/${id}.json`)
       assert.equal(plik.wersjaAdresow, plikAdresow.wersja)

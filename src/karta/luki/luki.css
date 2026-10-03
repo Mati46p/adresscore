@@ -116,7 +116,9 @@
   font-weight: 600;
   overflow-wrap: anywhere;
 }
+/* Pod nazwą: rodzaj okolicy (jednostka SIM, miejscowość) i liczba jej adresów. */
 .luki-typ {
+  display: block;
   font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 400;

@@ -241,7 +241,9 @@
   font-family: var(--font-mono);
   white-space: nowrap;
 }
+/* Pod nazwą okolicy: rodzaj (jednostka SIM, miejscowość) i liczba jej adresów. */
 .bilans__typ {
+  display: block;
   color: var(--tekst-3);
   font-size: 12px;
 }

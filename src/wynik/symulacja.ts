@@ -17,7 +17,7 @@
 // - Tylko obiekty, które stawia miasto. Sklep spożywczy to decyzja biznesu – ma swój tryb
 //   „Biznes” (`persony.ts`), nie symulator inwestycji publicznych.
 // - Park i zieleń poza v1: warstwa zieleni to siatka 100 m, potrzebny inny model niż odległość.
-import type { Adres, WskaznikMeta } from '../kontrakty/index.ts'
+import type { Adres, PlikOkolic, WskaznikMeta } from '../kontrakty/index.ts'
 import {
   type LiczbyLuki,
   type Okolica,
@@ -412,13 +412,19 @@ export interface Siatka {
   indeksy: Uint32Array
 }
 
+/** Okolica w bazie: z liczbą jej adresów, żeby bilans pokazał skalę (jednostka SIM bywa mała). */
+export interface OkolicaBazy extends Okolica {
+  liczbaAdresow: number
+}
+
 export interface BazaSymulacji {
   n: number
   lon: Float64Array
   lat: Float64Array
   heksy: string[]
   indeksHeksu: Uint32Array
-  okolice: Okolica[]
+  okolice: OkolicaBazy[]
+  /** Indeks w `okolice` dla i-tego adresu. */
   indeksOkolicy: Uint16Array
   suma: Float64Array
   sumaWag: Float64Array
@@ -440,6 +446,8 @@ export interface WejscieBazy {
   wskazniki: readonly WskaznikPrzygotowany[]
   wagi: Wagi
   kierunki?: Kierunki
+  /** Jednostki SIM i miejscowości (#185); bez nich okolicą jest dzielnica albo gmina. */
+  okolice?: PlikOkolic | null
 }
 
 const M_NA_STOPIEN = 111_320
@@ -591,20 +599,22 @@ export function przygotujBaze(we: WejscieBazy): BazaSymulacji {
   const n = we.adresy.length
   const lon = new Float64Array(n)
   const lat = new Float64Array(n)
-  const okolice: Okolica[] = []
+  const okolice: OkolicaBazy[] = []
   const pozycjaOkolicy = new Map<string, number>()
   const indeksOkolicy = new Uint16Array(n)
   for (let i = 0; i < n; i++) {
     const a = we.adresy[i] as Pick<Adres, 'lon' | 'lat' | 'dzielnica' | 'gmina'>
     lon[i] = a.lon
     lat[i] = a.lat
-    const o = okolicaAdresu(a)
+    const o = okolicaAdresu(a, i, we.okolice)
     let p = pozycjaOkolicy.get(o.id)
     if (p === undefined) {
       p = okolice.length
-      okolice.push(o)
+      okolice.push({ ...o, liczbaAdresow: 0 })
       pozycjaOkolicy.set(o.id, p)
     }
+    const wpis = okolice[p] as OkolicaBazy
+    wpis.liczbaAdresow++
     indeksOkolicy[i] = p
   }
 
@@ -743,7 +753,7 @@ export interface MieszkancySymulacji {
   adresyBezSzacunku: number
 }
 
-export interface BilansOkolicy extends Okolica {
+export interface BilansOkolicy extends OkolicaBazy {
   /** Adresy z lepszą literą o co najmniej jeden stopień. */
   awans: number
   /** Adresy z gorszą literą (możliwe tylko przy odwróconym kierunku warstwy). */
@@ -928,7 +938,7 @@ export function symuluj(baza: BazaSymulacji, obiekty: readonly Obiekt[]): WynikS
     if (roznica !== 0 || wyjscia.length > 0) {
       let b = okolice.get(io)
       if (!b) {
-        b = { ...(baza.okolice[io] as Okolica), awans: 0, spadek: 0, wychodzi: {} }
+        b = { ...(baza.okolice[io] as OkolicaBazy), awans: 0, spadek: 0, wychodzi: {} }
         okolice.set(io, b)
       }
       if (roznica > 0) b.awans++

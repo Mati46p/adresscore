@@ -203,10 +203,15 @@ Czyste funkcje. Luka nie zależy od wag, persony ani kierunku – liczy się z s
 - `PROGI_LUK` – jedyne miejsce progów, każdy ze źródłem: sklep > 800 m, przystanek > 500 m,
   punkt schronienia > 1 km, hałas > 64 dB LDWN (albo `meta.norma`, gdy warstwa ją ma).
 - `progLuki(meta)` daje próg albo `null` (atrapa, warstwa bez progu). Wybór warstwy w #90 pokazuje tylko te z progiem.
-- `okolicaAdresu(adres)` – dzielnica Krakowa, poza Krakowem cała gmina. Jednostki SIM przyjdą z #75.
-- `policzLuki(wskaznik, adresy, grupy?)` daje `{ prog, razem, okolice[], heksy: Map<h3, …>, jednostka: 'adresy' }`
+- `okolicaAdresu(adres, i?, okolice?)` – okolica adresu (#185). Z plikiem `okolice.json` (`useDane().okolice`)
+  i indeksem `i` adresu to jednostka SIM w Krakowie (`sim-803`) albo miejscowość poza nim (`m-<teryt>-<slug>`),
+  z pliku: `okolice[idOkolic[kolumny.okolica[i]]]`. `null` w kolumnie daje szarą okolicę `brak`, nie zero.
+  Bez pliku (nie wczytał się albo jest z innej wersji adresów) zapas: dzielnica Krakowa, poza Krakowem cała gmina
+  (`dzielnica:<nazwa>`, `gmina:<nazwa>`). Typ okolicy: `sim`, `miejscowosc`, `dzielnica`, `gmina`, `brak`.
+- `policzLuki(wskaznik, adresy, grupy?, okolice?)` daje `{ prog, razem, okolice[], heksy: Map<h3, …>, jednostka: 'adresy' }`
   albo `null` dla atrapy. Każda jednostka: `wszystkie = wLuce + bezLuki + brakDanych`,
   `udzial = wLuce / wszystkie`; `udzial: null`, gdy jednostka nie ma żadnego adresu z danymi (szara).
+  Suma `okolice[].wszystkie` = `razem.wszystkie` także z okolicami z pliku (adres bez okolicy liczy się w `brak`).
 - Podpis „adresy”, nie „mieszkańcy”, dopóki nie wejdzie #74 albo #40.
 
 ## Ranking luk – `rankingLuk.ts` (panel „Gdzie miasto ma luki”, #91)
@@ -217,5 +222,9 @@ Czyste funkcje dla `src/karta/luki/PanelLuk.tsx`. Dane z `policzLuki`, tu tylko 
   = `naglowek.wLuce` (`sumaWLuce`, pilnuje test). Jednostki szare (`udzial: null`) zawsze na końcu.
 - `kierunek` – kierunek słowami („Od góry: najwięcej adresów bez przystanku w 500 m”) zamiast numerów miejsc.
 - `pasekLuki(okolica)` – szerokości w % adresów jednostki (w luce + szary brak danych), nie % największej pozycji.
+- Okolice mają różną skalę (jednostka SIM z 10 adresami, miejscowość z 1000), więc wiersz niesie `opis`
+  pod nazwą (`opisOkolicy`): rodzaj i liczba adresów, np. „jednostka SIM VIII.3, dzielnica VIII Dębniki · 1 234 adresy”
+  albo „miejscowość, gmina Wieliczka · 589 adresów”. Jednostek SIM i miejscowości nie mieszamy bez podpisu.
+  Ten sam opis ma tabela bilansu w symulatorze (`BilansOkolicy.liczbaAdresow`).
 - `procentUdzialu` nie zaokrągla do kłamstwa: „<1%” zamiast „0%”, „>99%” zamiast „100%”.
 - `rozdzielczoscWarstwy(meta)`, `zrodlaWarstwy(meta)` – podpis pod rankingiem.
