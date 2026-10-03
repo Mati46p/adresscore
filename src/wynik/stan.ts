@@ -188,6 +188,17 @@ export function ustawWage(id: string, waga: number) {
   })
 }
 
+/**
+ * Wszystkie wagi naraz (np. „opisz siebie”, #16): jedna zmiana stanu = jedno przeliczenie mapy,
+ * bez przestawiania ostatniej warstwy, którą robi `ustawWage`.
+ */
+export function ustawWagi(wagi: Readonly<Record<string, number>>, kierunki: Kierunki) {
+  const przyciete: Record<string, number> = {}
+  for (const [id, w] of Object.entries(wagi))
+    przyciete[id] = Math.min(Math.max(Math.round(w), 0), 4)
+  zmien({ wagi: przyciete, kierunki: { ...kierunki }, persona: 'wlasna' })
+}
+
 /** null przywraca kierunek z meta wskaźnika. */
 export function ustawKierunek(id: string, kierunek: KierunekOceny | null) {
   const kierunki = { ...stan.kierunki }
