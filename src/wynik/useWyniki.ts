@@ -2,6 +2,13 @@
 // jest w module, bo mapa, panel i ranking wołają ten hook naraz z tymi samymi wejściami.
 import { type Dane, useDane } from './dane.ts'
 import {
+  maskujWykluczone,
+  policzWykluczenia,
+  type TwardyFiltr,
+  type Wykluczenia,
+  wykluczoneHeksy,
+} from './filtry.ts'
+import {
   type Kierunki,
   mapaHeksow,
   ocenyWarstwy,
@@ -13,19 +20,26 @@ import {
 import { useStan, type WarstwaMapy } from './stan.ts'
 
 export interface Wyniki {
-  /** Wartość 0–100 aktywnej warstwy per adres (NaN = brak danych). */
+  /** Wartość 0–100 aktywnej warstwy per adres (NaN = brak danych). Wykluczone adresy zachowują swój wynik. */
   naAdres: Float32Array
-  /** Średnia per heks H3 r10 – wprost do MapaKrakowa (`heksy`). null = brak danych. */
+  /** Średnia per heks H3 r10 bez adresów wykluczonych – wprost do MapaKrakowa (`heksy`). null = brak danych. */
   heksy: ReadonlyMap<string, number | null>
+  /** Heksy, w których wszystkie adresy są wykluczone filtrem – do MapaKrakowa (`wykluczone`). */
+  wykluczoneHeksy: ReadonlySet<string>
+  /** Które adresy wykluczono, a które „nie wiemy” (brak danych dla filtra). */
+  wykluczenia: Wykluczenia
   /** Podpis legendy: „Twój wynik" albo nazwa wskaźnika. */
   podpis: string
 }
+
+const BRAK_WYKLUCZONYCH: ReadonlySet<string> = new Set()
 
 let ostatni: {
   dane: Dane
   wagi: object
   kierunki: Kierunki
   warstwa: WarstwaMapy
+  filtry: readonly TwardyFiltr[]
   wynik: Wyniki
 } | null = null
 
@@ -34,9 +48,17 @@ export function policzWyniki(
   wagi: Readonly<Record<string, number>>,
   kierunki: Kierunki,
   warstwa: WarstwaMapy,
+  filtry: readonly TwardyFiltr[] = [],
 ): Wyniki {
   const o = ostatni
-  if (o && o.dane === dane && o.wagi === wagi && o.kierunki === kierunki && o.warstwa === warstwa) {
+  if (
+    o &&
+    o.dane === dane &&
+    o.wagi === wagi &&
+    o.kierunki === kierunki &&
+    o.warstwa === warstwa &&
+    o.filtry === filtry
+  ) {
     return o.wynik
   }
   const n = dane.plikAdresow.kolumny.id.length
@@ -46,12 +68,25 @@ export function policzWyniki(
     (wskaznik
       ? new Float32Array(n).fill(Number.NaN)
       : wynikiWszystkich(dane.wskazniki, wagi, kierunki, n))
+  // Filtr tylko maskuje adresy: naAdres zostaje nietknięte, a średnie heksów liczymy bez wykluczonych.
+  const wykluczenia = policzWykluczenia(dane.wskazniki, filtry, n)
+  const zMaska = wykluczenia.liczbaWykluczonych > 0
   const wynik: Wyniki = {
     naAdres,
-    heksy: mapaHeksow(srednieHeksow(naAdres, dane.grupyHeksow), dane.grupyHeksow),
+    heksy: mapaHeksow(
+      srednieHeksow(
+        zMaska ? maskujWykluczone(naAdres, wykluczenia.wykluczony) : naAdres,
+        dane.grupyHeksow,
+      ),
+      dane.grupyHeksow,
+    ),
+    wykluczoneHeksy: zMaska
+      ? wykluczoneHeksy(wykluczenia.wykluczony, dane.grupyHeksow)
+      : BRAK_WYKLUCZONYCH,
+    wykluczenia,
     podpis: wskaznik ? wskaznik.meta.nazwa : 'Twój wynik',
   }
-  ostatni = { dane, wagi, kierunki, warstwa, wynik }
+  ostatni = { dane, wagi, kierunki, warstwa, filtry, wynik }
   return wynik
 }
 
@@ -61,7 +96,8 @@ export function useWyniki(): Wyniki | null {
   const wagi = useStan((s) => s.wagi)
   const kierunki = useStan((s) => s.kierunki)
   const warstwa = useStan((s) => s.warstwa)
-  return dane.stan === 'gotowe' ? policzWyniki(dane, wagi, kierunki, warstwa) : null
+  const filtry = useStan((s) => s.filtry)
+  return dane.stan === 'gotowe' ? policzWyniki(dane, wagi, kierunki, warstwa, filtry) : null
 }
 
 /** Pełne rozbicie jednego adresu dla karty okolicy i porównania. */

@@ -57,6 +57,11 @@
   opacity: 1;
   border: 1px solid rgb(63 69 76 / 0.8);
 }
+/* Heks wykluczony filtrem: pełny ciemny kolor, bez szrafury (brak danych ma szrafurę). */
+.mapa-legenda__probka--wykluczony {
+  opacity: 1;
+  background: #2f3438;
+}
 .mapa-legenda__probka--mgla {
   opacity: 1;
   background: #eef0ee;

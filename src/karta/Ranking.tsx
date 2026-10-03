@@ -15,9 +15,10 @@ export function Ranking() {
   // Jedno przejście zamiast sortowania 70 tys. wyników przy każdej zmianie wagi.
   const najlepsze: number[] = []
   const v = wyniki.naAdres
+  const wykluczony = wyniki.wykluczenia.wykluczony
   for (let i = 0; i < v.length; i++) {
     const x = v[i] as number
-    if (x !== x) continue
+    if (x !== x || wykluczony[i]) continue
     if (najlepsze.length < ILE || x > (v[najlepsze[ILE - 1] as number] as number)) {
       najlepsze.push(i)
       najlepsze.sort((a, b) => (v[b] as number) - (v[a] as number))
@@ -39,7 +40,11 @@ export function Ranking() {
         {atrapa && <span className="atrapa">dane przykładowe</span>}
       </div>
       {najlepsze.length === 0 ? (
-        <p style={{ margin: 0, color: 'var(--tekst-2)' }}>Ustaw wagi, żeby policzyć wynik.</p>
+        <p style={{ margin: 0, color: 'var(--tekst-2)' }}>
+          {wyniki.wykluczenia.liczbaWykluczonych > 0
+            ? 'Twarde filtry wykluczyły wszystkie adresy z wynikiem. Poluzuj próg.'
+            : 'Ustaw wagi, żeby policzyć wynik.'}
+        </p>
       ) : (
         <ol className="lista-wynikow">
           {najlepsze.map((i) => {

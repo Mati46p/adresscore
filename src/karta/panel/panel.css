@@ -219,3 +219,81 @@
   border-radius: 8px;
   font-size: 14px;
 }
+
+/* Twarde filtry (#37) */
+.panel-filtry {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.panel-filtr {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 6px 6px 12px;
+  border: 1px solid var(--ostrzezenie);
+  border-radius: 8px;
+  background: var(--ostrzezenie-tlo);
+  color: var(--ostrzezenie-tekst);
+  font-size: 14px;
+}
+.panel-filtr-brak {
+  font-size: 12px;
+}
+.seg.panel-filtr-usun {
+  flex: none;
+  min-width: var(--cel-dotyku);
+  min-height: var(--cel-dotyku);
+  border-radius: 8px;
+}
+.panel-prog {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+}
+.seg.panel-prog-przycisk {
+  min-height: var(--cel-dotyku);
+  padding: 0 12px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+.panel-prog-wiersz {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px dashed var(--ostrzezenie);
+  border-radius: 8px;
+}
+.panel-prog-warunki {
+  flex-wrap: wrap;
+}
+.panel-prog-pole {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tekst-2);
+}
+.panel-prog-pole input {
+  min-height: var(--cel-dotyku);
+  max-width: 160px;
+  padding: 0 12px;
+  border: 1px solid var(--ramka-pola);
+  border-radius: 8px;
+  font: inherit;
+  font-family: var(--font-mono);
+  color: var(--tekst);
+  background: var(--powierzchnia);
+}
+.panel-prog-pole input[aria-invalid="true"] {
+  border-color: var(--ostrzezenie);
+}

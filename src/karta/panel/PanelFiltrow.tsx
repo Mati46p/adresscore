@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { KATEGORIE, type KategoriaId, type WskaznikMeta } from '@/kontrakty'
 import { useDane } from '@/wynik/dane'
+import { opisFiltru, type TwardyFiltr, type Warunek } from '@/wynik/filtry'
 import { PERSONY, type PersonaId, TRYBY } from '@/wynik/persony'
 import {
   type KierunekOceny,
@@ -10,7 +11,17 @@ import {
   type WskaznikPrzygotowany,
   wagaUzytkownika,
 } from '@/wynik/silnik'
-import { useStan, ustawKierunek, ustawTryb, ustawWage, wybierzPersone } from '@/wynik/stan'
+import {
+  useStan,
+  ustawFiltr,
+  ustawKierunek,
+  ustawTryb,
+  ustawWage,
+  usunFiltr,
+  wybierzPersone,
+  wyczyscFiltry,
+} from '@/wynik/stan'
+import { useWyniki } from '@/wynik/useWyniki'
 import './panel.css'
 
 const SEGMENTY_WAGI = Array.from({ length: WAGA_MAX + 1 }, (_, n) => n)
@@ -66,6 +77,8 @@ export function PanelFiltrow() {
   const persona = useStan((s) => s.persona)
   const wagi = useStan((s) => s.wagi)
   const kierunki = useStan((s) => s.kierunki)
+  const filtry = useStan((s) => s.filtry)
+  const wyniki = useWyniki()
 
   useEffect(() => {
     if (persona !== 'wlasna') ostatniaPersona = persona
@@ -80,6 +93,51 @@ export function PanelFiltrow() {
 
   return (
     <>
+      {filtry.length > 0 && (
+        <section aria-labelledby="h-filtry" className="panel-sekcja">
+          <h2 id="h-filtry" className="etykieta-sekcji">
+            Twarde filtry
+          </h2>
+          <ul className="panel-filtry">
+            {filtry.map((f) => {
+              const meta = wskazniki.find((w) => w.meta.id === f.id)?.meta
+              return (
+                <li key={f.id} className="panel-filtr">
+                  <span>
+                    {opisFiltru(f, meta)}
+                    {!meta && dane.stan === 'gotowe' && (
+                      <span className="panel-filtr-brak"> (brak warstwy – filtr czeka)</span>
+                    )}
+                  </span>
+                  <button
+                    type="button"
+                    className="seg panel-filtr-usun"
+                    aria-label={`Usuń filtr: ${opisFiltru(f, meta)}`}
+                    onClick={() => usunFiltr(f.id)}
+                  >
+                    Usuń
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+          {wyniki && (
+            <p className="panel-uwaga" role="status">
+              Wykluczono {wyniki.wykluczenia.liczbaWykluczonych.toLocaleString('pl-PL')} z{' '}
+              {wyniki.wykluczenia.liczbaAdresow.toLocaleString('pl-PL')} adresów. Wykluczone adresy
+              znikają z rankingu, a heksy bez żadnego adresu są ciemne na mapie.
+              {wyniki.wykluczenia.liczbaNiewiadomych > 0 &&
+                ` Dla ${wyniki.wykluczenia.liczbaNiewiadomych.toLocaleString('pl-PL')} adresów nie wiemy, czy spełniają filtr (brak danych) – zostają na mapie.`}
+            </p>
+          )}
+          <div className="panel-akcje">
+            <button type="button" className="seg panel-akcja" onClick={wyczyscFiltry}>
+              Usuń wszystkie filtry
+            </button>
+          </div>
+        </section>
+      )}
+
       <section aria-labelledby="h-tryb" className="panel-sekcja">
         <h2 id="h-tryb" className="etykieta-sekcji">
           Czego szukasz
@@ -164,6 +222,7 @@ export function PanelFiltrow() {
               warstwy={warstwy}
               wagi={wagi}
               kierunki={kierunki}
+              filtry={filtry}
               poczatkowoOtwarta={i === 0}
             />
           )
@@ -178,10 +237,18 @@ interface GrupaProps {
   warstwy: readonly WskaznikPrzygotowany[]
   wagi: Readonly<Record<string, number>>
   kierunki: Readonly<Record<string, KierunekOceny>>
+  filtry: readonly TwardyFiltr[]
   poczatkowoOtwarta: boolean
 }
 
-function GrupaWarstw({ kategoria, warstwy, wagi, kierunki, poczatkowoOtwarta }: GrupaProps) {
+function GrupaWarstw({
+  kategoria,
+  warstwy,
+  wagi,
+  kierunki,
+  filtry,
+  poczatkowoOtwarta,
+}: GrupaProps) {
   const [otwarta, setOtwarta] = useState(poczatkowoOtwarta)
   const informacyjna = kategoria === 'kontekst'
   const aktywne = warstwy.filter((w) => wagaUzytkownika(wagi, w.meta.id) > 0).length
@@ -209,7 +276,13 @@ function GrupaWarstw({ kategoria, warstwy, wagi, kierunki, poczatkowoOtwarta }: 
       {otwarta && (
         <ul id={idListy} className="panel-warstwy">
           {warstwy.map((w) => (
-            <Warstwa key={w.meta.id} w={w} wagi={wagi} kierunki={kierunki} />
+            <Warstwa
+              key={w.meta.id}
+              w={w}
+              wagi={wagi}
+              kierunki={kierunki}
+              filtr={filtry.find((f) => f.id === w.meta.id)}
+            />
           ))}
         </ul>
       )}
@@ -221,10 +294,12 @@ function Warstwa({
   w,
   wagi,
   kierunki,
+  filtr,
 }: {
   w: WskaznikPrzygotowany
   wagi: Readonly<Record<string, number>>
   kierunki: Readonly<Record<string, KierunekOceny>>
+  filtr: TwardyFiltr | undefined
 }) {
   const { meta } = w
   const waga = wagaUzytkownika(wagi, meta.id)
@@ -302,6 +377,118 @@ function Warstwa({
           )}
         </>
       )}
+      <TwardyProg meta={meta} filtr={filtr} />
     </li>
+  )
+}
+
+// Warstwy, w których 0 znaczy „poza strefą”: tylko tu ma sens warunek „równe zero”.
+const WARSTWY_STREFOWE: Readonly<Record<string, string>> = {
+  powodz_1proc: 'Wyklucz strefę Q100 (zalew raz na 100 lat)',
+}
+
+function domyslnyProg(meta: WskaznikMeta): number {
+  if (meta.norma) return meta.norma.wartosc
+  if (meta.zakres) return Math.round((meta.zakres[0] + meta.zakres[1]) / 2)
+  return 0
+}
+
+/**
+ * „Twardy próg” przy warstwie: adres, który go nie spełnia, jest wykluczony (a nie tylko
+ * gorzej oceniony). Dotyczy też warstw informacyjnych, np. maksymalnej ceny m².
+ */
+function TwardyProg({ meta, filtr }: { meta: WskaznikMeta; filtr: TwardyFiltr | undefined }) {
+  const id = useId()
+  const strefa = WARSTWY_STREFOWE[meta.id]
+  const [otwarty, setOtwarty] = useState(false)
+  const [warunek, setWarunek] = useState<Warunek>(filtr?.warunek ?? (strefa ? 'rowne-zero' : 'max'))
+  const [prog, setProg] = useState(String(filtr?.prog ?? domyslnyProg(meta)))
+  const [blad, setBlad] = useState(false)
+  const opcje: { id: Warunek; nazwa: string }[] = [
+    ...(strefa ? [{ id: 'rowne-zero' as const, nazwa: strefa }] : []),
+    { id: 'max', nazwa: 'Maksymalnie' },
+    { id: 'min', nazwa: 'Minimalnie' },
+  ]
+  const idPola = `${id}-prog`
+  const jednostka = meta.jednostka ? ` ${meta.jednostka}` : ''
+
+  function zastosuj() {
+    if (warunek === 'rowne-zero') {
+      ustawFiltr({ id: meta.id, warunek, prog: 0 })
+      return setBlad(false)
+    }
+    const liczba = prog.trim() === '' ? Number.NaN : Number(prog.replace(',', '.'))
+    if (!Number.isFinite(liczba)) return setBlad(true)
+    setBlad(false)
+    ustawFiltr({ id: meta.id, warunek, prog: liczba })
+  }
+
+  return (
+    <div className="panel-prog">
+      <button
+        type="button"
+        className="seg panel-prog-przycisk"
+        aria-expanded={otwarty}
+        aria-controls={`${id}-wiersz`}
+        aria-pressed={filtr !== undefined}
+        onClick={() => setOtwarty(!otwarty)}
+      >
+        {filtr ? 'Twardy próg: włączony' : 'Twardy próg'}
+      </button>
+      {otwarty && (
+        <div id={`${id}-wiersz`} className="panel-prog-wiersz">
+          <div
+            role="group"
+            aria-label={`Warunek twardego progu: ${meta.nazwa}`}
+            className="panel-seg-grupa panel-prog-warunki"
+          >
+            {opcje.map((o) => (
+              <button
+                key={o.id}
+                type="button"
+                className="seg panel-kier"
+                aria-pressed={warunek === o.id}
+                onClick={() => setWarunek(o.id)}
+              >
+                {o.nazwa}
+              </button>
+            ))}
+          </div>
+          {warunek !== 'rowne-zero' && (
+            <div className="panel-prog-pole">
+              <label htmlFor={idPola}>Próg{jednostka ? ` (${meta.jednostka})` : ''}</label>
+              <input
+                id={idPola}
+                type="text"
+                inputMode="decimal"
+                value={prog}
+                aria-invalid={blad}
+                onChange={(e) => setProg(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') zastosuj()
+                }}
+              />
+            </div>
+          )}
+          {blad && <p className="panel-nota">Wpisz liczbę, np. 55.</p>}
+          <p className="panel-uwaga">
+            {meta.zakres && `Zakres warstwy: ${meta.zakres[0]}–${meta.zakres[1]}${jednostka}. `}
+            {meta.norma && `Norma: ${meta.norma.wartosc}${jednostka} (${meta.norma.opis}). `}
+            Adres poza progiem znika z rankingu. Adres bez danych zostaje i dostaje znacznik „nie
+            wiemy".
+          </p>
+          <div className="panel-akcje">
+            <button type="button" className="seg wlaczony panel-akcja" onClick={zastosuj}>
+              Zastosuj
+            </button>
+            {filtr && (
+              <button type="button" className="seg panel-akcja" onClick={() => usunFiltr(meta.id)}>
+                Usuń próg
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
   )
 }

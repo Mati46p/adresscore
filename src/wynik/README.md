@@ -70,11 +70,23 @@ Kolory: `PALETA_WYNIKU` (5 stopni z makiety, od słabo do idealnie) i `KOLOR_BRA
 - `useWynikAdresu(i)` daje `WynikAdresu` dla karty i porównania.
 - Przeliczenie po zmianie wagi trwa ok. 25 ms dla 70 tys. adresów.
 
+## Twarde filtry – `filtry.ts` (czyste funkcje)
+
+Filtr wyklucza adres, nie obniża jego wyniku: wynik adresu i wyniki innych adresów zostają bez zmian.
+Działa po id wskaźnika, więc obejmie też warstwę, która dopiero się pojawi (np. czas dojazdu, #38).
+Filtr nieznanej warstwy nic nie wyklucza, ale zostaje w stanie i w URL.
+
+- `ocenFiltr(wartosc, filtr)` daje `spelnia`, `narusza` albo `nie-wiemy`. Brak danych daje `nie-wiemy`: adres NIE jest wykluczony.
+- `policzWykluczenia(wskazniki, filtry, n)` daje `wykluczony[]`, `niewiadomy[]` i liczniki.
+- `wykluczoneHeksy(wykluczony, grupy)` daje heksy, w których wszystkie adresy są wykluczone. `MapaKrakowa` dostaje je w propie `wykluczone`.
+- `useWyniki()` zwraca `wykluczenia` i `wykluczoneHeksy`. Ranking pomija wykluczone adresy, a średnie heksów liczą się bez nich.
+
 ## Stan – `stan.ts`
 
 - `useStan((s) => s.pole)` czyta stan. Selektor zwraca pole stanu albo prymityw, nigdy nowy obiekt.
 - Pola: `ekran`, `tryb`, `persona` (`'wlasna'` po ręcznej zmianie wagi), `wagi`, `kierunki`, `wybrany` (indeks | null), `porownanie` (do 5 indeksów), `warstwa` (`'wynik'` albo id wskaźnika).
 - Akcje: `wybierzPersone`, `ustawTryb`, `ustawWage(id, 0–4)`, `ustawKierunek(id, k | null)`, `wybierzAdres(i | null)`, `pokazOkolice(i)`, `przejdz(ekran)`, `dodajDoPorownania`, `usunZPorownania`, `przelaczPorownanie`, `wyczyscPorownanie`, `ustawWarstwe`.
+- Twarde filtry: pole `filtry` (`{ id, warunek: 'max' | 'min' | 'rowne-zero', prog }`, jeden na warstwę), akcje `ustawFiltr`, `usunFiltr`, `wyczyscFiltry`. W URL: `f=halas_ldwn:max:55,powodz_1proc:zero`.
 - `hrefDla(stan, latka)` daje hash do `<a href>`. Stan weź z `useStan((s) => s)`.
 - `idAdresu(i)` i `indeksAdresu(id)` tłumaczą indeks na id z `adresy.json` i z powrotem.
 

@@ -31,6 +31,15 @@ import {
   szrafuraCss,
   wyrazenieKoloru,
 } from '@/mapa/skala'
+import {
+  jestBrakiem,
+  jestWykluczony,
+  KOLOR_WYKLUCZONEGO,
+  KRYCIE_WYKLUCZONEGO,
+  W_BRAK,
+  W_WYKLUCZONY,
+  wszystkieWykluczone,
+} from '@/mapa/wykluczenie'
 import './mapa.css'
 
 export interface MapaKrakowaProps {
@@ -41,7 +50,11 @@ export interface MapaKrakowaProps {
   /** Znacznik wybranego adresu + lot kamery do niego. */
   wybrany?: { lon: number; lat: number } | null
   onKlik?: (lon: number, lat: number) => void
+  /** h3 r10 wykluczone twardym filtrem (#37) – rysowane inaczej niż brak danych. */
+  wykluczone?: ReadonlySet<string>
 }
+
+const BRAK_WYKLUCZONYCH: ReadonlySet<string> = new Set()
 
 // MapLibre 6 szuka workera obok własnego pliku (import.meta.url). Po pre-bundlingu Vite i w buildzie
 // tego pliku tam nie ma (404, mapa bez kafli), więc Vite pakuje worker osobno i podajemy jego adres.
@@ -80,7 +93,8 @@ const STYL: StyleSpecification = {
 
 // Brak danych trzymamy w feature-state jako -1, bo stan nie odróżnia null od nieustawionego.
 const WARTOSC: ExpressionSpecification = ['coalesce', ['feature-state', 'w'], -1]
-const BRAK: ExpressionSpecification = ['<', WARTOSC, 0]
+const BRAK = jestBrakiem(WARTOSC)
+const WYKLUCZONY = jestWykluczony(WARTOSC)
 const zrodloHeksow = (res: number) => `heksy-r${res}`
 const SZRAFURA = 'szrafura-braku'
 
@@ -95,6 +109,7 @@ type Wyslane = Record<8 | 9 | 10, Map<string, number>>
 const pusteWyslane = (): Wyslane => ({ 8: new Map(), 9: new Map(), 10: new Map() })
 
 function podpisHeksu(w: number | null | undefined, res: number): string {
+  if (w === W_WYKLUCZONY) return res === 10 ? 'wykluczony filtrem' : 'wykluczony filtrem (okolica)'
   const tekst = w === null || w === undefined || w < 0 ? 'brak danych' : `wynik ${Math.round(w)}`
   return res === 10 ? tekst : `${tekst} (średnia okolicy)`
 }
@@ -115,6 +130,7 @@ export function MapaKrakowa({
   podpisWarstwy,
   wybrany,
   onKlik,
+  wykluczone = BRAK_WYKLUCZONYCH,
 }: MapaKrakowaProps): JSX.Element {
   const kontener = useRef<HTMLDivElement>(null)
   const mapaRef = useRef<MapaLibre | null>(null)
@@ -176,8 +192,15 @@ export function MapaKrakowa({
           minzoom,
           maxzoom,
           paint: {
-            'fill-color': wyrazenieKoloru(WARTOSC),
-            'fill-opacity': ['case', BRAK, KRYCIE_BRAKU, KRYCIE_DANYCH],
+            'fill-color': ['case', WYKLUCZONY, KOLOR_WYKLUCZONEGO, wyrazenieKoloru(WARTOSC)],
+            'fill-opacity': [
+              'case',
+              WYKLUCZONY,
+              KRYCIE_WYKLUCZONEGO,
+              BRAK,
+              KRYCIE_BRAKU,
+              KRYCIE_DANYCH,
+            ],
           },
         })
         // Filtr nie widzi feature-state, więc szrafura leży na wszystkich heksach,
@@ -257,18 +280,20 @@ export function MapaKrakowa({
   // wywołań setFeatureState. Dlatego zmiana tylko zapamiętuje najnowszą mapę, a mapa dostaje
   // ją raz na klatkę i wyłącznie dla heksów, których wartość się zmieniła.
   const najnowszeRef = useRef(heksy)
+  const najnowszeWykluczoneRef = useRef(wykluczone)
   const klatkaRef = useRef<number | null>(null)
   const wyslaneRef = useRef<Wyslane>(pusteWyslane())
 
   useEffect(() => {
     najnowszeRef.current = heksy
+    najnowszeWykluczoneRef.current = wykluczone
     const mapa = mapaRef.current
     if (!mapa || !gotowa || klatkaRef.current !== null) return
     klatkaRef.current = requestAnimationFrame(() => {
       klatkaRef.current = null
-      zastosujHeksy(mapa, najnowszeRef.current)
+      zastosujHeksy(mapa, najnowszeRef.current, najnowszeWykluczoneRef.current)
     })
-  }, [heksy, gotowa])
+  }, [heksy, wykluczone, gotowa])
 
   useEffect(
     () => () => {
@@ -278,7 +303,11 @@ export function MapaKrakowa({
     [],
   )
 
-  function zastosujHeksy(mapa: MapaLibre, heksy: ReadonlyMap<string, number | null>) {
+  function zastosujHeksy(
+    mapa: MapaLibre,
+    heksy: ReadonlyMap<string, number | null>,
+    wykluczone: ReadonlySet<string>,
+  ) {
     // Mapa mogła zostać zdjęta (Strict Mode, zmiana ekranu) między zmianą a klatką.
     if (mapaRef.current !== mapa) return
     let g = geometriaRef.current
@@ -314,15 +343,19 @@ export function MapaKrakowa({
     }
     const wyslane = wyslaneRef.current
     const wyslij = (res: 8 | 9 | 10, h: string, w: number | null | undefined) => {
-      const v = w === null || w === undefined || Number.isNaN(w) ? -1 : w
+      const v = w === null || w === undefined || Number.isNaN(w) ? W_BRAK : w
       if (wyslane[res].get(h) === v) return
       wyslane[res].set(h, v)
       mapa.setFeatureState({ source: zrodloHeksow(res), id: h }, { w: v })
     }
-    for (const [h, w] of heksy) wyslij(10, h, w)
+    for (const [h, w] of heksy) wyslij(10, h, wykluczone.has(h) ? W_WYKLUCZONY : w)
     for (const res of [8, 9] as const) {
       for (const [rodzic, dzieci] of g.dzieci[res])
-        wyslij(res, rodzic, sredniaDzieci(dzieci, heksy))
+        wyslij(
+          res,
+          rodzic,
+          wszystkieWykluczone(dzieci, wykluczone) ? W_WYKLUCZONY : sredniaDzieci(dzieci, heksy),
+        )
     }
   }
 
@@ -375,6 +408,12 @@ export function MapaKrakowa({
               />
               brak danych
             </div>
+            {wykluczone.size > 0 && (
+              <div className="mapa-legenda__wiersz">
+                <span className="mapa-legenda__probka mapa-legenda__probka--wykluczony" />
+                wykluczone filtrem
+              </div>
+            )}
             <div className="mapa-legenda__wiersz">
               <span className="mapa-legenda__probka mapa-legenda__probka--mgla" />
               poza Krakowem – brak danych

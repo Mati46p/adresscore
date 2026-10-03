@@ -1,9 +1,11 @@
 // Stan aplikacji bez biblioteki: jeden obiekt niemutowalny + subskrybenci, czytany przez
 // useSyncExternalStore. Wystarcza na kilka pól, a równoległe okna nie dokładają zależności.
-// Hash URL trzyma to, co warto udostępnić linkiem: ekran, wybrany adres, persona, tryb, porównanie.
+// Hash URL trzyma to, co warto udostępnić linkiem: ekran, wybrany adres, persona, tryb, porównanie,
+// twarde filtry.
 
 import { useSyncExternalStore } from 'react'
 import type { WskaznikMeta } from '@/kontrakty'
+import { type TwardyFiltr, zPodmienionymFiltrem } from './filtry.ts'
 import {
   PERSONA_DOMYSLNA,
   type PersonaId,
@@ -31,6 +33,8 @@ export interface StanAplikacji {
   /** Indeksy adresów do porównania, najwyżej 5. */
   porownanie: readonly number[]
   warstwa: WarstwaMapy
+  /** Twarde filtry: adres, który ich nie spełnia, jest wykluczony (nie dostaje kary w wyniku). */
+  filtry: readonly TwardyFiltr[]
 }
 
 let stan: StanAplikacji = {
@@ -42,6 +46,7 @@ let stan: StanAplikacji = {
   wybrany: null,
   porownanie: [],
   warstwa: 'wynik',
+  filtry: [],
 }
 
 const sluchacze = new Set<() => void>()
@@ -144,6 +149,19 @@ export function ustawWarstwe(warstwa: WarstwaMapy) {
   zmien({ warstwa })
 }
 
+/** Dodaje twardy filtr albo podmienia filtr tej samej warstwy. */
+export function ustawFiltr(filtr: TwardyFiltr) {
+  zmien({ filtry: zPodmienionymFiltrem(stan.filtry, filtr) })
+}
+
+export function usunFiltr(id: string) {
+  zmien({ filtry: stan.filtry.filter((f) => f.id !== id) })
+}
+
+export function wyczyscFiltry() {
+  zmien({ filtry: [] })
+}
+
 /** Id adresu pod indeksem – do linków `#/adres/<id>`. */
 export function idAdresu(i: number | null): string | null {
   return i === null ? null : (idAdresow?.[i] ?? null)
@@ -196,6 +214,7 @@ function zUrl(url: StanUrl): Partial<StanAplikacji> {
     ekran: url.ekran === 'okolica' && wybrany === null ? 'szukaj' : url.ekran,
     wybrany: url.ekran === 'okolica' ? wybrany : stan.wybrany,
     porownanie: url.porownanie.map((id) => indeksPoId.get(id)).filter((i) => i !== undefined),
+    filtry: url.filtry,
   }
 }
 
@@ -222,6 +241,7 @@ function doUrl(s: StanAplikacji): StanUrl {
     porownanie: s.porownanie.map((i) => idAdresu(i)).filter((id) => id !== null),
     ustawienia:
       s.persona === 'wlasna' ? { wagi: { ...s.wagi }, kierunki: { ...s.kierunki } } : null,
+    filtry: [...s.filtry],
   }
 }
 
@@ -250,11 +270,12 @@ if (typeof window !== 'undefined') {
   stan = { ...stan, ekran: startowy.ekran }
   if (startowy.persona) stan = { ...stan, persona: startowy.persona }
   if (startowy.tryb) stan = { ...stan, tryb: startowy.tryb }
+  stan = { ...stan, filtry: startowy.filtry }
   window.addEventListener('hashchange', () => {
     const url = czytajHash(location.hash)
     if (!idAdresow) {
       oczekujacyUrl = url
-      return zmien({ ekran: url.ekran })
+      return zmien({ ekran: url.ekran, filtry: url.filtry })
     }
     const latka: Partial<StanAplikacji> = zUrl(url)
     const persona = url.ustawienia ? 'wlasna' : (url.persona ?? PERSONA_DOMYSLNA)

@@ -1,5 +1,6 @@
 // Router na hashu bez biblioteki: trzy ekrany i kilka parametrów do udostępniania.
 // Hash, a nie ścieżka, bo hosting SPA nie musi wtedy przepisywać adresów na index.html.
+import { filtryDoTekstu, filtryZTekstu, type TwardyFiltr } from './filtry.ts'
 import type { PersonaId, Tryb } from './persony.ts'
 import { PERSONY } from './persony.ts'
 import type { Kierunki } from './silnik.ts'
@@ -16,6 +17,8 @@ export interface StanUrl {
   porownanie: string[]
   /** Własne ustawienia wyniku, zapisane wyłącznie dla persony „własna”. */
   ustawienia: { wagi: Record<string, number>; kierunki: Kierunki } | null
+  /** Twarde filtry (parametr `f`). */
+  filtry: TwardyFiltr[]
 }
 
 export const MAKS_POROWNANIE = 5
@@ -89,6 +92,7 @@ export function czytajHash(hash: string): StanUrl {
     tryb: t === 'kupuje' || t === 'wynajmuje' ? t : null,
     porownanie: cmp ? cmp.split(',').filter(Boolean).slice(0, MAKS_POROWNANIE) : [],
     ustawienia,
+    filtry: filtryZTekstu(parametry.get('f')),
   }
 }
 
@@ -103,7 +107,8 @@ export function zapiszHash(s: StanUrl): string {
   if (s.porownanie.length) parametry.set('cmp', s.porownanie.join(','))
   if (s.ustawienia)
     parametry.set('u', JSON.stringify({ v: 1, w: s.ustawienia.wagi, k: s.ustawienia.kierunki }))
-  const q = parametry.toString().replaceAll('%2C', ',')
+  if (s.filtry.length) parametry.set('f', filtryDoTekstu(s.filtry))
+  const q = parametry.toString().replaceAll('%2C', ',').replaceAll('%3A', ':')
   return `#${sciezka}${q ? `?${q}` : ''}`
 }
 

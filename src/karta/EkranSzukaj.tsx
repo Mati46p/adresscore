@@ -70,6 +70,7 @@ export function EkranSzukaj() {
             <MapaKrakowa
               heksy={wyniki?.heksy ?? BRAK_HEKSOW}
               podpisWarstwy={wyniki?.podpis ?? 'Twój wynik'}
+              wykluczone={wyniki?.wykluczoneHeksy}
               wybrany={adres ? { lon: adres.lon, lat: adres.lat } : null}
               onKlik={(lon, lat) => {
                 if (dane.stan !== 'gotowe') return
@@ -87,6 +88,10 @@ export function EkranSzukaj() {
                 {wynikWybranego === undefined || Number.isNaN(wynikWybranego)
                   ? 'brak danych'
                   : `${wyniki?.podpis}: ${Math.round(wynikWybranego)}`}
+                {wyniki?.wykluczenia.wykluczony[adres.i] ? ' · wykluczony filtrem' : ''}
+                {wyniki?.wykluczenia.niewiadomy[adres.i]
+                  ? ' · nie wiemy, czy spełnia filtr (brak danych)'
+                  : ''}
               </span>
               <button type="button" className="seg wlaczony" onClick={() => pokazOkolice(adres.i)}>
                 Otwórz kartę

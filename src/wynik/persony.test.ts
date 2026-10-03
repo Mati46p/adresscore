@@ -57,6 +57,7 @@ describe('hash URL', () => {
       tryb: 'wynajmuje' as const,
       porownanie: ['a', 'b'],
       ustawienia: null,
+      filtry: [],
     }
     assert.deepEqual(czytajHash(zapiszHash(s)), s)
   })
@@ -92,6 +93,7 @@ describe('hash URL', () => {
         wagi: { halas_ldwn: 4, zielen_udzial: 0 },
         kierunki: { halas_ldwn: 'mniej-lepiej' as const },
       },
+      filtry: [{ id: 'halas_ldwn', warunek: 'max' as const, prog: 55 }],
     }
     assert.deepEqual(czytajHash(zapiszHash(s)), s)
   })
