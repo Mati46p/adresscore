@@ -1421,3 +1421,21 @@ innego niż we wzorcu) i czas odpowiedzi.
 - Zwykle odpowiada w 0,3 sekundy, a gdy pytanie dotyczy dwóch rzeczy z jednej grupy (np.
   przedszkole i żłobek), w ok. 0,65 sekundy. Przy pytaniach o kilka rzeczy naraz pokrywa 60%
   tematów, reguły 52% – różnica mniejsza niż jedno pytanie.
+
+## Surowe przebiegi i research
+
+Przebiegi pozycja po pozycji (odpowiedzi JEV, pewności, prawdopodobieństwa, czasy – bez klucza
+i nagłówków) leżą w `przebiegi/`, żeby dało się je przeliczać offline (`pomiar.ts --z-pliku`)
+bez nowych wywołań:
+
+| Plik | Co | Zadanie |
+|---|---|---|
+| `przebiegi/k2-152.json` | zbiór kontrolny nr 2, wersja końcowa | #152 |
+| `przebiegi/k3-153.json` | zbiór kontrolny nr 3 | #153 |
+| `przebiegi/k4-157.json` | zbiór kontrolny nr 4, runda #154–#156 | #157 |
+| `przebiegi/aa-157.json` | test A/A na `jev-1.13.0` (dwa identyczne przebiegi) | #157 |
+
+Przebiegów zbioru nr 1 (#147, #150) nie zapisywaliśmy pozycja po pozycji – są tylko liczby
+zbiorcze powyżej. Raport z przeglądu projektu JEV (nazwy warstw, prawdopodobieństwa, profil,
+co z dokumentacji TypeSafe nie wykorzystujemy): `RESEARCH-JEV.md`.
+
