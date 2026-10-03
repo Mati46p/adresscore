@@ -4,7 +4,9 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { describe, it } from 'node:test'
 import type { PlikWskaznika, WskaznikMeta } from '../kontrakty/index.ts'
 import {
+  BLIZNIACZE_WARSTWY,
   BRAK_DANYCH,
+  blizniak,
   drugieWywolanie,
   ID_DRUGIEJ,
   ID_PYTANIA,
@@ -1021,5 +1023,188 @@ describe('#156 R5 – tematy JEV nie przepadają przy słabym wyborze głównym'
     const { f } = fetchZ({ odpowiedzi: null, powod: 'blad' })
     const r = await wybierzWarstwy('Jak głośno?', pelna, { fetch: f })
     assert.deepEqual(r.wynik, regulaWiele('Jak głośno?', pelna))
+  })
+})
+
+// --- Warstwy bliźniacze Kraków / obwarzanek (#161) ------------------------------------------
+
+describe('#161 – warstwa bliźniacza, gdy wybrana nie ma danych pod adresem', () => {
+  const halasObw = meta('halas_obwarzanek_lden', 'spokoj', {
+    nazwa: 'Najwyższe pasmo hałasu poza Krakowem (Lden)',
+    jednostka: 'dB',
+    rozdzielczosc: 'rejon',
+    rozmiar: 'pasmo mapy akustycznej EEA (raster 10 m)',
+  })
+  const inw = meta('inwestycje_500m', 'przyszlosc', { jednostka: 'szt.' })
+  const inwObw = meta('inwestycje_500m_obwarzanek', 'przyszlosc', { jednostka: 'szt.' })
+  // Adres 0 – Kraków, 1 – obwarzanek z mapą END, 2 – obwarzanek poza konturem END, 3 – obwarzanek z zerem.
+  const DANE: WarstwaDanych[] = [
+    {
+      meta: halas,
+      wartosci: [62.5, null, null, null],
+      etykiety: ['60–64,9 dB LDWN', null, null, null],
+    },
+    {
+      meta: halasObw,
+      wartosci: [null, 57.5, null, null],
+      etykiety: [null, '55–59,9 dB Lden (pasmo mapy EEA); hałas kolejowy', null, null],
+    },
+    { meta: inw, wartosci: [4, null, null, null] },
+    { meta: inwObw, wartosci: [null, 7, 2, 0] },
+    { meta: przystanek, wartosci: [240, null, 900, 100] },
+  ]
+
+  it('adres w Krakowie zostaje przy warstwie krakowskiej, bez notki', () => {
+    const o = odpowiedz({ warstwa: 'halas_ldwn' }, DANE, 0, 'reguly')
+    assert.ok(o.rodzaj === 'warstwa')
+    assert.equal(o.warstwa, 'halas_ldwn')
+    assert.equal(o.wartosc, 62.5)
+    assert.equal(o.zamiana, undefined)
+  })
+
+  it('adres w obwarzanku dostaje bliźniaka z jego nazwą, jednostką, źródłem i rozdzielczością', () => {
+    const o = odpowiedz({ warstwa: 'halas_ldwn' }, DANE, 1, 'jev')
+    assert.ok(o.rodzaj === 'warstwa')
+    assert.equal(o.warstwa, 'halas_obwarzanek_lden')
+    assert.equal(o.etykieta, 'Najwyższe pasmo hałasu poza Krakowem (Lden)')
+    assert.equal(o.wartosc, 57.5)
+    assert.equal(o.tekstWartosci, '57,5 dB')
+    assert.equal(o.opisMiejsca, '55–59,9 dB Lden (pasmo mapy EEA); hałas kolejowy')
+    assert.equal(o.zrodlo, 'Źródło halas_obwarzanek_lden')
+    assert.equal(o.rozdzielczosc, 'rejon pasmo mapy akustycznej EEA (raster 10 m)')
+    assert.equal(o.zrodloOdpowiedzi, 'jev')
+    assert.deepEqual(o.zamiana, {
+      wybrana: 'halas_ldwn',
+      notka: 'dla tego adresu: mapa hałasu poza Krakowem (Lden, EEA)',
+    })
+  })
+
+  it('para działa w obie strony: warstwa z obwarzanka pod krakowskim adresem → krakowska', () => {
+    const o = odpowiedz({ warstwa: 'halas_obwarzanek_lden' }, DANE, 0, 'jev')
+    assert.ok(o.rodzaj === 'warstwa' && o.warstwa === 'halas_ldwn' && o.wartosc === 62.5)
+    assert.equal(o.zamiana?.notka, 'dla tego adresu: mapa hałasu Krakowa (LDWN, MSIP)')
+  })
+
+  it('obie warstwy bez danych → „brak danych” wybranej warstwy, nigdy zero', () => {
+    const o = odpowiedz({ warstwa: 'halas_ldwn' }, DANE, 2, 'reguly')
+    assert.ok(o.rodzaj === 'warstwa')
+    assert.equal(o.warstwa, 'halas_ldwn')
+    assert.equal(o.wartosc, null)
+    assert.equal(o.tekst, BRAK_DANYCH)
+    assert.equal(o.zamiana, undefined)
+  })
+
+  it('zero u bliźniaka to wartość, a nie brak danych', () => {
+    const o = odpowiedz({ warstwa: 'inwestycje_500m' }, DANE, 3, 'reguly')
+    assert.ok(o.rodzaj === 'warstwa' && o.warstwa === 'inwestycje_500m_obwarzanek')
+    assert.equal(o.wartosc, 0)
+    assert.equal(o.tekstWartosci, '0 szt.')
+  })
+
+  it('bliźniaka nie ma w danych (albo jest niedostępny) → jak dotąd „brak danych”', () => {
+    const bez = DANE.filter((w) => w.meta.id !== 'halas_obwarzanek_lden')
+    const o = odpowiedz({ warstwa: 'halas_ldwn' }, bez, 1, 'reguly')
+    assert.ok(o.rodzaj === 'warstwa' && o.warstwa === 'halas_ldwn' && o.wartosc === null)
+    const niedostepny = DANE.map((w) =>
+      w.meta.id === 'halas_obwarzanek_lden' ? { ...w, niedostepny: 'błąd' } : w,
+    )
+    const n = odpowiedz({ warstwa: 'halas_ldwn' }, niedostepny, 1, 'reguly')
+    assert.ok(n.rodzaj === 'warstwa' && n.warstwa === 'halas_ldwn' && n.tekst === BRAK_DANYCH)
+  })
+
+  it('warstwa bez pary się nie zmienia', () => {
+    assert.equal(blizniak('przystanek_odleglosc'), null)
+    const o = odpowiedz({ warstwa: 'przystanek_odleglosc' }, DANE, 1, 'reguly')
+    assert.ok(o.rodzaj === 'warstwa' && o.warstwa === 'przystanek_odleglosc')
+    assert.equal(o.tekst, BRAK_DANYCH)
+    assert.equal(o.zamiana, undefined)
+  })
+
+  it('dwie pozycje, które po zamianie wskazują tę samą warstwę, liczą się raz', () => {
+    const o = odpowiedzi(
+      { warstwy: ['inwestycje_500m', 'inwestycje_500m_obwarzanek', 'przystanek_odleglosc'] },
+      DANE,
+      1,
+      'jev',
+    )
+    assert.deepEqual(
+      o.map((x) => (x.rodzaj === 'warstwa' ? x.warstwa : x.rodzaj)),
+      ['inwestycje_500m_obwarzanek', 'przystanek_odleglosc'],
+    )
+  })
+
+  it('wybór reguł się nie zmienia: reguła dalej wskazuje halas_ldwn, odpowiedź – bliźniaka', async () => {
+    const { f } = fetchZ({ odpowiedzi: null, powod: 'brak-klucza' })
+    const o = await zapytajOAdres('Jak głośno tu jest?', DANE, 1, { fetch: f })
+    assert.ok(o.rodzaj === 'warstwa' && o.warstwa === 'halas_obwarzanek_lden')
+    assert.equal(o.zamiana?.wybrana, 'halas_ldwn')
+    const lista = listaWarstw(DANE.map((w) => w.meta))
+    assert.equal(regula('Jak głośno tu jest?', lista).warstwa, 'halas_ldwn')
+  })
+
+  it('propozycja (#156) z zamienioną warstwą nie przepada', async () => {
+    const { f } = fetchZ({
+      odpowiedzi: {
+        [ID_PYTANIA]: {
+          typ: 'choice',
+          wybor: 'halas_ldwn',
+          pewnosc: 0.6,
+          prawdopodobienstwa: { halas_ldwn: 0.6, przystanek_odleglosc: 0.3 },
+        },
+      },
+      powod: null,
+    })
+    const r = await zapytajOAdresZPropozycjami('czy słychać tramwaje', DANE, 1, { fetch: f })
+    assert.ok(r.propozycje)
+    assert.deepEqual(
+      r.propozycje.map((p) => p.warstwa),
+      ['halas_ldwn', 'przystanek_odleglosc'],
+    )
+    const [h] = r.propozycje[0]?.odpowiedzi ?? []
+    assert.ok(h?.rodzaj === 'warstwa' && h.warstwa === 'halas_obwarzanek_lden')
+  })
+
+  it('prawdziwe dane: każda zadeklarowana para naprawdę się uzupełnia', () => {
+    const adresy = JSON.parse(readFileSync('public/dane/adresy.json', 'utf8')) as {
+      kolumny: { gmina: string[] }
+    }
+    const wKrakowie = adresy.kolumny.gmina.map((g) => g === 'Kraków')
+    const nK = wKrakowie.filter(Boolean).length
+    const nO = wKrakowie.length - nK
+    assert.ok(nK > 0 && nO > 0)
+    const plik = (id: string) =>
+      JSON.parse(readFileSync(`public/dane/wskazniki/${id}.json`, 'utf8')) as PlikWskaznika
+    const jest = (v: number | null | undefined) => typeof v === 'number' && Number.isFinite(v)
+    for (const p of BLIZNIACZE_WARSTWY) {
+      const k = plik(p.krakow)
+      const o = plik(p.obwarzanek)
+      assert.equal(k.wartosci.length, wKrakowie.length, p.krakow)
+      assert.equal(o.wartosci.length, wKrakowie.length, p.obwarzanek)
+      assert.equal(k.meta.jednostka, o.meta.jednostka, `${p.krakow}: jednostki pary`)
+      let kK = 0
+      let kO = 0
+      let oK = 0
+      let oO = 0
+      let obie = 0
+      for (let i = 0; i < wKrakowie.length; i++) {
+        const a = jest(k.wartosci[i])
+        const b = jest(o.wartosci[i])
+        if (a && b) obie++
+        if (wKrakowie[i]) {
+          if (a) kK++
+          if (b) oK++
+        } else {
+          if (a) kO++
+          if (b) oO++
+        }
+      }
+      assert.equal(obie, 0, `${p.krakow} / ${p.obwarzanek}: adresy z obiema wartościami`)
+      assert.equal(kO, 0, `${p.krakow} poza Krakowem`)
+      assert.equal(oK, 0, `${p.obwarzanek} w Krakowie`)
+      assert.ok(kK / nK >= p.pokrycie.krakowWKrakowie, `${p.krakow} w Krakowie: ${kK / nK}`)
+      assert.ok(oO / nO >= p.pokrycie.obwarzanekPoza, `${p.obwarzanek} poza Krakowem: ${oO / nO}`)
+      assert.equal(blizniak(p.krakow)?.warstwa, p.obwarzanek)
+      assert.equal(blizniak(p.obwarzanek)?.warstwa, p.krakow)
+    }
   })
 })

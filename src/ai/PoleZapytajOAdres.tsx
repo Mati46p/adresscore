@@ -199,6 +199,7 @@ function Linia({ odpowiedz: o, bezKto = false }: { odpowiedz: Odpowiedz; bezKto?
         {o.atrapa && <span className="atrapa">dane przykładowe</span>}
       </p>
       {o.opisMiejsca && <p className="zap-opis">{o.opisMiejsca}</p>}
+      {o.zamiana && <p className="zap-opis">{o.zamiana.notka}</p>}
       <p className="zap-zrodlo">
         <span>
           Źródło:{' '}
