@@ -240,11 +240,31 @@ export function PanelFiltrow() {
 
         {dane.stan === 'ladowanie' && <p className="panel-uwaga">Wczytuję warstwy…</p>}
         {dane.stan === 'blad' && <p className="panel-uwaga">Nie udało się wczytać warstw.</p>}
+        {KOLEJNOSC_KATEGORII.map((kat, i) => {
+          const warstwy = warstwyPanelu.filter(
+            (w) => w.meta.kategoria === kat && !czyWarstwaWyborow(w.meta.id),
+          )
+          if (warstwy.length === 0) return null
+          return (
+            <GrupaWarstw
+              key={`${tryb}-${kat}`}
+              kategoria={kat}
+              warstwy={warstwy}
+              wagi={wagi}
+              kierunki={kierunki}
+              filtry={filtry}
+              poczatkowoOtwarta={tryb === 'biznes' || i === 0}
+            />
+          )
+        })}
         {tryb !== 'biznes' && wybranyKomitet && (
-          <div className="panel-grupa">
-            <div className="panel-grupa-glowa">
+          <details className="panel-grupa panel-grupa--wybory">
+            <summary className="panel-grupa-glowa">
               <span className="panel-grupa-tytul">Wybory do Sejmu 2023</span>
-            </div>
+              <span className="panel-grupa-podsumowanie">
+                <span>informacyjnie · waga 0</span>
+              </span>
+            </summary>
             <div className="panel-warstwy">
               <WybierakKomitetu
                 komitety={wyborcze.map((w) => ({ id: w.meta.id, nazwa: w.meta.nazwa }))}
@@ -265,25 +285,8 @@ export function PanelFiltrow() {
                 />
               </ul>
             </div>
-          </div>
+          </details>
         )}
-        {KOLEJNOSC_KATEGORII.map((kat, i) => {
-          const warstwy = warstwyPanelu.filter(
-            (w) => w.meta.kategoria === kat && !czyWarstwaWyborow(w.meta.id),
-          )
-          if (warstwy.length === 0) return null
-          return (
-            <GrupaWarstw
-              key={`${tryb}-${kat}`}
-              kategoria={kat}
-              warstwy={warstwy}
-              wagi={wagi}
-              kierunki={kierunki}
-              filtry={filtry}
-              poczatkowoOtwarta={tryb === 'biznes' || i === 0}
-            />
-          )
-        })}
         <div className="panel-tryb-mapy" role="group" aria-label="Widok mapy">
           <span className="panel-tryb-mapy-etykieta">Mapa pokazuje</span>
           <div className="panel-tryb-mapy-opcje">

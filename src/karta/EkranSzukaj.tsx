@@ -38,6 +38,7 @@ export function EkranSzukaj() {
   const porownanie = useStan((s) => s.porownanie)
   const kierunki = useStan((s) => s.kierunki)
   const [komunikatHeksow, setKomunikatHeksow] = useState('')
+  const [warstwyRozwiniete, setWarstwyRozwiniete] = useState(false)
   const wyniki = useWyniki()
   const sasiedzi = usePropsSasiadowMapy()
   const wstepnaMapa = useWstepnaMapa(dane.stan !== 'gotowe')
@@ -95,17 +96,29 @@ export function EkranSzukaj() {
             >
               Wynik tej okolicy
             </button>
-            {warstwy.map((w) => (
+            {warstwy
+              .filter((w) => warstwyRozwiniete || warstwa === w.meta.id)
+              .map((w) => (
+                <button
+                  key={w.meta.id}
+                  type="button"
+                  className="seg"
+                  aria-pressed={warstwa === w.meta.id}
+                  onClick={() => ustawWarstwe(w.meta.id)}
+                >
+                  {w.meta.nazwa}
+                </button>
+              ))}
+            {warstwy.length > 0 && (
               <button
-                key={w.meta.id}
                 type="button"
-                className="seg"
-                aria-pressed={warstwa === w.meta.id}
-                onClick={() => ustawWarstwe(w.meta.id)}
+                className="seg pasek-warstw__wiecej"
+                aria-expanded={warstwyRozwiniete}
+                onClick={() => setWarstwyRozwiniete(!warstwyRozwiniete)}
               >
-                {w.meta.nazwa}
+                {warstwyRozwiniete ? 'Zwiń warstwy ▴' : `Inne warstwy (${warstwy.length}) ▾`}
               </button>
-            ))}
+            )}
           </div>
           <div className="slot-mapy" data-slot="mapa">
             <Suspense
