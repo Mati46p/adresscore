@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs'
-import { gunzipSync, gzipSync } from 'node:zlib'
+import { gunzipSync } from 'node:zlib'
+import { gzipStaly } from '../etl/kompakt.mjs'
 import { hashAdresu, kluczUlicy, slugAdresu, slugUlicy } from '../src/wynik/slug.ts'
 
 const DOMENA = 'https://adresscore.pl'
@@ -43,10 +44,10 @@ for (let i = 0; i < c.id.length; i++) {
 const meta = { wersjaAdresow: zrodlo.wersja, adresy, ulice: [...ulice.values()] }
 const tresc = JSON.stringify(meta)
 const plikIndeksu = new URL('../api/_seo-index.json.gz', import.meta.url)
-// Bajty gzipa zależą od wersji zlib i systemu, więc przy tej samej treści nie przepisujemy
-// pliku – inaczej każdy build brudzi drzewo i `pnpm zadanie scal` odmawia.
+// Bajty gzipa zależą od wersji zlib, więc przy tej samej treści nie przepisujemy pliku –
+// inaczej każdy build brudzi drzewo i `pnpm zadanie scal` odmawia. Bajt systemu stały (#179).
 const poprzedni = existsSync(plikIndeksu) ? gunzipSync(readFileSync(plikIndeksu)).toString() : null
-if (poprzedni !== tresc) writeFileSync(plikIndeksu, gzipSync(tresc, { level: 9 }))
+if (poprzedni !== tresc) writeFileSync(plikIndeksu, gzipStaly(Buffer.from(tresc)))
 
 const url = (sciezka) => `<url><loc>${DOMENA}${sciezka}</loc></url>`
 const xml = (tresc) =>

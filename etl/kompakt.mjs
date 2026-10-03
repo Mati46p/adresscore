@@ -84,7 +84,19 @@ export function zapakuj(naglowek, sekcje) {
     czesci.push(Buffer.from(bajty.buffer, bajty.byteOffset, bajty.byteLength))
     czesci.push(Buffer.alloc(wyrownaj(bajty.byteLength) - bajty.byteLength))
   }
-  return gzipSync(Buffer.concat(czesci), { level: 9 })
+  return gzipStaly(Buffer.concat(czesci))
+}
+
+/**
+ * gzip z nagłówkiem niezależnym od systemu. zlib wpisuje do bajtu 9 kod systemu (macOS 19,
+ * Linux 3, Windows 10), a nazwy plików niosą skrót bajtów – bez tego ten sam kompakt
+ * policzony na innym systemie dawał inne nazwy i `--sprawdz` = 1 (#179). Stała 19, bo z nią
+ * policzono pliki już leżące w repo. mtime Node i tak zapisuje jako 0.
+ */
+export function gzipStaly(bufor) {
+  const gz = gzipSync(bufor, { level: 9 })
+  gz[9] = 19
+  return gz
 }
 
 // ── Kolumny ──────────────────────────────────────────────────────────────────────────────
@@ -416,11 +428,7 @@ export function zbudujKompakt(plikAdresow, plikiWskaznikow) {
       wartosci,
       etykiety,
     }
-    const plik = dodaj(
-      `kafle/${klucz}`,
-      gzipSync(Buffer.from(JSON.stringify(tresc)), { level: 9 }),
-      'json.gz',
-    )
+    const plik = dodaj(`kafle/${klucz}`, gzipStaly(Buffer.from(JSON.stringify(tresc))), 'json.gz')
     kafle.push({ h3: klucz, od, n: doo - od, plik: plik.plik })
     od = doo
   }
