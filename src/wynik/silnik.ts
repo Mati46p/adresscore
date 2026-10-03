@@ -245,6 +245,13 @@ export const KONTEKST_DO_WYNIKU: Readonly<Record<string, KategoriaId>> = {
   cena_m2_mediana: 'przyszlosc',
   drzewa_100m: 'codziennosc',
   ludnosc_1km: 'codziennosc',
+  sejm2023_lista_1: 'kontekst',
+  sejm2023_lista_2: 'kontekst',
+  sejm2023_lista_3: 'kontekst',
+  sejm2023_lista_4: 'kontekst',
+  sejm2023_lista_5: 'kontekst',
+  sejm2023_lista_6: 'kontekst',
+  sejm2023_lista_7: 'kontekst',
 }
 
 function kategoriaWarstwy(meta: WskaznikMeta, liczona: boolean): KategoriaId {
@@ -268,6 +275,7 @@ export interface WskaznikPrzygotowany {
   meta: WskaznikMeta
   wartosci: readonly (number | null)[]
   etykiety?: readonly (string | null)[]
+  slownikEtykiet?: Readonly<Record<string, string>>
   skala: Skala
   /** Powód, gdy plik warstwy się nie wczytał; wtedy każdy adres ma brak danych. */
   niedostepny?: string
@@ -278,6 +286,7 @@ export function przygotujWskaznik(plik: PlikWskaznika): WskaznikPrzygotowany {
     meta: plik.meta,
     wartosci: plik.wartosci,
     etykiety: plik.etykiety,
+    slownikEtykiet: plik.slownikEtykiet,
     skala: zbudujSkale(plik.meta, plik.wartosci),
   }
 }
@@ -398,7 +407,7 @@ export function wynikAdresu(
       meta: s.w.meta,
       kategoria: kategoriaWarstwy(s.w.meta, s.liczona),
       wartosc: s.wartosc,
-      etykieta: s.w.etykiety?.[i] ?? null,
+      etykieta: s.w.slownikEtykiet?.[s.w.etykiety?.[i] ?? ''] ?? s.w.etykiety?.[i] ?? null,
       ocena: s.ocena,
       kierunek: s.kierunek,
       wagaUzytkownika: s.wu,

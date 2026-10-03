@@ -7,6 +7,7 @@ import { useDane } from '@/wynik/dane'
 import type { RozbicieWarstwy, WynikAdresu } from '@/wynik/silnik'
 import { dodajDoPorownania, hrefDla, przejdz, useStan } from '@/wynik/stan'
 import { useWynikAdresu } from '@/wynik/useWyniki'
+import { czyWarstwaWyborow } from '@/wynik/wybory'
 import { Etykieta } from './Etykieta'
 import type { LiteraEtykiety } from './kolory'
 import { LepszySasiad } from './LepszySasiad'
@@ -60,7 +61,13 @@ export function EkranOkolica() {
   }
 
   const warstwyWyniku = wynik.warstwy.filter((w) => w.kategoria !== 'kontekst')
-  const kontekst = wynik.warstwy.filter((w) => w.kategoria === 'kontekst')
+  const wybranaLista =
+    wynik.warstwy.find((w) => czyWarstwaWyborow(w.id) && w.wagaUzytkownika > 0)?.id ??
+    wynik.warstwy.find((w) => czyWarstwaWyborow(w.id) && stan.kierunki[w.id])?.id ??
+    'sejm2023_lista_1'
+  const kontekst = wynik.warstwy.filter(
+    (w) => w.kategoria === 'kontekst' && (!czyWarstwaWyborow(w.id) || w.id === wybranaLista),
+  )
   const { mocne, slabe } = mocneISlabe(wynik.warstwy, wynik.wynik)
   const atrapa = wynik.warstwy.some((w) => w.meta.atrapa)
 
@@ -415,9 +422,11 @@ function NaCoDzien({
   return (
     <section aria-labelledby="h-codzien" className="karta okol-codzien">
       <h2 id="h-codzien" className="okol-h2">
-        Na co dzień
+        Dodatkowe dane o okolicy
       </h2>
-      <p className="okol-podpis">Fakty o okolicy. Nie wpływają na wynik.</p>
+      <p className="okol-podpis">
+        Fakty o okolicy. Wybrane przez Ciebie warstwy z wagą większą od zera wpływają na wynik.
+      </p>
       <dl className="okol-fakty">
         {warstwy.map((w) => (
           <div key={w.id} className="okol-fakt">

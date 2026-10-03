@@ -16,6 +16,7 @@ import {
   useStan,
   ustawFiltr,
   ustawKierunek,
+  ustawKomitet,
   ustawTryb,
   ustawTrybMapy,
   ustawWage,
@@ -25,7 +26,9 @@ import {
 } from '@/wynik/stan'
 import { useWyniki } from '@/wynik/useWyniki'
 import './panel.css'
+import { czyWarstwaWyborow } from '@/wynik/wybory'
 import { etykietaKierunku, kierunkiWarstwy } from './preferencje'
+import { WybierakKomitetu } from './WybierakKomitetu'
 
 const SEGMENTY_WAGI = Array.from({ length: WAGA_MAX + 1 }, (_, n) => n)
 
@@ -86,6 +89,12 @@ export function PanelFiltrow() {
     tryb === 'biznes'
       ? wskazniki.filter((w) => WARSTWY_BIZNESU.some((id) => id === w.meta.id && !w.meta.atrapa))
       : wskazniki
+  const wyborcze = warstwyPanelu.filter((w) => czyWarstwaWyborow(w.meta.id))
+  const wybranyKomitet =
+    wyborcze.find((w) => wagaUzytkownika(wagi, w.meta.id) > 0) ??
+    wyborcze.find((w) => kierunki[w.meta.id]) ??
+    wyborcze.find((w) => filtry.some((f) => f.id === w.meta.id)) ??
+    wyborcze[0]
   const liczone = warstwyPanelu.filter(
     (w) => w.meta.kategoria !== 'kontekst' || KONTEKST_DO_WYNIKU[w.meta.id],
   )
@@ -231,8 +240,37 @@ export function PanelFiltrow() {
 
         {dane.stan === 'ladowanie' && <p className="panel-uwaga">Wczytuję warstwy…</p>}
         {dane.stan === 'blad' && <p className="panel-uwaga">Nie udało się wczytać warstw.</p>}
+        {tryb !== 'biznes' && wybranyKomitet && (
+          <div className="panel-grupa">
+            <div className="panel-grupa-glowa">
+              <span className="panel-grupa-tytul">Wybory do Sejmu 2023</span>
+            </div>
+            <div className="panel-warstwy">
+              <WybierakKomitetu
+                komitety={wyborcze.map((w) => ({ id: w.meta.id, nazwa: w.meta.nazwa }))}
+                wybranyId={wybranyKomitet.meta.id}
+                onChange={ustawKomitet}
+              />
+              <p className="panel-uwaga">
+                Udział głosów ważnych w gminie adresu. To wynik z 15 października 2023 r., nie
+                poglądy mieszkańców budynku. Wybór komitetu nie zmienia wyniku; domyślna waga wynosi
+                0.
+              </p>
+              <ul>
+                <Warstwa
+                  w={wybranyKomitet}
+                  wagi={wagi}
+                  kierunki={kierunki}
+                  filtr={filtry.find((f) => f.id === wybranyKomitet.meta.id)}
+                />
+              </ul>
+            </div>
+          </div>
+        )}
         {KOLEJNOSC_KATEGORII.map((kat, i) => {
-          const warstwy = warstwyPanelu.filter((w) => w.meta.kategoria === kat)
+          const warstwy = warstwyPanelu.filter(
+            (w) => w.meta.kategoria === kat && !czyWarstwaWyborow(w.meta.id),
+          )
           if (warstwy.length === 0) return null
           return (
             <GrupaWarstw
@@ -392,7 +430,10 @@ function Warstwa({
                 if (wlaczona) ustawWage(meta.id, 0)
                 else {
                   if (meta.kierunek === 'neutralny' && !kierunki[meta.id])
-                    ustawKierunek(meta.id, 'mniej-lepiej')
+                    ustawKierunek(
+                      meta.id,
+                      czyWarstwaWyborow(meta.id) ? 'wiecej-lepiej' : 'mniej-lepiej',
+                    )
                   ustawWage(meta.id, 2)
                 }
               }}

@@ -22,6 +22,7 @@ import {
 import type { KierunekOceny, Kierunki } from './silnik.ts'
 import { hashAdresu, hashZeSluga, slugAdresu } from './slug.ts'
 import { czytajHash, type Ekran, MAKS_POROWNANIE, type StanUrl, zapiszHash } from './url.ts'
+import { czyWarstwaWyborow, zmienKomitet } from './wybory.ts'
 
 /** `'wynik'` = wynik łączny; inaczej id wskaźnika pokazywanego na mapie. */
 export type WarstwaMapy = 'wynik' | (string & {})
@@ -180,8 +181,27 @@ export function ustawTryb(tryb: Tryb) {
 }
 
 export function ustawWage(id: string, waga: number) {
+  const inneWagi = czyWarstwaWyborow(id)
+    ? Object.fromEntries(
+        Object.entries(stan.wagi).map(([klucz, wartosc]) => [
+          klucz,
+          czyWarstwaWyborow(klucz) && klucz !== id ? 0 : wartosc,
+        ]),
+      )
+    : stan.wagi
   zmien({
-    wagi: { ...stan.wagi, [id]: Math.min(Math.max(Math.round(waga), 0), 4) },
+    wagi: { ...inneWagi, [id]: Math.min(Math.max(Math.round(waga), 0), 4) },
+    persona: 'wlasna',
+    ostatniaWarstwa: id,
+    ...(stan.trybMapy === 'ostatnia' ? { warstwa: id } : {}),
+  })
+}
+
+export function ustawKomitet(id: string) {
+  if (!czyWarstwaWyborow(id) || !metaWskaznikow.some((m) => m.id === id)) return
+  const ustawienia = zmienKomitet(id, stan.wagi, stan.kierunki, stan.filtry)
+  zmien({
+    ...ustawienia,
     persona: 'wlasna',
     ostatniaWarstwa: id,
     ...(stan.trybMapy === 'ostatnia' ? { warstwa: id } : {}),
