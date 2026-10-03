@@ -21,6 +21,8 @@ export interface OkolicaPorownania {
   nazwa: string
   wynik: WynikPorownania
   href?: string
+  /** Stały kolor adresu także po wykluczeniu innego adresu twardym filtrem. */
+  kolor?: string
 }
 
 export const OSIE: readonly KategoriaId[] = [
