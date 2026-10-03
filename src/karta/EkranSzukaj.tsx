@@ -136,6 +136,7 @@ export function EkranSzukaj() {
                 wykluczone={wyniki?.wykluczoneHeksy}
                 sasiedzi={sasiedzi}
                 wybrany={adres ? { lon: adres.lon, lat: adres.lat } : null}
+                widok3d
                 onKlik={(lon, lat) => {
                   if (dane.stan !== 'gotowe') return
                   const kandydat = adresWKliknietymHeksie(dane.adresy, lon, lat)

@@ -206,3 +206,46 @@
     bottom: calc(42vh + 12px);
   }
 }
+/* ── Pora dnia na mapie głównej: przycisk i okienko nad mapą ───────────────── */
+.m3d-pora {
+  position: absolute;
+  z-index: 3;
+  top: 8px;
+  right: 8px;
+  display: grid;
+  justify-items: end;
+  gap: 8px;
+  max-width: calc(100% - 16px);
+}
+.m3d-pora-przycisk {
+  padding: 6px 12px;
+  border: 1px solid #dde1e4;
+  border-radius: 10px;
+  background: rgb(255 255 255 / 0.96);
+  box-shadow: 0 2px 8px rgb(24 32 43 / 0.1);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.m3d-pora-okno {
+  position: relative;
+  width: min(340px, calc(100vw - 32px));
+  border-radius: 12px;
+  background: var(--powierzchnia, #fff);
+  box-shadow: 0 8px 24px rgb(24 32 43 / 0.2);
+}
+.m3d-pora-okno .m3d-cien {
+  background: transparent;
+}
+.m3d-pora-zamknij {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  z-index: 1;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  background: transparent;
+  font-size: 20px;
+  cursor: pointer;
+}
