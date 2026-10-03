@@ -46,7 +46,7 @@ const DOPISKI_WARSTW: Readonly<Record<string, string>> = {
   powodz_10proc: 'Tylko gdy pytanie wprost dotyczy częstych zalań (co kilka lat).',
   powodz_02proc: 'Tylko gdy pytanie wprost dotyczy najgorszego, skrajnie rzadkiego scenariusza.',
   zielen_worldcover_100m:
-    'Domyślna odpowiedź na pytania o zieleń: park, skwer, trawnik, czy jest zielono, gdzie wyjść na spacer albo z psem.',
+    'Domyślna odpowiedź na pytania o zieleń: park, skwer, trawnik, czy jest zielono, gdzie wyjść na spacer albo pobiegać, także na spacer z psem.',
   drzewa_100m: 'Odpowiedź na pytania o drzewa przy ulicy i pod oknem.',
   pm25_srednia:
     'Domyślna odpowiedź na pytania o smog, czyste powietrze i czym się tu oddycha (astma, alergia).',
@@ -165,20 +165,27 @@ export interface Temat {
 // (choćby w części) dotyczy …” łapało samo słowo: „słychać tramwaje” → komunikacja, „apteka”
 // → sklepy, „dieslem” → powietrze, „bezpiecznie rowerem” → zagrożenia (pomiar #146).
 const O = 'Użytkownik chce się dowiedzieć'
+// #150: ostre „Użytkownik chce się dowiedzieć” obniżało też prawdziwe tematy (sklepy 0,96 →
+// 0,56 na zbiorze kontrolnym). Siedem tematów wraca do formy obejmującej („choćby w części”),
+// ale z zawężonymi wykluczeniami („pytanie wyłącznie o …”) – cztery znane fałszywe dodatki
+// zostają pod progiem (0,07 / 0,17 / 0,13 / 0,33), a prawdziwe tematy rosną (hałas 0,77 → 0,94,
+// bezpieczeństwo wieczorem 0,47 → 0,91, powietrze 0,71 → 0,91, sklepy 0,69 → 0,91; WYNIKI.md,
+// „Druga runda (#150)”). Tematy, których nie sprawdziłem na żywo, mają brzmienie z #147.
+const P = 'Pytanie (choćby w części) dotyczy'
 
 /** Stała kolejność – JEV widzi ją w zapytaniu, a remis noul rozstrzyga pozycja na liście. */
 export const TEMATY: readonly Temat[] = [
   {
     id: 'halas',
     nazwa: 'hałas',
-    twierdzenie: `${O}, czy jest tu głośno albo cicho: hałas ulicy, tramwajów, pociągów, samolotów, spokój w nocy.`,
+    twierdzenie: `${P} hałasu: czy jest głośno albo cicho, słychać ulicę, tramwaje, pociągi, samoloty, spokój w nocy.`,
     warstwy: ['halas_ldwn', 'halas_obwarzanek_lden'],
     domyslna: 'halas_ldwn',
   },
   {
     id: 'powietrze',
     nazwa: 'powietrze',
-    twierdzenie: `${O}, jakim powietrzem się tu oddycha: smog, pyły, spaliny, dym z pieców. Pytanie o przepisy dla aut (wjazd do strefy, mandat) to nie to.`,
+    twierdzenie: `${P} jakości powietrza: smog, pyły, spaliny, dym z pieców, czym się tu oddycha. Pytanie wyłącznie o przepisy dla aut (wjazd do strefy, mandat) to nie to.`,
     warstwy: [
       'pm25_srednia',
       'pm10_srednia',
@@ -192,7 +199,7 @@ export const TEMATY: readonly Temat[] = [
   {
     id: 'zielen',
     nazwa: 'zieleń',
-    twierdzenie: `${O}, czy w okolicy jest zieleń: parki, skwery, drzewa, las, przyroda, miejsce na spacer.`,
+    twierdzenie: `${P} zieleni w okolicy: parki, skwery, drzewa, las, przyroda, gdzie wyjść na spacer. Samo posiadanie psa to nie to.`,
     warstwy: [
       'zielen_worldcover_100m',
       'zielen_udzial',
@@ -213,7 +220,7 @@ export const TEMATY: readonly Temat[] = [
   {
     id: 'komunikacja',
     nazwa: 'komunikacja',
-    twierdzenie: `${O}, jak stąd dojechać komunikacją publiczną: odległość do przystanku albo stacji, jak często jeździ, ile trwa dojazd. Hałas od tramwajów to nie to.`,
+    twierdzenie: `${P} dojazdu komunikacją publiczną: przystanek, tramwaj, autobus, pociąg, jak często jeździ, ile trwa dojazd. Pytanie wyłącznie o hałas tramwajów to nie to.`,
     warstwy: [
       'przystanek_odleglosc',
       'kursy_szczyt_h',
@@ -269,7 +276,7 @@ export const TEMATY: readonly Temat[] = [
   {
     id: 'sklepy',
     nazwa: 'sklepy i usługi',
-    twierdzenie: `${O}, czy blisko są sklepy albo usługi: zakupy, poczta, bankomat, paczkomat, weterynarz. Apteka i lekarz to nie sklepy.`,
+    twierdzenie: `${P} sklepów albo usług w pobliżu: zakupy, spożywczak, poczta, bankomat, paczkomat, weterynarz. Pytanie wyłącznie o aptekę albo lekarza to nie to.`,
     warstwy: [
       'sklep_odleglosc',
       'uslugi_15min',
@@ -295,7 +302,7 @@ export const TEMATY: readonly Temat[] = [
   {
     id: 'bezpieczenstwo',
     nazwa: 'bezpieczeństwo',
-    twierdzenie: `${O}, czy okolica jest bezpieczna od przestępstw i zdarzeń: oświetlenie ulic wieczorem, policja, interwencje służb, pożary. Bezpieczeństwo jazdy rowerem to nie to.`,
+    twierdzenie: `${P} bezpieczeństwa okolicy: czy jest bezpiecznie albo ciemno wieczorem, oświetlenie ulic, przestępstwa, policja, pożary. Pytanie wyłącznie o bezpieczną jazdę rowerem to nie to.`,
     warstwy: [
       'oswietlenie_100m',
       'policja_odleglosc',
@@ -315,7 +322,7 @@ export const TEMATY: readonly Temat[] = [
   {
     id: 'rower',
     nazwa: 'rower',
-    twierdzenie: `${O}, jak tu jeździć rowerem: drogi i trasy rowerowe albo stojaki, gdzie przypiąć rower.`,
+    twierdzenie: `${P} roweru: drogi i trasy rowerowe, dojazd rowerem, stojaki, gdzie przypiąć rower.`,
     warstwy: ['rower_infrastruktura_odleglosc', 'droga_rowerowa_odleglosc', 'stojaki_300m'],
     domyslna: 'rower_infrastruktura_odleglosc',
     obiekty: {
@@ -427,7 +434,8 @@ export function przetworzWiele(
   if (!glowny) return null
   if (glowny.warstwa === null) return { warstwy: [] }
   const ids = new Set(lista.map((p) => p.id))
-  const wskazane = trafieniaRegul(pytanie, lista).map((t) => t.warstwa)
+  const trafienia = trafieniaRegul(pytanie, lista)
+  const wskazane = trafienia.map((t) => t.warstwa)
   const tematy = TEMATY.map((t) => {
     const o = odpowiedzi[idTematu(t)]
     return { t, noul: o?.typ === 'noul' ? o.noul : null }
@@ -442,7 +450,7 @@ export function przetworzWiele(
         wskazane,
         ids,
       ),
-      wskazane,
+      nazwane(trafienia),
     ),
   }
 }
@@ -451,7 +459,8 @@ export function przetworzWiele(
  * #147: dwa różne obiekty z jednego tematu („przedszkole i żłobek”, „apteka i przychodnia”).
  * Temat z `obiekty`, który ma już dokładnie jedną warstwę, dokłada drugą: pierwszą warstwę
  * tego tematu wskazaną przez reguły słów kluczowych, która jest INNYM obiektem niż ta, którą
- * już ma – bez dodatkowego wywołania JEV. Najpierw liczą się różne tematy (dobierz), drugie
+ * już ma – bez dodatkowego wywołania JEV. #150: `wskazane` to tylko warstwy, których obiekt
+ * pytanie nazywa wprost (bez słów samego tematu, `ogolne` w REGULY). Najpierw liczą się różne tematy (dobierz), drugie
  * warstwy idą tylko w wolne miejsca do MAKS_ODPOWIEDZI, zaraz po pierwszej z tematu.
  */
 export function drugieZTematu(warstwy: readonly string[], wskazane: readonly string[]): string[] {
@@ -514,7 +523,16 @@ export function normalizuj(tekst: string): string {
  * pierwsza warstwa z listy, która istnieje. Wzorce działają na tekście po `normalizuj`.
  * Wygrywa reguła z największą liczbą trafionych wzorców; remis – wyższa na liście.
  */
-export const REGULY: readonly { warstwy: readonly string[]; wzorce: readonly RegExp[] }[] = [
+export const REGULY: readonly {
+  warstwy: readonly string[]
+  wzorce: readonly RegExp[]
+  /**
+   * #150: słowa samego tematu („rower”). Liczą się do wyboru warstwy jak `wzorce`, ale nie
+   * nazywają osobnego obiektu – nie dokładają drugiej warstwy z tematu (`drugieZTematu`).
+   * Inaczej „gdzie przypiąć rower” dostawało obok stojaków trasę rowerową.
+   */
+  ogolne?: readonly RegExp[]
+}[] = [
   { warstwy: ['szkola_podst_wynik_e8'], wzorce: [/\be8\b/, /egzamin/, /(dobr|najlepsz)\w* szkol/] },
   {
     warstwy: ['przychodnia_bez_barier_odleglosc'],
@@ -579,7 +597,9 @@ export const REGULY: readonly { warstwy: readonly string[]; wzorce: readonly Reg
   { warstwy: ['stojaki_300m'], wzorce: [/stojak/, /przypi/] },
   {
     warstwy: ['rower_infrastruktura_odleglosc', 'droga_rowerowa_odleglosc'],
-    wzorce: [/rower/, /sciezk/],
+    // Trasę nazywa jazda („rowerem”, „na rowerze”) albo droga; samo „rower” to słowo tematu.
+    wzorce: [/sciezk/, /\btras/, /rowerem/, /na rowerze/],
+    ogolne: [/rower/],
   },
   { warstwy: ['teren_osuwiskowy', 'osuwisko_odleglosc'], wzorce: [/osuw/, /osiada/] },
   { warstwy: ['azbest_budynki_100m'], wzorce: [/azbest/, /eternit/] },
@@ -628,11 +648,16 @@ export function regula(pytanie: string, lista: readonly PozycjaListy[]): WyborWa
 
 interface TrafienieReguly {
   warstwa: string
-  /** Liczba trafionych wzorców. */
+  /** Liczba trafionych wzorców (z `ogolne`). */
   n: number
   /** Pozycja pierwszego trafienia w znormalizowanym pytaniu. */
   poz: number
+  /** #150: pytanie nazywa obiekt warstwy (trafił wzorzec spoza `ogolne`). */
+  nazwany: boolean
 }
+
+/** #150: warstwy, których obiekt pytanie nazywa wprost – kandydaci na drugą warstwę z tematu. */
+const nazwane = (t: readonly TrafienieReguly[]) => t.filter((x) => x.nazwany).map((x) => x.warstwa)
 
 /** Wszystkie reguły, które coś trafiły, w kolejności REGULY (pierwszeństwa). */
 function trafieniaRegul(pytanie: string, lista: readonly PozycjaListy[]): TrafienieReguly[] {
@@ -644,13 +669,18 @@ function trafieniaRegul(pytanie: string, lista: readonly PozycjaListy[]): Trafie
     if (!warstwa) continue
     let n = 0
     let poz = Number.POSITIVE_INFINITY
-    for (const w of r.wzorce) {
+    let nazwany = false
+    for (const [w, ogolny] of [
+      ...r.wzorce.map((w) => [w, false] as const),
+      ...(r.ogolne ?? []).map((w) => [w, true] as const),
+    ]) {
       const m = w.exec(tekst)
       if (!m) continue
       n++
       poz = Math.min(poz, m.index)
+      if (!ogolny) nazwany = true
     }
-    if (n > 0) wynik.push({ warstwa, n, poz })
+    if (n > 0) wynik.push({ warstwa, n, poz, nazwany })
   }
   return wynik
 }
@@ -678,10 +708,7 @@ export function regulaWiele(pytanie: string, lista: readonly PozycjaListy[]): Wy
     .map((t) => t.warstwa)
   // #147: wolne miejsca – druga warstwa z tematu, w którym pytanie nazywa dwa różne obiekty.
   return {
-    warstwy: drugieZTematu(
-      warstwy,
-      trafienia.map((t) => t.warstwa),
-    ),
+    warstwy: drugieZTematu(warstwy, nazwane(trafienia)),
   }
 }
 

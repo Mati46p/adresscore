@@ -220,7 +220,7 @@ interface WynikA {
     /** Ocena twierdzeń (noul 0–1) dla potrzeb z twierdzeniem. */
     noul: Record<string, number | null>
     poziomy: Record<string, number | null>
-    /** #147: ocena twierdzenia „opisuje własną obecną sytuację” (noul 0–1). */
+    /** #147: ocena twierdzenia o własnej sytuacji (noul 0–1, brzmienie z #150). */
     wlasna: number | null
   }
 }

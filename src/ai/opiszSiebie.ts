@@ -86,13 +86,25 @@ export const PROG_PEWNOSCI = 0.6
 export const PROG_POTRZEBY = 0.6
 
 /**
- * #147: tekst o cudzej, hipotetycznej albo przeszłej sytuacji („Kumpel ma trójkę dzieci…”,
- * „Gdybyśmy kiedyś mieli dzieci…”). JEV ocenia to twierdzenie w tym samym wywołaniu.
+ * #147: tekst o cudzej, hipotetycznej albo przeszłej sytuacji („Pytam dla koleżanki…”,
+ * „Gdybym kiedyś miał psa…”). JEV ocenia to twierdzenie w tym samym wywołaniu.
+ *
+ * #150: brzmienie z #147 („własną obecną sytuację … nie cudzą, nie hipotetyczną, nie
+ * przeszłą”) karało domowników i plany: „mama z nami zamieszka” 0,18, teść, który się
+ * wprowadza, 0,58–0,66. Nowe zdanie mówi, czego szuka piszący – dla siebie, rodziny albo jako
+ * inwestor. Na celowanych zdaniach: domownicy i własne plany 0,92–0,95, inwestor 0,94,
+ * znajoma 0,04, czysta hipoteza 0,13, dawna sytuacja 0,16 (WYNIKI.md, „Druga runda (#150)”).
+ * Wersja tylko o „ludziach, z którymi mieszka” odcinała inwestora (0,29).
  */
 export const ID_WLASNEJ_SYTUACJI = 'wlasna_sytuacja'
 export const TWIERDZENIE_WLASNEJ_SYTUACJI =
-  'Osoba opisuje własną obecną sytuację i swoje potrzeby (nie cudzą, nie hipotetyczną, nie przeszłą).'
-/** Poniżej tej oceny profil zostaje bez zmian, a potrzeby muszą mieć noul ≥ PROG_POTRZEBY_PEWNEJ. */
+  'Tekst opisuje, czego szuka sama osoba pisząca (dla siebie, swojej rodziny albo jako inwestor), a nie znajomy ani wyobrażona lub dawna sytuacja.'
+/**
+ * Poniżej tej oceny profil zostaje bez zmian, a potrzeby muszą mieć noul ≥ PROG_POTRZEBY_PEWNEJ.
+ * #150: bramki nie łagodzimy pewnością profilu – przy „Pytam dla koleżanki: ona ma dwójkę
+ * dzieci i psa” JEV wybiera Rodzinę z pewnością 1,00, więc wysoka pewność profilu nie
+ * odróżnia cudzej sytuacji od własnej. Próg potrzeb też zostaje (pies koleżanki 0,92).
+ */
 export const PROG_WLASNEJ_SYTUACJI = 0.5
 export const PROG_POTRZEBY_PEWNEJ = 0.9
 

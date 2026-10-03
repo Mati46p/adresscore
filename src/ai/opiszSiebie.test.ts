@@ -14,6 +14,7 @@ import {
   POZIOMY_WAZNOSCI,
   PROG_WLASNEJ_SYTUACJI,
   przetworzOdpowiedzi,
+  TWIERDZENIE_WLASNEJ_SYTUACJI,
   wagiZeZrozumienia,
   type Zrozumienie,
   zapytanieOpiszSiebie,
@@ -214,6 +215,43 @@ describe('przetworzOdpowiedzi (JEV → zrozumienie)', () => {
       assert.equal(z?.persona, 'rodzina')
       assert.deepEqual(z?.potrzeby, ['dzieci'])
     }
+  })
+
+  it('#150: domownik, który się wprowadza („mama z nami zamieszka”) to własna sytuacja – profil zostaje', () => {
+    // noul jak na żywo dla nowego brzmienia: domownicy i własne plany 0,92–0,95.
+    const z = przetworzOdpowiedzi({
+      profil: { typ: 'choice', wybor: 'senior', pewnosc: 0.9 },
+      p_senior: { typ: 'noul', noul: 0.97 },
+      p_zdrowie: { typ: 'noul', noul: 0.94 },
+      p_dzieci: { typ: 'noul', noul: 0.2 },
+      [ID_WLASNEJ_SYTUACJI]: { typ: 'noul', noul: 0.93 },
+    })
+    assert.equal(z?.persona, 'senior')
+    assert.deepEqual(z?.potrzeby, ['senior', 'zdrowie'])
+    // Twierdzenie obejmuje rodzinę i inwestora, a wyklucza znajomego, hipotezę i przeszłość.
+    for (const slowo of ['rodziny', 'inwestor', 'znajomy', 'wyobrażona', 'dawna'])
+      assert.ok(TWIERDZENIE_WLASNEJ_SYTUACJI.includes(slowo), slowo)
+    assert.ok(
+      !TWIERDZENIE_WLASNEJ_SYTUACJI.includes('obecną'),
+      'plany domowników to nie przeszłość',
+    )
+    // Nadal ≤ 16 pytań i twierdzenie w zapytaniu.
+    const q = zapytanieOpiszSiebie('Mama z nami zamieszka, ma 80 lat.')
+    assert.ok(Object.keys(q.pytania).length <= 16)
+    assert.deepEqual(q.pytania[ID_WLASNEJ_SYTUACJI], {
+      typ: 'noul',
+      polecenie: TWIERDZENIE_WLASNEJ_SYTUACJI,
+    })
+  })
+
+  it('#150: wysoka pewność profilu nie otwiera bramki – cudza sytuacja dalej bez profilu', () => {
+    // „Pytam dla koleżanki: ona ma dwójkę dzieci i psa” – na żywo Rodzina 1,00, bramka 0,04.
+    const z = przetworzOdpowiedzi({
+      profil: { typ: 'choice', wybor: 'rodzina', pewnosc: 1 },
+      p_dzieci: { typ: 'noul', noul: 0.85 },
+      [ID_WLASNEJ_SYTUACJI]: { typ: 'noul', noul: 0.04 },
+    })
+    assert.ok(z && nicNieZrozumiano(z))
   })
 
   it('#147: profil Inwestor niesie przyszłość okolicy (potrzeba z tabeli, bez liczby JEV)', () => {
