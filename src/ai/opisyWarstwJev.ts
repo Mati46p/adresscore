@@ -282,6 +282,9 @@ export const OPISY_WARSTW_DLA_JEV: Readonly<Record<string, OpisStrukturalny>> = 
   punkt_schronienia_odleglosc: {
     co: `${M}ego punktu schronienia wyznaczonego przez Państwową Straż Pożarną (miejsce do ukrycia się w razie zagrożenia), tylko Kraków. Odpowiada na pytania o schron.`,
   },
+  punkt_schronienia_pieszo_min: {
+    co: 'Czas dojścia pieszo w minutach (po chodnikach i ścieżkach, 4,5 km/h) do najbliższego punktu schronienia wyznaczonego przez Państwową Straż Pożarną, tylko Kraków. Odpowiada na pytania, ile minut idzie się do schronu.',
+  },
   recykling_odleglosc: {
     co: `${M}ego kontenera albo punktu segregacji odpadów (szkło, plastik, papier). Odpowiada na pytania, gdzie wyrzucić posegregowane śmieci.`,
   },

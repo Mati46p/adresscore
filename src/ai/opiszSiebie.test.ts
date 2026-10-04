@@ -1233,7 +1233,9 @@ describe('pokrycie warstw: każda warstwa osiągalna z „Opisz siebie”', () =
     urzad_odleglosc: 'urząd odwiedza się rzadko – nie kryterium wyboru mieszkania',
     siec_cieplownicza_odleglosc: 'bliskość sieci nie znaczy, że budynek jest podłączony',
     rod_odleglosc:
-      'ogródki działkowe to nie zieleń dla wszystkich (#177); profil Z psem waży je bez kierunku, więc się nie liczą',
+      'ogródki działkowe to nie zieleń dla wszystkich (#177); profil Z psem już ich nie waży – regulaminy ROD ograniczają psy',
+    punkt_schronienia_odleglosc:
+      'ten sam punkt schronienia co czas dojścia pieszo – profil Bezpieczeństwo waży czas dojścia, nie linię prostą',
   }
 
   /** Warstwy, które podnosi profil możliwy do wyboru przez JEV – tylko te, które liczą się w silniku. */
