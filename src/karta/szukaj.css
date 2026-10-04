@@ -175,3 +175,100 @@
     bottom: 42px;
   }
 }
+
+/* Okolica wybrana w wyszukiwarce (#185): pod polem, nad mapą. Akcent tylko dla stanu wybranego. */
+.wybrana-okolica {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 4px 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--akcent-obrys);
+  border-radius: var(--promien);
+  background: var(--akcent-jasny);
+}
+
+.wybrana-okolica__tekst {
+  display: flex;
+  flex: 1 1 190px;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.wybrana-okolica__glowa {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 10px;
+  align-items: baseline;
+  margin: 0;
+}
+
+.wybrana-okolica__etykieta {
+  color: var(--tekst-2);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.wybrana-okolica__nazwa {
+  color: var(--tekst);
+  font-size: 17px;
+}
+
+.wybrana-okolica__opis {
+  color: var(--tekst-2);
+  font-size: 14px;
+}
+
+.wybrana-okolica__uwaga {
+  margin: 0;
+  color: var(--tekst-2);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.wybrana-okolica .seg {
+  flex: none;
+  min-height: 44px;
+}
+
+/* Uwagi o nazwie jednostki: zwinięte, żeby pasek zostawiał mapie miejsce na telefonie. */
+.wybrana-okolica__szczegoly {
+  flex: 1 1 100%;
+  color: var(--tekst-2);
+}
+
+.wybrana-okolica__szczegoly summary {
+  padding: 14px 0;
+  color: var(--akcent);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.wybrana-okolica__szczegoly[open] summary {
+  padding-bottom: 6px;
+}
+
+@media (hover: hover) {
+  .wybrana-okolica__szczegoly summary:hover {
+    color: var(--akcent-hover);
+    text-decoration: underline;
+  }
+}
+
+.szukaj-okolica-komunikat {
+  margin: 0;
+  color: var(--tekst-2);
+  font-size: 13px;
+}
+
+/* Telefon: lista podpowiedzi wychodzi poza blok pola i ma leżeć nad przyklejoną mapą (z-index 10 w styles.css). */
+@media (max-width: 860px) {
+  .szukaj-wyszukaj {
+    position: relative;
+    z-index: 11;
+  }
+}

@@ -175,6 +175,14 @@ export function indeksOkolicDla(plik: PlikOkolic): IndeksOkolic {
 }
 
 /**
+ * Opis okolicy bez złych miejsc łamania wiersza: separator „ · ” zostaje przy poprzednim słowie (wiersz nie
+ * zaczyna się od kropki), a liczba przy słowie „adresów” („1241 / adresów” rozerwałoby jedną informację).
+ */
+export function spojnyOpis(opis: string): string {
+  return opis.replaceAll(' · ', '\u00a0· ').replace(/(\d) (adres(?:y|ów)?)$/u, '$1\u00a0$2')
+}
+
+/**
  * Okolice pasujące do zapytania, najlepsze pierwsze (nie więcej niż `limit`). Pusta lista, gdy zapytanie
  * nie ma żadnego słowa z nazwą (same „osiedle”, „na”) albo nic nie pasuje.
  */

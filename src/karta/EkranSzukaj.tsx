@@ -1,6 +1,9 @@
-import { lazy, Suspense, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { PoleOpiszSiebie } from '@/ai/PoleOpiszSiebie'
+import { okolicaNaMapie } from '@/mapa/okolica/granice'
+import { wczytajGraniceOkolic } from '@/mapa/okolica/wczytajGranice'
 import { useDane } from '@/wynik/dane'
+import { miejsceOkolicy } from '@/wynik/miejsceAdresu'
 import { BIZNESY, warstwyBiznesu } from '@/wynik/persony'
 import { kierunekEfektywny } from '@/wynik/silnik'
 import {
@@ -17,9 +20,13 @@ import { usePropsSasiadowMapy } from '@/wynik/useSasiedzi'
 import { useWyniki } from '@/wynik/useWyniki'
 import { useWstepnaMapa } from '@/wynik/wstepnaMapa'
 import { opisAdresu } from './adres'
+import type { WybranaOkolica } from './okolicaWybrana'
+import { PasekOkolicy } from './PasekOkolicy'
 import { PanelFiltrow } from './panel/PanelFiltrow'
 import { Ranking } from './Ranking'
 import { adresWKliknietymHeksie } from './wyszukiwarka/heks'
+import type { WynikOkolicy } from './wyszukiwarka/szukajOkolic'
+import { Wyszukiwarka } from './wyszukiwarka/Wyszukiwarka'
 import './szukaj.css'
 
 const MapaKrakowa = lazy(async () => ({
@@ -40,6 +47,11 @@ export function EkranSzukaj() {
   const kierunki = useStan((s) => s.kierunki)
   const [komunikatHeksow, setKomunikatHeksow] = useState('')
   const [warstwyRozwiniete, setWarstwyRozwiniete] = useState(false)
+  // Okolica z pola wyszukiwarki żyje w stanie ekranu: link i stan aplikacji nie znają okolic (url.ts, stan.ts).
+  const [okolica, setOkolica] = useState<WybranaOkolica | null>(null)
+  const [komunikatOkolicy, setKomunikatOkolicy] = useState('')
+  const wyborOkolicy = useRef(0)
+  const sekcjaMapy = useRef<HTMLElement>(null)
   const wyniki = useWyniki()
   const sasiedzi = usePropsSasiadowMapy()
   const wstepnaMapa = useWstepnaMapa(dane.stan !== 'gotowe')
@@ -64,6 +76,45 @@ export function EkranSzukaj() {
         )
       : []
 
+  // Wybór okolicy z podpowiedzi. Granice jednostek SIM ładują się przy pierwszym fokusie w polu (albo tu,
+  // gdy ktoś wybrał szybciej); miejscowość granic nie potrzebuje. Nowszy wybór wyprzedza starszy, który
+  // jeszcze czeka na plik.
+  async function wybierzOkolice(wynik: WynikOkolicy) {
+    if (dane.stan !== 'gotowe' || !dane.okolice) return
+    const numer = ++wyborOkolicy.current
+    setKomunikatOkolicy('Wczytuję granice okolicy…')
+    const granice = wynik.rodzaj === 'sim' ? await wczytajGraniceOkolic() : null
+    if (numer !== wyborOkolicy.current) return
+    const naMapie = okolicaNaMapie(wynik.id, granice, dane.adresy, dane.okolice)
+    const miejsce = miejsceOkolicy(dane.okolice, wynik.id)
+    if (!naMapie || !miejsce) {
+      setOkolica(null)
+      setKomunikatOkolicy('Nie mamy położenia tej okolicy na mapie.')
+      return
+    }
+    setKomunikatOkolicy('')
+    setOkolica({ naMapie, miejsce, nazwaOsm: wynik.nazwaOsm })
+  }
+
+  function wyczyscOkolice(zKlawiatury: boolean) {
+    wyborOkolicy.current++
+    setOkolica(null)
+    setKomunikatOkolicy('')
+    // Przycisk znika razem z paskiem: z klawiatury fokus wraca do pola (dotyk nie otwiera przez to klawiatury ekranowej).
+    if (zKlawiatury) {
+      document.querySelector<HTMLInputElement>('.szukaj-wyszukaj input[role="combobox"]')?.focus()
+    }
+  }
+
+  // Telefon: pole i pasek okolicy stoją nad mapą, więc po wyborze mapa bywa poza ekranem. Przewijamy tylko tyle,
+  // żeby cała mapa była widoczna (nic się nie dzieje, gdy już jest), a przy ograniczonym ruchu bez animacji.
+  useEffect(() => {
+    const sekcja = sekcjaMapy.current
+    if (!okolica || !sekcja || !window.matchMedia('(max-width: 860px)').matches) return
+    const bezRuchu = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    sekcja.scrollIntoView({ block: 'nearest', behavior: bezRuchu ? 'auto' : 'smooth' })
+  }, [okolica])
+
   return (
     <main className="szukaj">
       <div className="szukaj-lewa">
@@ -80,6 +131,25 @@ export function EkranSzukaj() {
                 : 'Profil i wagi poniżej od razu przeliczają kolory na mapie. Kliknij mapę, żeby zobaczyć okolicę i dodać jej heks do porównania.'}
             </p>
           </div>
+          {dane.stan === 'gotowe' && dane.okolice ? (
+            // Pole szuka okolic, nie adresów: na Szukaj oglądamy mapę (decyzja właściciela, commit 80c7aad),
+            // a adresy są w Katalogu adresów. Włączenie adresów to prop `adresy` + `onWybierz`.
+            <Wyszukiwarka
+              okolice={dane.okolice}
+              onWybierzOkolice={(w) => void wybierzOkolice(w)}
+              onFokus={() => void wczytajGraniceOkolic()}
+              etykieta="Nazwa okolicy"
+              placeholder="np. Ruczaj, Rakowice, Kurdwanów"
+            />
+          ) : dane.stan === 'ladowanie' ? (
+            <p className="etykieta-sekcji">Wczytuję okolice…</p>
+          ) : null}
+          {komunikatOkolicy && (
+            <p className="szukaj-okolica-komunikat" role="status">
+              {komunikatOkolicy}
+            </p>
+          )}
+          {okolica && <PasekOkolicy okolica={okolica} onZamknij={wyczyscOkolice} />}
         </div>
         <aside aria-label="Filtry" className="szukaj-filtry">
           <PoleOpiszSiebie />
@@ -88,7 +158,7 @@ export function EkranSzukaj() {
       </div>
 
       <div className="szukaj-prawa">
-        <section aria-label="Mapa Krakowa" className="szukaj-mapa">
+        <section aria-label="Mapa Krakowa" className="szukaj-mapa" ref={sekcjaMapy}>
           <div role="group" aria-label="Co pokazuje mapa" className="pasek-warstw">
             <button
               type="button"
@@ -135,6 +205,7 @@ export function EkranSzukaj() {
                 podpisWarstwy={wyniki?.podpis ?? wstepnaMapa?.podpis ?? 'Wynik tej okolicy'}
                 wykluczone={wyniki?.wykluczoneHeksy}
                 sasiedzi={sasiedzi}
+                okolica={okolica?.naMapie ?? null}
                 wybrany={adres ? { lon: adres.lon, lat: adres.lat } : null}
                 widok3d
                 onKlik={(lon, lat) => {

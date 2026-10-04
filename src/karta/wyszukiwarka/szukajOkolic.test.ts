@@ -5,7 +5,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { describe, it } from 'node:test'
 import type { PlikOkolic } from '../../kontrakty/okolice.ts'
 import { liczbaAdresowOkolicy } from '../../wynik/rankingLuk.ts'
-import { indeksOkolicDla, szukajOkolic, zbudujIndeksOkolic } from './szukajOkolic.ts'
+import { indeksOkolicDla, spojnyOpis, szukajOkolic, zbudujIndeksOkolic } from './szukajOkolic.ts'
 
 type Wpisy = PlikOkolic['okolice']
 
@@ -235,6 +235,29 @@ describe('szukajOkolic: miejscowości i nazwy z OSM', () => {
         assert.doesNotMatch(`${w.tytul} ${w.opis}`, /—/)
       }
     }
+  })
+})
+
+describe('spojnyOpis', () => {
+  it('separator zostaje przy poprzednim słowie, a liczba przy „adresów” (twarda spacja)', () => {
+    assert.equal(
+      spojnyOpis('jednostka SIM VIII.5, dzielnica VIII Dębniki · 1241 adresów'),
+      'jednostka SIM VIII.5, dzielnica VIII Dębniki\u00a0· 1241\u00a0adresów',
+    )
+    assert.equal(
+      spojnyOpis('miejscowość, gmina Liszki · 1 adres'),
+      'miejscowość, gmina Liszki\u00a0· 1\u00a0adres',
+    )
+    assert.equal(spojnyOpis('x · 22 adresy'), 'x\u00a0· 22\u00a0adresy')
+  })
+
+  it('tekst bez separatora i bez liczby adresów zostaje bez zmian (np. opis adresu)', () => {
+    assert.equal(spojnyOpis('I Stare Miasto, 31-001'), 'I Stare Miasto, 31-001')
+    assert.equal(spojnyOpis(''), '')
+  })
+
+  it('tylko końcowa liczba adresów; słowo „adres” w środku nie jest ruszane', () => {
+    assert.equal(spojnyOpis('adres 5 adresów dalej'), 'adres 5 adresów dalej')
   })
 })
 
