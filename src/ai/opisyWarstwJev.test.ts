@@ -58,6 +58,49 @@ describe('OPISY_WARSTW_DLA_JEV', () => {
       for (const z of ZARGON) assert.doesNotMatch(teksty(o).join(' '), z, id)
   })
 
+  // #192 (uzbrojenie po #72 obejmuje cały Kraków) i #69 (wypadki): tylko te sześć warstw, bo ich
+  // opisy dopisano albo poprawiono pod zasięg i rozdzielczość z meta. Reszty test nie obejmuje:
+  // liczby są tam zapisane inaczej niż w meta (np. „7–9” wobec „07:00”) albo spoza meta (wiek żłobka).
+  const UZBROJENIE = [
+    'uzbrojenie_gaz_50m',
+    'uzbrojenie_kanalizacja_50m',
+    'uzbrojenie_prad_50m',
+    'uzbrojenie_woda_50m',
+  ]
+  const WYPADKI = ['wypadki_heks', 'wypadki_piesi_rowerzysci_heks']
+  const metaWarstwy = (id: string) => METAS.find((m) => m.id === id)
+  const liczby = (s: string) => [...s.matchAll(/\d+(?:,\d+)?/g)].map((m) => m[0])
+
+  it('#192: opisy uzbrojenia obejmują Kraków i gminy wokół, bez zawężenia do gmin i obrzeży', () => {
+    for (const id of UZBROJENIE) {
+      const co = OPISY_WARSTW_DLA_JEV[id]?.co ?? ''
+      assert.match(co, /w Krakowie i gminach wokół/, id)
+      assert.doesNotMatch(co, /tylko gmin|obrzeż/, id)
+      assert.match(co, /nie dowodzi braku przyłącza/, id)
+    }
+  })
+
+  it('#192, #69: liczby w opisach uzbrojenia i wypadków są z meta, obszar wypadków bez własnego szacunku', () => {
+    for (const id of [...UZBROJENIE, ...WYPADKI]) {
+      const meta = metaWarstwy(id)
+      assert.ok(meta, `brak warstwy ${id} w danych`)
+      const zMeta = new Set(
+        liczby(
+          [meta.nazwa, meta.opis, meta.rozmiar ?? '', ...meta.zrodla.map((z) => z.dataDanych)].join(
+            ' ',
+          ),
+        ),
+      )
+      const obce = liczby(OPISY_WARSTW_DLA_JEV[id]?.co ?? '').filter((n) => !zMeta.has(n))
+      assert.deepEqual(obce, [], `${id}: liczby spoza meta`)
+    }
+    for (const id of WYPADKI) {
+      const pole = /(\d+,\d+) km²/.exec(metaWarstwy(id)?.rozmiar ?? '')?.[1]
+      assert.ok(pole, `${id}: meta.rozmiar bez powierzchni w km²`)
+      assert.ok(OPISY_WARSTW_DLA_JEV[id]?.co.includes(`${pole} kilometra kwadratowego`), id)
+    }
+  })
+
   it('test skrótów działa: skrót bez rozwinięcia jest wyłapany', () => {
     const tekst = 'Odległość do najbliższego P+R i SCT.'
     const wylapane = Object.entries(SKROTY)
