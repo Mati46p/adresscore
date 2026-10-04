@@ -2,8 +2,13 @@
 // i kafle PMTiles działają po odcięciu sieci. Rejestracja: src/main.tsx (tylko build produkcyjny).
 //
 // Strategie:
-// - nawigacja, /dane/, /mapa/fonts/, fonty Google: najpierw sieć, przy braku sieci kopia z cache,
+// - nawigacja, /mapa/fonts/, fonty Google: najpierw sieć, przy braku sieci kopia z cache,
 //   więc online zawsze widać świeży deploy;
+// - /dane/: kopia z cache od razu, świeża wersja pobiera się w tle na następne otwarcie.
+//   Pliki danych ważą kilka MB (adresy.json ~5 MB po kompresji), a sieć-najpierw kazała je
+//   pobierać przy każdym wejściu. Wyjątek: kompakt/indeks.json wskazuje pliki z hashem,
+//   które po deployu znikają, więc idzie siecią. Niezgodność wersji kopii z manifestem jest bezpieczna:
+//   warstwa z inną wersją adresów wypada jako niedostępna (wynik/dane.ts), nie psuje wyniku;
 // - /assets/ (pliki z hashem w nazwie): najpierw cache, bo treść pod daną nazwą się nie zmienia;
 // - *.pmtiles: Cache API nie przechowuje odpowiedzi 206, więc przy pierwszym żądaniu Range
 //   pobieramy całe archiwum w tle i potem kroimy zakresy z kopii, także offline;
@@ -45,6 +50,15 @@ self.addEventListener('fetch', (e) => {
     e.respondWith(siecPotemCache(zad, '/index.html'))
     return
   }
+  if (
+    swoj &&
+    url.pathname.startsWith('/dane/') &&
+    url.pathname !== '/dane/kompakt/indeks.json' &&
+    !zad.headers.has('range')
+  ) {
+    e.respondWith(cacheIOdswiez(e, zad))
+    return
+  }
   if (swoj && url.pathname.startsWith('/assets/')) {
     e.respondWith(cachePotemSiec(zad))
     return
@@ -78,6 +92,18 @@ async function cachePotemSiec(zad) {
   const odp = await fetch(zad)
   if (odp.ok) await cache.put(zad, odp.clone())
   return odp
+}
+
+async function cacheIOdswiez(e, zad) {
+  const cache = await caches.open(CACHE)
+  const kopia = await cache.match(zad)
+  const swieza = fetch(zad).then(async (odp) => {
+    if (odp.ok) await cache.put(zad, odp.clone())
+    return odp
+  })
+  if (!kopia) return swieza
+  e.waitUntil(swieza.catch(() => {}))
+  return kopia
 }
 
 const pobieraneArchiwa = new Map()

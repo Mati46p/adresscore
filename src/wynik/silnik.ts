@@ -119,13 +119,17 @@ export function percentyl(posortowane: ArrayLike<number>, p: number): number {
 }
 
 function posortowaneLiczby(wartosci: readonly (number | null)[], zakres?: [number, number]) {
-  const liczby: number[] = []
-  for (const w of wartosci) {
+  // Wołane raz na warstwę przy starcie na ~176 tys. adresów: tablica typowana z góry zamiast
+  // push do number[] i kopii w Float64Array.from – to był najdroższy kawałek startu.
+  const liczby = new Float64Array(wartosci.length)
+  let n = 0
+  for (let i = 0; i < wartosci.length; i++) {
+    const w = wartosci[i]
     // Zmierzone zero to liczba – odpada tylko brak danych.
     if (w === null || w === undefined || Number.isNaN(w)) continue
-    liczby.push(zakres ? Math.min(Math.max(w, zakres[0]), zakres[1]) : w)
+    liczby[n++] = zakres ? Math.min(Math.max(w, zakres[0]), zakres[1]) : w
   }
-  return Float64Array.from(liczby).sort()
+  return liczby.subarray(0, n).sort()
 }
 
 function liczbaPoziomow(posortowane: Float64Array, limit: number): number {
