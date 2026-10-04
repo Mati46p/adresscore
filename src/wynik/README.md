@@ -52,7 +52,7 @@ Kolory: `PALETA_WYNIKU` (5 stopni z makiety, od słabo do idealnie) i `KOLOR_BRA
 
 ## Persony – `persony.ts` (dane)
 
-- `PERSONY`: `rodzina`, `singiel`, `senior`, `inwestor`, `od-zera`. Każda ma `wagi`, opcjonalne `kierunki` i `wagaNowych`.
+- `PERSONY`: 14 profili i `od-zera`. Każdy ma `wagi`, opcjonalne `kierunki` i `wagaNowych`. Skala 0–4 i dowody przy wagach: `docs/metoda-wag.md`. Waga na warstwie neutralnej wymaga kierunku w `kierunki`, a warstwa kontekstu nie dostaje wagi – inaczej test-strażnik w `persony.test.ts` jest czerwony.
 - `TRYBY`: `kupuje`, `wynajmuje`, `biznes`. Kupno i najem używają person oraz modyfikatorów
   kategorii. Biznes ocenia odległość od wybranego rodzaju usługi (sklep spożywczy,
   gastronomia, apteka lub weterynarz) oraz ludność NSP 2021. Warstwa przykładowa dostaje wagę 0.

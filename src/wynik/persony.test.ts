@@ -2,7 +2,9 @@
 import assert from 'node:assert/strict'
 import { readdirSync, readFileSync } from 'node:fs'
 import { describe, it } from 'node:test'
+import type { WskaznikMeta } from '../kontrakty/index.ts'
 import { BIZNESY, PERSONY, TRYBY, ustawieniaPersony } from './persony.ts'
+import { kierunekEfektywny } from './silnik.ts'
 import { czytajHash, zapiszHash } from './url.ts'
 
 const manifest = [
@@ -117,6 +119,80 @@ describe('persony', () => {
     const url = czytajHash('#/?t=biznes&biz=gastronomia')
     assert.equal(url.biznes, 'gastronomia')
     assert.match(zapiszHash(url), /biz=gastronomia/)
+  })
+})
+
+// Strażnik martwych wag (metoda: docs/metoda-wag.md). Waga na warstwie neutralnej bez kierunku
+// albo na warstwie kontekstu nie zmienia wyniku – profil „Z psem” ważył tak wybieg, weterynarza
+// i ogródki działkowe, a „Student” akademik i bary. Tu każda taka waga daje czerwony test.
+describe('persony: każda waga działa w silniku', () => {
+  const META = new Map<string, WskaznikMeta>(
+    readdirSync('public/dane/wskazniki')
+      .filter((plik) => plik.endsWith('.json'))
+      .map((plik) => {
+        const m = JSON.parse(readFileSync(`public/dane/wskazniki/${plik}`, 'utf8'))
+          .meta as WskaznikMeta
+        return [m.id, m] as const
+      }),
+  )
+  const mieszkaniowe = PERSONY.filter((p) => p.id !== 'od-zera')
+
+  it('każda waga to liczba całkowita 1–4 na warstwie z public/dane/wskazniki', () => {
+    for (const p of PERSONY)
+      for (const [id, w] of Object.entries(p.wagi)) {
+        assert.ok(META.has(id), `${p.id}: nieznana warstwa ${id}`)
+        assert.ok(Number.isInteger(w) && w >= 1 && w <= 4, `${p.id}: ${id} = ${w}`)
+      }
+  })
+
+  it('każda dodatnia waga trafia na warstwę, którą silnik liczy z kierunkiem persony', () => {
+    for (const p of PERSONY)
+      for (const [id, w] of Object.entries(p.wagi)) {
+        const meta = META.get(id)
+        if (!meta || w <= 0) continue
+        assert.ok(!meta.atrapa, `${p.id}: ${id} to atrapa`)
+        assert.notEqual(
+          kierunekEfektywny(meta, p.kierunki),
+          null,
+          `${p.id}: ${id} (${meta.kategoria}, ${meta.kierunek}) nie wchodzi do wyniku – martwa waga`,
+        )
+      }
+  })
+
+  it('po złożeniu ustawień (oba tryby mieszkaniowe) żadna dodatnia waga nie jest martwa', () => {
+    const katalog = [...META.values()]
+    for (const p of PERSONY)
+      for (const tryb of ['kupuje', 'wynajmuje'] as const) {
+        const { wagi, kierunki } = ustawieniaPersony(p.id, tryb, katalog)
+        for (const [id, w] of Object.entries(wagi)) {
+          const meta = META.get(id)
+          if (!meta || w <= 0) continue
+          assert.notEqual(kierunekEfektywny(meta, kierunki), null, `${p.id}/${tryb}: ${id}`)
+        }
+      }
+  })
+
+  it('kierunek persony dotyczy warstwy, którą persona waży', () => {
+    for (const p of PERSONY)
+      for (const [id, k] of Object.entries(p.kierunki ?? {})) {
+        assert.ok(META.has(id), `${p.id}: kierunek nieznanej warstwy ${id}`)
+        assert.ok((p.wagi[id] ?? 0) > 0, `${p.id}: kierunek ${id} bez wagi`)
+        assert.ok(k === 'mniej-lepiej' || k === 'wiecej-lepiej', `${p.id}: ${id} = ${k}`)
+      }
+  })
+
+  it('każdy profil mieszkaniowy waży hałas i PM2,5 (minimum WHO)', () => {
+    for (const p of mieszkaniowe) {
+      assert.ok((p.wagi.halas_ldwn ?? 0) >= 1, `${p.id}: hałas`)
+      assert.ok((p.wagi.pm25_srednia ?? 0) >= 1, `${p.id}: PM2,5`)
+    }
+  })
+
+  it('profile różnią się zestawem wag – żadne dwa nie są identyczne', () => {
+    const podpisy = mieszkaniowe.map((p) =>
+      JSON.stringify(Object.entries(p.wagi).sort(([a], [b]) => a.localeCompare(b))),
+    )
+    assert.equal(new Set(podpisy).size, podpisy.length)
   })
 })
 

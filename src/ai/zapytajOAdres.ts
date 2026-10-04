@@ -381,6 +381,7 @@ export const TEMATY: readonly Temat[] = [
       'miejscowe_zagrozenia_gmina_2025',
       'pozary_gmina_2025',
       'punkt_schronienia_odleglosc',
+      'punkt_schronienia_pieszo_min',
       'przestepstwa_1000_powiat_2025',
       'wykrywalnosc_powiat_2025',
       'straz_pozarna_odleglosc',
@@ -1287,7 +1288,10 @@ export const REGULY: readonly {
   { warstwy: ['inwestycje_500m'], wzorce: [/budow/, /buduj/, /inwestycj/, /dzwig/, /pozwoleni/] },
   { warstwy: ['gmina_mpzp_pokrycie_pct'], wzorce: [/pokryci\w* (plan|mpzp)/] },
   { warstwy: ['mpzp_status'], wzorce: [/plan\w* miejscow/, /\bmpzp\b/, /zabudow/] },
-  { warstwy: ['punkt_schronienia_odleglosc'], wzorce: [/schron/, /ukryc/] },
+  {
+    warstwy: ['punkt_schronienia_odleglosc', 'punkt_schronienia_pieszo_min'],
+    wzorce: [/schron/, /ukryc/],
+  },
   { warstwy: ['przetargi_dzielnica'], wzorce: [/przetarg/, /zamowien/] },
   { warstwy: ['gmina_dlug_pc'], wzorce: [/dlug/, /zadluz/] },
   {
