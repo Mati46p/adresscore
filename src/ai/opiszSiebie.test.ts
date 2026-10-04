@@ -5,7 +5,7 @@ import { describe, it } from 'node:test'
 import type { WskaznikMeta } from '../kontrakty/index.ts'
 import { PERSONY } from '../wynik/persony.ts'
 import { kierunekEfektywny } from '../wynik/silnik.ts'
-import type { OdpowiedzJev } from './jev.ts'
+import type { OdpowiedzJev, OpisOpcji } from './jev.ts'
 import {
   BRAMKA,
   bramkaZamknieta,
@@ -166,29 +166,71 @@ describe('zapytanieOpiszSiebie', () => {
     const profil = z.pytania[ID_PROFILU]
     assert.equal(profil?.typ, 'choice')
     if (profil?.typ !== 'choice') return
+    // Wszystkie profile z PERSONY w ich kolejności (cztery stare na początku, jak w #155).
     assert.deepEqual(Object.keys(profil.kryteria), [
+      ...PERSONY.filter((p) => p.id !== 'od-zera').map((p) => p.id),
+      'nieznany',
+    ])
+    assert.deepEqual(Object.keys(profil.kryteria).slice(0, 4), [
       'rodzina',
       'singiel',
       'senior',
       'inwestor',
-      'nieznany',
     ])
+    // Pełny rekord: każda persona poza „Od zera” ma opis (nowa persona bez opisu = czerwono).
+    for (const p of PERSONY) assert.equal(p.id in OPISY_PROFILI_JEV, p.id !== 'od-zera', p.id)
   })
 
   it('#155: opcje profilu mówią, kim jest osoba, a nie, co ceni (≤ 32 pytań)', () => {
     const profil = z.pytania[ID_PROFILU]
     assert.equal(profil?.typ, 'choice')
-    const kryteria = (profil?.typ === 'choice' ? profil.kryteria : {}) as Record<string, string>
-    assert.deepEqual(kryteria, { ...OPISY_PROFILI_JEV, nieznany: OPIS_PROFILU_NIEZNANEGO })
-    assert.match(kryteria.senior ?? '', /emerytur/)
-    assert.match(kryteria.rodzina ?? '', /dziećmi w domu/)
-    assert.match(kryteria.singiel ?? '', /mieszkająca sama/)
-    assert.match(kryteria.inwestor ?? '', /pod wynajem/)
+    const kryteria: Record<string, OpisOpcji> = profil?.typ === 'choice' ? profil.kryteria : {}
+    // Kopia do porównania – `deepEqual` zawęża typ argumentu do typu wzorca.
+    assert.deepEqual({ ...kryteria }, { ...OPISY_PROFILI_JEV, nieznany: OPIS_PROFILU_NIEZNANEGO })
+    const co = (id: string) => {
+      const o = kryteria[id]
+      return typeof o === 'string' ? o : (o?.co ?? '')
+    }
+    // Cztery opisy z #155: trzy bez zmian, Singiel bez „studiująca” (jest profil Student).
+    assert.match(co('senior'), /emerytur/)
+    assert.match(co('rodzina'), /dziećmi w domu/)
+    assert.match(co('singiel'), /mieszkająca sama/)
+    assert.doesNotMatch(co('singiel'), /studiuj/)
+    assert.match(co('inwestor'), /pod wynajem/)
+    assert.match(co('student'), /studiuje/)
+    assert.match(co('alergik'), /astm/)
     // Opisy z UI („Komunikacja i sklepy pod ręką”) nie trafiają do JEV.
-    const opisy = Object.values(kryteria)
-    for (const p of PERSONY) for (const o of opisy) assert.ok(!o.includes(p.opis), p.id)
+    const teksty = Object.values(kryteria).flatMap((o) =>
+      typeof o === 'string'
+        ? [o]
+        : [o.co, ...(o.nie_dla ? [o.nie_dla] : []), ...(o.przyklady ?? [])],
+    )
+    for (const p of PERSONY) for (const t of teksty) assert.ok(!t.includes(p.opis), p.id)
     assert.ok(ids.length <= 32)
-    for (const o of opisy) assert.ok(o.length <= 120)
+    // Limit pośrednika na pole opisu; `co` krótkie, żeby opcje dało się porównać.
+    for (const t of teksty) assert.ok(t.length <= 300, t)
+    for (const id of Object.keys(kryteria)) assert.ok(co(id).length <= 160, id)
+    // Profile „z jednej cechy” mówią, kiedy wygrywa Rodzina, Senior albo Inwestor.
+    for (const id of ['psiarz', 'rowerzysta', 'zdalny', 'aktywny', 'kierowca', 'alergik']) {
+      const o = kryteria[id]
+      assert.ok(typeof o === 'object' && /dzieci/.test(o.nie_dla ?? ''), id)
+    }
+  })
+
+  it('opcje profilu mieszczą się w limitach pośrednika i całe zapytanie daleko od 60 tys. znaków', async () => {
+    const sciezka = new URL('../../api/_jev.js', import.meta.url).href
+    const { LIMITY, sprawdzZapytanie } = (await import(sciezka)) as {
+      LIMITY: { opcjiChoice: number; pytaniaZnakow: number }
+      sprawdzZapytanie: (c: unknown) => { blad?: string; pytania: unknown }
+    }
+    const profil = z.pytania[ID_PROFILU]
+    assert.equal(profil?.typ, 'choice')
+    const n = profil?.typ === 'choice' ? Object.keys(profil.kryteria).length : 0
+    assert.ok(n >= 2 && n <= LIMITY.opcjiChoice, String(n))
+    const api = sprawdzZapytanie(z)
+    assert.equal(api.blad, undefined)
+    // Dziś ok. 14,3 tys. znaków (było 11,1 tys. przy czterech profilach).
+    assert.ok(JSON.stringify(api.pytania).length < LIMITY.pytaniaZnakow / 3)
   })
 
   it('kategorie to score na 5 poziomach 0–4, potrzeby to noul', () => {
@@ -583,8 +625,16 @@ describe('#155: próg profilu i profil z mocnych potrzeb', () => {
     assert.equal(nie?.persona, null)
   })
 
-  it('kolejność przy kilku mocnych potrzebach: inwestor, senior, rodzina, singiel', () => {
-    assert.deepEqual(PIERWSZENSTWO_PERSON, ['inwestor', 'senior', 'rodzina', 'singiel'])
+  it('kolejność przy kilku mocnych potrzebach: inwestor, senior, rodzina, profile z jednej cechy, singiel', () => {
+    assert.deepEqual(PIERWSZENSTWO_PERSON.slice(0, 3), ['inwestor', 'senior', 'rodzina'])
+    assert.equal(PIERWSZENSTWO_PERSON.at(-1), 'singiel')
+    // Każdy profil, który daje jakaś potrzeba, jest na liście – inaczej `personaZPotrzeb` go gubi.
+    for (const p of POTRZEBY)
+      if (p.persona) assert.ok(PIERWSZENSTWO_PERSON.includes(p.persona), p.id)
+    assert.equal(new Set(PIERWSZENSTWO_PERSON).size, PIERWSZENSTWO_PERSON.length)
+    // Rodzina z psem albo z autem to Rodzina (`nie_dla` profili z jednej cechy).
+    assert.equal(profilZMocnychPotrzeb({ p_dzieci: noul(0.95), p_pies: noul(0.95) }, ''), 'rodzina')
+    assert.equal(profilZMocnychPotrzeb({ p_auto: noul(0.95), p_senior: noul(0.95) }, ''), 'senior')
     const odp = { p_dzieci: noul(0.95), p_senior: noul(0.95) }
     // Senior przed Rodziną (wnuki, dorosłe dzieci).
     assert.equal(profilZMocnychPotrzeb(odp, ''), 'senior')
@@ -717,26 +767,42 @@ describe('zRegul – parser po polsku', () => {
     ['Nie mam samochodu, jeżdżę tramwajem', ['bez_samochodu'], null],
     ['Żyję bez auta i pracuję w centrum', ['bez_samochodu', 'praca_centrum'], null],
     ['Jestem emerytką, potrzebuję przychodni i apteki blisko', ['senior', 'zdrowie'], 'senior'],
-    ['Dojeżdżam rowerem do biura na Rynku', ['rower', 'praca_centrum'], null],
+    // Profile z pełnych opisów dla JEV: rower na co dzień → Rowerzysta.
+    ['Dojeżdżam rowerem do biura na Rynku', ['rower', 'praca_centrum'], 'rowerzysta'],
     ['Nie mam dzieci, liczy się dojazd do pracy', ['praca_centrum'], null],
     ['Córka idzie do przedszkola, chcemy park obok', ['dzieci', 'zielen'], 'rodzina'],
-    ['Mam astmę, smog to dla mnie problem', ['powietrze'], null],
+    // Astma to potrzeba `alergia` i profil Alergik; „smog” dalej daje `powietrze`.
+    ['Mam astmę, smog to dla mnie problem', ['powietrze', 'alergia'], 'alergik'],
     ['Kupuję mieszkanie pod wynajem jako inwestycję', ['inwestycja'], 'inwestor'],
     [
       'Student, mieszkam sam, lubię mieć sklep pod domem',
       ['sklepy', 'singiel', 'student'],
-      'singiel',
+      'student',
     ],
     ['Boję się powodzi, poprzednie mieszkanie zalało', ['bezpieczenstwo'], null],
     ['Często latam służbowo, lotnisko musi być blisko', ['lotnisko'], null],
     // #183: parking to potrzeba `auto` (przed #183 – nic).
-    ['Szukam miejsca z miejscem parkingowym', ['auto'], null],
+    ['Szukam miejsca z miejscem parkingowym', ['auto'], 'kierowca'],
     ['Babcia z wnukami, spokojna okolica', ['senior', 'cisza'], 'senior'],
     ['Lubię dobrą kawę', [], null],
     // Warstwy z nocy 3/4.10 (#136, #138–#142): tylko reguły, bez nowych pytań do JEV.
     ['Chcę niskie opłaty, liczę każdy koszt', ['koszty'], null],
     ['Do pracy dojeżdżam pociągiem', ['kolej', 'bez_samochodu', 'praca_centrum'], null],
     ['Zależy mi na aktywnych sąsiadach', ['sasiedzi'], null],
+    // Profile spoza zbiorów pomiarowych – tylko z reguł (bez nowych pytań do JEV).
+    ['Mam alergię na pyłki', ['alergia'], 'alergik'],
+    ['Chodzę do teatru i muzeów, kino blisko to podstawa', ['kultura'], 'kultura'],
+    ['Szukam w pobliżu galerii handlowej', [], null],
+    ['Nie chcę koncertów pod oknem', [], null],
+    ['Kupuję działkę budowlaną, chcemy postawić dom', ['budowa_domu'], 'budowa-domu'],
+    ['Mam działkę ROD i lubię tam jeździć', [], null],
+    [
+      'Boję się kradzieży i włamań, okolica musi być bezpieczna',
+      ['przestepczosc', 'bezpieczenstwo'],
+      'bezpieczenstwo',
+    ],
+    // Rodzina wygrywa z profilem z jednej cechy (PIERWSZENSTWO_PERSON).
+    ['Mamy dzieci, psa i auto', ['dzieci', 'pies', 'auto'], 'rodzina'],
   ]
   for (const [zdanie, potrzeby, persona] of PRZYPADKI) {
     it(zdanie, () => {
@@ -900,7 +966,9 @@ describe('#177: wagiZeZrozumienia – składanie z potrzeb', () => {
   ] as const
 
   it('potrzeba nadaje kierunek warstwie neutralnej i daje „własne” ustawienia', () => {
-    const u = wagiZeZrozumienia(zRegul('Mamy psa'), 'kupuje', WARSTWY, BIEZACE)
+    // Bez profilu (reguły dają dziś Z psem) – test dotyczy samej potrzeby na bieżących wagach.
+    const pies: Zrozumienie = { ...zRegul('Mamy psa'), persona: null }
+    const u = wagiZeZrozumienia(pies, 'kupuje', WARSTWY, BIEZACE)
     assert.equal(u.wagi.weterynarz_odleglosc, 3)
     assert.equal(u.kierunki.weterynarz_odleglosc, 'mniej-lepiej')
     const z: Zrozumienie = { ...zRegul('Mamy psa'), persona: 'rodzina' }
@@ -1020,8 +1088,12 @@ describe('#183: nowe potrzeby – auto, wózek, praca zdalna, życie nocne, spor
 
   const PRZYPADKI: [string, string[], string | null][] = [
     // auto
-    ['Dojeżdżam autem do pracy, potrzebuję miejsca parkingowego', ['auto', 'praca_centrum'], null],
-    ['Mamy dwa samochody i szukamy domu z garażem', ['auto'], null],
+    [
+      'Dojeżdżam autem do pracy, potrzebuję miejsca parkingowego',
+      ['auto', 'praca_centrum'],
+      'kierowca',
+    ],
+    ['Mamy dwa samochody i szukamy domu z garażem', ['auto'], 'kierowca'],
     ['Nie mam samochodu', ['bez_samochodu'], null],
     ['Auta nie mam, wszędzie tramwajem', ['bez_samochodu'], null],
     ['Na auto mnie nie stać', [], null],
@@ -1038,29 +1110,30 @@ describe('#183: nowe potrzeby – auto, wózek, praca zdalna, życie nocne, spor
     ['Chodzę z wózkiem z dzieckiem', ['zdrowie', 'dzieci'], 'rodzina'],
     ['Ważne, żeby było bez barier', ['wozek'], null],
     // praca_zdalna
-    ['Pracuję zdalnie z domu', ['praca_zdalna'], null],
-    ['Mam home office trzy dni w tygodniu', ['praca_zdalna'], null],
+    ['Pracuję zdalnie z domu', ['praca_zdalna'], 'zdalny'],
+    ['Mam home office trzy dni w tygodniu', ['praca_zdalna'], 'zdalny'],
     ['Nie pracuję zdalnie', [], null],
     ['Kiedyś pracowałem zdalnie, teraz jeżdżę do biura', [], null],
     ['Spacerujemy z wózkiem, mała ma pół roku', ['zielen', 'zdrowie'], null],
     ['Mama jeździ na wózku inwalidzkim', ['wozek', 'zdrowie'], null],
-    ['Mam auto, ale na co dzień jeżdżę rowerem', ['auto', 'rower'], null], // reguła tego nie odróżni – JEV tak (0,04)
+    // Reguła tego nie odróżni – JEV tak (0,04); profil: Rowerzysta przed Kierowcą.
+    ['Mam auto, ale na co dzień jeżdżę rowerem', ['auto', 'rower'], 'rowerzysta'],
     ['Jeżdżę hybrydą', [], null], // auto hybrydowe to nie praca hybrydowa
     // zycie_nocne
     ['Lubię knajpy i kluby w okolicy', ['zycie_nocne'], null],
     ['Nie chcę knajp pod oknem', [], null],
     ['Dorabiam w knajpie', [], null],
-    ['Chodzę do klubu fitness', ['sport'], null],
+    ['Chodzę do klubu fitness', ['sport'], 'aktywny'],
     ['Szukam miejsca bez barów', [], null],
     // sport
-    ['Biegam i chodzę na siłownię', ['sport'], null],
-    ['Gram w tenisa, basen blisko byłby super', ['sport'], null],
+    ['Biegam i chodzę na siłownię', ['sport'], 'aktywny'],
+    ['Gram w tenisa, basen blisko byłby super', ['sport'], 'aktywny'],
     ['Nie uprawiam sportu', [], null],
     // student
-    ['Jestem studentką UJ', ['student', 'singiel'], 'singiel'],
+    ['Jestem studentką UJ', ['student'], 'student'],
     ['Syn idzie na studia', ['student', 'dzieci'], 'rodzina'],
-    // Bez `student`; `singiel` łapie „student” jak przed #183, profil i tak Inwestor.
-    ['Kupuję pod wynajem dla studentów', ['inwestycja', 'singiel'], 'inwestor'],
+    // Bez `student` (lookbehind „dla”) i bez `singiel` (słowa studiów tylko w `student`).
+    ['Kupuję pod wynajem dla studentów', ['inwestycja'], 'inwestor'],
     ['Pierwsza praca po studiach', [], null],
     ['Kiedyś studiowałem w Krakowie', [], null],
     ['Nie jestem studentem', [], null],
@@ -1073,7 +1146,7 @@ describe('#183: nowe potrzeby – auto, wózek, praca zdalna, życie nocne, spor
     })
   }
 
-  it('JEV: noul ≥ progu dodaje nową potrzebę i jej warstwy; student pewny → Singiel pod progiem profilu', () => {
+  it('JEV: noul ≥ progu dodaje nową potrzebę i jej warstwy; student pewny → Student pod progiem profilu', () => {
     const odp: Record<string, OdpowiedzJev | null> = {
       profil: { typ: 'choice', wybor: 'singiel', pewnosc: 0.7 },
       p_auto: noul(0.85),
@@ -1085,7 +1158,8 @@ describe('#183: nowe potrzeby – auto, wózek, praca zdalna, życie nocne, spor
     const z = przetworzOdpowiedzi(odp, 'Studiuję na AGH, dojeżdżam autem')
     assert.ok(z)
     assert.deepEqual(z.potrzeby, ['auto', 'student'])
-    assert.equal(z.persona, 'singiel')
+    // Auto 0,85 pod progiem mocnej potrzeby, student 0,95 – profil Student.
+    assert.equal(z.persona, 'student')
     assert.equal(z.wskazniki.dojazd_utwardzony, 3)
     assert.equal(z.wskazniki.akademik_odleglosc, 3)
     assert.equal(z.wskazniki.obnizone_krawezniki_300m, undefined)
@@ -1109,8 +1183,101 @@ describe('#183: nowe potrzeby – auto, wózek, praca zdalna, życie nocne, spor
     )
     assert.equal(oba.kierunki.zycie_nocne_300m, 'mniej-lepiej')
     assert.equal(oba.wagi.gastronomia_odleglosc, 3)
-    const auto = wagiZeZrozumienia(zRegul('Mam samochód'), 'kupuje', WARSTWY_183, BIEZACE)
+    // Bez profilu Kierowca – jego SPP (3) zasłoniłaby wagę samej potrzeby.
+    const auto = wagiZeZrozumienia(
+      { ...zRegul('Mam samochód'), persona: null },
+      'kupuje',
+      WARSTWY_183,
+      BIEZACE,
+    )
     assert.equal(auto.wagi.spp_podstrefa, 1)
     assert.equal(auto.kierunki.spp_podstrefa, 'mniej-lepiej')
+  })
+})
+
+// Pokrycie warstw przez „Opisz siebie”: każda warstwa, która liczy się w wyniku, musi dać się
+// podnieść opisem siebie – potrzebą (POTRZEBY), „nie chcę” (NA_NIE) albo profilem, który JEV
+// może wybrać. Nowa warstwa bez żadnej z tych dróg = czerwony test: dopisz ją do potrzeby
+// albo do wyjątków niżej z powodem.
+describe('pokrycie warstw: każda warstwa osiągalna z „Opisz siebie”', () => {
+  /** Warstwy bez drogi z „Opisz siebie” – świadomie. Klucz: id, wartość: dlaczego. */
+  const WYJATKI: Readonly<Record<string, string>> = {
+    // Liczby dla całej gminy albo powiatu: ta sama wartość dla każdego adresu w Krakowie, więc
+    // nie odróżniają adresów, a opisy warstw mówią wprost „informacja, nie ocena adresu”.
+    gmina_czyste_powietrze_wnioski_100_domow:
+      'liczba wniosków dla całej gminy, nie powietrze pod adresem (#177)',
+    gmina_pit_na_mieszkanca: 'dochód gminy, nie cecha okolicy, o którą prosi mieszkaniec',
+    powiat_wynagrodzenie_brutto: 'płace w powiecie – jedna liczba dla całego Krakowa',
+    miejscowe_zagrozenia_gmina_2025: 'interwencje straży w gminie – jedna liczba dla Krakowa',
+    pozary_gmina_2025: 'pożary w gminie – jedna liczba dla Krakowa',
+    przetargi_dzielnica: 'przetargi dzielnicy – wydatki urzędu, nie potrzeba mieszkańca',
+    sejm2023_lista_1: 'wynik wyborów w gminie – historyczny, nie preferencja do ważenia',
+    sejm2023_lista_2: 'wynik wyborów w gminie – historyczny, nie preferencja do ważenia',
+    sejm2023_lista_3: 'wynik wyborów w gminie – historyczny, nie preferencja do ważenia',
+    sejm2023_lista_4: 'wynik wyborów w gminie – historyczny, nie preferencja do ważenia',
+    sejm2023_lista_5: 'wynik wyborów w gminie – historyczny, nie preferencja do ważenia',
+    sejm2023_lista_6: 'wynik wyborów w gminie – historyczny, nie preferencja do ważenia',
+    sejm2023_lista_7: 'wynik wyborów w gminie – historyczny, nie preferencja do ważenia',
+    // Demografia opisuje, kto tu mieszka – to odpowiedź na „Zapytaj o adres”, nie potrzeba.
+    ludnosc_1km: 'liczba mieszkańców – tryb Biznes waży ją sam, mieszkaniec o nią nie prosi',
+    gestosc_zaludnienia_100m: 'gęstość zabudowy ludźmi – opis okolicy, nie potrzeba',
+    udzial_0_14: 'udział dzieci – rodzina potrzebuje szkoły, nie rówieśników w statystyce',
+    udzial_65plus: 'udział seniorów – opis okolicy, nie potrzeba seniora',
+    // Warstwy z udokumentowaną decyzją „bez niej” przy potrzebie, której by dotyczyły.
+    liceum_odleglosc: 'potrzeba „dzieci” nie zna wieku dzieci, w opisach przeważają małe (#177)',
+    pr_odleglosc: 'parking dla dojeżdżających spoza miasta, nie dla mieszkańca z autem (#183)',
+    swiatlo_nocne_viirs: 'nocne światło z satelity to nie hałas ani bezpieczeństwo (#177)',
+    // Neutralne usługi bez potrzeby, która by je wołała – „nie twórz potrzeb na siłę”.
+    recykling_odleglosc: 'odpady zwykle odbiera się sprzed domu, kontener bywa zbędny',
+    toaleta_woda_odleglosc: 'toalety publiczne – rzadkie w OSM, bez potrzeby w opisach',
+    urzad_odleglosc: 'urząd odwiedza się rzadko – nie kryterium wyboru mieszkania',
+    siec_cieplownicza_odleglosc: 'bliskość sieci nie znaczy, że budynek jest podłączony',
+    rod_odleglosc:
+      'ogródki działkowe to nie zieleń dla wszystkich (#177); profil Z psem waży je bez kierunku, więc się nie liczą',
+  }
+
+  /** Warstwy, które podnosi profil możliwy do wyboru przez JEV – tylko te, które liczą się w silniku. */
+  const zProfili = new Set(
+    PERSONY.filter((p) => p.id in OPISY_PROFILI_JEV).flatMap((p) =>
+      Object.entries(p.wagi)
+        .filter(([id, w]) => {
+          const meta = MANIFEST.get(id)
+          return w > 0 && meta !== undefined && kierunekEfektywny(meta, p.kierunki) !== null
+        })
+        .map(([id]) => id),
+    ),
+  )
+  const zPotrzeb = new Set([
+    ...POTRZEBY.flatMap((p) => Object.keys(p.wskazniki)),
+    ...NA_NIE.flatMap((n) => Object.keys(n.warstwy)),
+  ])
+  const liczone = [...MANIFEST.values()].filter((m) => !m.atrapa && m.kategoria !== 'kontekst')
+
+  it('każda liczona warstwa ma potrzebę, „nie chcę” albo profil – albo jest w wyjątkach', () => {
+    const bez = liczone
+      .map((m) => m.id)
+      .filter((id) => !zPotrzeb.has(id) && !zProfili.has(id) && !(id in WYJATKI))
+    assert.deepEqual(bez, [], `warstwy bez drogi z „Opisz siebie”: ${bez.join(', ')}`)
+  })
+
+  it('wyjątki są aktualne: istnieją w danych i naprawdę nie mają drogi', () => {
+    for (const [id, dlaczego] of Object.entries(WYJATKI)) {
+      assert.ok(MANIFEST.has(id), `wyjątek ${id} nie istnieje w danych`)
+      assert.ok(!zPotrzeb.has(id) && !zProfili.has(id), `${id} ma już drogę – usuń wyjątek`)
+      assert.ok(dlaczego.length > 10, id)
+    }
+  })
+
+  it('nowe warstwy z ostatnich etapów (MLD, CAS, akademiki, usługi biznesu) nie wypadły', () => {
+    for (const id of [
+      'bus_mld_kursy_szczyt_h',
+      'cas_odleglosc',
+      'akademik_odleglosc',
+      'sklep_odleglosc',
+      'gastronomia_odleglosc',
+      'apteka_odleglosc',
+      'weterynarz_odleglosc',
+    ])
+      assert.ok(zPotrzeb.has(id) || zProfili.has(id), id)
   })
 })
