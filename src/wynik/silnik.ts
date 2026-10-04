@@ -290,13 +290,60 @@ export interface WskaznikPrzygotowany {
 }
 
 export function przygotujWskaznik(plik: PlikWskaznika): WskaznikPrzygotowany {
+  return przygotujWskaznikZeSkala(plik)
+}
+
+/**
+ * `gotowa` – skala policzona wcześniej (kompakt z ETL, tym samym zbudujSkale). Przyjmujemy ją tylko,
+ * gdy przejdzie `skalaPasuje`; inaczej liczymy od nowa. Oszczędza sortowanie każdej warstwy
+ * w przeglądarce (~2,5 s procesora na laptopie przy 127 warstwach).
+ */
+export function przygotujWskaznikZeSkala(
+  plik: PlikWskaznika,
+  gotowa?: { skala: Skala; zDanymi: number },
+): WskaznikPrzygotowany {
   return {
     meta: plik.meta,
     wartosci: plik.wartosci,
     etykiety: plik.etykiety,
     slownikEtykiet: plik.slownikEtykiet,
-    skala: zbudujSkale(plik.meta, plik.wartosci),
+    skala:
+      gotowa && skalaPasuje(plik.meta, plik.wartosci, gotowa.skala, gotowa.zDanymi)
+        ? gotowa.skala
+        : zbudujSkale(plik.meta, plik.wartosci),
   }
+}
+
+/**
+ * Tani test zgodności skali policzonej wcześniej z wartościami warstwy, jednym przejściem bez
+ * sortowania: liczba wartości z danymi i (gdy skala je wyznacza) najmniejsza i największa
+ * wartość po przycięciu do `zakres`. Łapie warstwę przeliczoną po zbudowaniu kompaktu.
+ */
+export function skalaPasuje(
+  meta: WskaznikMeta,
+  wartosci: readonly (number | null)[],
+  skala: Skala,
+  zDanymi: number,
+): boolean {
+  if (!skala || typeof skala.od !== 'number' || typeof skala.do !== 'number') return false
+  let n = 0
+  let min = Number.POSITIVE_INFINITY
+  let max = Number.NEGATIVE_INFINITY
+  const zakres = meta.norma ? undefined : meta.zakres
+  for (let i = 0; i < wartosci.length; i++) {
+    const w = wartosci[i]
+    if (w === null || w === undefined || Number.isNaN(w)) continue
+    const v = zakres ? Math.min(Math.max(w, zakres[0]), zakres[1]) : w
+    n++
+    if (v < min) min = v
+    if (v > max) max = v
+  }
+  if (n !== zDanymi) return false
+  if (n === 0) return skala.zrodlo === 'brak'
+  if (skala.zrodlo === 'rangi' || skala.zrodlo === 'jednostki') {
+    return skala.od === min && skala.do === max
+  }
+  return true
 }
 
 /**

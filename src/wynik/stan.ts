@@ -109,8 +109,10 @@ const sluchacze = new Set<() => void>()
 // Słownik id ↔ indeks dostajemy dopiero po wczytaniu adresów. Do tego czasu id z URL czekają.
 let idAdresow: readonly string[] | null = null
 let indeksPoId = new Map<string, number>()
-let indeksPoHash = new Map<string, number>()
-let slugPoIndeks: readonly string[] = []
+// Hash i slug liczone leniwie: dla ~176 tys. adresów to ~0,7 s procesora przy starcie, a potrzebne
+// są tylko przy wejściu z linku /adres/… i przy zapisie ścieżki wybranego adresu.
+let indeksPoHash: Map<string, number> | null = null
+let adresyStanu: readonly Adres[] = []
 let metaWskaznikow: readonly (Pick<WskaznikMeta, 'id' | 'kategoria'> &
   Partial<Pick<WskaznikMeta, 'atrapa' | 'domyslnaWaga'>>)[] = []
 let oczekujacyUrl: StanUrl | null = null
@@ -467,8 +469,8 @@ export function podlaczDane(
 ) {
   idAdresow = ids
   indeksPoId = new Map(ids.map((id, i) => [id, i]))
-  indeksPoHash = new Map(ids.map((id, i) => [hashAdresu(id), i]))
-  slugPoIndeks = adresy.map(slugAdresu)
+  indeksPoHash = null
+  adresyStanu = adresy
   metaWskaznikow = wskazniki
   const url = typeof window === 'undefined' ? oczekujacyUrl : czytajBiezacyUrl()
   oczekujacyUrl = null
@@ -601,7 +603,9 @@ function czytajBiezacyUrl(): StanUrl {
   if (sciezka.startsWith('/adres/')) {
     const slug = sciezka.slice('/adres/'.length)
     const hash = hashZeSluga(slug)
-    const indeks = hash ? indeksPoHash.get(hash) : undefined
+    if (hash && !indeksPoHash && idAdresow)
+      indeksPoHash = new Map(idAdresow.map((id, i) => [hashAdresu(id), i]))
+    const indeks = hash ? indeksPoHash?.get(hash) : undefined
     return {
       ...url,
       ekran: 'okolica',
@@ -613,7 +617,8 @@ function czytajBiezacyUrl(): StanUrl {
 
 function sciezkaStanu(s: StanAplikacji): string {
   if (s.ekran === 'okolica' && s.wybrany !== null) {
-    const slug = slugPoIndeks[s.wybrany]
+    const adres = adresyStanu[s.wybrany]
+    const slug = adres && slugAdresu(adres)
     if (slug) return `/adres/${slug}`
   }
   if (s.ekran === 'katalog') return '/katalog'

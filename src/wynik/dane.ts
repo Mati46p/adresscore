@@ -12,10 +12,12 @@ import {
   wczytajOkolice,
   wczytajWskaznik,
 } from '@/kontrakty'
+import { type IndeksKompaktu, niezgodnoscKompaktu } from './kompakt.ts'
 import {
   type GrupyHeksow,
   grupujHeksy,
-  przygotujWskaznik,
+  przygotujWskaznikZeSkala,
+  type Skala,
   type WskaznikPrzygotowany,
   wskaznikNiedostepny,
 } from './silnik.ts'
@@ -45,8 +47,47 @@ export type StanDanych =
   | { stan: 'blad'; blad: string }
   | ({ stan: 'gotowe' } & Dane)
 
+type SkaleGotowe = Map<string, { skala: Skala; zDanymi: number }>
+
+/**
+ * Skale warstw z kompaktu (ETL liczy je tym samym silnikiem). Każdy błąd albo niezgodność = null
+ * i przeglądarka liczy skale sama, jak wcześniej. Każda skala jest jeszcze sprawdzana przy warstwie
+ * (`skalaPasuje`), bo kompakt mógł nie zostać przebudowany po zmianie wartości.
+ */
+async function wczytajSkaleKompaktu(
+  manifest: Promise<Manifest>,
+  wersjaAdresow: Promise<string>,
+): Promise<SkaleGotowe | null> {
+  try {
+    const baza = `${import.meta.env.BASE_URL}dane/kompakt/`
+    const odp = await fetch(`${baza}indeks.json`)
+    if (!odp.ok) return null
+    const indeks = (await odp.json()) as IndeksKompaktu
+    if (niezgodnoscKompaktu(indeks, await manifest)) return null
+    const plikSkal = await fetch(`${baza}${indeks.skale.plik}`)
+    if (!plikSkal.ok) return null
+    const skale = (await plikSkal.json()) as Record<string, Skala>
+    if (indeks.wersjaAdresow !== (await wersjaAdresow)) return null
+    const wynik: SkaleGotowe = new Map()
+    for (const [id, wpis] of Object.entries(indeks.wskazniki)) {
+      const skala = skale[id]
+      if (skala) wynik.set(id, { skala, zDanymi: wpis.pokrycie.zDanymi })
+    }
+    return wynik
+  } catch {
+    return null
+  }
+}
+
 async function wczytajWszystko(): Promise<Dane> {
-  const [plikAdresow, manifest] = await Promise.all([wczytajAdresy(), wczytajManifest()])
+  const adresyP = wczytajAdresy()
+  const manifestP = wczytajManifest()
+  const skaleP = wczytajSkaleKompaktu(
+    manifestP,
+    adresyP.then((p) => p.wersja),
+  )
+  const [plikAdresow, manifest] = await Promise.all([adresyP, manifestP])
+  const skaleGotowe = await skaleP
   const pominiete: Dane['pominiete'] = []
   const n = plikAdresow.kolumny.id.length
   // Okolice ładują się równolegle ze wskaźnikami. Brak pliku nie blokuje mapy: zapas to dzielnica/gmina.
@@ -65,7 +106,9 @@ async function wczytajWszystko(): Promise<Dane> {
       }
       try {
         const plik = await wczytajWskaznik(meta.id, plikAdresow.wersja)
-        return plik ? przygotujWskaznik(plik) : pomin('niezgodna wersja adresów')
+        return plik
+          ? przygotujWskaznikZeSkala(plik, skaleGotowe?.get(meta.id))
+          : pomin('niezgodna wersja adresów')
       } catch (e) {
         // Jedna zepsuta warstwa nie może zablokować całej mapy.
         return pomin(String(e))
