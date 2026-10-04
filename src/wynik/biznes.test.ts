@@ -1,11 +1,15 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import {
+  adresyWZasieguHeksow,
   bezPunktu,
+  bialePlamyZIndeksu,
   bilansPopytu,
   czynnikiOceny,
   type KomorkaPopytu,
   kursyZeSlowem,
+  METRY_LAT,
+  METRY_LON,
   type Miejsce,
   type OcenaMiejsca,
   obliczBazowePunkty,
@@ -181,6 +185,61 @@ test('skala mapy nasyca się na 95. percentylu heksów z punktem, nie na maksimu
     assert.equal(p.skala, Math.min(100, (100 * (p.adresyNaPunkt ?? p.adresyWZasiegu)) / prog))
   assert.equal(skalaPlamy({ adresyNaPunkt: 200, adresyWZasiegu: 999 }, 100), 100)
   assert.equal(skalaPlamy({ adresyNaPunkt: 25, adresyWZasiegu: 999 }, 100), 25)
+})
+
+test('adresy w zasięgu heksu liczą się raz na parę (heksy, promień), a wynik to naiwna suma', () => {
+  const { dane } = zbior(21)
+  const komorkiIndeks = przygotujKomorki(dane)
+  const naiwnie = (promien: number) =>
+    dane.map(([, lon, lat]) =>
+      dane.reduce((suma, [, lon2, lat2, adresy]) => {
+        const d = Math.hypot((lon - lon2) * METRY_LON, (lat - lat2) * METRY_LAT)
+        return d <= promien ? suma + adresy : suma
+      }, 0),
+    )
+  for (const promien of [500, 800, 2000]) {
+    const wynik = adresyWZasieguHeksow(komorkiIndeks, promien)
+    assert.equal(wynik.length, dane.length)
+    naiwnie(promien).forEach((suma, i) => {
+      assert.ok(bliskie(wynik[i] as number, suma), `promień ${promien}, heks ${i}`)
+    })
+    // Drugie wywołanie nie liczy od nowa: ta sama tablica.
+    assert.equal(adresyWZasieguHeksow(komorkiIndeks, promien), wynik)
+  }
+  // Inny promień i inne heksy to osobne wpisy (cache nie miesza zasięgów ani zestawów heksów).
+  assert.notEqual(
+    adresyWZasieguHeksow(komorkiIndeks, 500),
+    adresyWZasieguHeksow(komorkiIndeks, 800),
+  )
+  assert.notEqual(
+    adresyWZasieguHeksow(przygotujKomorki(dane), 500),
+    adresyWZasieguHeksow(komorkiIndeks, 500),
+  )
+  // Większy promień obejmuje co najmniej tyle samo adresów, a z samym heksem zawsze co najmniej jego własne.
+  const maly = adresyWZasieguHeksow(komorkiIndeks, 500)
+  const duzy = adresyWZasieguHeksow(komorkiIndeks, 2000)
+  dane.forEach(([, , , adresy], i) => {
+    assert.ok((duzy[i] as number) >= (maly[i] as number))
+    assert.ok((maly[i] as number) >= adresy)
+  })
+})
+
+test('białe plamy dla innych punktów i filtrów na tych samych heksach zachowują adresy w zasięgu', () => {
+  const { dane, uslugi } = zbior(22)
+  const komorkiIndeks = przygotujKomorki(dane)
+  const wszystkie = bialePlamyZIndeksu(zbudujIndeks(komorkiIndeks, uslugi, 800))
+  // „Filtr” wycina połowę punktów: konkurenci się zmieniają, adresy w zasięgu (popyt) nie.
+  const polowa = bialePlamyZIndeksu(zbudujIndeks(komorkiIndeks, uslugi.slice(0, 25), 800))
+  // Od zera na nowych heksach (bez wspólnego cache): wynik identyczny co do liczby.
+  const odZera = obliczBialePlamy(dane, uslugi.slice(0, 25), 800)
+  assert.deepEqual(polowa, odZera)
+  wszystkie.forEach((p, i) => {
+    assert.equal(p.adresyWZasiegu, (polowa[i] as (typeof polowa)[number]).adresyWZasiegu)
+    assert.ok(p.konkurenci >= (polowa[i] as (typeof polowa)[number]).konkurenci)
+  })
+  assert.ok(
+    wszystkie.some((p, i) => p.konkurenci > (polowa[i] as (typeof polowa)[number]).konkurenci),
+  )
 })
 
 test('heks bez żadnego punktu różni się od heksu z jednym punktem', () => {

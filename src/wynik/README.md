@@ -180,7 +180,7 @@ pomijane, gdy plików nie ma.
 | `przygotujKomorki(dane)` | Heksy popytu jako tablice i siatka wyszukiwania. Raz na worker, nie zależy od branży. |
 | `zbudujIndeks(komorki, punkty, promien)` | Przydziały Huffa istniejących punktów, rozkład porównawczy, najbliższy punkt w heksie. Raz na branżę i na zestaw filtrów (4–27 ms). |
 | `ocenMiejsceWIndeksie(indeks, miejsce)` | Ocena stawianego miejsca: liczy tylko heksy w jego promieniu (mediana 0,01–0,2 ms, najdłuższy zasięg 2000 m). Wynik jest taki sam jak po przeliczeniu całego miasta – pilnuje tego test na prawdziwych danych. |
-| `bialePlamyZIndeksu(indeks)` | Per heks: adresy w zasięgu, punkty w zasięgu, najbliższy konkurent, skala 0–100 (45–360 ms, rośnie z zasięgiem branży). |
+| `bialePlamyZIndeksu(indeks)` | Per heks: adresy w zasięgu, punkty w zasięgu, najbliższy konkurent, skala 0–100. Adresy w zasięgu (`adresyWZasieguHeksow`) liczą się raz na heksy i promień: pierwsze liczenie zasięgu trwa 50–370 ms (500–2000 m), zmiana filtra albo branży o tym samym zasięgu 5–30 ms. |
 | `ocenMiejsce`, `obliczBialePlamy` | To samo „od zera” (indeks budowany przy każdym wywołaniu): do testów i jednorazowych obliczeń. |
 | `czynnikiOceny`, `PROGI_POZYCJI`, `PROGI_CZYNNIKOW` | 2–3 czynniki za i przeciw słowami; progi w jednym miejscu, z uzasadnieniem. |
 | `rozbicieZasiegu` | Udziały na karcie: miejsce + konkurenci = adresy w zasięgu (liczby całkowite, procenty dają 100). |
