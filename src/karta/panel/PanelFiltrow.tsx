@@ -52,13 +52,6 @@ function opisDomyslny(meta: WskaznikMeta): string {
   ).toLowerCase()
 }
 
-function opisZrodla(w: WskaznikPrzygotowany): string {
-  const { meta } = w
-  const zrodlo = meta.zrodla[0]?.nazwa ?? 'brak źródła'
-  const rozmiar = meta.rozmiar ? ` ${meta.rozmiar}` : ''
-  return `${zrodlo} · ${meta.rozdzielczosc}${rozmiar}`
-}
-
 /**
  * Panel filtrów wg docs/makieta/Main.dc.html: tryb, profil, warstwy z wagami 0–4 i kierunkami.
  * Warstwy bierzemy z manifestu, więc nowa warstwa z ETL pojawia się tu bez zmian w kodzie.
@@ -371,7 +364,6 @@ function Warstwa({
     <li className="panel-warstwa" title={meta.opis}>
       <div className="panel-warstwa-glowa">
         <span className="panel-warstwa-nazwa">{meta.nazwa}</span>
-        <span className="panel-warstwa-zrodlo mono">{opisZrodla(w)}</span>
       </div>
       {meta.atrapa && <span className="atrapa panel-atrapa">dane przykładowe</span>}
 
