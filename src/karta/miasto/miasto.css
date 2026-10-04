@@ -1,0 +1,107 @@
+/* Tryb „Dla miasta” (#92, #108): pasek widoków nad ekranem luk albo symulatora. Widok dostaje resztę
+   wysokości po pasku, więc nadpisujemy jego własne `height: calc(100dvh - …)` (symulator.css). */
+.miasto {
+  display: flex;
+  flex-direction: column;
+  height: calc(100dvh - var(--wys-naglowka));
+}
+.miasto-widoki {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 24px;
+  background: var(--powierzchnia);
+  border-bottom: 1px solid var(--ramka);
+}
+.miasto > main {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: auto;
+}
+.miasto-ladowanie {
+  padding: 24px;
+}
+
+/* ── Widok „Luki w usługach”: ranking okolic obok mapy luk ─────────────────── */
+.miasto-luki {
+  display: grid;
+  grid-template-columns: minmax(320px, 440px) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+}
+.miasto-luki-panel {
+  overflow-y: auto;
+  background: var(--powierzchnia);
+  border-right: 1px solid var(--ramka);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
+}
+.miasto-luki-wstep h1 {
+  margin: 0 0 8px;
+  font-size: 24px;
+  line-height: 1.2;
+}
+.miasto-luki-wstep p {
+  margin: 0;
+  color: var(--tekst-2);
+  line-height: 1.45;
+}
+.miasto-luki-mapa {
+  min-width: 0;
+  min-height: 0;
+  padding: 12px;
+}
+
+/* Telefon: mapa nad panelem (jak w symulatorze), strona przewija się jako całość. */
+@media (max-width: 860px) {
+  .miasto {
+    height: auto;
+  }
+  .miasto-widoki {
+    padding: 8px 16px;
+  }
+  .miasto > main {
+    flex: none;
+  }
+  .miasto-luki {
+    display: flex;
+    flex-direction: column;
+  }
+  .miasto-luki-mapa {
+    order: 1;
+    padding: 12px 16px;
+  }
+  .miasto-luki-panel {
+    order: 2;
+    border-right: 0;
+    padding: 20px 16px;
+    overflow: visible;
+  }
+}
+
+/* Telefon: dziesięć warstw w dwóch kolumnach zjadłoby pół ekranu przed mapą, więc pasek warstw nad mapą
+   luk jest jednym przewijanym rzędem (jak pasek warstw na Szukaj). Nadpisuje siatkę z mapaLuk.css. */
+@media (max-width: 480px) {
+  .miasto-luki .mapa-luk__warstwy {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    /* Przycięcie przy prawej krawędzi sygnalizuje, że pasek się przewija. */
+    mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+    /* Zapas wokół przycisków, żeby overflow nie uciął obrysu fokusu. */
+    padding: 4px 28px 4px 4px;
+    margin: -4px;
+  }
+  .miasto-luki .mapa-luk__warstwy::-webkit-scrollbar {
+    display: none;
+  }
+  .miasto-luki .mapa-luk__warstwa {
+    flex: none;
+    white-space: nowrap;
+    scroll-snap-align: start;
+  }
+}

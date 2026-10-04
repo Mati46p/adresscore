@@ -1,0 +1,45 @@
+/* Przełącznik trybów w nagłówku (#92, #108): „Dla miasta” / „Dla biznesu”.
+   Akcent ma wyłącznie wybrany tryb. Pozostały segment jest neutralny i reaguje na najechanie
+   tylko tłem (pod hover: hover, żeby na dotyku stan nie zostawał po tapnięciu). Segment ma
+   cel dotyku 44 px jak kroki obok, a wysokość całości (z ramką) równa się wysokości kroku. */
+.tryby {
+  display: inline-flex;
+  border: 1px solid var(--ramka-pola);
+  border-radius: 999px;
+  background: var(--powierzchnia);
+}
+.tryb {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--cel-dotyku);
+  padding: 0 16px;
+  font-size: 14px;
+  color: var(--tekst-2);
+  text-decoration: none;
+  /* Obrys fokusu (`:focus-visible` z styles.css) nie może wylewać się poza kapsułę. */
+  outline-offset: -3px;
+}
+.tryb:first-child {
+  border-radius: 999px 0 0 999px;
+}
+.tryb:last-child {
+  border-radius: 0 999px 999px 0;
+}
+.tryb + .tryb {
+  border-left: 1px solid var(--ramka);
+}
+.tryb[aria-current="page"] {
+  background: var(--akcent);
+  color: #fff;
+}
+/* Kreska między segmentami zlewa się z wypełnieniem wybranego trybu. */
+.tryb[aria-current="page"],
+.tryb[aria-current="page"] + .tryb {
+  border-left-color: var(--akcent);
+}
+@media (hover: hover) {
+  .tryb:not([aria-current="page"]):hover {
+    background: var(--linia);
+    color: var(--tekst);
+  }
+}

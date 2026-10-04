@@ -1,8 +1,11 @@
-// Symulator w workerze (#96): jedna instancja na aplikację, baza wysyłana tylko po zmianie
-// danych albo wag, a każde postawienie obiektu to jedno `licz`. Bez Workera (stara przeglądarka,
-// błąd ładowania) liczymy synchronicznie – ta sama czysta funkcja, wynik identyczny.
+// Symulator w workerze (#96): baza wysyłana tylko po zmianie danych albo wag, a każde postawienie
+// obiektu to jedno `licz`. Worker jest WSPÓLNY z trybem Biznes (#108) – bierzemy go z menedżera
+// (`menedzerObliczen.ts`) na czas życia ekranu Miasto i oddajemy przy wyjściu. Bez Workera (stara
+// przeglądarka, błąd ładowania, wyjątek w obsłudze) liczymy synchronicznie – ta sama czysta
+// funkcja, wynik identyczny.
 import { useEffect, useState } from 'react'
 import type { Dane } from './dane.ts'
+import { menedzerObliczen, type Uchwyt } from './menedzerObliczen.ts'
 import type { Kierunki } from './silnik.ts'
 import {
   type BazaSymulacji,
@@ -14,7 +17,6 @@ import {
   type TypObiektu,
   type WynikSymulacji,
 } from './symulacja.ts'
-import type { OdpowiedzWorkera, WiadomoscDoWorkera } from './symulacja.worker.ts'
 
 export interface StanSymulacji {
   baza: BazaSymulacji | null
@@ -47,29 +49,11 @@ function bazaDla(dane: Dane, wagi: Readonly<Record<string, number>>, kierunki: K
   return baza
 }
 
-let worker: Worker | null | undefined
+// Uchwyt do wspólnego workera, otwarty przez ekran Miasto (jeden naraz) i baza, którą worker ma
+// w pamięci dla tego uchwytu. Nowy uchwyt = nowa (albo oddana) instancja, więc baza idzie od nowa.
+let uchwyt: Uchwyt<'miasto'> | null = null
 let bazaWWorkerze: BazaSymulacji | null = null
 let licznik = 0
-
-function pobierzWorker(): Worker | null {
-  if (worker !== undefined) return worker
-  try {
-    worker = new Worker(new URL('./symulacja.worker.ts', import.meta.url), { type: 'module' })
-    worker.addEventListener('error', () => {
-      // Worker się nie załadował – dalej liczymy w wątku głównym.
-      worker?.terminate()
-      worker = null
-      bazaWWorkerze = null
-    })
-  } catch {
-    worker = null
-  }
-  return worker
-}
-
-function wyslij(w: Worker, wiadomosc: WiadomoscDoWorkera) {
-  w.postMessage(wiadomosc)
-}
 
 export function useSymulacja(
   dane: Dane | null,
@@ -86,31 +70,53 @@ export function useSymulacja(
   // Klucz treści, nie tożsamości: nowa tablica z tymi samymi obiektami nie liczy od nowa.
   const klucz = JSON.stringify(warianty)
 
+  // Uchwyt do workera żyje tyle, ile ekran Miasto. Deklaracja PRZED efektem liczącym: efekty tego
+  // samego komponentu biegną w kolejności deklaracji, więc uchwyt już jest, gdy liczymy. Otwarcie
+  // zaraz po wejściu (jeszcze przed danymi) rozgrzewa worker, zanim dojdą adresy.
+  useEffect(() => {
+    const moj = menedzerObliczen.otworz('miasto')
+    uchwyt = moj
+    bazaWWorkerze = null
+    return () => {
+      if (uchwyt === moj) {
+        uchwyt = null
+        bazaWWorkerze = null
+      }
+      moj?.zwolnij()
+    }
+  }, [])
+
   useEffect(() => {
     if (!dane) return
     const lista = JSON.parse(klucz) as Obiekt[][]
     const baza = bazaDla(dane, wagi, kierunki)
     const id = ++licznik
-    const w = pobierzWorker()
-    if (!w) {
+    const liczTutaj = () => {
       const t0 = performance.now()
       const wyniki = lista.map((o) => symuluj(baza, o))
       ustawStan({ baza, wyniki, ms: performance.now() - t0, liczy: false })
+    }
+    const u = uchwyt
+    if (!u) {
+      liczTutaj()
       return
     }
     ustawStan((s) => ({ ...s, baza, liczy: true }))
-    const odbierz = (e: MessageEvent<OdpowiedzWorkera>) => {
+    const zdejmijOdpowiedzi = u.nasluchuj((o) => {
       // Starsze odpowiedzi (szybkie przeciąganie znacznika) pomijamy – liczy się ostatnia.
-      if (e.data.typ !== 'wynik' || e.data.id !== id) return
-      ustawStan({ baza, wyniki: e.data.wyniki, ms: e.data.ms, liczy: false })
+      if (o.typ === 'wynik' && o.id === id) {
+        ustawStan({ baza, wyniki: o.wyniki, ms: o.ms, liczy: false })
+      } else if (o.typ === 'blad' && o.id === id) {
+        liczTutaj() // wyjątek w workerze: ten sam wynik z wątku głównego
+      }
+    })
+    const zdejmijBlad = u.naBledzie(liczTutaj)
+    if (bazaWWorkerze !== baza && u.wyslij({ typ: 'baza', baza })) bazaWWorkerze = baza
+    if (!u.wyslij({ typ: 'licz', id, warianty: lista })) liczTutaj()
+    return () => {
+      zdejmijOdpowiedzi()
+      zdejmijBlad()
     }
-    w.addEventListener('message', odbierz)
-    if (bazaWWorkerze !== baza) {
-      wyslij(w, { typ: 'baza', baza })
-      bazaWWorkerze = baza
-    }
-    wyslij(w, { typ: 'licz', id, warianty: lista })
-    return () => w.removeEventListener('message', odbierz)
   }, [dane, wagi, kierunki, klucz])
 
   return stan
@@ -125,20 +131,25 @@ export function sugerujWTle(
   typ: TypObiektu,
   obiekty: readonly Obiekt[],
 ): Promise<SugestiaMiejsca | null> {
-  const w = pobierzWorker()
-  if (!w) return Promise.resolve(sugerujMiejsce(baza, typ, obiekty))
+  const u = uchwyt
+  if (!u) return Promise.resolve(sugerujMiejsce(baza, typ, obiekty))
   const id = ++licznik
   return new Promise((ok) => {
-    const odbierz = (e: MessageEvent<OdpowiedzWorkera>) => {
-      if (e.data.typ !== 'sugestia' || e.data.id !== id) return
-      w.removeEventListener('message', odbierz)
-      ok(e.data.sugestia)
+    let zdejmijOdpowiedzi = () => {}
+    let zdejmijBlad = () => {}
+    const koniec = (sugestia: SugestiaMiejsca | null) => {
+      zdejmijOdpowiedzi()
+      zdejmijBlad()
+      ok(sugestia)
     }
-    w.addEventListener('message', odbierz)
-    if (bazaWWorkerze !== baza) {
-      wyslij(w, { typ: 'baza', baza })
-      bazaWWorkerze = baza
-    }
-    wyslij(w, { typ: 'sugeruj', id, typObiektu: typ, obiekty: [...obiekty] })
+    const wWatkuGlownym = () => koniec(sugerujMiejsce(baza, typ, obiekty))
+    zdejmijOdpowiedzi = u.nasluchuj((o) => {
+      if (o.id !== id) return
+      if (o.typ === 'sugestia') koniec(o.sugestia)
+      else if (o.typ === 'blad') wWatkuGlownym()
+    })
+    zdejmijBlad = u.naBledzie(wWatkuGlownym)
+    if (bazaWWorkerze !== baza && u.wyslij({ typ: 'baza', baza })) bazaWWorkerze = baza
+    if (!u.wyslij({ typ: 'sugeruj', id, typObiektu: typ, obiekty: [...obiekty] })) wWatkuGlownym()
   })
 }
