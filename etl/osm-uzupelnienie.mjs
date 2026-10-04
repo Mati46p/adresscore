@@ -25,6 +25,7 @@ import { pipeline } from 'node:stream/promises'
 import { pathToFileURL } from 'node:url'
 import { DuckDBInstance } from '@duckdb/node-api'
 import { odlegloscMetry } from './lib/codziennosc-geo.mjs'
+import { MIASTO_INFO, pbfRegionu, WOJEWODZTWO } from './lib/miasto.mjs'
 import {
   budujNajblizszy,
   liczbaPL,
@@ -44,7 +45,6 @@ import {
   zaokraglijWGore,
   zewnetrzneLinie,
 } from './lib/osm-uzupelnienie.mjs'
-import { MIASTO_INFO, pbfRegionu, WOJEWODZTWO } from './lib/miasto.mjs'
 import { CACHE, dzis, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
 
 const ZADANIE = 159
@@ -415,8 +415,8 @@ const zdanieLuki = (l) =>
   !l
     ? ''
     : l.obwarzanek.na1000 === 0 || l.krakow.na1000 > 4 * l.obwarzanek.na1000
-    ? ' Poza Krakowem OSM zna wielokrotnie mniej takich miejsc na mieszkańca, więc tam brak obiektu w pobliżu częściej oznacza brak wpisu niż brak miejsca.'
-    : ''
+      ? ' Poza Krakowem OSM zna wielokrotnie mniej takich miejsc na mieszkańca, więc tam brak obiektu w pobliżu częściej oznacza brak wpisu niż brak miejsca.'
+      : ''
 
 /** Percentyl z posortowanej tablicy. */
 const pct = (t, p) => (t.length ? t[Math.min(t.length - 1, Math.floor(p * (t.length - 1)))] : null)
@@ -426,7 +426,8 @@ function rozklad(adresy, wartosci) {
     wartosci
       .filter(
         (v, i) =>
-          v !== null && (MIASTO_INFO ? czyKrakow : (adresy[i].teryt === TERYT_KRAKOWA) === czyKrakow),
+          v !== null &&
+          (MIASTO_INFO ? czyKrakow : (adresy[i].teryt === TERYT_KRAKOWA) === czyKrakow),
       )
       .sort((a, b) => a - b)
   return Object.fromEntries(
@@ -513,23 +514,23 @@ function kontrolaLiczenia(adresy, punkty, wartosci, promien, nazwa) {
 const KONTROLA_MIEJSC = MIASTO_INFO
   ? []
   : [
-  ['Kraków', 'Rynek Główny', '10', 'Kraków, Rynek Główny 10 (Stare Miasto)'],
-  [
-    'Kraków',
-    'Plac Wszystkich Świętych',
-    '3',
-    'Kraków, Plac Wszystkich Świętych 3 (przy Urzędzie Miasta)',
-  ],
-  ['Kraków', 'Rynek Kleparski', '10', 'Kraków, Rynek Kleparski 10 (Stary Kleparz)'],
-  ['Kraków', 'Plac Nowowiejski', '2', 'Kraków, Plac Nowowiejski 2 (targ)'],
-  ['Kraków', 'Plac Nowy', '3', 'Kraków, Plac Nowy 3 (Kazimierz, targowisko z relacji OSM)'],
-  ['Kraków', 'Powstańców Wielkopolskich', '1', 'Kraków, Powstańców Wielkopolskich 1 (Dębniki)'],
-  ['Zabierzów', 'Rynek', '1', 'Zabierzów, Rynek 1 (Urząd Gminy)'],
-  ['Wieliczka', 'Rynek Górny', '7', 'Wieliczka, Rynek Górny 7'],
-  ['Skawina', 'Rynek', '2', 'Skawina, Rynek 2'],
-  ['Niepołomice', 'Rynek', '19', 'Niepołomice, Rynek 19'],
-  ['Koniusza', '', '70', 'Koniusza 70 (wieś)'],
-]
+      ['Kraków', 'Rynek Główny', '10', 'Kraków, Rynek Główny 10 (Stare Miasto)'],
+      [
+        'Kraków',
+        'Plac Wszystkich Świętych',
+        '3',
+        'Kraków, Plac Wszystkich Świętych 3 (przy Urzędzie Miasta)',
+      ],
+      ['Kraków', 'Rynek Kleparski', '10', 'Kraków, Rynek Kleparski 10 (Stary Kleparz)'],
+      ['Kraków', 'Plac Nowowiejski', '2', 'Kraków, Plac Nowowiejski 2 (targ)'],
+      ['Kraków', 'Plac Nowy', '3', 'Kraków, Plac Nowy 3 (Kazimierz, targowisko z relacji OSM)'],
+      ['Kraków', 'Powstańców Wielkopolskich', '1', 'Kraków, Powstańców Wielkopolskich 1 (Dębniki)'],
+      ['Zabierzów', 'Rynek', '1', 'Zabierzów, Rynek 1 (Urząd Gminy)'],
+      ['Wieliczka', 'Rynek Górny', '7', 'Wieliczka, Rynek Górny 7'],
+      ['Skawina', 'Rynek', '2', 'Skawina, Rynek 2'],
+      ['Niepołomice', 'Rynek', '19', 'Niepołomice, Rynek 19'],
+      ['Koniusza', '', '70', 'Koniusza 70 (wieś)'],
+    ]
 
 export async function licz() {
   const t0 = Date.now()

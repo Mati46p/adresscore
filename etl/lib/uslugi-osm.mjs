@@ -8,6 +8,7 @@ import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { DuckDBInstance } from '@duckdb/node-api'
 import { BBOX } from './codziennosc-zrodla.mjs'
+import { MIASTO_INFO, pbfRegionu } from './miasto.mjs'
 import { klasyfikujOsm, kluczeOsm, selektoryOsm } from './uslugi-katalog.mjs'
 import { CACHE, pobierzDoCache } from './wspolne.mjs'
 
@@ -33,6 +34,14 @@ export async function stanGeofabrik() {
  * bywa starszy niż „latest" z Geofabrik – data z przekierowania opisywałaby wtedy inny ekstrakt.
  */
 export async function pbfZCache() {
+  if (MIASTO_INFO) {
+    const r = await pbfRegionu()
+    return {
+      plik: r.plik,
+      stan: r.stan,
+      pobrano: statSync(r.plik).mtime.toISOString().slice(0, 10),
+    }
+  }
   const plik = join(CACHE, 'malopolskie.osm.pbf')
   const znacznik = `${plik}.stan`
   if (!existsSync(plik)) {

@@ -1,0 +1,21 @@
+{
+  "nazwa": "Modele budynków GUGiK LoD1 2024, powiat Wrocław (TERYT 0264)",
+  "url": "https://opendata.geoportal.gov.pl/InneDane/Budynki3D/LOD1/2024/02/0264.zip",
+  "dokumentacja": "https://www.geoportal.gov.pl/pl/dane/inne-dane/modele-3d-budynkow/",
+  "licencja": "Bez opłat, do dowolnego wykorzystania według dokumentacji GUGiK",
+  "rocznikModelu": 2024,
+  "rocznikiALS": {
+    "2024": 67484
+  },
+  "pobrano": "2026-10-04",
+  "zipSha256": "bf10f465db73f91decff301b4dc882a53c36487f840705345773bcd093b5ee79",
+  "liczbaBudynkow": 67484,
+  "zakresWysokosciM": [
+    2.01,
+    71.23
+  ],
+  "crs": "EPSG:4326",
+  "jednostkaWysokosci": "m",
+  "metoda": "Najniższy poziomy wielokąt z lod1Solid stanowi przyziemie budynku BDOT10k BUBD_A; height_m to przybliżona bldg:measuredHeight GUGiK z mediany punktów ALS względem NMT 1 m. To nie są obrysy EGiB.",
+  "dokladnoscWspolrzednych": "6 miejsc po przecinku (~0,1 m)"
+}

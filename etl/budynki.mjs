@@ -3,12 +3,11 @@
 
 import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { readFileSync, statSync, writeFileSync } from 'node:fs'
+import { readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import proj4 from 'proj4'
-import { rmSync } from 'node:fs'
 import { MIASTA } from './lib/miasta.mjs'
-import { CACHE, DANE, MIASTO, dzis, pobierzDoCache } from './lib/wspolne.mjs'
+import { CACHE, DANE, dzis, MIASTO, pobierzDoCache } from './lib/wspolne.mjs'
 
 // ADRESCORE_MIASTO: powiat miasta (URL: 2024/<kod województwa>/<TERYT powiatu>.zip, wg GetFeatureInfo WMS GUGiK).
 const M = MIASTO ? MIASTA[MIASTO] : null

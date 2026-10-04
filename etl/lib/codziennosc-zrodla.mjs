@@ -6,17 +6,23 @@ import { join } from 'node:path'
 import { DuckDBInstance } from '@duckdb/node-api'
 import { unzipSync } from 'fflate'
 import { geokoduj } from './codziennosc-geo.mjs'
-import { bboxMiasta, MIASTO_INFO, pbfRegionu, SUFIKS_REGIONU, TERYT_WOJ, WOJEWODZTWO } from './miasto.mjs'
+import {
+  bboxMiasta,
+  MIASTO_INFO,
+  pbfRegionu,
+  SUFIKS_REGIONU,
+  TERYT_WOJ,
+  terytMiasta,
+  WOJEWODZTWO,
+  wMiescieMiasta,
+} from './miasto.mjs'
 import { CACHE, pobierzDoCache } from './wspolne.mjs'
 
 /** Prostokąt Kraków + obwarzanek z zapasem ok. 3 km, żeby najbliższy punkt za granicą gminy był widoczny. */
 export const BBOX = bboxMiasta() ?? { minLat: 49.84, maxLat: 50.3, minLon: 19.58, maxLon: 20.46 }
 
 /** Tryb miasta: rejestry bez współrzędnych geokodujemy tylko dla wpisów z miejscowości miasta (UUG jest wolny). */
-const wMiescie = (miejscowosc) =>
-  !MIASTO_INFO ||
-  (miejscowosc ?? '').split(/[-,]/)[0].trim().toLocaleLowerCase('pl') ===
-    MIASTO_INFO.nazwa.toLocaleLowerCase('pl')
+const wMiescie = wMiescieMiasta
 
 const wBbox = (p) =>
   p.lat >= BBOX.minLat && p.lat <= BBOX.maxLat && p.lon >= BBOX.minLon && p.lon <= BBOX.maxLon
@@ -56,17 +62,20 @@ async function zGeokodowaniem(wejscie) {
 
 // --- SIO / RSPO: szkoły podstawowe i przedszkola -------------------------------------------
 
+// W SIO „Miejscowość" bywa nazwą dzielnicy (Warszawa: „Mokotów"), więc w trybie miasta wybieramy
+// placówki po TERYT gminy, a miejscowość do geokodera ustawiamy na nazwę miasta.
 async function wczytajSio() {
   const plik = await pobierzDoCache(URL_SIO, 'sio-2025-09-30.xlsx')
   const c = await duckdb('excel')
-  return (await wiersze(
+  return await wiersze(
     c,
     `select "Typ podmiotu" as typ, "Publiczność" as publicznosc, "Specyfika szkoły" as specyfika,
-            "Nazwa placówki" as nazwa, Miejscowość as miejscowosc, Ulica as ulica,
+            "Nazwa placówki" as nazwa, ${MIASTO_INFO ? `'${sq(MIASTO_INFO.nazwa)}'` : 'Miejscowość'} as miejscowosc, Ulica as ulica,
             "Numer domu" as nr, "Kod pocztowy" as kod, try_cast("w tym_w oddz_przedszk" as integer) as oddz_przedszk
      from read_xlsx('${sq(plik)}', all_varchar=true)
-     where idTerytWojewodztwo = '${TERYT_WOJ}' and "Numer domu" <> ''`,
-  )).filter((s) => wMiescie(s.miejscowosc))
+     where idTerytWojewodztwo = '${TERYT_WOJ}' and "Numer domu" <> ''
+       ${MIASTO_INFO ? `and idTerytGmina = '${terytMiasta()}'` : ''}`,
+  )
 }
 
 const nazwaSzkoly = (s) => (s.nazwa ?? '').replace(/\s+/g, ' ').trim()
@@ -96,14 +105,16 @@ export async function przedszkola() {
 export async function zlobki() {
   const plik = await pobierzDoCache(URL_ZLOBKI, 'zlobki-mrpips.csv')
   const c = await duckdb()
-  const w = (await wiersze(
-    c,
-    `select Nazwa as nazwa, Miejscowość as miejscowosc, Ulica as ulica, "Nr domu" as nr,
+  const w = (
+    await wiersze(
+      c,
+      `select Nazwa as nazwa, Miejscowość as miejscowosc, Ulica as ulica, "Nr domu" as nr,
             "Kod pocztowy" as kod, Geolokalizacja as geo
      from read_csv('${sq(plik)}', delim=';', header=true, all_varchar=true)
      where Województwo ilike '${sq(WOJEWODZTWO)}'
        and coalesce("Czy podmiot prowadzący zawiesił działalność instytucji opieki?", '') not ilike 'TAK'`,
-  )).filter((z) => wMiescie(z.miejscowosc))
+    )
+  ).filter((z) => wMiescie(z.miejscowosc))
   const punkty = []
   const bez = []
   for (const z of w) {
@@ -179,9 +190,10 @@ export async function przychodniePoz() {
     `read_csv('${sq(join(katalog, p))}', delim=';', quote='"', header=true, all_varchar=true, nullstr='NULL', ignore_errors=true)`
   const c = await duckdb()
   // kodResortVIII 0010 = „poradnia (gabinet) lekarza podstawowej opieki zdrowotnej" (słownik RPWDL).
-  const w = (await wiersze(
-    c,
-    `select coalesce(z.Nazwa, k."Nazwa komórki") as nazwa, k.Miejscowość as miejscowosc,
+  const w = (
+    await wiersze(
+      c,
+      `select coalesce(z.Nazwa, k."Nazwa komórki") as nazwa, k.Miejscowość as miejscowosc,
             k.Ulica as ulica, k.Budynek as nr,
             k."Kod pocztowy" as kod
      from ${csv('komorki.csv')} k
@@ -190,7 +202,8 @@ export async function przychodniePoz() {
        and k."Data zakończenia działalności komórki" is null
        and k."Budynek" is not null
      order by miejscowosc, ulica, nr, nazwa`,
-  )).filter((z) => wMiescie(z.miejscowosc))
+    )
+  ).filter((z) => wMiescie(z.miejscowosc))
   return { ...(await zGeokodowaniem(w)), stan }
 }
 

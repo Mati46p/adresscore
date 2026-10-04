@@ -14,12 +14,13 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { czytelnaNazwa, geokoduj, odlegloscMetry } from './codziennosc-geo.mjs'
+import { MIASTO_INFO } from './miasto.mjs'
 import { CACHE, dzis } from './wspolne.mjs'
 
 export const NFZ_API = 'https://api.nfz.gov.pl/app-itl-api/queues'
 export const NFZ_ZRODLO_URL = 'https://api.nfz.gov.pl/'
 /** Kod województwa w API NFZ: 06 to Małopolski Oddział Wojewódzki (oddziały NFZ numerowane są inaczej niż TERYT). */
-export const NFZ_WOJEWODZTWO = '06'
+export const NFZ_WOJEWODZTWO = MIASTO_INFO ? MIASTO_INFO.nfz : '06'
 /**
  * Fragmenty nazw świadczeń (parametr `benefit`), które tworzą flagę: poradnie stomatologiczne (także dla
  * dzieci, chirurgii i protetyki) oraz ortodontyczne. Kody VIII części tych wpisów (1800, 1801, 1830, 1840,
@@ -32,7 +33,7 @@ export const NFZ_LIMIT_STRONY = 25
 const PAUZA_MS = 200
 /** Miejsce NFZ i punkt dentysty dalej niż tyle od siebie nie są tym samym miejscem. */
 export const PROMIEN_NFZ_M = 50
-const PLIK_CACHE = 'nfz-itl-stomatologia-06.json'
+const PLIK_CACHE = `nfz-itl-stomatologia-${NFZ_WOJEWODZTWO}.json`
 const UA = 'adresscore-etl/1.0 (HackYeah 2026; https://github.com/Mati46p/adresscore)'
 
 const pauza = (ms) => new Promise((ok) => setTimeout(ok, ms))

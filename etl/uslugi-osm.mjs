@@ -206,7 +206,8 @@ async function pobierzZPbf() {
   )
   const elements = surowe.map((r) => {
     const tags = {}
-    for (const k of ['shop', 'amenity', 'healthcare', 'nursery', 'name']) if (r[k] != null) tags[k] = r[k]
+    for (const k of ['shop', 'amenity', 'healthcare', 'nursery', 'name'])
+      if (r[k] != null) tags[k] = r[k]
     return { type: r.typ, id: Number(r.id), lat: Number(r.lat), lon: Number(r.lon), tags }
   })
   const wynik = {

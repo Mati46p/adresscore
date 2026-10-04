@@ -24,7 +24,11 @@ import { CACHE, dzis, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
 const USLUGA =
   'https://cbdgmapa.pgi.gov.pl/arcgis/rest/services/geozagrozenia/egms_2016_2020_pion/ImageServer'
 const EGMS = 'https://egms.land.copernicus.eu'
-const KAT = join(CACHE, 'osiadanie')
+const KAT = join(
+  CACHE,
+  'osiadanie',
+  ...(process.env.ADRESCORE_MIASTO ? [process.env.ADRESCORE_MIASTO] : []),
+)
 const MARGINES_KOMOREK = 1
 
 proj4.defs(

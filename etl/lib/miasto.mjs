@@ -2,7 +2,14 @@
 // na jedno z miast z public/dane/miasta/<slug>/adresy.json. Bez zmiennej MIASTO_INFO === null,
 // a skrypty zachowują się jak dotąd (Kraków i obwarzanek, Małopolska).
 // Surowe pobrania (PBF województwa, rejestry krajowe, GTFS) leżą w etl/.cache i są wspólne dla miast.
-import { createWriteStream, existsSync, mkdirSync, readFileSync, renameSync, statSync } from 'node:fs'
+import {
+  createWriteStream,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  renameSync,
+  statSync,
+} from 'node:fs'
 import { join } from 'node:path'
 import { Readable } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
@@ -10,11 +17,12 @@ import { CACHE, DANE, MIASTO } from './wspolne.mjs'
 
 /**
  * woj: nazwa województwa (małe litery, jak w rejestrach), teryt2: prefiks TERYT województwa,
- * pbf: ekstrakt OSM województwa, centrum: cel dla czasu podróży do centrum (rynek / plac główny),
+ * nfz: kod oddziału wojewódzkiego NFZ (API Terminów Leczenia), pbf: ekstrakt OSM województwa, centrum: cel dla czasu podróży do centrum (rynek / plac główny),
  * gtfs: pliki z etl/.cache/gtfs-miasta (patrz etl/lib/gtfs-miasta.mjs).
  */
 export const MIASTA = {
   warszawa: {
+    nfz: '07',
     nazwa: 'Warszawa',
     woj: 'mazowieckie',
     teryt2: '14',
@@ -22,6 +30,7 @@ export const MIASTA = {
     centrum: { nazwa: 'Rynek Starego Miasta w Warszawie', lon: 21.0122, lat: 52.2497 },
   },
   lodz: {
+    nfz: '05',
     nazwa: 'Łódź',
     woj: 'łódzkie',
     teryt2: '10',
@@ -29,6 +38,7 @@ export const MIASTA = {
     centrum: { nazwa: 'Plac Wolności w Łodzi', lon: 19.4553, lat: 51.7765 },
   },
   wroclaw: {
+    nfz: '01',
     nazwa: 'Wrocław',
     woj: 'dolnośląskie',
     teryt2: '02',
@@ -36,6 +46,7 @@ export const MIASTA = {
     centrum: { nazwa: 'Rynek we Wrocławiu', lon: 17.0322, lat: 51.11 },
   },
   poznan: {
+    nfz: '15',
     nazwa: 'Poznań',
     woj: 'wielkopolskie',
     teryt2: '30',
@@ -43,6 +54,7 @@ export const MIASTA = {
     centrum: { nazwa: 'Stary Rynek w Poznaniu', lon: 16.9335, lat: 52.4082 },
   },
   gdansk: {
+    nfz: '11',
     nazwa: 'Gdańsk',
     woj: 'pomorskie',
     teryt2: '22',
@@ -50,6 +62,7 @@ export const MIASTA = {
     centrum: { nazwa: 'Długi Targ w Gdańsku', lon: 18.6531, lat: 54.3487 },
   },
   szczecin: {
+    nfz: '16',
     nazwa: 'Szczecin',
     woj: 'zachodniopomorskie',
     teryt2: '32',
@@ -57,6 +70,7 @@ export const MIASTA = {
     centrum: { nazwa: 'Plac Żołnierza Polskiego w Szczecinie', lon: 14.5533, lat: 53.429 },
   },
   bydgoszcz: {
+    nfz: '02',
     nazwa: 'Bydgoszcz',
     woj: 'kujawsko-pomorskie',
     teryt2: '04',
@@ -64,6 +78,7 @@ export const MIASTA = {
     centrum: { nazwa: 'Stary Rynek w Bydgoszczy', lon: 18.0003, lat: 53.1235 },
   },
   lublin: {
+    nfz: '03',
     nazwa: 'Lublin',
     woj: 'lubelskie',
     teryt2: '06',
@@ -71,6 +86,7 @@ export const MIASTA = {
     centrum: { nazwa: 'Rynek w Lublinie', lon: 22.5697, lat: 51.2477 },
   },
   bialystok: {
+    nfz: '10',
     nazwa: 'Białystok',
     woj: 'podlaskie',
     teryt2: '20',
@@ -82,6 +98,15 @@ export const MIASTA = {
 export const MIASTO_INFO = MIASTO ? (MIASTA[MIASTO] ?? null) : null
 if (MIASTO && !MIASTO_INFO) throw new Error(`Nieznane miasto ADRESCORE_MIASTO=${MIASTO}`)
 
+/**
+ * Czy miejscowość z rejestru należy do miasta: „Łódź", „Łódź-Bałuty", „Łódź-Górna, delegatura".
+ * Poza trybem miasta zawsze prawda (rejestry Małopolski bierzemy w całości).
+ */
+export const wMiescieMiasta = (miejscowosc) =>
+  !MIASTO_INFO ||
+  (miejscowosc ?? '').split(/[-,]/)[0].trim().toLocaleLowerCase('pl') ===
+    MIASTO_INFO.nazwa.toLocaleLowerCase('pl')
+
 /** Prefiks TERYT województwa, dla którego pobieramy rejestry krajowe (Małopolska = 12). */
 export const TERYT_WOJ = MIASTO_INFO ? MIASTO_INFO.teryt2 : '12'
 /** Nazwa województwa w rejestrach (małe litery). */
@@ -91,10 +116,21 @@ export const REGION_PBF = MIASTO_INFO ? MIASTO_INFO.pbf : 'malopolskie'
 /** Sufiks do nazw plików cache zależnych od województwa; pusty dla Małopolski (zachowuje stare nazwy). */
 export const SUFIKS_REGIONU = MIASTO_INFO ? `-${MIASTO_INFO.pbf}` : ''
 
+let kolumnyAdresow = null
+const kolumny = () => {
+  kolumnyAdresow ??= JSON.parse(readFileSync(join(DANE, 'adresy.json'), 'utf8')).kolumny
+  return kolumnyAdresow
+}
+
+/** TERYT gminy miasta z adresy.json (7 cyfr, z wiodącym zerem, np. „0461011"); null poza trybem miasta. */
+export function terytMiasta() {
+  return MIASTO_INFO ? String(kolumny().teryt[0]) : null
+}
+
 /** Prostokąt adresów miasta z zapasem (ok. 11 km); null poza trybem miasta. */
 export function bboxMiasta(zapasLat = 0.1, zapasLon = 0.16) {
   if (!MIASTO_INFO) return null
-  const k = JSON.parse(readFileSync(join(DANE, 'adresy.json'), 'utf8')).kolumny
+  const k = kolumny()
   let minLat = Infinity
   let maxLat = -Infinity
   let minLon = Infinity

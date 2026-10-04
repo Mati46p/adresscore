@@ -42,6 +42,7 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import KDBush from 'kdbush'
 import { do2180, odlegloscDoBbox } from './lib/geo.mjs'
+import { MIASTO_INFO, WOJEWODZTWO } from './lib/miasto.mjs'
 import {
   IndeksPokrycia,
   klasaWpisu,
@@ -383,7 +384,7 @@ async function main() {
   console.log(
     `SVG (${rozmiarPliku(svg.plik)} MB, pobrano ${pobrano}): ${obiekty.length} obiektów – wielokąty ${rodzaje.wielokat}, linie ${rodzaje.linia}, punkty ${rodzaje.punkt}`,
   )
-  if (obiekty.length < 1_000)
+  if (obiekty.length < (MIASTO_INFO ? 100 : 1_000))
     throw new Error(`Podejrzanie mało obiektów w SVG (${obiekty.length}): zmiana usługi?`)
 
   const skrotSvg = createHash('sha1').update(svg.tekst).digest('hex').slice(0, 10)
@@ -433,7 +434,7 @@ async function main() {
   const rekordy = rekordyNid(dekodujNid(readFileSync(plikCsv)))
   const gminy = new Set(adresy.map((a) => a.gmina))
   const idZUslugi = new Set([...ident.przypisania.values()].map((p) => p.id))
-  const pokrycie = pokrycieWykazu(rekordy, gminy, idZUslugi)
+  const pokrycie = pokrycieWykazu(rekordy, gminy, idZUslugi, WOJEWODZTWO)
   const pokrycieProc = proc(pokrycie.znalezione, pokrycie.pozycji)
   const niedokladneProc = proc(pokrycie.niedokladne, pokrycie.pozycji)
   console.log(
@@ -450,7 +451,7 @@ async function main() {
     if (lista) lista.push(o)
     else poId.set(p.id, [o])
   }
-  const zgodnosc = zgodnoscAdresowa(rekordy, adresy, poId)
+  const zgodnosc = zgodnoscAdresowa(rekordy, adresy, poId, WOJEWODZTWO)
   console.log(
     `Położenie: ${zgodnosc.dopasowane} pozycji z dokładnym adresem w PRG, ${zgodnosc.zObiektem} z obiektem w usłudze; odległość punktu PRG od obiektu o tym id: mediana ${zgodnosc.mediana?.toFixed(1)} m, p90 ${zgodnosc.p90?.toFixed(0)} m, w obrysie ${zgodnosc.w0m}, do 50 m ${zgodnosc.w50m}`,
   )
@@ -471,7 +472,7 @@ async function main() {
   const wartosci = wyniki.map((w) => w.liczba)
   const etykiety = wyniki.map((w) => w.klasa)
 
-  const krakowskie = (a) => a.teryt === '1261011'
+  const krakowskie = (a) => MIASTO_INFO || a.teryt === '1261011'
   const posortowane = (filtr) => wartosci.filter((_, i) => filtr(adresy[i])).sort((a, b) => a - b)
   const opisz = (nazwa, v) => {
     const q = (p) => v[Math.min(v.length - 1, Math.floor(p * v.length))]
@@ -480,11 +481,12 @@ async function main() {
     )
   }
   const krakow = posortowane(krakowskie)
-  opisz('Kraków', krakow)
-  opisz(
-    'Gminy obwarzanka',
-    posortowane((a) => !krakowskie(a)),
-  )
+  opisz(MIASTO_INFO ? MIASTO_INFO.nazwa : 'Kraków', krakow)
+  if (!MIASTO_INFO)
+    opisz(
+      'Gminy obwarzanka',
+      posortowane((a) => !krakowskie(a)),
+    )
   const wgEtykiet = new Map()
   for (const e of etykiety) wgEtykiet.set(e, (wgEtykiet.get(e) ?? 0) + 1)
   console.log(`Etykiety: ${[...wgEtykiet].map(([e, n]) => `${e ?? 'brak'} ${n}`).join(', ')}`)
@@ -529,7 +531,7 @@ async function main() {
     ['Wieliczka', 'Rynek Górny'],
     ['Niepołomice', 'Rynek'],
   ]
-  for (const [miejscowosc, ulica] of kontrola) {
+  for (const [miejscowosc, ulica] of MIASTO_INFO ? [] : kontrola) {
     const i = adresy.findIndex((a) => a.miejscowosc === miejscowosc && a.ulica === ulica)
     console.log(
       `Kontrola ${miejscowosc}, ${ulica} ${i < 0 ? '(brak adresu w PRG)' : `${adresy[i]?.nr}: ${wartosci[i]}${etykiety[i] ? ` – ${etykiety[i]}` : ''}`}`,

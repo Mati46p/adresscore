@@ -3,7 +3,14 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { MIASTA } from './lib/miasta.mjs'
-import { DANE, MIASTO, dzis, pobierzDoCache, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
+import {
+  DANE,
+  dzis,
+  MIASTO,
+  pobierzDoCache,
+  wczytajAdresy,
+  zapiszWskaznik,
+} from './lib/wspolne.mjs'
 
 export const ROK = 2025
 export const PIT = 149128

@@ -12,7 +12,9 @@ import { MIASTO_INFO, WOJEWODZTWO } from './lib/miasto.mjs'
 import { DANE, dzis, pobierzDoCache, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
 
 /** Nazwa województwa w arkuszu E8 („Małopolskie", „Łódzkie"); bez ADRESCORE_MIASTO zostaje Małopolska. */
-const WOJ_E8 = WOJEWODZTWO.charAt(0).toLocaleUpperCase('pl') + WOJEWODZTWO.slice(1)
+const WOJ_E8 = WOJEWODZTWO.split('-')
+  .map((c) => c.charAt(0).toLocaleUpperCase('pl') + c.slice(1))
+  .join('-')
 
 const E8_URL =
   'https://mapa.wyniki.edu.pl/MapaEgzaminow/assets/data/CSV/E8/2026/E8_2026_szkoly_09.xlsx'
@@ -99,12 +101,10 @@ function norm(s) {
     .replace(/[^a-z0-9]/g, '')
 }
 function miejscowosc(s) {
-  return norm(
-    (s ?? '').replace(/^Kraków-.+$/, 'Kraków').replace(
-      MIASTO_INFO ? new RegExp(`^${MIASTO_INFO.nazwa}[-,].*$`) : /^$^/,
-      MIASTO_INFO?.nazwa ?? '',
-    ),
-  )
+  // Tryb miasta: SIO podaje dzielnice jako miejscowość (Warszawa: „Mokotów"), a gmina jest już
+  // wybrana po TERYT, więc wszystko po stronie SIO i adresów sprowadzamy do nazwy miasta.
+  if (MIASTO_INFO) return norm(MIASTO_INFO.nazwa)
+  return norm((s ?? '').replace(/^Kraków-.+$/, 'Kraków'))
 }
 function klucz(miasto, ulica, nr) {
   return `${miejscowosc(miasto)}|${norm(ulica)}|${norm(nr)}`
@@ -118,7 +118,8 @@ const [{ adresy, wersja }, plikE8, plikSIO] = await Promise.all([
   pobierzDoCache(SIO_URL, 'sio-2025.csv'),
 ])
 const wyniki = arkuszE8(plikE8)
-if (wyniki.size < 1000) throw new Error('Eksport E8 ma za mało szkół; sprawdź układ arkusza')
+if (wyniki.size < (MIASTO_INFO ? 200 : 1000))
+  throw new Error('Eksport E8 ma za mało szkół; sprawdź układ arkusza')
 const indeksAdresow = new Map()
 for (const a of adresy) {
   const k = klucz(a.miejscowosc, a.ulica, a.nr)
@@ -131,7 +132,9 @@ for (const a of adresy) {
 const rows = csvRows(readFileSync(plikSIO, 'utf8'))
 const head = new Map(rows.shift().map((v, i) => [v, i]))
 const field = (r, k) => r[head.get(k)] ?? ''
-const gminy = new Set(adresy.map((a) => a.teryt))
+// SIO zapisuje TERYT gminy bez wiodącego zera („461011"), adresy z nim („0461011").
+const bezZer = (t) => String(t).replace(/^0+/, '')
+const gminy = new Set(adresy.map((a) => bezZer(a.teryt)))
 const szkoly = []
 const brakLokalizacji = []
 for (const r of rows) {
@@ -139,7 +142,7 @@ for (const r of rows) {
   const wynik = wyniki.get(rspo)
   if (
     !wynik ||
-    !gminy.has(field(r, 'idTerytGmina')) ||
+    !gminy.has(bezZer(field(r, 'idTerytGmina'))) ||
     field(r, 'Typ podmiotu') !== 'Szkoła podstawowa'
   )
     continue
@@ -209,7 +212,7 @@ const szczegoly = {
 }
 writeFileSync(join(DANE, 'szkoly_e8_szczegoly.json'), JSON.stringify(szczegoly))
 console.log(
-  `E8: ${wyniki.size} wyników w Małopolsce, ${szkoly.length} szkół z adresem, ${brakLokalizacji.length} bez dokładnego dopasowania.`,
+  `E8: ${wyniki.size} wyników w województwie (${WOJEWODZTWO}), ${szkoly.length} szkół z adresem, ${brakLokalizacji.length} bez dokładnego dopasowania.`,
 )
 zapiszWskaznik(
   {

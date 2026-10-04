@@ -9,6 +9,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { czytelnaNazwa, geokoduj, odlegloscMetry } from './lib/codziennosc-geo.mjs'
+import { MIASTO_INFO, WOJEWODZTWO } from './lib/miasto.mjs'
 import { wierszeKomorek } from './lib/uslugi-rpwdl.mjs'
 import { CACHE, dzis, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
 
@@ -59,15 +60,26 @@ async function main() {
   const punkty = unikalnePunkty(wiersze)
   const geo = await geokoduj(punkty)
   const sory = []
+  let pominiete = 0
   for (const [i, p] of punkty.entries()) {
-    if (!geo[i])
+    if (!geo[i]) {
+      // Tryb miasta: SOR w odległej części województwa bez adresu w UUG nie zatrzymuje całej warstwy
+      // (dla Krakowa każdy z ok. 20 SOR-ów musi mieć położenie, inaczej błąd).
+      if (MIASTO_INFO) {
+        console.warn(
+          `SOR bez współrzędnych z UUG (pominięty): ${p.nazwa}, ${p.miejscowosc} ${p.ulica} ${p.nr}`,
+        )
+        pominiete++
+        continue
+      }
       throw new Error(
         `SOR bez współrzędnych z UUG: ${p.nazwa}, ${p.miejscowosc} ${p.ulica} ${p.nr}`,
       )
+    }
     sory.push({ ...p, ...geo[i], etykieta: `${czytelnaNazwa(p.nazwa)} (${p.miejscowosc})` })
   }
-  if (sory.length < 15)
-    throw new Error(`Za mało SOR-ów w Małopolsce: ${sory.length}, oczekiwano ok. 20`)
+  if (sory.length < (MIASTO_INFO ? 3 : 15))
+    throw new Error(`Za mało SOR-ów w województwie ${WOJEWODZTWO}: ${sory.length}`)
 
   const { adresy } = wczytajAdresy()
   const wyniki = adresy.map((a) => najblizszy(a, sory))
@@ -81,7 +93,7 @@ async function main() {
       id: 'sor_odleglosc',
       kategoria: 'bezpieczenstwo',
       nazwa: 'Najbliższy SOR',
-      opis: `Odległość w linii prostej od adresu do najbliższego z ${sory.length} czynnych szpitalnych oddziałów ratunkowych w Małopolsce (RPWDL, stan na ${stan}). To nie jest czas dojazdu karetki – ten nie ma otwartych danych – ani trasa drogowa. Nie liczymy izb przyjęć, nocnej pomocy lekarskiej ani SOR-ów poza Małopolską, więc na skraju województwa odległość może być zawyżona. Adres szpitala geokodowany do budynku, stąd zaokrąglenie do 50 m. Etykieta podaje szpital.`,
+      opis: `Odległość w linii prostej od adresu do najbliższego z ${sory.length} czynnych szpitalnych oddziałów ratunkowych w ${MIASTO_INFO ? `województwie ${WOJEWODZTWO}` : 'Małopolsce'} (RPWDL, stan na ${stan}). To nie jest czas dojazdu karetki – ten nie ma otwartych danych – ani trasa drogowa. Nie liczymy izb przyjęć, nocnej pomocy lekarskiej ani SOR-ów poza ${MIASTO_INFO ? `województwem ${WOJEWODZTWO}` : 'Małopolską'}, więc na skraju województwa odległość może być zawyżona. Adres szpitala geokodowany do budynku, stąd zaokrąglenie do 50 m. Etykieta podaje szpital.${pominiete ? ` Z rejestru pominięto ${pominiete} SOR bez położenia w geokoderze UUG.` : ''}`,
       jednostka: 'm',
       kierunek: 'mniej-lepiej',
       rozdzielczosc: 'adres',
@@ -112,11 +124,13 @@ async function main() {
       .map(([e, n]) => `  ${e}: ${n} adresów`)
       .join('\n'),
   )
-  for (const [miejscowosc, ulica, nr] of [
-    ['Kraków', 'Rynek Główny', '1'],
-    ['Kraków', 'Rzepakowa', '10'],
-    ['Wieliczka', 'Rynek Górny', '1'],
-  ]) {
+  for (const [miejscowosc, ulica, nr] of MIASTO_INFO
+    ? []
+    : [
+        ['Kraków', 'Rynek Główny', '1'],
+        ['Kraków', 'Rzepakowa', '10'],
+        ['Wieliczka', 'Rynek Górny', '1'],
+      ]) {
     const i = adresy.findIndex(
       (a) => a.miejscowosc === miejscowosc && a.ulica === ulica && a.nr === nr,
     )

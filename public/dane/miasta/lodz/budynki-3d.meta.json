@@ -1,0 +1,22 @@
+{
+  "nazwa": "Modele budynków GUGiK LoD1 2024, powiat Łódź (TERYT 1061)",
+  "url": "https://opendata.geoportal.gov.pl/InneDane/Budynki3D/LOD1/2024/10/1061.zip",
+  "dokumentacja": "https://www.geoportal.gov.pl/pl/dane/inne-dane/modele-3d-budynkow/",
+  "licencja": "Bez opłat, do dowolnego wykorzystania według dokumentacji GUGiK",
+  "rocznikModelu": 2024,
+  "rocznikiALS": {
+    "2017": 84904,
+    "2024": 2871
+  },
+  "pobrano": "2026-10-04",
+  "zipSha256": "b804e14b6a4e6989720f7f29775518565f8bb096cd754146436c746b6e82b0f3",
+  "liczbaBudynkow": 87775,
+  "zakresWysokosciM": [
+    2.01,
+    78.07
+  ],
+  "crs": "EPSG:4326",
+  "jednostkaWysokosci": "m",
+  "metoda": "Najniższy poziomy wielokąt z lod1Solid stanowi przyziemie budynku BDOT10k BUBD_A; height_m to przybliżona bldg:measuredHeight GUGiK z mediany punktów ALS względem NMT 1 m. To nie są obrysy EGiB.",
+  "dokladnoscWspolrzednych": "6 miejsc po przecinku (~0,1 m)"
+}

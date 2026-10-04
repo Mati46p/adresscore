@@ -24,8 +24,8 @@ import { unzipSync } from 'fflate'
 import {
   CACHE,
   dzis,
-  MIASTO,
   KORZEN,
+  MIASTO,
   pobierzDoCache,
   wczytajAdresy,
   zapiszWskaznik,

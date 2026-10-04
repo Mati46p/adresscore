@@ -5,8 +5,9 @@
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { dataRobocza, GRUPY, odczytajFeed, pobierzGrupe } from './dojazd-gtfs.mjs'
-import { DANE, dzis } from './lib/wspolne.mjs'
+import { dataRobocza, listaFeedow, odczytajFeed } from './dojazd-gtfs.mjs'
+import { DATA_OBSLUGI_MIASTA } from './lib/gtfs-miasta.mjs'
+import { DANE } from './lib/wspolne.mjs'
 
 // Okno: wyjście 05:00–21:00 + 2 h na podróż (ok. 3,9 MB, 0,6 MB gzip). Rozmiar rośnie liniowo
 // z oknem; pobierany dopiero po wybraniu celu.
@@ -47,19 +48,11 @@ export async function generuj(data = dataRobocza(), okno = OKNO_DOMYSLNE) {
   const punkty = []
   const zdarzenia = []
   const zrodla = []
-  for (const grupa of GRUPY) {
-    const { url, bufor, meta } = pobierzGrupe(grupa)
+  for (const { grupa, bufor, zrodlo } of await listaFeedow()) {
     const feed = odczytajFeed(bufor, grupa, data, punkty.length, { start, koniec })
     punkty.push(...feed.punkty)
     for (const z of feed.zdarzenia) if (z.dep >= start) zdarzenia.push(z)
-    zrodla.push({
-      nazwa: `ZTP Kraków GTFS ${grupa} (${feed.info.feed_publisher_name}; ${feed.info.feed_version || 'bez wersji'})`,
-      url,
-      licencja:
-        'Warunki ponownego wykorzystania informacji GMK: https://bip.krakow.pl/?dok_id=48482',
-      dataDanych: new Date(meta.lastModified).toISOString().slice(0, 10),
-      pobrano: dzis(),
-    })
+    zrodla.push(zrodlo(feed.info))
   }
   const uzyte = [...new Set(zdarzenia.map((z) => z.stop))].sort((a, b) => a - b)
   const mapa = new Map(uzyte.map((s, i) => [s, i]))
@@ -87,5 +80,5 @@ export async function generuj(data = dataRobocza(), okno = OKNO_DOMYSLNE) {
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   const [data, okno] = process.argv.slice(2)
-  await generuj(data || dataRobocza(), okno || OKNO_DOMYSLNE)
+  await generuj(data || DATA_OBSLUGI_MIASTA || dataRobocza(), okno || OKNO_DOMYSLNE)
 }

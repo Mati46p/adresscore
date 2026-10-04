@@ -2,8 +2,15 @@
 // Uruchom: node etl/przestepstwa.mjs. Odpowiedzi BDL trafiają do etl/.cache/.
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { MIASTA, bdlPowiaty } from './lib/miasta.mjs'
-import { DANE, MIASTO, dzis, pobierzDoCache, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
+import { bdlPowiaty, MIASTA } from './lib/miasta.mjs'
+import {
+  DANE,
+  dzis,
+  MIASTO,
+  pobierzDoCache,
+  wczytajAdresy,
+  zapiszWskaznik,
+} from './lib/wspolne.mjs'
 import { PRZENIESIONE } from './uprosc-kryteria.mjs'
 
 export const ROK = 2025

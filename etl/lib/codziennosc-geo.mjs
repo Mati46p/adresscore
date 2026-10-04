@@ -138,7 +138,10 @@ export function normalizujUlice(ulica) {
 export function normalizujMiejscowosc(miejscowosc) {
   const m = (miejscowosc ?? '').trim()
   if (/^Kraków\b/i.test(m)) return 'Kraków'
-  if (MIASTO_INFO && m.split(/[-,]/)[0].trim().toLocaleLowerCase('pl') === MIASTO_INFO.nazwa.toLocaleLowerCase('pl'))
+  if (
+    MIASTO_INFO &&
+    m.split(/[-,]/)[0].trim().toLocaleLowerCase('pl') === MIASTO_INFO.nazwa.toLocaleLowerCase('pl')
+  )
     return MIASTO_INFO.nazwa
   return m
 }

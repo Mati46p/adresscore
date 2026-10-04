@@ -25,6 +25,7 @@ import { pipeline } from 'node:stream/promises'
 import { pathToFileURL } from 'node:url'
 import { DuckDBInstance } from '@duckdb/node-api'
 import { odlegloscMetry } from './lib/codziennosc-geo.mjs'
+import { MIASTO_INFO, pbfRegionu, WOJEWODZTWO } from './lib/miasto.mjs'
 import {
   budujNajblizszy,
   GRUPY,
@@ -40,7 +41,6 @@ import {
   srodekLinii,
   warunekSql,
 } from './lib/osm-uslugi.mjs'
-import { MIASTO_INFO, pbfRegionu, WOJEWODZTWO } from './lib/miasto.mjs'
 import { CACHE, dzis, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
 
 const ZADANIE = 124
@@ -458,7 +458,8 @@ function rozklad(adresy, wartosci) {
     wartosci
       .filter(
         (v, i) =>
-          v !== null && (MIASTO_INFO ? czyKrakow : (adresy[i].teryt === TERYT_KRAKOWA) === czyKrakow),
+          v !== null &&
+          (MIASTO_INFO ? czyKrakow : (adresy[i].teryt === TERYT_KRAKOWA) === czyKrakow),
       )
       .sort((a, b) => a - b)
   return Object.fromEntries(
@@ -511,13 +512,13 @@ function kontrolaIndeksu(adresy, punkty, wartosci, nazwa) {
 const KONTROLA_MIEJSC = MIASTO_INFO
   ? []
   : [
-  ['Kraków', 'Rynek Główny', '10', 'Rynek Główny 10 (Stare Miasto)'],
-  ['Kraków', 'Powstańców Wielkopolskich', '1', 'Powstańców Wielkopolskich 1 (Kraków, Dębniki)'],
-  ['Wieliczka', 'Rynek Górny', '7', 'Wieliczka, Rynek Górny 7'],
-  ['Skawina', 'Rynek', '2', 'Skawina, Rynek 2'],
-  ['Niepołomice', 'Rynek', '19', 'Niepołomice, Rynek 19'],
-  ['Koniusza', '', '70', 'Koniusza 70 (wieś)'],
-]
+      ['Kraków', 'Rynek Główny', '10', 'Rynek Główny 10 (Stare Miasto)'],
+      ['Kraków', 'Powstańców Wielkopolskich', '1', 'Powstańców Wielkopolskich 1 (Kraków, Dębniki)'],
+      ['Wieliczka', 'Rynek Górny', '7', 'Wieliczka, Rynek Górny 7'],
+      ['Skawina', 'Rynek', '2', 'Skawina, Rynek 2'],
+      ['Niepołomice', 'Rynek', '19', 'Niepołomice, Rynek 19'],
+      ['Koniusza', '', '70', 'Koniusza 70 (wieś)'],
+    ]
 
 export async function licz() {
   const t0 = Date.now()
@@ -574,8 +575,7 @@ export async function licz() {
         zrodla: [
           w.inpost
             ? {
-                nazwa:
-                  MIASTO_INFO
+                nazwa: MIASTO_INFO
                   ? `InPost – publiczne API punktów (ShipX), paczkomaty województwa ${WOJEWODZTWO}, migawka z dnia pobrania`
                   : 'InPost – publiczne API punktów (ShipX), paczkomaty województwa małopolskiego, migawka z dnia pobrania',
                 url: INPOST_API,

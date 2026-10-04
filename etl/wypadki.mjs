@@ -7,7 +7,7 @@
 import { createReadStream, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { cellToParent, latLngToCell } from 'h3-js'
-import { MIASTO, dzis, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
+import { dzis, MIASTO, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
 
 export const RES = 8
 export const LATA = [2018, 2024]

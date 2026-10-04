@@ -483,7 +483,9 @@ export function zbudujKompakt(plikAdresow, plikiWskaznikow) {
 // ── Dysk ─────────────────────────────────────────────────────────────────────────────────
 
 const KORZEN = join(dirname(fileURLToPath(import.meta.url)), '..')
-const DANE = join(KORZEN, 'public', 'dane')
+// ADRESCORE_MIASTO=<slug> → public/dane/miasta/<slug> (jak w lib/wspolne.mjs)
+const MIASTO = process.env.ADRESCORE_MIASTO || null
+const DANE = join(KORZEN, 'public', 'dane', ...(MIASTO ? ['miasta', MIASTO] : []))
 const KOMPAKT = join(DANE, 'kompakt')
 
 export function wczytajZrodla(dane = DANE) {
