@@ -1,7 +1,8 @@
 // Katalog branż usług dla trybu „Biznes" (#104, rozszerzony w #160): dane, nie logika. Jedno miejsce,
 // z którego ETL (etl/uslugi.mjs) bierze mapowanie kategorii OSM, Overture Places i PKD z CEIDG oraz
 // zasięg pieszy. Nowa branża = nowy wpis w BRANZE (plus test), bez zmian w potoku.
-// Paczkomat jest poza katalogiem celowo: robi go #124 (InPost + OSM).
+// Paczkomat jest w katalogu od drugiej partii #160 (2026-10-04): tylko OSM i Overture. API InPost nie
+// wchodzi, bo nie ma licencji na ponowne udostępnianie punktów.
 
 /**
  * Bity źródeł w kolumnie `zr` plików punktów. Kolejność jest kontraktem z frontem:
@@ -140,7 +141,7 @@ export const BRANZE = [
     overture: ['convenience_store', 'grocery_store'],
     pkd: ['47.11.Z'],
     uwagi:
-      'Supermarkety, sklepy osiedlowe i warzywniaki. Bez rzeźni, delikatesów specjalistycznych, kiosków i drogerii.',
+      'Supermarkety, sklepy osiedlowe i warzywniaki (te mają też własną branżę `warzywniak`, a ten sam punkt jest w obu plikach). Bez sklepów mięsnych (`sklep_miesny`), delikatesów specjalistycznych, kiosków i drogerii (`drogeria`).',
   },
   {
     id: 'apteka',
@@ -178,16 +179,21 @@ export const BRANZE = [
   },
   {
     id: 'piekarnia',
-    minPunktow: 200,
-    minZrodel: { osm: 200, overture: 120 },
-    nazwa: 'Piekarnia i cukiernia',
+    // Strażnik przeliczony 2026-10-04 po wydzieleniu cukierni: ok. 50% zmierzonej liczby (590 punktów,
+    // OSM 468, Overture 190). Wcześniej 200, 200 i 120, gdy piekarnia obejmowała też shop=pastry.
+    minPunktow: 295,
+    minZrodel: { osm: 234, overture: 95 },
+    nazwa: 'Piekarnia',
     zasiegPieszyM: 500,
-    // Overture (bakery) i PKD 10.71.Z obejmują piekarnie razem z cukierniami, więc w OSM też shop=pastry.
-    osm: ['shop=bakery', 'shop=pastry'],
-    overture: ['bakery'],
+    // Od 2026-10-04 cukiernie mają własną branżę `cukiernia`, więc tu zostaje sam shop=bakery (OSM shop=pastry
+    // i confectionery przeszły do cukierni). Overture ma jedną kategorię `bakery` dla piekarni i cukierni (jedna
+    // trzecia miejsc w obszarze to „Cukiernia …"), więc rozdziela je filtr `piekarnia`: odrzuca nazwy czysto
+    // cukiernicze, a „Piekarnia i Cukiernia …" zostaje w obu branżach. PKD 10.71.Z nadal obejmuje oba rodzaje.
+    osm: ['shop=bakery'],
+    overture: ['bakery?piekarnia'],
     pkd: ['10.71.Z'],
     uwagi:
-      'Piekarnie i cukiernie (OSM shop=bakery i pastry, Overture bakery, PKD 10.71.Z). Sklepy ze słodyczami (shop=confectionery) są poza branżą.',
+      'Piekarnie (OSM shop=bakery, Overture bakery bez nazw czysto cukierniczych, PKD 10.71.Z). Cukiernie i sklepy ze słodyczami mają własną branżę (`cukiernia`); lokale „Piekarnia i Cukiernia" są w obu. PKD 10.71.Z nie rozdziela piekarni od cukierni.',
   },
   {
     id: 'kawiarnia',
@@ -382,6 +388,157 @@ export const BRANZE = [
     uwagi:
       'Salony optyczne (OSM optician, Overture eyewear_store). Gabinety okulistyczne i optometryczne są poza branżą.',
   },
+  // --- Druga partia #160 (2026-10-04): drobny handel i usługi, które tryb Biznes brał dotąd ze starego
+  // eksportu etl/biznes-poi.py (tylko OSM). CEIDG zostaje wyłączony, więc `pkd` jest puste. Wartości
+  // minPunktow i minZrodel to ok. 50% zmierzonej liczby (bieg z 2026-10-04, całe BBOX).
+  {
+    id: 'drogeria',
+    minPunktow: 82,
+    minZrodel: { osm: 57, overture: 54 },
+    nazwa: 'Drogeria',
+    zasiegPieszyM: 800,
+    osm: ['shop=chemist'],
+    // Overture `drugstore` to w większości apteki (12 z 14 miejsc), a sieciowe drogerie (Rossmann, Hebe,
+    // Super-Pharm, Kosmyk) leżą w `beauty_supply_store`, `shopping` i kilku innych kategoriach. Wszystkie
+    // te kategorie przechodzą przez filtr `drogeria`, który zostawia tylko nazwy drogeryjne.
+    overture: [
+      'drugstore?drogeria',
+      'beauty_supply_store?drogeria',
+      'cosmetics_and_fragrance_store?drogeria',
+      'beauty_product_supplier?drogeria',
+      'hair_supply_store?drogeria',
+      'shopping?drogeria',
+      'pharmacy?drogeria',
+    ],
+    pkd: [],
+    uwagi:
+      'Drogerie (OSM shop=chemist, Overture drugstore i sześć kategorii handlowych po filtrze nazwy: „drogeria", Rossmann, Hebe, Super-Pharm). Apteki, perfumerie (Douglas, Sephora), sklepy z kosmetykami i sklepy z chemią niemiecką są poza branżą.',
+  },
+  {
+    id: 'cukiernia',
+    minPunktow: 140,
+    minZrodel: { osm: 89, overture: 69 },
+    nazwa: 'Cukiernia',
+    zasiegPieszyM: 800,
+    // OSM: cukiernie (pastry) i sklepy ze słodyczami (confectionery). Overture: kategorie deserów i słodyczy
+    // oraz `bakery` po filtrze `cukiernia`: kategoria miesza piekarnie z cukierniami, więc bierzemy z niej tylko
+    // nazwy cukiernicze („Cukiernia Sowa", „Pracownia Cukiernicza …", „Piekarnia i Cukiernia …").
+    osm: ['shop=pastry', 'shop=confectionery'],
+    overture: [
+      'bakery?cukiernia',
+      'dessert_shop',
+      'patisserie_cake_shop',
+      'cupcake_shop',
+      'candy_store',
+      'chocolatier',
+    ],
+    pkd: [],
+    uwagi:
+      'Cukiernie i sklepy ze słodyczami (OSM pastry i confectionery, Overture dessert_shop, patisserie_cake_shop, cupcake_shop, candy_store, chocolatier oraz bakery o nazwie cukierniczej). Piekarnie mają własną branżę; lokale „Piekarnia i Cukiernia" są w obu.',
+  },
+  {
+    id: 'sklep_miesny',
+    minPunktow: 75,
+    minZrodel: { osm: 69, overture: 11 },
+    nazwa: 'Sklep mięsny',
+    zasiegPieszyM: 800,
+    osm: ['shop=butcher'],
+    overture: ['butcher_shop'],
+    pkd: [],
+    uwagi:
+      'Sklepy mięsne i wędliniarskie (OSM butcher, Overture butcher_shop). Hurtownie mięsa (meat_wholesaler) i delikatesy są poza branżą.',
+  },
+  {
+    id: 'warzywniak',
+    minPunktow: 94,
+    minZrodel: { osm: 96, overture: 4 },
+    nazwa: 'Warzywniak',
+    zasiegPieszyM: 500,
+    osm: ['shop=greengrocer'],
+    overture: ['produce_store'],
+    pkd: [],
+    uwagi:
+      'Warzywniaki i sklepy z owocami (OSM greengrocer, Overture produce_store). OSM greengrocer jest też w branży sklep_spozywczy: ten sam punkt trafia do obu plików. Hurtownie owoców i warzyw (produce_wholesaler) i sklepy ekologiczne są poza branżą.',
+  },
+  {
+    id: 'pralnia',
+    minPunktow: 42,
+    minZrodel: { osm: 29, overture: 16 },
+    nazwa: 'Pralnia',
+    zasiegPieszyM: 1000,
+    osm: ['shop=laundry', 'shop=dry_cleaning'],
+    // `laundromat` (pralnie samoobsługowe) to rozszerzenie względem zadania: w OSM shop=laundry obejmuje
+    // także samoobsługowe, więc bez tej kategorii Overture widziałby tylko część pralni.
+    overture: ['laundry_service', 'dry_cleaning', 'laundromat'],
+    pkd: [],
+    uwagi:
+      'Pralnie, pralnie chemiczne i samoobsługowe (OSM laundry i dry_cleaning, Overture laundry_service, dry_cleaning, laundromat). Pranie dywanów (carpet_cleaning) i usługi sprzątające są poza branżą.',
+  },
+  {
+    id: 'sklep_zoologiczny',
+    minPunktow: 72,
+    minZrodel: { osm: 42, overture: 39 },
+    nazwa: 'Sklep zoologiczny',
+    zasiegPieszyM: 1000,
+    osm: ['shop=pet'],
+    // `aquatic_pet_store` (sklepy akwarystyczne) to rozszerzenie względem zadania: w OSM są pod shop=pet.
+    overture: ['pet_store', 'aquatic_pet_store'],
+    pkd: [],
+    uwagi:
+      'Sklepy zoologiczne i akwarystyczne (OSM pet, Overture pet_store i aquatic_pet_store). Salony groomerskie (pet_groomer), hodowle, lecznice i hotele dla zwierząt są poza branżą.',
+  },
+  {
+    id: 'bar',
+    minPunktow: 284,
+    minZrodel: { osm: 139, overture: 204 },
+    nazwa: 'Bar i pub',
+    zasiegPieszyM: 800,
+    osm: ['amenity=bar', 'amenity=pub'],
+    // W OSM bary koktajlowe, winiarnie i puby irlandzkie to też amenity=bar albo pub, a Overture ma dla nich
+    // osobne kategorie, więc lista jest jawna (gwiazdka `*_bar` wciągnęłaby bary sałatkowe, sokowe i mleczne).
+    overture: [
+      'bar',
+      'pub',
+      'cocktail_bar',
+      'wine_bar',
+      'beer_bar',
+      'sports_bar',
+      'irish_pub',
+      'gastropub',
+      'dive_bar',
+      'gay_bar',
+      'tapas_bar',
+      'hotel_bar',
+      'whiskey_bar',
+    ],
+    pkd: [],
+    uwagi:
+      'Bary i puby (OSM amenity=bar i pub, Overture bar, pub i ich odmiany: bary koktajlowe, winiarnie, bary piwne, puby irlandzkie, gastropuby). Kawiarnie, restauracje, bary mleczne, sałatkowe i sokowe, lokale z shishą, ogródki piwne i browary są poza branżą.',
+  },
+  {
+    id: 'lodziarnia',
+    minPunktow: 124,
+    minZrodel: { osm: 86, overture: 72 },
+    nazwa: 'Lodziarnia',
+    zasiegPieszyM: 500,
+    osm: ['amenity=ice_cream', 'shop=ice_cream'],
+    overture: ['ice_cream_shop', 'frozen_yogurt_shop'],
+    pkd: [],
+    uwagi:
+      'Lodziarnie i punkty z lodami (OSM amenity=ice_cream i shop=ice_cream, Overture ice_cream_shop i frozen_yogurt_shop). Sprzedaż lodów w kawiarniach i cukierniach nie liczy się, jeśli lokal nie jest tak opisany w źródle.',
+  },
+  {
+    id: 'paczkomat',
+    minPunktow: 1159,
+    minZrodel: { osm: 987, overture: 347 },
+    nazwa: 'Automat paczkowy',
+    zasiegPieszyM: 500,
+    osm: ['amenity=parcel_locker'],
+    overture: ['package_locker'],
+    pkd: [],
+    uwagi:
+      'Automaty paczkowe (OSM amenity=parcel_locker, Overture package_locker: InPost, DHL i inni operatorzy; w Overture także punkty odbioru, np. „ORLEN Paczka"). Punkty z API InPost nie wchodzą do katalogu (brak licencji). Kilka automatów obok siebie (do 30 m, ta sama nazwa) to jeden punkt. Placówki pocztowe i kurierskie są poza branżą.',
+  },
 ]
 
 export const BRANZE_PO_ID = Object.fromEntries(BRANZE.map((b) => [b.id, b]))
@@ -480,7 +637,38 @@ export function nazwaMozeBycMyjnia(nazwa) {
   return !/paczk|stacj\w* paliw/.test(bezOgonkow(nazwa))
 }
 
-/** Filtry nazwane z napisowych reguł katalogu (`?poz`, `?lab`, `?myjnia`). */
+// --- Filtr drogerii (druga partia #160) ---------------------------------------------------------
+// Overture nie ma jednej kategorii drogerii: `drugstore` to w większości apteki, a Rossmann, Hebe
+// i Super-Pharm leżą w `beauty_supply_store`, `shopping`, `beauty_product_supplier` i kilku innych.
+// Filtr przepuszcza więc tylko nazwy drogeryjne i, jak pozostałe, woli pominąć, niż dopisać.
+
+const NAZWA_DROGERIA = /drogeri|rossmann|\bhebe\b|super-?pharm/
+
+/** Czy nazwa wygląda na drogerię („Drogeria Kosmyk", „Rossmann", „Hebe", „Super-Pharm"). */
+export function nazwaDrogeriaPodobna(nazwa) {
+  return NAZWA_DROGERIA.test(bezOgonkow(nazwa))
+}
+
+// --- Filtry piekarni i cukierni (druga partia #160) ---------------------------------------------
+// OSM rozdziela piekarnie (shop=bakery) od cukierni (shop=pastry), ale Overture ma jedną kategorię `bakery`
+// i trzecia część jej miejsc w obszarze to „Cukiernia …". Rozdzielamy je po nazwie: nazwa cukiernicza idzie do
+// `cukiernia`, a „Piekarnia i Cukiernia …" (i każda nazwa z piekarnią albo pieczywem) zostaje też w `piekarnia`.
+
+const NAZWA_CUKIERNIA = /cukiern|ciastkar|patiss?erie|cake|tort/
+const NAZWA_PIEKARNIA = /piekar|pieczyw|chleb|bulk|bakery/
+
+/** Czy nazwa wygląda na cukiernię („Cukiernia Sowa", „Pracownia Cukiernicza …", „Fit Cake", „Torty z Pomysłem"). */
+export function nazwaCukierniPodobna(nazwa) {
+  return NAZWA_CUKIERNIA.test(bezOgonkow(nazwa))
+}
+
+/** Czy nazwa jest czysto cukiernicza, bez śladu piekarni: „Cukiernia Zając", ale nie „Piekarnia i Cukiernia Buczek". */
+export function nazwaTylkoCukierni(nazwa) {
+  const n = bezOgonkow(nazwa)
+  return NAZWA_CUKIERNIA.test(n) && !NAZWA_PIEKARNIA.test(n)
+}
+
+/** Filtry nazwane z napisowych reguł katalogu (`?poz`, `?lab`, `?myjnia`, `?drogeria`, `?cukiernia`, `?piekarnia`). */
 export const FILTRY = {
   poz: {
     osm: czyPozOsm,
@@ -493,6 +681,18 @@ export const FILTRY = {
   myjnia: {
     osm: () => true,
     overture: (punkt) => nazwaMozeBycMyjnia(punkt.nazwa),
+  },
+  drogeria: {
+    osm: () => true,
+    overture: (punkt) => nazwaDrogeriaPodobna(punkt.nazwa),
+  },
+  cukiernia: {
+    osm: () => true,
+    overture: (punkt) => nazwaCukierniPodobna(punkt.nazwa),
+  },
+  piekarnia: {
+    osm: () => true,
+    overture: (punkt) => !nazwaTylkoCukierni(punkt.nazwa),
   },
 }
 
