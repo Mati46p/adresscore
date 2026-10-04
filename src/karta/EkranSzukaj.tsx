@@ -3,7 +3,7 @@ import { PoleOpiszSiebie } from '@/ai/PoleOpiszSiebie'
 import { okolicaNaMapie } from '@/mapa/okolica/granice'
 import { wczytajGraniceOkolic } from '@/mapa/okolica/wczytajGranice'
 import { useDane } from '@/wynik/dane'
-import { miejsceOkolicy } from '@/wynik/miejsceAdresu'
+import { miejsceAdresu, miejsceOkolicy } from '@/wynik/miejsceAdresu'
 import { BIZNESY, warstwyBiznesu } from '@/wynik/persony'
 import { kierunekEfektywny } from '@/wynik/silnik'
 import {
@@ -64,6 +64,9 @@ export function EkranSzukaj() {
         })
       : []
   const wynikWybranego = adres && wyniki ? wyniki.naAdres[adres.i] : undefined
+  // Okolica wybranego adresu: jednostka SIM albo miejscowość z okolice.json, bez pliku dzielnica albo gmina.
+  const miejsceWybranego =
+    adres && dane.stan === 'gotowe' ? miejsceAdresu(adres, adres.i, dane.okolice) : null
   // Przełącznik pokazuje tylko warstwy, które coś oceniają. Liczy się kierunek efektywny:
   // warstwa neutralna z kierunkiem nadanym przez personę wchodzi do wyniku, więc ma przycisk.
   const warstwy =
@@ -290,6 +293,18 @@ export function EkranSzukaj() {
                 {wyniki?.wykluczenia.niewiadomy[adres.i]
                   ? ' · nie wiemy, czy spełnia filtr (brak danych)'
                   : ''}
+                {miejsceWybranego && (
+                  <small className="wybrany-adres__miejsce">
+                    {miejsceWybranego.rodzaj === 'zapas' ? (
+                      miejsceWybranego.nazwa
+                    ) : (
+                      <>
+                        Okolica: <strong>{miejsceWybranego.nazwa}</strong>
+                        {miejsceWybranego.podpis && `, ${miejsceWybranego.podpis}`}
+                      </>
+                    )}
+                  </small>
+                )}
               </span>
               <button type="button" className="seg wlaczony" onClick={() => pokazOkolice(adres.i)}>
                 Otwórz kartę

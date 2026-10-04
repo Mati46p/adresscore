@@ -272,3 +272,16 @@
     z-index: 11;
   }
 }
+
+/* Pod adresem wybranym na mapie: okolica z okolice.json (#185), bez podpisu w zapasie na dzielnicę i gminę. */
+.wybrany-adres__miejsce {
+  display: block;
+  margin-top: 2px;
+  color: var(--tekst-2);
+  font-size: 13px;
+}
+
+.wybrany-adres__miejsce strong {
+  color: var(--tekst);
+  font-weight: 600;
+}
