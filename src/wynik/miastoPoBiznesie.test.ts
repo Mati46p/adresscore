@@ -290,18 +290,6 @@ describe('Miasto po wizycie w Biznesie (E10, #108)', () => {
     assert.deepEqual(bilans(zUstawieniami), wzorzec)
   })
 
-  it('kafel „Biznes” z ekranu Szukaj: Miasto i tak liczy na profilu mieszkańca', async () => {
-    const s = await swiezyStan()
-    s.podlaczDane([], META, [])
-    s.ustawTryb('biznes')
-    assert.equal(s.pobierzStan().tryb, 'biznes')
-    przejdzLinkiem(s, DO_MIASTA)
-    s.ustawSymulacje({ a: OBIEKTY_A, b: '' })
-    assert.equal(s.pobierzStan().ekran, 'miasto')
-    assert.equal(s.pobierzStan().tryb, 'kupuje')
-    assert.deepEqual(bilans(s), bilansWzorcowy('rodzina', 'kupuje'))
-  })
-
   it('linki z Biznesu nie niosą t=biznes, a link do Biznesu dalej tak', async () => {
     const s = await miastoZObiektem()
     const doBiznesu = s.hrefDla(s.pobierzStan(), DO_BIZNESU)
@@ -477,15 +465,12 @@ describe('czyDoMieszkanca: kiedy stan wraca do profilu mieszkańca', () => {
     }
   })
 
-  it('wyjście z Biznesu na każdy inny ekran wraca do mieszkańca, a kafel na ekranach mieszkańca zostaje', () => {
-    for (const ekran of EKRANY.filter((e) => e !== 'biznes')) {
-      assert.equal(czyDoMieszkanca('biznes', { ekran, tryb: 'biznes' }), true, `biznes → ${ekran}`)
-    }
-    for (const poprzedni of EKRANY.filter((e) => e !== 'biznes')) {
-      for (const ekran of EKRANY.filter((e) => e !== 'biznes' && e !== 'miasto')) {
+  it('tryb biznes poza ekranem Biznes zawsze wraca do mieszkańca', () => {
+    for (const poprzedni of EKRANY) {
+      for (const ekran of EKRANY.filter((e) => e !== 'biznes')) {
         assert.equal(
           czyDoMieszkanca(poprzedni, { ekran, tryb: 'biznes' }),
-          false,
+          true,
           `${poprzedni} → ${ekran}`,
         )
       }

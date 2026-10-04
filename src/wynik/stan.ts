@@ -250,7 +250,9 @@ export function ustawTryb(tryb: Tryb) {
     // Mieszkańca zapamiętuje `zmien` (wejście w tryb biznes z każdej drogi, nie tylko z tego kafla).
     const zapis = ostatniBiznes ?? ustawieniaZSesji('biznes', 'biznes')
     const domyslne = ustawieniaPersony(PERSONA_DOMYSLNA, 'biznes', metaWskaznikow, stan.biznes)
+    // Tryb biznes żyje tylko na ekranie Biznes, więc wejście w niego tam przenosi.
     return zmien({
+      ekran: 'biznes',
       tryb,
       persona: zapis?.persona ?? PERSONA_DOMYSLNA,
       wagi: zapis?.wagi ?? domyslne.wagi,
@@ -347,6 +349,7 @@ export function pokazOkolice(i: number) {
 }
 
 export function przejdz(ekran: Ekran) {
+  if (ekran === 'biznes' && stan.tryb !== 'biznes') return ustawTryb('biznes')
   zmien({ ekran, ...(ekran === 'biznes' ? { tryb: 'biznes' as const } : {}) })
 }
 
@@ -674,9 +677,9 @@ export function wczytajLinkStartowy(startowy: StanUrl) {
   oczekujacyUrl = startowy
   stan = { ...stan, ekran: startowy.ekran }
   if (startowy.persona) stan = { ...stan, persona: startowy.persona }
-  // Miasto liczy na profilu mieszkańca: `t=biznes` w jego linku (stary link, zapis sesji) nie ustawia
-  // trybu, a po wczytaniu adresów `zgodnyZTrybem` dopilnuje reszty (`czyDoMieszkanca`).
-  if (startowy.tryb && !(startowy.ekran === 'miasto' && startowy.tryb === 'biznes'))
+  // Tryb biznes należy tylko do ekranu Biznes: `t=biznes` w innym linku (stary link, zapis sesji) nie
+  // ustawia trybu, a po wczytaniu adresów `zgodnyZTrybem` dopilnuje reszty (`czyDoMieszkanca`).
+  if (startowy.tryb && !(startowy.ekran !== 'biznes' && startowy.tryb === 'biznes'))
     stan = { ...stan, tryb: startowy.tryb }
   stan = { ...stan, ...zUrlBezSlownika(startowy) }
   if (startowy.ekran === 'biznes') stan = { ...stan, tryb: 'biznes' }

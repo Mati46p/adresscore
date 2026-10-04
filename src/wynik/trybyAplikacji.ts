@@ -37,17 +37,13 @@ export function trybEkranu(ekran: Ekran): TrybAplikacji | null {
  * a symulator Miasta liczył litery na wagach Biznesu (ten sam obiekt awansował adresy przed wizytą
  * w Biznesie i żadnego po niej). Dlatego tryb wraca do mieszkańca:
  *
- * - po wyjściu z ekranu Biznes, na każdy inny ekran,
- * - na ekranie Miasto zawsze, skąd by tryb biznes nie przyszedł (link z `t=biznes`, zapis sesji,
- *   kafel „Miejsca do założenia biznesu” z ekranu Szukaj).
- *
- * Kafel na ekranach mieszkańca (Szukaj, karta okolicy) zostaje, dopóki użytkownik z niego nie wyjdzie
- * przez Biznes albo Miasto: to jego wybór, a nie wyciek z innego trybu.
+ * na każdym ekranie poza Biznes, skąd by tryb biznes nie przyszedł (link z `t=biznes`, zapis sesji).
+ * Ekrany mieszkańca nie mają już kafla biznesu – biznes żyje tylko pod „Dla biznesu” w nagłówku.
  */
 export function czyDoMieszkanca(
   poprzedniEkran: Ekran,
   nastepny: { ekran: Ekran; tryb: Tryb },
 ): boolean {
-  if (nastepny.tryb !== 'biznes' || nastepny.ekran === 'biznes') return false
-  return nastepny.ekran === 'miasto' || poprzedniEkran === 'biznes'
+  void poprzedniEkran
+  return nastepny.tryb === 'biznes' && nastepny.ekran !== 'biznes'
 }
