@@ -339,7 +339,18 @@ function Scena({
     const efekt = efektSwiatla(
       zSlonca && znacznik !== undefined ? { znacznik, cien, noc: noc === true } : null,
     )
-    nakladkaRef.current?.setProps({ effects: [efekt] })
+    const nakladka = nakladkaRef.current
+    nakladka?.setProps({ effects: [efekt] })
+    // Nowy efekt rysuje mapę cieni dopiero w pierwszej klatce, a ta klatka wychodzi bez cienia.
+    // Deck sam drugiej nie zleca (kamera stoi), więc cień wracał dopiero po ruchu mapą.
+    // Wymuszamy dwie kolejne klatki.
+    const deck = (nakladka as unknown as { _deck?: { redraw: (powod?: string) => void } } | null)
+      ?._deck
+    let klatka = requestAnimationFrame(() => {
+      deck?.redraw('swiatlo')
+      klatka = requestAnimationFrame(() => deck?.redraw('swiatlo'))
+    })
+    return () => cancelAnimationFrame(klatka)
   }, [zSlonca, znacznik, cien, noc])
 
   return (
