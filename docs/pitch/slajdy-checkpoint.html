@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8" />
+<title>adresscore – draft na checkpoint</title>
+<!-- Draft na checkpoint 20:00 (#47). PDF: chromium --headless --no-pdf-header-footer
+     --print-to-pdf=docs/pitch/adresscore-checkpoint.pdf docs/pitch/slajdy-checkpoint.html -->
+<style>
+  @page { size: 1280px 720px; margin: 0; }
+  :root {
+    --tlo: #f5f6f3; --pow: #ffffff; --tekst: #18202b; --tekst-2: #3d4652; --tekst-3: #5b6470;
+    --ramka: #dde1e4; --akcent: #1f5c46; --akcent-jasny: #e3efe8; --brak: #a9afb4;
+    --font: "IBM Plex Sans", "Inter", system-ui, sans-serif; --mono: "IBM Plex Mono", ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: #ccd; font-family: var(--font); color: var(--tekst); }
+  .slajd {
+    width: 1280px; height: 720px; padding: 64px 80px; background: var(--tlo);
+    position: relative; overflow: hidden; margin: 0 auto 24px; page-break-after: always; break-after: page;
+    display: flex; flex-direction: column;
+  }
+  @media print { body { background: none; } .slajd { margin: 0; } }
+  .stopka { position: absolute; left: 80px; right: 80px; bottom: 28px; display: flex; justify-content: space-between;
+    font: 500 14px var(--mono); color: var(--tekst-3); }
+  .nad { font: 500 15px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--akcent); margin: 0 0 14px; }
+  h1 { font-size: 54px; line-height: 1.08; margin: 0 0 20px; letter-spacing: -.02em; max-width: 1000px; }
+  h2 { font-size: 40px; line-height: 1.12; margin: 0 0 28px; letter-spacing: -.015em; max-width: 1050px; }
+  p { font-size: 21px; line-height: 1.45; color: var(--tekst-2); margin: 0 0 14px; }
+  .kolumny { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; flex: 1; min-height: 0; }
+  .trzy { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .karta { background: var(--pow); border: 1px solid var(--ramka); border-radius: 14px; padding: 24px 26px; }
+  .karta h3 { margin: 0 0 8px; font-size: 22px; }
+  .karta p { font-size: 18px; margin: 0; }
+  .liczba { white-space: nowrap; font: 700 52px var(--font); color: var(--akcent); letter-spacing: -.02em; line-height: 1; margin-bottom: 8px; }
+  .zrzut { border: 2px dashed var(--brak); border-radius: 14px; background: repeating-linear-gradient(135deg, #eef0f1 0 12px, #f5f6f3 12px 24px);
+    display: flex; align-items: center; justify-content: center; text-align: center; color: var(--tekst-3);
+    font: 500 17px var(--mono); padding: 24px; min-height: 0; }
+  ul { margin: 0; padding-left: 0; list-style: none; }
+  li { font-size: 20px; line-height: 1.4; color: var(--tekst-2); padding: 9px 0 9px 30px; position: relative; border-bottom: 1px solid #e6e9ea; }
+  li::before { content: ""; position: absolute; left: 4px; top: 19px; width: 12px; height: 12px; border-radius: 3px; background: var(--akcent); }
+  li b { color: var(--tekst); }
+  .tag { display: inline-block; font: 500 14px var(--mono); padding: 3px 10px; border-radius: 99px; margin-right: 6px;
+    background: var(--akcent-jasny); color: var(--akcent); }
+  .tag.szary { background: #eceeef; color: #4a525b; }
+
+  /* Etykieta A–G – kolory z src/karta/okolica/kolory.ts */
+  .etykieta { display: flex; flex-direction: column; gap: 7px; }
+  .pasek { height: 44px; display: flex; align-items: center; padding: 0 16px; font: 700 22px var(--font);
+    clip-path: polygon(0 0, calc(100% - 22px) 0, 100% 50%, calc(100% - 22px) 100%, 0 100%); }
+  .pasek span { font: 500 15px var(--font); margin-left: 14px; opacity: .9; }
+  .A { background: #0B6B3A; color: #fff; width: 46%; } .B { background: #6DBE45; color: #10210F; width: 54%; }
+  .C { background: #B7D335; color: #18202B; width: 62%; } .D { background: #F4DC3C; color: #18202B; width: 70%; }
+  .E { background: #F6A935; color: #18202B; width: 78%; } .F { background: #EC6A2C; color: #18202B; width: 86%; }
+  .G { background: #B3261E; color: #fff; width: 94%; }
+  .pasek.wybrany { outline: 3px solid var(--tekst); outline-offset: 3px; }
+
+  .kategorie { display: grid; gap: 12px; }
+  .kat { display: grid; grid-template-columns: 240px 1fr 44px; align-items: center; gap: 14px; font-size: 18px; }
+  .kat .tor { height: 14px; background: #e6e9ea; border-radius: 99px; overflow: hidden; }
+  .kat .tor i { display: block; height: 100%; border-radius: 99px; }
+  .kat b { font: 600 18px var(--mono); text-align: right; }
+  .krok { display: grid; grid-template-columns: 44px 1fr; gap: 14px; align-items: start; margin-bottom: 16px; }
+  .krok .n { width: 40px; height: 40px; border-radius: 50%; background: var(--akcent); color: #fff; display: grid; place-items: center; font: 700 18px var(--font); }
+  .krok h3 { margin: 4px 0 2px; font-size: 21px; } .krok p { font-size: 17px; margin: 0; }
+  .tytulowy { background: var(--tekst); color: #fff; }
+  .tytulowy h1 { color: #fff; font-size: 76px; } .tytulowy p { color: #c9d0d6; font-size: 26px; }
+  .tytulowy .nad { color: #8bc0a3; } .tytulowy .stopka { color: #8a939b; }
+</style>
+</head>
+<body>
+
+<!-- 1. Tytuł -->
+<section class="slajd tytulowy">
+  <div class="kolumny" style="grid-template-columns: 1.25fr 1fr; align-items: center;">
+    <div>
+      <p class="nad">HackYeah 2026 · Smart City</p>
+      <h1>adresscore</h1>
+      <p>Jakość życia pod każdym adresem – jedna etykieta A–G z rejestrów publicznych.</p>
+      <p style="margin-top: 36px; font: 500 22px var(--mono); color: #fff;">adresscore.pl</p>
+      <p style="font-size: 18px;">Zespół: <b style="color:#fff">[NAZWA ZESPOŁU]</b> · [imiona i nazwiska, 1–6 osób]</p>
+    </div>
+    <div class="etykieta" aria-label="Etykieta A–G">
+      <div class="pasek A">A</div><div class="pasek B wybrany">B <span>ul. Grodzka, Kraków</span></div>
+      <div class="pasek C">C</div><div class="pasek D">D</div><div class="pasek E">E</div>
+      <div class="pasek F">F</div><div class="pasek G">G</div>
+    </div>
+  </div>
+  <div class="stopka"><span>draft · checkpoint 20:00</span><span>1 / 7</span></div>
+</section>
+
+<!-- 2. Problem -->
+<section class="slajd">
+  <p class="nad">Problem</p>
+  <h2>Mieszkanie wybieramy na lata, a okolicę sprawdzamy na oko.</h2>
+  <div class="trzy" style="margin-bottom: 30px;">
+    <div class="karta"><div class="liczba">40+</div><h3>instytucji</h3><p>Hałas w MSIP, powietrze w GIOŚ, powódź w Wodach Polskich, budowy w GUNB, rozkłady w GTFS – każde osobno.</p></div>
+    <div class="karta"><div class="liczba">3</div><h3>skale naraz</h3><p>Jedne dane dotyczą adresu, inne heksu 100 m, jeszcze inne całej gminy. Nikt nie mówi, które są które.</p></div>
+    <div class="karta"><div class="liczba">po</div><h3>przeprowadzce</h3><p>O nocnym hałasie, braku żłobka i bloku, który wyrośnie za oknem, dowiadujemy się za późno.</p></div>
+  </div>
+  <p>Ogłoszenia mówią o metrażu i cenie. Miasto ma dane o tym, jak się żyje pod adresem – ale nie w formie, z której skorzysta mieszkaniec.</p>
+  <div class="stopka"><span>adresscore</span><span>2 / 7</span></div>
+</section>
+
+<!-- 3. Rozwiązanie -->
+<section class="slajd">
+  <p class="nad">Rozwiązanie</p>
+  <h2>Każdy adres dostaje etykietę A–G – jak lodówka, tylko dla okolicy.</h2>
+  <div class="kolumny" style="grid-template-columns: 1fr 1.05fr;">
+    <div>
+      <div class="kategorie" style="margin-bottom: 26px;">
+        <div class="kat">Codzienność pieszo <div class="tor"><i style="width:88%;background:#0B6B3A"></i></div><b>A</b></div>
+        <div class="kat">Transport <div class="tor"><i style="width:80%;background:#6DBE45"></i></div><b>B</b></div>
+        <div class="kat">Spokój i zdrowie <div class="tor"><i style="width:44%;background:#F6A935"></i></div><b>E</b></div>
+        <div class="kat">Przyszłość okolicy <div class="tor"><i style="width:62%;background:#B7D335"></i></div><b>C</b></div>
+        <div class="kat">Bezpieczeństwo i ryzyko <div class="tor"><i style="width:0;"></i></div><b style="color:var(--brak)">–</b></div>
+      </div>
+      <ul>
+        <li><b>Wynik zależy od Ciebie:</b> persony (rodzina, senior, singiel, inwestor) i tryby kupuję / wynajmuję / biznes.</li>
+        <li><b>„Opisz siebie”</b> jednym zdaniem – AI ustawia wagi, mapa przelicza się na żywo.</li>
+        <li><b>Szary pasek = brak danych</b>, nigdy zero.</li>
+      </ul>
+    </div>
+    <div class="zrzut">[ZRZUT: karta adresu – etykieta A–G,<br />kategorie i źródło przy każdej liczbie]</div>
+  </div>
+  <div class="stopka"><span>dane na pasku przykładowe</span><span>3 / 7</span></div>
+</section>
+
+<!-- 4. Jak działa -->
+<section class="slajd">
+  <p class="nad">Demo · adresscore.pl</p>
+  <h2>Od mapy miasta do decyzji w czterech krokach.</h2>
+  <div class="kolumny" style="grid-template-columns: 1fr 1.15fr;">
+    <div>
+      <div class="krok"><div class="n">1</div><div><h3>Mapa heksów H3</h3><p>Kraków i obwarzanek w heksach ~65 m, reszta Polski we mgle. Filtry i twarde warunki, np. maks. 30 min do pracy.</p></div></div>
+      <div class="krok"><div class="n">2</div><div><h3>Karta adresu</h3><p>Etykieta A–G, każda liczba ze źródłem, licencją i rozdzielczością. Budynki 3D GUGiK z cieniem.</p></div></div>
+      <div class="krok"><div class="n">3</div><div><h3>Porównanie</h3><p>Do 5 okolic na radarze wobec Twoich priorytetów, pełna tabela atrybutów, link do udostępnienia.</p></div></div>
+      <div class="krok"><div class="n">4</div><div><h3>Lepszy sąsiad</h3><p>Lepsze adresy w promieniu 500 m przy podobnej cenie transakcyjnej (RCN).</p></div></div>
+    </div>
+    <div class="zrzut">[ZRZUT: mapa heksów z panelem filtrów<br />+ obok mniejszy zrzut z telefonu]</div>
+  </div>
+  <div class="stopka"><span>adresscore</span><span>4 / 7</span></div>
+</section>
+
+<!-- 5. Dane i AI -->
+<section class="slajd">
+  <p class="nad">Dane i AI</p>
+  <h2>Prawdziwe rejestry, uczciwa rozdzielczość, AI bez zmyślania.</h2>
+  <div class="trzy" style="grid-template-columns: repeat(4, 1fr); gap: 18px; margin-bottom: 30px;">
+    <div class="karta"><div class="liczba" style="font-size:44px">176 684</div><p>punkty adresowe – Kraków + 13 gmin</p></div>
+    <div class="karta"><div class="liczba">93</div><p>warstwy w pięciu kategoriach i kontekście</p></div>
+    <div class="karta"><div class="liczba">40+</div><p>instytucji: MSIP, GIOŚ, GUGiK, GUNB, GUS, NFZ, PSP…</p></div>
+    <div class="karta"><div class="liczba">0</div><p>wartości wymyślonych – żadnej atrapy w danych</p></div>
+  </div>
+  <div class="kolumny" style="gap: 36px;">
+    <div>
+      <p style="margin-bottom: 12px;"><span class="tag">adres</span><span class="tag">budynek</span><span class="tag">heks</span><span class="tag">siatka</span><span class="tag szary">gmina</span></p>
+      <p>Przy każdej warstwie widać, czego naprawdę dotyczy liczba. Dane liczone skryptami (Node + DuckDB) do plików statycznych – bez pośredniczenia w usługach miasta.</p>
+    </div>
+    <div>
+      <p><b style="color:var(--tekst)">Warstwa AI – JEV:</b> zamienia „mam dwoje dzieci i pracuję w Bronowicach” na wagi oraz odpowiada na pytania o adres. Wybiera wyłącznie z zamkniętych list – liczby i miejsca zawsze pochodzą z rejestrów. Gdy AI nie odpowie, działa reguła zapasowa.</p>
+    </div>
+  </div>
+  <div class="stopka"><span>pełna lista źródeł: adresscore.pl/#/metoda</span><span>5 / 7</span></div>
+</section>
+
+<!-- 6. Smart City i etyka -->
+<section class="slajd">
+  <p class="nad">Smart City</p>
+  <h2>Narzędzie dla mieszkańca i dla miasta – nie tablica wstydu.</h2>
+  <div class="trzy">
+    <div class="karta"><h3>Mieszkaniec</h3><p>Wie przed podpisaniem umowy, ile kosztuje go adres w czasie i pieniądzach, i co powstanie obok (pozwolenia, plany miejscowe, budżet obywatelski).</p></div>
+    <div class="karta"><h3>Miasto</h3><p>Tryb „gdzie miasto ma luki”: okolice, z których do przedszkola, apteki czy przystanku jest za daleko. Ranking wskazuje, co naprawić.</p></div>
+    <div class="karta"><h3>Etyka</h3><p>Bez przestępczości per adres. Brak danych nie obniża wyniku. Każda niska ocena ma „co by to zmieniło” zamiast wyroku.</p></div>
+  </div>
+  <p style="margin-top: 30px;">Otwarte dane miasta zamieniamy w odpowiedź na pytanie, które każdy zadaje raz na kilka lat – i od którego zależy następna dekada życia.</p>
+  <div class="stopka"><span>adresscore</span><span>6 / 7</span></div>
+</section>
+
+<!-- 7. Status -->
+<section class="slajd">
+  <p class="nad">Stan na checkpoint</p>
+  <h2>Działa publicznie. Do niedzieli: miasto jako użytkownik i biznes.</h2>
+  <div class="kolumny" style="grid-template-columns: 1fr 1fr 260px; gap: 36px;">
+    <div>
+      <p style="font-weight: 600; color: var(--tekst);">Gotowe</p>
+      <ul>
+        <li>mapa heksów, filtry, persony, tryby</li>
+        <li>karta A–G ze źródłami, porównanie</li>
+        <li>lot do adresu i budynki 3D z cieniem</li>
+        <li>„co by to zmieniło” w zł i godzinach</li>
+        <li>luki miasta, lepszy sąsiad, metoda</li>
+      </ul>
+    </div>
+    <div>
+      <p style="font-weight: 600; color: var(--tekst);">W nocy</p>
+      <ul>
+        <li>AI JEV na serwerze (dziś reguła zapasowa)</li>
+        <li>dla miasta: postaw obiekt, zobacz zysk</li>
+        <li>tryb biznes: białe plamy branży</li>
+        <li>strażnik uchwał Rady Miasta</li>
+        <li>telefon, offline, QR dla jury</li>
+      </ul>
+    </div>
+    <div class="zrzut" style="aspect-ratio: 1; align-self: start;">[QR → adresscore.pl<br />po teście na telefonie]</div>
+  </div>
+  <div class="stopka"><span>adresscore.pl · repo: [link albo dostęp dla jury]</span><span>7 / 7</span></div>
+</section>
+
+</body>
+</html>
