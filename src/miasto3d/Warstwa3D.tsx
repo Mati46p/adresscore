@@ -44,7 +44,15 @@ export default function Warstwa3D({
     return () => {
       nakladkaRef.current = null
       mapa.removeControl(nakladka)
-      if (mapa.getPitch() > 0) mapa.easeTo({ pitch: 0, bearing: 0, duration: 400 })
+      // Wyjście z 3D zwykle wypada w trakcie oddalania kółkiem albo szczypaniem – easeTo
+      // odpalone w środku gestu zostałoby przez niego przerwane i kamera zostałaby nachylona.
+      // Dlatego prostujemy dopiero po zakończeniu ruchu.
+      const wyprostuj = () => {
+        if (mapa.getPitch() > 0 || mapa.getBearing() !== 0)
+          mapa.easeTo({ pitch: 0, bearing: 0, duration: 400 })
+      }
+      if (mapa.isMoving()) mapa.once('moveend', wyprostuj)
+      else wyprostuj()
     }
   }, [mapa])
 

@@ -54,14 +54,22 @@ const SWIATLO_STALE = new LightingEffect({
   }),
 })
 
-/** Światło od słońca o wybranej chwili; w nocy tylko przygaszone rozproszone. */
+// Noc: przygaszone, chłodne światło „księżyca". Samo rozproszone (bez kierunkowego) po
+// zejściu z efektu z cieniem zostawiało shadery budynków bez źródła kierunkowego i bryły
+// znikały – dlatego zawsze jest słabe kierunkowe.
+const SWIATLO_NOCY = new LightingEffect({
+  otoczenie: new AmbientLight({ color: [200, 210, 235], intensity: 1.0 }),
+  ksiezyc: new DirectionalLight({
+    color: [170, 185, 220],
+    intensity: 0.5,
+    direction: [1, 2, -3],
+  }),
+})
+
+/** Światło od słońca o wybranej chwili; w nocy przygaszone, chłodne. */
 export function efektSwiatla(s: Swiatlo | null): LightingEffect {
   if (!s) return SWIATLO_STALE
-  if (s.noc) {
-    return new LightingEffect({
-      otoczenie: new AmbientLight({ color: [200, 210, 235], intensity: 1.1 }),
-    })
-  }
+  if (s.noc) return SWIATLO_NOCY
   const efekt = new LightingEffect({
     otoczenie: new AmbientLight({ color: [255, 255, 255], intensity: 1.2 }),
     slonce: new SunLight({
