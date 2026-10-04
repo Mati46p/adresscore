@@ -2,7 +2,7 @@
 // w luce dla wybranej warstwy. Liczy silnik z #89 (`policzLuki`), tu tylko kolor, dymek, legenda,
 // wybór warstwy i przelot do okolicy z rankingu (#91).
 import type { JSX } from 'react'
-import type { Adres } from '@/kontrakty'
+import type { Adres, PlikOkolic } from '@/kontrakty'
 import {
   type Granice,
   gradientLukCss,
@@ -45,11 +45,12 @@ function lukiWarstwy(
   wskaznik: WskaznikPrzygotowany,
   adresy: readonly Adres[],
   grupy: GrupyHeksow,
+  okolice: PlikOkolic | null,
 ): { wynik: WynikLuk | null; heksy: ReadonlyMap<string, number | null> } {
   if (ostatnieLuki && ostatnieLuki.wskaznik === wskaznik && ostatnieLuki.adresy === adresy) {
     return ostatnieLuki
   }
-  const wynik = policzLuki(wskaznik, adresy, grupy)
+  const wynik = policzLuki(wskaznik, adresy, grupy, okolice)
   const heksy = new Map<string, number | null>()
   if (wynik) for (const [h, l] of wynik.heksy) heksy.set(h, wartoscMapyLuki(l.udzial))
   ostatnieLuki = { wskaznik, adresy, wynik, heksy }
@@ -58,11 +59,15 @@ function lukiWarstwy(
 
 let ostatnieGranice: { adresy: readonly Adres[]; id: string; granice: Granice | null } | null = null
 
-function graniceZPamieci(adresy: readonly Adres[], id: string): Granice | null {
+function graniceZPamieci(
+  adresy: readonly Adres[],
+  id: string,
+  okolice: PlikOkolic | null,
+): Granice | null {
   if (ostatnieGranice && ostatnieGranice.adresy === adresy && ostatnieGranice.id === id) {
     return ostatnieGranice.granice
   }
-  ostatnieGranice = { adresy, id, granice: graniceOkolicy(adresy, id) }
+  ostatnieGranice = { adresy, id, granice: graniceOkolicy(adresy, id, okolice) }
   return ostatnieGranice.granice
 }
 
@@ -78,10 +83,15 @@ export function MapaLuk({
   // Tylko warstwy z progiem luki i bez atrapy – `progLuki` daje null dla obu przypadków.
   const warstwy = gotowe ? gotowe.wskazniki.filter((w) => progLuki(w.meta) !== null) : []
   const wybrana = warstwy.find((w) => w.meta.id === warstwa) ?? warstwy[0] ?? null
-  const luki = gotowe && wybrana ? lukiWarstwy(wybrana, gotowe.adresy, gotowe.grupyHeksow) : null
+  const luki =
+    gotowe && wybrana
+      ? lukiWarstwy(wybrana, gotowe.adresy, gotowe.grupyHeksow, gotowe.okolice)
+      : null
   const wynik = luki?.wynik ?? null
   const granice =
-    gotowe && okolicaDoPokazania ? graniceZPamieci(gotowe.adresy, okolicaDoPokazania) : null
+    gotowe && okolicaDoPokazania
+      ? graniceZPamieci(gotowe.adresy, okolicaDoPokazania, gotowe.okolice)
+      : null
   const tytul = wynik ? zWielkiej(wynik.prog.naglowek) : 'Luki w usługach'
 
   return (
