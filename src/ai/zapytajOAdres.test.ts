@@ -24,6 +24,7 @@ import {
   propozycje,
   przetworz,
   przetworzWiele,
+  REGULY,
   regula,
   regulaWiele,
   regulyZTematami,
@@ -345,7 +346,8 @@ describe('tematy – pytania złożone (#146)', () => {
   }
 
   it('każda warstwa domyślna i każda warstwa tematu jest na liście (bez atrap)', () => {
-    assert.ok(TEMATY.length >= 2 && TEMATY.length <= 15)
+    // Limit pośrednika 32 pytania: choice + najwyżej 31 tematów.
+    assert.ok(TEMATY.length >= 2 && TEMATY.length <= 31)
     for (const t of TEMATY) {
       assert.ok(ids.has(t.domyslna), `${t.id}: domyślnej ${t.domyslna} nie ma na liście`)
       assert.ok(t.warstwy.includes(t.domyslna), `${t.id}: domyślna spoza grupy`)
@@ -362,10 +364,11 @@ describe('tematy – pytania złożone (#146)', () => {
     assert.equal(new Set(TEMATY.map((t) => t.id)).size, TEMATY.length)
   })
 
-  it('zapytanie ma ≤ 16 pytań: choice + noul na każdy temat', () => {
+  it('zapytanie ma ≤ 32 pytań (limit pośrednika): choice + noul na każdy temat', () => {
     const z = zapytanieJev('Jak głośno i daleko do tramwaju?', pelna)
     const klucze = Object.keys(z.pytania)
-    assert.ok(klucze.length <= 16, `${klucze.length} pytań`)
+    // 16 do pokrycia warstw z późniejszych etapów, 22 po nim (6 nowych tematów).
+    assert.ok(klucze.length <= 32, `${klucze.length} pytań`)
     assert.equal(klucze[0], ID_PYTANIA)
     assert.equal(klucze.length, 1 + TEMATY.length)
     for (const t of TEMATY) assert.equal(z.pytania[idTematu(t)]?.typ, 'noul')
@@ -712,6 +715,8 @@ describe('tematy – pytania złożone (#146)', () => {
       'przychodnia_odleglosc',
       'przychodnia_bez_barier_odleglosc',
       'defibrylator_odleglosc',
+      'nfz_kolejki_dni',
+      'sor_odleglosc',
       NIE_WIEM,
     ])
   })
@@ -775,9 +780,9 @@ describe('tematy – pytania złożone (#146)', () => {
   it('atrapy nigdy: ani jako warstwa główna, ani jako dodatek', () => {
     const atrapa = meta('halas_ldwn', 'spokoj', { atrapa: true })
     const lista = listaWarstw([...metas.filter((m) => m.id !== 'halas_ldwn'), atrapa])
-    // halas_ldwn jest atrapą → temat bierze inną warstwę z grupy, nigdy atrapę.
+    // halas_ldwn jest atrapą → temat bierze inną warstwę z grupy (imprezy), nigdy atrapę.
     const w = przetworzWiele(odp('przystanek_odleglosc', 0.9, { halas: 0.9 }), lista, 'x')
-    assert.deepEqual(w?.warstwy, ['przystanek_odleglosc'])
+    assert.deepEqual(w?.warstwy, ['przystanek_odleglosc', 'imprezy_obiekty_dni_500m_2025_26'])
     const o = odpowiedzi({ warstwy: ['sklep_atrapa', 'halas_ldwn'] }, WSKAZNIKI, 0, 'jev')
     assert.deepEqual(
       o.map((x) => (x.rodzaj === 'warstwa' ? x.warstwa : x.rodzaj)),
@@ -1252,5 +1257,96 @@ describe('scalone warstwy Krakowa i obwarzanka', () => {
       .filter((j) => tylkoPoza.has(j))
       .map((j) => `${tylkoK.get(j)?.join('/')} ↔ ${tylkoPoza.get(j)?.join('/')} (${j})`)
     assert.deepEqual(pary, [])
+  })
+})
+
+// Pokrycie warstw przez „Zapytaj o adres”: JEV był budowany na niepełnej bazie, a nowe warstwy
+// dochodziły bez tematu i bez reguły. Strażnik: każda warstwa z danych jest na liście wyboru
+// (nic nie ucina limit opcji), ma regułę słów kluczowych (zapas bez JEV) i temat (dodatek
+// w pytaniu złożonym) – albo stoi w wyjątkach z powodem.
+describe('pokrycie warstw: każda warstwa osiągalna z „Zapytaj o adres”', () => {
+  const metas = metasZDanych().filter((m) => !m.atrapa)
+  const lista = listaWarstw(metasZDanych())
+  const wTematach = new Set(TEMATY.flatMap((t) => t.warstwy))
+  const wRegulach = new Set(REGULY.flatMap((r) => r.warstwy))
+
+  /** Warstwy bez tematu – świadomie. Klucz: id, wartość: dlaczego. */
+  const BEZ_TEMATU: Readonly<Record<string, string>> = {
+    akademik_odleglosc:
+      'temat szkół jest o dzieciach, a warstwy uczelni nie ma – grupy nie z czego złożyć; odpowiada warstwą główną',
+    noclegi_lozka_300m:
+      'łóżka dla turystów to ani hałas, ani wyjście – pytanie o turystów odpowiada warstwą główną',
+    slonce_grudzien_h: 'jedyna warstwa o świetle dziennym – grupy nie z czego złożyć',
+    swiatlo_nocne_viirs:
+      'nocne światło z satelity to nie hałas ani bezpieczeństwo (#177) – osobna rzecz bez grupy',
+  }
+
+  it('lista wyboru JEV ma każdą warstwę bez atrapy – limit opcji (127 + nie_wiem) niczego nie ucina', () => {
+    const naLiscie = new Set(lista.map((p) => p.id))
+    const uciete = metas.map((m) => m.id).filter((id) => !naLiscie.has(id))
+    assert.deepEqual(
+      uciete,
+      [],
+      `poza listą JEV (podnieś MAKS_WARSTW albo limit pośrednika): ${uciete}`,
+    )
+    // Opcje choice: warstwy + nie_wiem, limit pośrednika 128.
+    assert.ok(lista.length + 1 <= 128, `${lista.length + 1} opcji`)
+  })
+
+  it('każda warstwa ma temat albo jest w wyjątkach z powodem', () => {
+    const bez = metas.map((m) => m.id).filter((id) => !wTematach.has(id) && !(id in BEZ_TEMATU))
+    assert.deepEqual(bez, [], `warstwy bez tematu (dopisz do TEMATY albo do wyjątków): ${bez}`)
+  })
+
+  it('wyjątki tematów są aktualne: istnieją w danych i naprawdę nie mają tematu', () => {
+    const ids = new Set(metas.map((m) => m.id))
+    for (const [id, dlaczego] of Object.entries(BEZ_TEMATU)) {
+      assert.ok(ids.has(id), `wyjątek ${id} nie istnieje w danych`)
+      assert.ok(!wTematach.has(id), `${id} ma już temat – usuń wyjątek`)
+      assert.ok(dlaczego.length > 10, id)
+    }
+  })
+
+  it('strażnik coś mierzy: ponad 100 warstw z danych', () => {
+    assert.ok(metas.length > 100, `${metas.length}`)
+  })
+
+  it('nowe reguły: pytanie → warstwa, bez kradzieży starych słów', () => {
+    const PRZYPADKI: [string, string][] = [
+      ['Jak tu głosują?', 'frekwencja_samorzad_2024'],
+      ['Kto tu wygrał wybory, PiS czy KO?', 'sejm2023_lista_4'],
+      ['Jak często jeździ pociąg?', 'kolej_kursy_szczyt_h'],
+      ['Daleko do stacji kolejowej?', 'kolej_odleglosc'],
+      ['Gdzie najbliższy bar?', 'zycie_nocne_300m'],
+      ['Daleko do teatru i kina?', 'kultura_odleglosc'],
+      ['Jest tu siłownia plenerowa?', 'silownia_plenerowa_odleglosc'],
+      ['Jest klub seniora?', 'cas_odleglosc'],
+      ['Czy jest kanalizacja?', 'uzbrojenie_kanalizacja_50m'],
+      ['Ile się płaci za śmieci?', 'gmina_koszty_stale_rok'],
+      ['Gdzie wyrzucić śmieci?', 'recykling_odleglosc'],
+      ['Czy blisko jest szkoła średnia?', 'liceum_odleglosc'],
+      ['Dużo kradzieży?', 'przestepstwa_1000_powiat_2025'],
+      ['Jak tu z zasięgiem?', 'stacje_bazowe_300m'],
+      // Stare słowa bez zmian: „powietrze” to nie przewietrzanie, „głośno” to hałas.
+      ['Jakie powietrze?', 'pm25_srednia'],
+      ['Jak głośno?', 'halas_ldwn'],
+    ]
+    for (const [pytanie, warstwa] of PRZYPADKI)
+      assert.equal(regula(pytanie, lista).warstwa, warstwa, pytanie)
+    // Jedna rzecz – jedna warstwa (bez drugiego obiektu z tematu).
+    assert.deepEqual(regulaWiele('Jest tu siłownia plenerowa?', lista).warstwy, [
+      'silownia_plenerowa_odleglosc',
+    ])
+    assert.deepEqual(regulaWiele('Jest klub seniora?', lista).warstwy, ['cas_odleglosc'])
+  })
+
+  it('każda warstwa ma regułę słów kluczowych – bez klucza JEV też jest osiągalna', () => {
+    const bez = metas.map((m) => m.id).filter((id) => !wRegulach.has(id))
+    assert.deepEqual(bez, [], `warstwy bez reguły w REGULY: ${bez}`)
+  })
+
+  it('każda reguła i temat wskazuje warstwę z danych (bez literówek w id)', () => {
+    const ids = new Set(metas.map((m) => m.id))
+    for (const id of [...wRegulach, ...wTematach]) assert.ok(ids.has(id), id)
   })
 })

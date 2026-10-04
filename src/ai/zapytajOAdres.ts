@@ -171,7 +171,9 @@ export const TEMATY: readonly Temat[] = [
     id: 'halas',
     nazwa: 'hałas',
     twierdzenie: `${O}, czy jest tu głośno albo cicho: hałas ulicy, tramwajów, pociągów, samolotów, spokój w nocy.`,
-    warstwy: ['halas_ldwn'],
+    // Imprezy w obiektach i plenerowe to źródła hałasu – dokładane tylko, gdy reguły je nazwą
+    // („stadion”, „koncert”); domyślnie temat dokłada mapę hałasu, jak dotąd.
+    warstwy: ['halas_ldwn', 'imprezy_obiekty_dni_500m_2025_26', 'imprezy_stale_wpisy_500m_2026'],
     domyslna: 'halas_ldwn',
   },
   {
@@ -195,6 +197,7 @@ export const TEMATY: readonly Temat[] = [
       'bap_srednia',
       'paleniska_200m',
       'przewietrzanie_klasa',
+      'gmina_czyste_powietrze_wnioski_100_domow',
     ],
     domyslna: 'pm25_srednia',
   },
@@ -221,6 +224,8 @@ export const TEMATY: readonly Temat[] = [
       'przyroda_chroniona_odleglosc',
       'rod_odleglosc',
       'woda_odleglosc',
+      // Wybieg dla psów to spacer z psem w zieleni (kryteria „prawda”), a nie weterynarz.
+      'wybieg_psy_odleglosc',
     ],
     domyslna: 'zielen_worldcover_100m',
   },
@@ -254,6 +259,7 @@ export const TEMATY: readonly Temat[] = [
       'bus_mld_odleglosc',
       'bus_mld_kursy_szczyt_h',
       'lotnisko_czas_min',
+      'kolej_punktualnosc',
     ],
     domyslna: 'przystanek_odleglosc',
   },
@@ -268,10 +274,12 @@ export const TEMATY: readonly Temat[] = [
       'liceum_odleglosc',
       'szkola_podst_wynik_e8',
       'plac_zabaw_odleglosc',
+      'szkola_odleglosc',
     ],
     domyslna: 'szkola_podst_odleglosc',
     obiekty: {
       szkola_podst_odleglosc: 'szkola',
+      szkola_odleglosc: 'szkola',
       szkola_podst_wynik_e8: 'szkola',
       przedszkole_odleglosc: 'przedszkole',
       zlobek_odleglosc: 'zlobek',
@@ -289,6 +297,8 @@ export const TEMATY: readonly Temat[] = [
       'przychodnia_bez_barier_odleglosc',
       'apteka_odleglosc',
       'defibrylator_odleglosc',
+      'nfz_kolejki_dni',
+      'sor_odleglosc',
     ],
     domyslna: 'przychodnia_odleglosc',
     obiekty: {
@@ -296,6 +306,8 @@ export const TEMATY: readonly Temat[] = [
       przychodnia_bez_barier_odleglosc: 'przychodnia',
       apteka_odleglosc: 'apteka',
       defibrylator_odleglosc: 'defibrylator',
+      nfz_kolejki_dni: 'specjalista',
+      sor_odleglosc: 'sor',
     },
   },
   {
@@ -319,12 +331,27 @@ export const TEMATY: readonly Temat[] = [
       'biblioteka_1200m',
       'paczkomat_odleglosc',
       'weterynarz_odleglosc',
+      // Usługi z twierdzenia (bankomat, poczta) i pokrewne – dokładane, gdy reguły je nazwą.
+      'bankomat_odleglosc',
+      'poczta_odleglosc',
+      'targowisko_odleglosc',
+      'piekarnia_odleglosc',
+      'fryzjer_odleglosc',
+      'urzad_odleglosc',
+      'recykling_odleglosc',
     ],
     domyslna: 'sklep_odleglosc',
     obiekty: {
       sklep_odleglosc: 'sklep',
       paczkomat_odleglosc: 'paczkomat',
       weterynarz_odleglosc: 'weterynarz',
+      bankomat_odleglosc: 'bankomat',
+      poczta_odleglosc: 'poczta',
+      targowisko_odleglosc: 'targowisko',
+      piekarnia_odleglosc: 'piekarnia',
+      fryzjer_odleglosc: 'fryzjer',
+      urzad_odleglosc: 'urzad',
+      recykling_odleglosc: 'recykling',
     },
   },
   {
@@ -354,6 +381,10 @@ export const TEMATY: readonly Temat[] = [
       'miejscowe_zagrozenia_gmina_2025',
       'pozary_gmina_2025',
       'punkt_schronienia_odleglosc',
+      'przestepstwa_1000_powiat_2025',
+      'wykrywalnosc_powiat_2025',
+      'straz_pozarna_odleglosc',
+      'wypadki_heks',
     ],
     domyslna: 'oswietlenie_100m',
   },
@@ -361,14 +392,28 @@ export const TEMATY: readonly Temat[] = [
     id: 'parkowanie',
     nazwa: 'parkowanie',
     twierdzenie: `${O} czegoś o samochodzie w okolicy: parkowanie, płatna strefa parkowania, parking P+R, wjazd autem do strefy czystego transportu.`,
-    warstwy: ['spp_podstrefa', 'sct_w_strefie', 'pr_odleglosc'],
+    warstwy: [
+      'spp_podstrefa',
+      'sct_w_strefie',
+      'pr_odleglosc',
+      'ladowarka_ev_odleglosc',
+      'dojazd_utwardzony',
+      'drogi_gruntowe_300m',
+    ],
     domyslna: 'spp_podstrefa',
   },
   {
     id: 'rower',
     nazwa: 'rower',
     twierdzenie: `${O}, jak tu jeździć rowerem: drogi i trasy rowerowe albo stojaki, gdzie przypiąć rower.`,
-    warstwy: ['rower_infrastruktura_odleglosc', 'droga_rowerowa_odleglosc', 'stojaki_300m'],
+    warstwy: [
+      'rower_infrastruktura_odleglosc',
+      'droga_rowerowa_odleglosc',
+      'stojaki_300m',
+      'rower_ruch_dobowy',
+      // Wypadki z rowerzystami to bezpieczna jazda – kryteria „bezpieczeństwa” odsyłają ją tutaj.
+      'wypadki_piesi_rowerzysci_heks',
+    ],
     domyslna: 'rower_infrastruktura_odleglosc',
     obiekty: {
       rower_infrastruktura_odleglosc: 'trasa',
@@ -380,7 +425,7 @@ export const TEMATY: readonly Temat[] = [
     id: 'demografia',
     nazwa: 'demografia',
     twierdzenie: `${O}, kto mieszka w okolicy: ilu jest tu ludzi, czy dużo rodzin z dziećmi albo seniorów.`,
-    warstwy: ['ludnosc_1km', 'udzial_0_14', 'udzial_65plus'],
+    warstwy: ['ludnosc_1km', 'udzial_0_14', 'udzial_65plus', 'gestosc_zaludnienia_100m'],
     domyslna: 'ludnosc_1km',
   },
   {
@@ -394,6 +439,7 @@ export const TEMATY: readonly Temat[] = [
       'bo_projekty_1km',
       'przetargi_dzielnica',
       'gmina_inwestycje_pc',
+      'obszar_rewitalizacji',
     ],
     domyslna: 'inwestycje_500m',
   },
@@ -408,8 +454,118 @@ export const TEMATY: readonly Temat[] = [
       'osuwisko_odleglosc',
       'teren_osuwiskowy',
       'osiadanie_mm_rok',
+      // Stacje bazowe to źródło pola elektromagnetycznego – uciążliwość otoczenia jak zakład.
+      'stacje_bazowe_300m',
     ],
     domyslna: 'emitent_odleglosc',
+  },
+  // ── Tematy dla warstw z późniejszych etapów ────────────────────────────────────────────
+  // JEV był budowany na niepełnej bazie: z 126 warstw 57 nie miało tematu, więc w pytaniu
+  // złożonym („jest tu teatr i cicho?”) nie dało się ich dołożyć. Sześć nowych grup to osobne
+  // potrzeby, których nie obejmuje żaden temat wyżej. Na końcu listy: remis noul rozstrzyga
+  // pozycja, więc stare tematy zachowują pierwszeństwo. Każdy temat to jedno pytanie noul
+  // więcej (16 → 22, limit pośrednika 32). Twierdzenia nie są zmierzone na zbiorach (WYNIKI.md)
+  // – fałszywe dodatki trzeba sprawdzić pomiarem, jak w #146–#173.
+  {
+    id: 'sport',
+    nazwa: 'sport i rekreacja',
+    twierdzenie: `${O}, gdzie tu uprawiać sport: obiekty sportowe, boiska, baseny, siłownie plenerowe, kąpieliska.`,
+    warstwy: [
+      'sport_odleglosc',
+      'silownia_plenerowa_odleglosc',
+      'kapielisko_odleglosc',
+      'pitnik_odleglosc',
+    ],
+    domyslna: 'sport_odleglosc',
+    obiekty: {
+      sport_odleglosc: 'obiekt_sportowy',
+      silownia_plenerowa_odleglosc: 'silownia',
+      kapielisko_odleglosc: 'kapielisko',
+      pitnik_odleglosc: 'pitnik',
+    },
+  },
+  {
+    id: 'wyjscia',
+    nazwa: 'kultura i wyjścia',
+    twierdzenie: `${O}, gdzie tu wyjść z domu: kino, teatr, muzeum, zabytki, restauracje, kawiarnie, bary i kluby.`,
+    warstwy: [
+      'kultura_odleglosc',
+      'zabytki_300m',
+      'zabytki_rejestr_500m',
+      'gastronomia_odleglosc',
+      'zycie_nocne_300m',
+    ],
+    domyslna: 'kultura_odleglosc',
+    obiekty: {
+      kultura_odleglosc: 'kultura',
+      zabytki_300m: 'zabytki',
+      zabytki_rejestr_500m: 'zabytki',
+      gastronomia_odleglosc: 'gastronomia',
+      zycie_nocne_300m: 'bary',
+    },
+  },
+  {
+    id: 'dostepnosc',
+    nazwa: 'dla seniora i bez barier',
+    twierdzenie: `${O}, czy okolica jest wygodna dla seniora albo osoby na wózku: ławki, obniżone krawężniki, toalety publiczne, centrum aktywności seniora.`,
+    warstwy: ['lawki_300m', 'obnizone_krawezniki_300m', 'toaleta_woda_odleglosc', 'cas_odleglosc'],
+    domyslna: 'obnizone_krawezniki_300m',
+    obiekty: {
+      lawki_300m: 'lawki',
+      obnizone_krawezniki_300m: 'kraweznik',
+      toaleta_woda_odleglosc: 'toaleta',
+      cas_odleglosc: 'cas',
+    },
+  },
+  {
+    id: 'uzbrojenie',
+    nazwa: 'media przy działce',
+    twierdzenie: `${O}, czy są tu media: prąd, wodociąg, kanalizacja, gaz albo sieć ciepłownicza.`,
+    warstwy: [
+      'uzbrojenie_prad_50m',
+      'uzbrojenie_woda_50m',
+      'uzbrojenie_kanalizacja_50m',
+      'uzbrojenie_gaz_50m',
+      'siec_cieplownicza_odleglosc',
+    ],
+    domyslna: 'uzbrojenie_kanalizacja_50m',
+    obiekty: {
+      uzbrojenie_prad_50m: 'prad',
+      uzbrojenie_woda_50m: 'woda',
+      uzbrojenie_kanalizacja_50m: 'kanalizacja',
+      uzbrojenie_gaz_50m: 'gaz',
+      siec_cieplownicza_odleglosc: 'cieplo',
+    },
+  },
+  {
+    id: 'finanse',
+    nazwa: 'opłaty i finanse gminy',
+    // Bez kryteriów #163 (są tylko przy zmierzonych fałszywych dodatkach) – wykluczenie ceny
+    // mieszkania jednym zdaniem w twierdzeniu, jak przy wykluczeniach z #147.
+    twierdzenie: `${O}, ile kosztuje tu życie i jak zamożna jest gmina: opłaty i podatki lokalne, dług gminy, dochody i zarobki mieszkańców. Cena mieszkania to nie to.`,
+    warstwy: [
+      'gmina_koszty_stale_rok',
+      'gmina_dlug_pc',
+      'gmina_pit_na_mieszkanca',
+      'powiat_wynagrodzenie_brutto',
+    ],
+    domyslna: 'gmina_koszty_stale_rok',
+  },
+  {
+    id: 'wybory',
+    nazwa: 'wybory',
+    twierdzenie: `${O}, jak tu głosują ludzie: wyniki wyborów, poparcie partii, frekwencja.`,
+    warstwy: [
+      'frekwencja_samorzad_2024',
+      'sejm2023_lista_1',
+      'sejm2023_lista_2',
+      'sejm2023_lista_3',
+      'sejm2023_lista_4',
+      'sejm2023_lista_5',
+      'sejm2023_lista_6',
+      'sejm2023_lista_7',
+    ],
+    domyslna: 'frekwencja_samorzad_2024',
   },
 ]
 
@@ -870,7 +1026,34 @@ export const REGULY: readonly {
     warstwy: ['przychodnia_bez_barier_odleglosc'],
     wzorce: [/bez barier/, /dostepn\w* (przychodn|lekarz)/],
   },
+  // Pokrycie JEV: kolej i busy MLD nad ogólnymi kursami – „jak często pociąg” to kursy kolei.
+  {
+    warstwy: ['kolej_punktualnosc'],
+    wzorce: [
+      /(pociag|kolej|skm)\w*.*(punktual|spozni|opozni)|(punktual|spozni|opozni)\w*.*(pociag|kolej|skm)/,
+    ],
+  },
+  {
+    warstwy: ['kolej_kursy_szczyt_h'],
+    wzorce: [
+      /(jak czesto|kurs|rozklad|czestotliw)\w*.*(pociag|kolej|skm)|(pociag|kolej|skm)\w*.*(jak czesto|kursuj|rozklad|czesto)/,
+    ],
+  },
+  {
+    warstwy: ['bus_mld_kursy_szczyt_h'],
+    wzorce: [
+      /(jak czesto|kurs|rozklad)\w*.*(\bbus(y|ow|em)?\b|\bmld\b)|(\bbus(y|ow|em)?\b|\bmld\b).*(jak czesto|kursuj|rozklad|czesto)/,
+    ],
+  },
   { warstwy: ['kursy_szczyt_h'], wzorce: [/jak czesto/, /\bkurs/, /czestotliw/, /szczyt/] },
+  {
+    warstwy: ['kolej_odleglosc'],
+    wzorce: [/pociag/, /kolej/, /\bskm\b/, /\bpkp\b/, /dworz/, /stacj\w* (kolej|pkp)/],
+  },
+  {
+    warstwy: ['bus_mld_odleglosc'],
+    wzorce: [/\bbus(y|ow|em|a)?\b/, /\bmld\b/, /przewoznik/, /prywatn\w* lini/],
+  },
   { warstwy: ['lotnisko_czas_min'], wzorce: [/lotnisk/, /balic/, /samolot/] },
   { warstwy: ['rynek_czas_min'], wzorce: [/\brynek/, /\brynku/, /centrum/, /do miasta/] },
   {
@@ -879,8 +1062,45 @@ export const REGULY: readonly {
   },
   {
     warstwy: ['halas_ldwn'],
-    wzorce: [/glos/, /halas/, /\bcich/, /\bcisz/, /spokojn/, /\bhuk/, /decybel/, /\bdb\b/],
+    // „głos” bez „głosują”, „głosowali”, „głosów” – to wybory, nie hałas (temat `wybory`).
+    wzorce: [/glos(?!uj|ow)/, /halas/, /\bcich/, /\bcisz/, /spokojn/, /\bhuk/, /decybel/, /\bdb\b/],
   },
+  {
+    warstwy: ['imprezy_obiekty_dni_500m_2025_26'],
+    wzorce: [
+      /stadion/,
+      /koncert/,
+      /\bmecz/,
+      /kibic/,
+      /\baren/,
+      /hal\w* (widowisk|sportow)/,
+      /impre\w* masow/,
+    ],
+  },
+  {
+    warstwy: ['imprezy_stale_wpisy_500m_2026'],
+    wzorce: [/festiwal/, /jarmark/, /impre\w* plenerow/],
+  },
+  {
+    warstwy: ['swiatlo_nocne_viirs'],
+    wzorce: [
+      /swiatl\w* w nocy/,
+      /jasno w nocy/,
+      /lun\w* swietln/,
+      /zanieczyszcz\w* swiatl/,
+      /gwiazd/,
+    ],
+  },
+  {
+    warstwy: ['gmina_czyste_powietrze_wnioski_100_domow'],
+    wzorce: [
+      /program\w* czyst/,
+      /wymian\w* (piec|kotl|kopciuch)/,
+      /dotacj\w* (na )?(piec|kotl|ogrzew)/,
+    ],
+  },
+  { warstwy: ['paleniska_200m'], wzorce: [/palenisk/, /kopciuch/, /piec\w* weglow/] },
+  { warstwy: ['przewietrzanie_klasa'], wzorce: [/przewietrz/, /\bwiatr/, /\bwietrz/, /nawiew/] },
   { warstwy: ['pm10_srednia'], wzorce: [/pm ?10/] },
   { warstwy: ['no2_srednia'], wzorce: [/\bno2\b/, /azot/, /spalin/] },
   { warstwy: ['bap_srednia'], wzorce: [/benzo/, /\bbap\b/, /piec(e|ow|uch)/, /wegl/] },
@@ -888,6 +1108,30 @@ export const REGULY: readonly {
     warstwy: ['pm25_srednia', 'pm10_srednia'],
     wzorce: [/powietrz/, /smog/, /\bpyl/, /pm ?2/, /oddych/, /zanieczyszcz/],
   },
+  {
+    warstwy: ['przyroda_chroniona_odleglosc'],
+    wzorce: [
+      /natura 2000/,
+      /rezerwat/,
+      /park\w* krajobraz/,
+      /przyrod\w* chronion/,
+      /obszar\w* chronion/,
+    ],
+  },
+  {
+    warstwy: ['rod_odleglosc'],
+    wzorce: [/ogrod\w* dzialk/, /dzialk\w* (rod|ogrod)/, /\brod\b/],
+  },
+  {
+    warstwy: ['woda_odleglosc'],
+    wzorce: [/(nad|blisko) (rzek|wod|wisl|jezior|staw)/, /\bstaw(y|u|ow)?\b/, /bulwar/],
+  },
+  {
+    // Samo „z psem” to nie wybieg (#150: „z psem do weterynarza” nie dokłada zieleni).
+    warstwy: ['wybieg_psy_odleglosc'],
+    wzorce: [/wybieg/, /psi\w* (park|plac)/],
+  },
+  { warstwy: ['weterynarz_odleglosc'], wzorce: [/weteryn/, /\bweta?\b/, /\bwecie\b/] },
   { warstwy: ['drzewa_100m'], wzorce: [/drzew/] },
   {
     warstwy: ['zielen_worldcover_100m', 'zielen_udzial', 'drzewa_100m'],
@@ -909,11 +1153,41 @@ export const REGULY: readonly {
       /tanio/,
     ],
   },
+  {
+    warstwy: ['gmina_koszty_stale_rok'],
+    wzorce: [/oplat/, /podat/, /koszt\w* (zycia|utrzyman|stal)/, /rachunk/, /za smieci/],
+  },
   { warstwy: ['apteka_odleglosc'], wzorce: [/aptek/, /\bleki\b/, /\blekow\b/, /lekarstw/] },
   { warstwy: ['przedszkole_odleglosc'], wzorce: [/przedszkol/] },
   { warstwy: ['zlobek_odleglosc'], wzorce: [/zlob/] },
+  { warstwy: ['liceum_odleglosc'], wzorce: [/lice(um|a|ow|ach)\b/, /\blo\b/, /szkol\w* sredni/] },
+  {
+    warstwy: ['szkola_odleglosc'],
+    wzorce: [/technikum/, /szkol\w* (ponadpodst|zawod|branzow|muzyczn|artystyczn)/],
+  },
+  {
+    warstwy: ['plac_zabaw_odleglosc'],
+    wzorce: [/plac\w* zabaw/, /hustaw/, /piaskownic/, /zjezdzalni/],
+  },
+  {
+    warstwy: ['akademik_odleglosc'],
+    wzorce: [/akademik/, /dom\w* studenck/],
+  },
   // #147: \b – inaczej „przedszkola” trafiało też szkołę (fałszywa druga warstwa z tematu).
-  { warstwy: ['szkola_podst_odleglosc'], wzorce: [/\bszkol/, /podstawowk/] },
+  // „Szkoła średnia”, „technikum” itd. to warstwy wyżej – bez drugiej warstwy podstawówki.
+  {
+    warstwy: ['szkola_podst_odleglosc'],
+    wzorce: [/\bszkol(?!\w* (sredni|ponadpodst|zawod|branzow|muzyczn|artystyczn))/, /podstawowk/],
+  },
+  {
+    warstwy: ['nfz_kolejki_dni'],
+    wzorce: [/kolejk\w* (do|na)/, /specjalist/, /\bnfz\b/, /czas\w* oczekiw/],
+  },
+  {
+    warstwy: ['sor_odleglosc'],
+    wzorce: [/\bsor\b/, /szpital/, /pogotow/, /ostry dyzur/, /izb\w* przyj/],
+  },
+  { warstwy: ['defibrylator_odleglosc'], wzorce: [/defibryl/, /\baed\b/] },
   { warstwy: ['przychodnia_odleglosc'], wzorce: [/przychodn/, /lekarz/, /\bpoz\b/, /doktor/] },
   {
     warstwy: ['sklep_odleglosc'],
@@ -923,12 +1197,38 @@ export const REGULY: readonly {
     warstwy: ['gastronomia_1200m', 'poczta_1200m', 'biblioteka_1200m'],
     wzorce: [/uslug/, /15 minut/, /wszystko blisko/, /pod reka/],
   },
+  { warstwy: ['paczkomat_odleglosc'], wzorce: [/paczkomat/, /\bpaczk/, /inpost/] },
+  { warstwy: ['poczta_odleglosc', 'poczta_1200m'], wzorce: [/poczt/, /list\w* polecon/] },
+  { warstwy: ['bankomat_odleglosc'], wzorce: [/bankomat/, /gotowk/, /\batm\b/, /wyplacic/] },
+  { warstwy: ['targowisko_odleglosc'], wzorce: [/targowisk/, /\btargu?\b/, /bazar/, /ryneczek/] },
+  { warstwy: ['piekarnia_odleglosc'], wzorce: [/piekarn/, /pieczyw/, /chleb/, /bulk/, /cukierni/] },
+  { warstwy: ['fryzjer_odleglosc'], wzorce: [/fryzjer/, /barber/, /strzyz/, /salon\w* kosmetycz/] },
+  { warstwy: ['urzad_odleglosc'], wzorce: [/urzad/, /ratusz/, /zameldow/, /dowod\w* osobist/] },
+  {
+    warstwy: ['recykling_odleglosc'],
+    wzorce: [/recykl/, /segreg/, /pszok/, /kontener/, /odpad/, /wyrzuci/],
+  },
+  { warstwy: ['toaleta_woda_odleglosc'], wzorce: [/toalet/, /\bwc\b/, /szalet/] },
+  {
+    warstwy: ['pitnik_odleglosc'],
+    wzorce: [/pitnik/, /poidel/, /wod\w* (pitn|do picia)/, /napic/],
+  },
+  { warstwy: ['cas_odleglosc'], wzorce: [/centrum aktywnosci/, /\bcas\b/, /klub\w* senior/] },
   { warstwy: ['lawki_300m'], wzorce: [/lawk/, /usiasc/] },
   { warstwy: ['obnizone_krawezniki_300m'], wzorce: [/kraweznik/, /wozk/, /niepelnospraw/] },
   { warstwy: ['oswietlenie_100m'], wzorce: [/latarn/, /oswietl/, /ciemno/] },
   // #146: tematy rower, bezpieczeństwo i przemysł/grunt nie miały reguł – bez nich zapas
   // nie umiał dołożyć ich warstwy.
+  { warstwy: ['wykrywalnosc_powiat_2025'], wzorce: [/wykryw/, /sprawc/, /skuteczn\w* policj/] },
   { warstwy: ['policja_odleglosc'], wzorce: [/policj/, /komisariat/] },
+  {
+    warstwy: ['wypadki_piesi_rowerzysci_heks'],
+    wzorce: [/potrac/, /wypadk\w*.*(pies|rowerzyst)/, /(pies|rowerzyst)\w*.*wypadk/],
+  },
+  {
+    warstwy: ['rower_ruch_dobowy'],
+    wzorce: [/ilu rowerzyst/, /ruch\w* rower/, /licznik\w* rower/],
+  },
   { warstwy: ['stojaki_300m'], wzorce: [/stojak/, /przypi/] },
   {
     warstwy: ['rower_infrastruktura_odleglosc', 'droga_rowerowa_odleglosc'],
@@ -936,21 +1236,171 @@ export const REGULY: readonly {
     wzorce: [/sciezk/, /\btras/, /rowerem/, /na rowerze/],
     ogolne: [/rower/],
   },
+  { warstwy: ['osiadanie_mm_rok'], wzorce: [/osiada/, /ruch\w* (grunt|teren)/, /zapada/] },
   { warstwy: ['teren_osuwiskowy', 'osuwisko_odleglosc'], wzorce: [/osuw/, /osiada/] },
   { warstwy: ['azbest_budynki_100m'], wzorce: [/azbest/, /eternit/] },
+  {
+    warstwy: ['seveso_odleglosc'],
+    wzorce: [/seveso/, /niebezpieczn\w* (substancj|zaklad)/, /chemiczn/, /wybuch/],
+  },
+  {
+    warstwy: ['emitent_odleglosc'],
+    wzorce: [
+      /zaklad\w* (przemysl|produkc|chemicz)/,
+      /fabryk/,
+      /przemysl/,
+      /komin/,
+      /\bhut[aeyi]?\b/,
+      /emisj/,
+      /\bprtr\b/,
+      /elektrocieplown/,
+    ],
+  },
+  {
+    warstwy: ['stacje_bazowe_300m'],
+    wzorce: [/zasieg/, /\b5g\b/, /\blte\b/, /\bbts\b/, /stacj\w* bazow/, /maszt/, /elektromagnet/],
+  },
   { warstwy: ['sct_w_strefie'], wzorce: [/\bsct\b/, /czystego transportu/, /diesl/] },
+  {
+    warstwy: ['pr_odleglosc'],
+    wzorce: [/\bp r\b/, /park and ride/, /park ride/, /parking\w* przesiadk/],
+  },
+  {
+    warstwy: ['ladowarka_ev_odleglosc'],
+    wzorce: [/ladowar/, /\bev\b/, /elektryk/, /ladowa\w* (auta|auto|samochod)/],
+  },
+  {
+    warstwy: ['dojazd_utwardzony'],
+    wzorce: [/utwardz/, /asfalt/, /droga dojazdow/, /dojazd\w* (do domu|do dzialki)/],
+  },
+  { warstwy: ['drogi_gruntowe_300m'], wzorce: [/gruntow/, /szutr/, /\bblot/] },
   { warstwy: ['spp_podstrefa'], wzorce: [/parkow/, /parkuj/, /parking/, /strefa platn/] },
+  {
+    warstwy: ['gmina_inwestycje_pc'],
+    wzorce: [/inwestycj\w* gmin/, /wydatk\w* gmin/, /gmina inwestuj/],
+  },
+  {
+    warstwy: ['obszar_rewitalizacji'],
+    wzorce: [/rewitaliz/, /odnow\w* (dzielnic|okolic|kamienic)/],
+  },
   { warstwy: ['bo_projekty_1km'], wzorce: [/budzet\w* obywatel/, /projekt\w* (bo|obywatel)/] },
   { warstwy: ['inwestycje_500m'], wzorce: [/budow/, /buduj/, /inwestycj/, /dzwig/, /pozwoleni/] },
+  { warstwy: ['gmina_mpzp_pokrycie_pct'], wzorce: [/pokryci\w* (plan|mpzp)/] },
   { warstwy: ['mpzp_status'], wzorce: [/plan\w* miejscow/, /\bmpzp\b/, /zabudow/] },
   { warstwy: ['punkt_schronienia_odleglosc'], wzorce: [/schron/, /ukryc/] },
   { warstwy: ['przetargi_dzielnica'], wzorce: [/przetarg/, /zamowien/] },
   { warstwy: ['gmina_dlug_pc'], wzorce: [/dlug/, /zadluz/] },
+  {
+    warstwy: ['straz_pozarna_odleglosc'],
+    wzorce: [/straz\w* pozar/, /\bpsp\b/, /\bosp\b/, /remiz/, /jednostk\w* strazy/],
+  },
   { warstwy: ['pozary_gmina_2025'], wzorce: [/pozar/, /ogien/, /strazak/] },
+  {
+    warstwy: ['przestepstwa_1000_powiat_2025'],
+    wzorce: [/przestep/, /kradziez/, /kradn/, /wlaman/, /napad/, /rozbo/],
+  },
+  { warstwy: ['wypadki_heks'], wzorce: [/wypadk/, /kolizj/, /stluczk/] },
   { warstwy: ['miejscowe_zagrozenia_gmina_2025'], wzorce: [/zagrozen/, /wypadk/, /bezpieczn/] },
-  { warstwy: ['udzial_65plus'], wzorce: [/senior/, /emeryt/, /starsz/] },
+  // „Klub seniora”, „centrum aktywności seniora” to miejsce (CAS), nie udział seniorów.
+  {
+    warstwy: ['udzial_65plus'],
+    wzorce: [/(?<!(klub\w*|centrum aktywnosci) )senior/, /emeryt/, /starsz/],
+  },
   { warstwy: ['udzial_0_14'], wzorce: [/dzieci/, /dziecm/, /mlodych rodzin/] },
+  // Trzy wzorce, bo „gęstość zaludnienia” trafia też trzy wzorce liczby mieszkańców niżej.
+  { warstwy: ['gestosc_zaludnienia_100m'], wzorce: [/gest/, /zaludn/, /zaludnien|zaludnion/] },
   { warstwy: ['ludnosc_1km'], wzorce: [/ludn/, /zaludn/, /gest/, /tlum/, /ile osob/, /ilu ludzi/] },
+  // ── Pokrycie JEV: warstwy z późniejszych etapów bez reguły (bez klucza JEV były nieosiągalne) ──
+  {
+    warstwy: ['zycie_nocne_300m'],
+    wzorce: [
+      /\bbar(y|ow|ach)?\b/,
+      /\bpub/,
+      /\bklub(y|ow|ach|ie)?\b(?! (senior|sport|fitness))/,
+      /knajp/,
+      /zycie nocn/,
+      /nocne zycie/,
+      /dyskotek/,
+    ],
+  },
+  {
+    warstwy: ['gastronomia_odleglosc'],
+    wzorce: [/restaurac/, /kawiarn/, /jedzeni/, /zjesc/, /pizz/, /obiad/],
+  },
+  {
+    warstwy: ['kultura_odleglosc'],
+    wzorce: [
+      /kultur/,
+      /teatr/,
+      /muze/,
+      /\bkin(o|a)\b/,
+      /filharmon/,
+      /\boper/,
+      /galeri\w* sztuk/,
+      /wystaw/,
+    ],
+  },
+  { warstwy: ['zabytki_rejestr_500m'], wzorce: [/rejestr\w* zabyt/, /zabyt\w* rejestrow/] },
+  { warstwy: ['zabytki_300m'], wzorce: [/zabyt/, /historyczn/, /kamienic/] },
+  {
+    warstwy: ['noclegi_lozka_300m'],
+    wzorce: [/turyst/, /airbnb/, /hotel/, /hostel/, /nocleg/, /najem krotko/, /na doby/],
+  },
+  {
+    warstwy: ['silownia_plenerowa_odleglosc'],
+    wzorce: [/silowni\w* (plener|zewn|na powietrz|pod chmur)/, /street ?workout/, /drazk/],
+  },
+  {
+    warstwy: ['sport_odleglosc'],
+    // Siłownia plenerowa to warstwa wyżej, nie drugi obiekt sportowy.
+    wzorce: [
+      /sport/,
+      /boisk/,
+      /basen/,
+      /orlik/,
+      /\bkort/,
+      /silowni(?!\w* (plener|zewn|na powietrz|pod chmur))/,
+    ],
+  },
+  { warstwy: ['kapielisko_odleglosc'], wzorce: [/kapiel/, /plaz[aye]?\b/, /poplywac/] },
+  { warstwy: ['slonce_grudzien_h'], wzorce: [/slonc/, /naslonecz/, /swiatl\w* dzienn/] },
+  { warstwy: ['uzbrojenie_prad_50m'], wzorce: [/\bprad/, /energi\w* elektryczn/] },
+  {
+    warstwy: ['uzbrojenie_woda_50m'],
+    wzorce: [/wodociag/, /\bwod\w* z sieci/, /wod\w* miejsk/, /przylacz\w* wod/],
+  },
+  { warstwy: ['uzbrojenie_kanalizacja_50m'], wzorce: [/kanaliz/, /szamb/, /sciek/] },
+  { warstwy: ['uzbrojenie_gaz_50m'], wzorce: [/\bgaz(u|em|owy|owa|owe|ociag)?\b/] },
+  {
+    warstwy: ['siec_cieplownicza_odleglosc'],
+    wzorce: [/\bcieplown/, /siec\w* ciepl/, /\bmpec\b/, /ogrzewani\w* (miejsk|sieciow|z sieci)/],
+  },
+  {
+    warstwy: ['gmina_pit_na_mieszkanca'],
+    wzorce: [/\bpit\b/, /dochod\w* gmin/, /zamozn/, /bogat/, /biedn/],
+  },
+  {
+    warstwy: ['powiat_wynagrodzenie_brutto'],
+    wzorce: [/zarab/, /zarob/, /wynagrodz/, /pensj/, /pensi/],
+  },
+  // Partie przed frekwencją: „kto wygrał wybory, PiS czy KO” – przy remisie wygrywa partia.
+  {
+    warstwy: ['sejm2023_lista_4'],
+    wzorce: [/\bpis\b/, /prawo i sprawiedliw/, /prawa i sprawiedliw/],
+  },
+  {
+    warstwy: ['sejm2023_lista_6'],
+    wzorce: [/koalicj\w* obywatel/, /platform\w* obywatel/, /\bko\b/],
+  },
+  { warstwy: ['sejm2023_lista_3'], wzorce: [/lewic/] },
+  { warstwy: ['sejm2023_lista_2'], wzorce: [/trzeci\w* drog/, /holown/, /\bpsl\b/, /polska 2050/] },
+  { warstwy: ['sejm2023_lista_5'], wzorce: [/konfederac/, /mentzen/] },
+  { warstwy: ['sejm2023_lista_1'], wzorce: [/bezpartyjn/] },
+  { warstwy: ['sejm2023_lista_7'], wzorce: [/polska jest jedna/] },
+  {
+    warstwy: ['frekwencja_samorzad_2024'],
+    wzorce: [/frekwencj/, /na wybory/, /glosuj/, /glosowal/, /wybor(y|ach|ow)\b/],
+  },
 ]
 
 /** Przykładowe pytania na „nie wiem” – pokazujemy tylko te, których warstwa jest na liście. */
