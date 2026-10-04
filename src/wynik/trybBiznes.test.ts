@@ -10,7 +10,7 @@ import {
   zapiszPreferencje,
 } from './sesja.ts'
 import { przygotujWskaznik, wynikAdresu } from './silnik.ts'
-import { pobierzStan, podlaczDane, ustawFiltr, ustawTryb, ustawWage } from './stan.ts'
+import { pobierzStan, podlaczDane, przejdz, ustawFiltr, ustawWage } from './stan.ts'
 import { czytajHash } from './url.ts'
 
 test('preferencje sklepu są osobne od ustawień mieszkaniowych podczas przełączania trybów', () => {
@@ -25,16 +25,16 @@ test('preferencje sklepu są osobne od ustawień mieszkaniowych podczas przełą
   )
   ustawWage('halas_ldwn', 4)
   ustawFiltr({ id: 'halas_ldwn', warunek: 'max', prog: 55 })
-  ustawTryb('biznes')
+  przejdz('biznes')
   assert.equal(pobierzStan().wagi.halas_ldwn, 0)
   assert.equal(pobierzStan().wagi.sklep_odleglosc, 4)
   assert.equal(pobierzStan().wagi.ludnosc_1km, 4)
   assert.deepEqual(pobierzStan().filtry, [])
   ustawWage('sklep_odleglosc', 2)
-  ustawTryb('kupuje')
+  przejdz('szukaj')
   assert.equal(pobierzStan().wagi.halas_ldwn, 4)
   assert.equal(pobierzStan().filtry.length, 0)
-  ustawTryb('biznes')
+  przejdz('biznes')
   assert.equal(pobierzStan().wagi.sklep_odleglosc, 2)
   assert.deepEqual(pobierzStan().filtry, [])
 })
