@@ -7,7 +7,9 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 export const KORZEN = join(dirname(fileURLToPath(import.meta.url)), '..', '..')
-export const DANE = join(KORZEN, 'public', 'dane')
+// ADRESCORE_MIASTO=<slug> przełącza cały ETL na public/dane/miasta/<slug> (adresy.json tego miasta).
+export const MIASTO = process.env.ADRESCORE_MIASTO || null
+export const DANE = join(KORZEN, 'public', 'dane', ...(MIASTO ? ['miasta', MIASTO] : []))
 export const CACHE = join(KORZEN, 'etl', '.cache')
 const KATEGORIE = [
   'codziennosc',
