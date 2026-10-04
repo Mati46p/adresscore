@@ -511,14 +511,25 @@ export function ocenMiejsce(
 
 // ── Białe plamy ──────────────────────────────────────────────────────────────────────────
 
+const adresyWZasiegu = new WeakMap<IndeksKomorek, Map<number, Float64Array>>()
+
 /**
- * Per heks r10: adresy w zasięgu, punkty w zasięgu i najbliższy konkurent. Adresy w zasięgu to
- * suma po heksach w promieniu branży (z samym heksem), czyli te same adresy, które liczy ocena.
+ * Adresy w zasięgu każdego heksu: suma po heksach w promieniu (z samym heksem), czyli te same
+ * adresy, które liczy ocena miejsca. Zależy wyłącznie od heksów popytu i promienia, nie od punktów
+ * branży ani od filtrów, więc liczy się raz na parę (heksy, promień). To najdroższa część białych
+ * plam (ok. 50 ms przy 500 m, ok. 370 ms przy 2000 m), a zmiana filtra albo branży o tym samym
+ * zasięgu powtarzałaby ją na próżno. Zwracana tablica jest wspólna: wołający tylko ją czytają.
  */
-export function bialePlamyZIndeksu(indeks: IndeksBiznesu): BialaPlama[] {
-  const { komorki, promien } = indeks
+export function adresyWZasieguHeksow(komorki: IndeksKomorek, promien: number): Float64Array {
+  let poPromieniu = adresyWZasiegu.get(komorki)
+  if (!poPromieniu) {
+    poPromieniu = new Map()
+    adresyWZasiegu.set(komorki, poPromieniu)
+  }
+  const znane = poPromieniu.get(promien)
+  if (znane) return znane
+  const wynik = new Float64Array(komorki.n)
   const sasiedzi = new Wyniki()
-  const surowe: BialaPlama[] = []
   for (let i = 0; i < komorki.n; i++) {
     wPromieniu(
       komorki.siatka,
@@ -529,9 +540,24 @@ export function bialePlamyZIndeksu(indeks: IndeksBiznesu): BialaPlama[] {
       promien,
       sasiedzi,
     )
-    let adresyWZasiegu = 0
-    for (let t = 0; t < sasiedzi.n; t++)
-      adresyWZasiegu += komorki.adresy[sasiedzi.idx[t] as number] as number
+    let suma = 0
+    for (let t = 0; t < sasiedzi.n; t++) suma += komorki.adresy[sasiedzi.idx[t] as number] as number
+    wynik[i] = suma
+  }
+  poPromieniu.set(promien, wynik)
+  return wynik
+}
+
+/**
+ * Per heks r10: adresy w zasięgu, punkty w zasięgu i najbliższy konkurent. Adresy w zasięgu to
+ * suma po heksach w promieniu branży (z samym heksem), czyli te same adresy, które liczy ocena.
+ */
+export function bialePlamyZIndeksu(indeks: IndeksBiznesu): BialaPlama[] {
+  const { komorki, promien } = indeks
+  const adresyWPromieniu = adresyWZasieguHeksow(komorki, promien)
+  const surowe: BialaPlama[] = []
+  for (let i = 0; i < komorki.n; i++) {
+    const adresyWZasiegu = adresyWPromieniu[i] as number
     const k = indeks.punktowWZasiegu[i] as number
     const najblizszy = indeks.najblizszyPunkt[i] as number
     surowe.push({

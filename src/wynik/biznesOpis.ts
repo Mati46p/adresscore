@@ -1,27 +1,10 @@
 // Teksty trybu „Biznes” jako czyste funkcje (#106, #107): zdanie o pozycji, dymek heksu, źródła.
 // Osobno od silnika (`biznes.ts`), żeby ekran nie składał zdań w komponencie – tu da się je testować.
 import { type BialaPlama, bezPunktu, odmiana } from './biznes.ts'
+import { branzaWDopelniaczu } from './biznesBranze.ts'
+import type { BranzaKatalogu, KatalogUslug, ZrodloKatalogu } from './biznesUslugi.ts'
 
 const LICZBA = new Intl.NumberFormat('pl-PL', { maximumFractionDigits: 0 })
-
-/**
- * Nazwa branży w dopełniaczu liczby mnogiej („istniejących aptek”). Katalog zna tylko mianownik
- * („Apteka”), więc odmiana jest tutaj; nowa branża bez wpisu dostaje bezpieczne „punktów tej
- * branży”, a test pilnuje, żeby żadna branża z katalogu nie spadła na ten zapas.
- */
-const BRANZE_W_DOPELNIACZU: Readonly<Record<string, string>> = {
-  sklep: 'sklepów spożywczych',
-  apteka: 'aptek',
-  fryzjer: 'fryzjerów lub barberów',
-  piekarnia: 'piekarni',
-  kawiarnia: 'kawiarni',
-  przychodnia: 'przychodni lub gabinetów',
-  paczkomat: 'automatów paczkowych',
-}
-
-export function branzaWDopelniaczu(id: string): string {
-  return BRANZE_W_DOPELNIACZU[id] ?? 'punktów tej branży'
-}
 
 export interface ZdaniePozycji {
   przed: string
@@ -34,12 +17,18 @@ export interface ZdaniePozycji {
 /**
  * Główna liczba karty miejsca: pozycja wśród istniejących punktów branży, z kierunkiem
  * wypisanym słowami („więcej … niż”). Percentyl bez znaku %, bo procent myli się z udziałem.
+ * `konkurencja` to dopełniacz mnogi tego, z czym porównano (domyślnie cała branża); przy filtrze
+ * flagowym podaje go `konkurencjaWDopelniaczu`, np. „restauracji bez fast foodów”.
  */
-export function zdaniePozycji(percentyl: number, branzaId: string): ZdaniePozycji {
+export function zdaniePozycji(
+  percentyl: number,
+  branzaId: string,
+  konkurencja: string = branzaWDopelniaczu(branzaId),
+): ZdaniePozycji {
   const naDziesiec = Math.min(10, Math.max(0, Math.round(percentyl / 10)))
   const przed = 'Więcej klientów w zasięgu niż'
   const liczba = `${naDziesiec} na 10`
-  const po = `istniejących ${branzaWDopelniaczu(branzaId)}`
+  const po = `istniejących ${konkurencja}`
   return { przed, liczba, po, pelny: `${przed} ${liczba} ${po}` }
 }
 
@@ -105,26 +94,55 @@ const POLPAUZA = String.fromCodePoint(0x2013)
 /** Pauza z nazw źródeł z ETL (np. „MSIP … punkty adresowe”) wraca jako półpauza. */
 export const bezPauzy = (tekst: string): string => tekst.replaceAll(PAUZA, POLPAUZA)
 
-export interface MetaPunktow {
-  zrodlo?: string
-  licencja?: string
-  dataDanych?: string
-}
+/**
+ * Strona praw OpenStreetMap. ODbL wymaga atrybucji „© OpenStreetMap contributors” z odnośnikiem
+ * do niej, więc wpis OSM prowadzi tutaj, a nie do strony ekstraktu Geofabrik.
+ */
+export const URL_PRAW_OSM = 'https://www.openstreetmap.org/copyright'
 
 /**
- * Atrybucja punktów usług: OpenStreetMap wymaga nazwy źródła z odnośnikiem do strony o prawach
- * (ODbL). Działa też przed wczytaniem pliku branży (`meta` = null): wtedy bez daty wyciągu.
+ * Wpis jednego źródła z `katalog.json` (`zrodla.<klucz>`): nazwa to gotowa atrybucja ze źródła
+ * („© OpenStreetMap contributors, ODbL”, „Centrum e-Zdrowia, RPWDL (CC BY 4.0)”), a w opisie
+ * licencja i data danych. Źródło, którego katalog nie opisuje, i tak trafia na listę (z kluczem
+ * zamiast nazwy): cicho zgubiona atrybucja byłaby gorsza niż brzydki wpis.
  */
-export function wpisZrodlaPunktow(meta: MetaPunktow | null): WpisZrodla {
+export function wpisZrodlaKatalogu(klucz: string, zrodlo: ZrodloKatalogu | undefined): WpisZrodla {
+  if (!zrodlo) return { nazwa: klucz, url: null, opis: 'brak opisu źródła w katalogu' }
   return {
-    nazwa: bezPauzy(meta?.zrodlo ?? '© OpenStreetMap contributors'),
-    url: 'https://www.openstreetmap.org/copyright',
+    nazwa: bezPauzy(zrodlo.atrybucja),
+    url: klucz === 'osm' ? URL_PRAW_OSM : zrodlo.url,
     opis: bezPauzy(
-      [`licencja ${meta?.licencja ?? 'ODbL 1.0'}`, meta?.dataDanych && `dane z ${meta.dataDanych}`]
+      [zrodlo.licencja, zrodlo.dataDanych ? `dane z ${zrodlo.dataDanych}` : undefined]
         .filter(Boolean)
         .join('; '),
     ),
   }
+}
+
+/**
+ * Klucze źródeł z `katalog.zrodla`, z których pochodzą punkty branży i jej flagi, w kolejności
+ * OSM, Overture, rejestr, dalej flagi z osobnych źródeł (NFZ). Bit `rejestr` znaczy rejestr
+ * właściwy dla branży (`mapowanie.rejestr`: Rejestr Aptek albo RPWDL). Tylko te, które branża ma:
+ * apteka nie pokazuje RPWDL, sklep nie pokazuje rejestrów.
+ */
+export function kluczeZrodelBranzy(
+  branza: Pick<BranzaKatalogu, 'zrodlaWPliku' | 'mapowanie'>,
+): string[] {
+  const klucze: string[] = []
+  const dodaj = (klucz: string | null | undefined) => {
+    if (klucz && !klucze.includes(klucz)) klucze.push(klucz)
+  }
+  for (const bit of branza.zrodlaWPliku) dodaj(bit === 'rejestr' ? branza.mapowanie.rejestr : bit)
+  for (const flaga of Object.values(branza.mapowanie.flagi)) dodaj(flaga.zrodlo)
+  return klucze
+}
+
+/** Atrybucja punktów wybranej branży: licencje i daty tylko jej źródeł, bez popytu (ten ma osobne wpisy). */
+export function wpisyZrodelBranzy(
+  katalog: Pick<KatalogUslug, 'zrodla'>,
+  branza: Pick<BranzaKatalogu, 'zrodlaWPliku' | 'mapowanie'>,
+): WpisZrodla[] {
+  return kluczeZrodelBranzy(branza).map((klucz) => wpisZrodlaKatalogu(klucz, katalog.zrodla[klucz]))
 }
 
 /** Wszystkie źródła popytu z `popyt.json.zrodla`, gotowe do wypisania pod mapą. */
