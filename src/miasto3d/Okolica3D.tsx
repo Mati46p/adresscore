@@ -54,6 +54,19 @@ const SWIATLO_STALE = new LightingEffect({
   }),
 })
 
+/**
+ * SunLight liczy kierunek dopiero przy rysowaniu warstw, a mapa cieni powstaje wcześniej –
+ * w pierwszej klatce po zmianie godziny cień szedł z kierunku domyślnego i znikał do ruchu
+ * kamery. Kierunek ustawiamy od razu (dla Krakowa; przy rysowaniu deck poprawi go do kadru).
+ */
+function slonce(opcje: ConstructorParameters<typeof SunLight>[0]): SunLight {
+  const s = new SunLight(opcje)
+  s.getProjectedLight({
+    layer: { context: { viewport: { latitude: 50.06, longitude: 19.94 } } },
+  } as unknown as Parameters<SunLight['getProjectedLight']>[0])
+  return s
+}
+
 /** Światło od słońca o wybranej chwili; w nocy przygaszone, chłodne. */
 export function efektSwiatla(s: Swiatlo | null): LightingEffect {
   if (!s) return SWIATLO_STALE
@@ -64,7 +77,7 @@ export function efektSwiatla(s: Swiatlo | null): LightingEffect {
     const poludnie = s.znacznik - (s.znacznik % 86_400_000) + 11 * 3_600_000
     const noc = new LightingEffect({
       otoczenie: new AmbientLight({ color: [200, 210, 235], intensity: 1.0 }),
-      slonce: new SunLight({
+      slonce: slonce({
         timestamp: poludnie,
         color: [170, 185, 220],
         intensity: 0.5,
@@ -76,7 +89,7 @@ export function efektSwiatla(s: Swiatlo | null): LightingEffect {
   }
   const efekt = new LightingEffect({
     otoczenie: new AmbientLight({ color: [255, 255, 255], intensity: 1.2 }),
-    slonce: new SunLight({
+    slonce: slonce({
       timestamp: s.znacznik,
       color: [255, 250, 235],
       intensity: 1.35,
@@ -339,18 +352,7 @@ function Scena({
     const efekt = efektSwiatla(
       zSlonca && znacznik !== undefined ? { znacznik, cien, noc: noc === true } : null,
     )
-    const nakladka = nakladkaRef.current
-    nakladka?.setProps({ effects: [efekt] })
-    // Nowy efekt rysuje mapę cieni dopiero w pierwszej klatce, a ta klatka wychodzi bez cienia.
-    // Deck sam drugiej nie zleca (kamera stoi), więc cień wracał dopiero po ruchu mapą.
-    // Wymuszamy dwie kolejne klatki.
-    const deck = (nakladka as unknown as { _deck?: { redraw: (powod?: string) => void } } | null)
-      ?._deck
-    let klatka = requestAnimationFrame(() => {
-      deck?.redraw('swiatlo')
-      klatka = requestAnimationFrame(() => deck?.redraw('swiatlo'))
-    })
-    return () => cancelAnimationFrame(klatka)
+    nakladkaRef.current?.setProps({ effects: [efekt] })
   }, [zSlonca, znacznik, cien, noc])
 
   return (
