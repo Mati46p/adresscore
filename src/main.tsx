@@ -12,6 +12,19 @@ createRoot(root).render(
   </StrictMode>,
 )
 
+// Karta otwarta przed deployem trzyma stary index, a chunki starego builda już nie istnieją (404).
+// Jedno przeładowanie pobiera świeży index; znacznik w sessionStorage chroni przed pętlą.
+window.addEventListener('vite:preloadError', (e) => {
+  try {
+    const teraz = Date.now()
+    const ostatnio = Number(sessionStorage.getItem('przeladowanie-po-deployu') ?? 0)
+    if (teraz - ostatnio < 10_000) return
+    sessionStorage.setItem('przeladowanie-po-deployu', String(teraz))
+  } catch {}
+  e.preventDefault()
+  window.location.reload()
+})
+
 // Tryb offline demo (#100): po jednym otwarciu online aplikacja i mapa działają bez sieci.
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {
