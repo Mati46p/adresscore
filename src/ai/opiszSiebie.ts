@@ -19,6 +19,7 @@ import {
   type KryteriaTakNie,
   type OdpowiedzJev,
   type OpcjeKlienta,
+  type OpisOpcji,
   ocena,
   takNie,
   type WynikZZapasem,
@@ -268,6 +269,7 @@ export const POTRZEBY: readonly Potrzeba[] = [
     etykieta: 'pies',
     twierdzenie: 'Osoba ma psa albo chce go mieć.',
     wzorce: [{ re: /\b(pies|psa|psem|psy|psiak|piesk|psiny)\b/ }],
+    persona: 'psiarz',
     kategorie: { spokoj: 3 },
     // #177: wybieg i weterynarz służą wprost psu. Obie warstwy są neutralne (bez kierunku nie
     // liczą się), więc potrzeba nadaje „mniej = lepiej”. OSM ich nie zna wszędzie – waga 3.
@@ -291,18 +293,23 @@ export const POTRZEBY: readonly Potrzeba[] = [
     kategorie: { spokoj: 4 },
     // #177: las, park krajobrazowy, Natura 2000 (2) i drzewa przy ulicy (2; tylko Kraków,
     // ewidencja ZZM niepełna). Ogródki działkowe (ROD) nie – to nie zieleń dla wszystkich.
+    // Pokrycie JEV: woda powierzchniowa (1) – brzeg rzeki albo stawu na spacer; lekko, bo
+    // liczy też potoki i małe stawy, a sama bliskość wody to nie park.
     wskazniki: {
       zielen_udzial: 4,
       zielen_worldcover_100m: 4,
       przyroda_chroniona_odleglosc: 2,
       drzewa_100m: 2,
+      woda_odleglosc: 1,
     },
   },
   {
     id: 'powietrze',
     etykieta: 'czyste powietrze',
     twierdzenie: 'Dla osoby ważne jest czyste powietrze (smog, astma, alergia).',
-    wzorce: [{ re: /\b(smog|powietrz|astm|alergi|zanieczyszcz|pylow|pyly)/ }],
+    // Astma i alergia przeszły do potrzeby `alergia` (profil Alergik): choroba to KIM osoba
+    // jest, a „czyste powietrze” chce też ktoś zdrowy. Twierdzenie dla JEV bez zmian.
+    wzorce: [{ re: /\b(smog|powietrz|zanieczyszcz|pylow|pyly)/ }],
     kategorie: { spokoj: 4 },
     // #177: paleniska węglowe w 200 m (3, tylko Kraków) i przewietrzanie (2, model 2016).
     // Zakład z rejestru PRTR (2): to lista zakładów, nie pomiar emisji. Bez wniosków „Czyste
@@ -322,16 +329,20 @@ export const POTRZEBY: readonly Potrzeba[] = [
     etykieta: 'rower',
     twierdzenie: 'Osoba jeździ na co dzień rowerem albo hulajnogą.',
     wzorce: [{ re: /\b(rower|hulajnog)/ }],
+    persona: 'rowerzysta',
     kategorie: { codziennosc: 3 },
     // #177: są już warstwy rowerowe – najbliższa droga dla rowerów (4) i stojaki (3). Główne
     // trasy metropolii (2, neutralna, więc z kierunkiem) to tylko 448 km tras, nie cała sieć.
     // Z dawnego zastępstwa („krótkie dystanse do usług”) zostaje sklep (2); gastronomia
     // i poczta w 1,2 km (0/1, prawie wszędzie 1) odpadają. Bez ruchu z liczników (17 sztuk).
+    // Pokrycie JEV: wypadki z pieszymi i rowerzystami w heksie (2) – bezpieczna jazda po
+    // okolicy; heks, nie trasa, więc nie więcej niż infrastruktura.
     wskazniki: {
       rower_infrastruktura_odleglosc: 4,
       stojaki_300m: 3,
       droga_rowerowa_odleglosc: 2,
       sklep_odleglosc: 2,
+      wypadki_piesi_rowerzysci_heks: 2,
     },
     kierunki: { droga_rowerowa_odleglosc: 'mniej-lepiej' },
   },
@@ -360,6 +371,7 @@ export const POTRZEBY: readonly Potrzeba[] = [
     kategorie: { transport: 4, codziennosc: 3 },
     // #177: czas komunikacją do Rynku (3) to dojazd bez auta. Kolej (2 + 2) i busy MLD (1) to
     // druga sieć, ważna głównie poza Krakowem; kursy z najbliższego przystanku ZTP zostają główne.
+    // Pokrycie JEV: odległość do przystanku busa MLD (1) obok kursów – ta sama druga sieć.
     wskazniki: {
       przystanek_odleglosc: 4,
       kursy_szczyt_h: 4,
@@ -367,6 +379,7 @@ export const POTRZEBY: readonly Potrzeba[] = [
       kolej_odleglosc: 2,
       kolej_kursy_szczyt_h: 2,
       bus_mld_kursy_szczyt_h: 1,
+      bus_mld_odleglosc: 1,
       sklep_odleglosc: 3,
     },
   },
@@ -482,11 +495,14 @@ export const POTRZEBY: readonly Potrzeba[] = [
     // „bezpiecznie wieczorem”, choć mapa latarni jest niepełna. Policja (1): dostępność, nie
     // przestępczość. Bez przestępstw i wykrywalności na powiat: jedna liczba dla całego
     // Krakowa – opis warstwy mówi wprost, że to informacja, nie ocena adresu.
+    // Pokrycie JEV: wypadki drogowe w heksie (2) – ryzyko pod adresem, w odróżnieniu od
+    // liczb na powiat ma rozdzielczość heksu.
     wskazniki: {
       powodz_10proc: 4,
       teren_osuwiskowy: 3,
       seveso_odleglosc: 2,
       oswietlenie_100m: 2,
+      wypadki_heks: 2,
       policja_odleglosc: 1,
     },
   },
@@ -500,14 +516,17 @@ export const POTRZEBY: readonly Potrzeba[] = [
     kategorie: { spolecznosc: 4 },
     // #177: bez zmian. Kierunku pozwoleń nie nadajemy: Inwestor ma „więcej = lepiej” w profilu,
     // a Rodzina „mniej = lepiej” (budowa obok) – o tym rozstrzyga profil, nie potrzeba.
-    wskazniki: { inwestycje_500m: 4, bo_projekty_1km: 3 },
+    // Pokrycie JEV: obszar rewitalizacji (2) – publiczne pieniądze na odnowę okolicy, czyli
+    // przyszły wzrost wartości; profil Inwestor tej warstwy nie liczy.
+    wskazniki: { inwestycje_500m: 4, bo_projekty_1km: 3, obszar_rewitalizacji: 2 },
   },
   {
     id: 'singiel',
     etykieta: 'mieszkam sam',
     wzorce: [
       {
-        re: /\b(singiel|singielk|student|studentk|studiuj|mieszkam sam|sam mieszkam|sama mieszkam)/,
+        // Bez „student”, „studiuję”: od profilu Student słowa studiów niesie potrzeba `student`.
+        re: /\b(singiel|singielk|mieszkam sam|sam mieszkam|sama mieszkam)/,
       },
     ],
     persona: 'singiel',
@@ -540,6 +559,92 @@ export const POTRZEBY: readonly Potrzeba[] = [
     kategorie: { spolecznosc: 3 },
     wskazniki: { frekwencja_samorzad_2024: 3 },
   },
+  // ── Profile spoza zbiorów pomiarowych: tylko z reguł ─────────────────────────────────────
+  // Cztery profile z `persony.ts` (Alergik, Miłośnik kultury, Budowa domu, Bezpieczeństwo)
+  // nie mają potrzeby z twierdzeniem, więc bez nich reguły zapasowe nigdy ich nie dawały.
+  // Bez twierdzeń dla JEV: zapytanie zostaje przy 29 pytaniach, a po stronie JEV profil
+  // wybiera pytanie o profil (#155: słowa liczą się pod progiem tylko przy zgodnym wyborze).
+  // Przed blokiem #183, bo test pilnuje, że sześć potrzeb #183 zamyka tabelę.
+  {
+    id: 'alergia',
+    etykieta: 'astma, alergia',
+    wzorce: [
+      {
+        re: /\b(astm|alergi|alergik|uczulen|uczulon|pylk|chor\w* pluc|pochp|bezdech|duszno)/,
+      },
+    ],
+    persona: 'alergik',
+    kategorie: { spokoj: 4 },
+    // Te same warstwy powietrza co `powietrze`, a do tego azbest w budynkach w 100 m (2) –
+    // włókna szkodzą płucom. Przychodnię niesie profil Alergik.
+    wskazniki: {
+      pm25_srednia: 4,
+      pm10_srednia: 4,
+      no2_srednia: 3,
+      bap_srednia: 3,
+      paleniska_200m: 3,
+      przewietrzanie_klasa: 3,
+      emitent_odleglosc: 3,
+      azbest_budynki_100m: 2,
+    },
+  },
+  {
+    id: 'kultura',
+    etykieta: 'kultura',
+    wzorce: [
+      {
+        // „Galeria” sama to też centrum handlowe – tylko galeria sztuki. Koncert w odmowie
+        // („nie chcę koncertów pod oknem”) wycina wcześniej `NA_NIE` (imprezy).
+        re: /\b(teatr|muze(um|a|ow|ach|ami)?\b|filharmoni|oper[aey]\b|galeri\w* sztuk|wystaw|kino\b|kina\b|kin\b|koncert|zabytk|kultur)/,
+      },
+    ],
+    persona: 'kultura',
+    kategorie: { codziennosc: 3 },
+    wskazniki: {
+      kultura_odleglosc: 4,
+      zabytki_300m: 2,
+      zabytki_rejestr_500m: 2,
+      biblioteka_1200m: 2,
+    },
+  },
+  {
+    id: 'budowa_domu',
+    etykieta: 'budowa domu',
+    wzorce: [
+      {
+        // „Działka” bez ROD i ogródka działkowego („dzialkowy” nie pasuje do dzialk[eiay]?\b).
+        re: /\b(budow\w* (dom|domu|wlasn)|(zbudowac|wybudowac|postawic|budujemy|buduje) dom|dzialk[eiay]?\b(?! (rod|ogrod))|uzbrojen|uzbrojon)/,
+      },
+    ],
+    persona: 'budowa-domu',
+    kategorie: { bezpieczenstwo: 3 },
+    // Media przy działce (prąd i woda 4, kanalizacja 3, gaz 2), dojazd drogą utwardzoną (3),
+    // plan miejscowy (3) i ryzyka gruntu: osuwisko (3), osiadanie (2).
+    wskazniki: {
+      uzbrojenie_prad_50m: 4,
+      uzbrojenie_woda_50m: 4,
+      uzbrojenie_kanalizacja_50m: 3,
+      uzbrojenie_gaz_50m: 2,
+      dojazd_utwardzony: 3,
+      mpzp_status: 3,
+      teren_osuwiskowy: 3,
+      osiadanie_mm_rok: 2,
+    },
+  },
+  {
+    id: 'przestepczosc',
+    etykieta: 'mało przestępstw',
+    wzorce: [
+      {
+        re: /\b(przestep|kradziez|kradna|wlaman|wlamuj|napad|chuligan|bandyt|(nie)?bezpieczn\w* (okolic|dzielnic|osiedl|ulic)|po zmroku|monitoring)/,
+      },
+    ],
+    persona: 'bezpieczenstwo',
+    kategorie: { bezpieczenstwo: 4 },
+    // Latarnie (3) i policja (2) – jak w `bezpieczenstwo`, mocniej. Przestępstw na powiat nie
+    // dajemy z tego samego powodu (jedna liczba dla całego Krakowa); niesie je profil.
+    wskazniki: { oswietlenie_100m: 3, policja_odleglosc: 2 },
+  },
   // ── #183: sześć nowych potrzeb (id ze słownika zbioru nr 8) ──────────────────────────────
   // Na końcu tabeli: kolejność pytań do JEV dla starych potrzeb się nie zmienia, a przy dwóch
   // potrzebach z przeciwnym kierunkiem tej samej warstwy wygrywa wcześniejsza (`cisza` przed
@@ -571,6 +676,7 @@ export const POTRZEBY: readonly Potrzeba[] = [
         re: /\b((?<!stac mnie na )(samochod\w*|auto|autem|auta|autko)\b(?! (nie|mnie nie|juz nie|sprzedal))|parking|parkowan|parkowac|zaparkow|miejsc\w* postojow|garaz)/,
       },
     ],
+    persona: 'kierowca',
     kategorie: { transport: 3 },
     // Dojazd drogą utwardzoną (3) i mało dróg gruntowych w 300 m (2): auto pod dom bez błota.
     // Poza strefą płatnego parkowania (1, neutralna – z kierunkiem „0 = lepiej”): w SPP postój
@@ -647,11 +753,13 @@ export const POTRZEBY: readonly Potrzeba[] = [
         re: /\b((?<!pracowal\w* )zdaln|home office|homeoffice|remote|freelanc|prac\w* hybryd|hybrydow\w* (prac|tryb|model)|w hybrydzie|prac\w* z domu|prac\w* w domu|z domu prac\w*)/,
       },
     ],
+    persona: 'zdalny',
     kategorie: { spokoj: 3 },
     // Cały dzień w domu: hałas za dnia (3), zieleń na przerwę (2 + 2), słońce w grudniu (2 – światło
     // w pokoju do pracy; tylko część adresów ma dane). Usługi w zasięgu spaceru: sklep (2),
     // gastronomia (2, kawiarnia) i paczkomat (2). „Mniej wagi na dojazd” się tu nie da – potrzeby
-    // tylko podnoszą wagi (maksimum, #177).
+    // tylko podnoszą wagi (maksimum, #177). Pokrycie JEV: stacje bazowe w 300 m (2) – zasięg
+    // do wideorozmów, tak jak w profilu Praca zdalna.
     wskazniki: {
       halas_ldwn: 3,
       zielen_worldcover_100m: 2,
@@ -660,6 +768,7 @@ export const POTRZEBY: readonly Potrzeba[] = [
       sklep_odleglosc: 2,
       gastronomia_odleglosc: 2,
       paczkomat_odleglosc: 2,
+      stacje_bazowe_300m: 2,
     },
   },
   {
@@ -714,6 +823,7 @@ export const POTRZEBY: readonly Potrzeba[] = [
         re: /\b(sport|silowni|silownia|biegam|biegan|jogging|trening|trenuj|fitness|basen|plywa|crossfit|joga|jogi|tenis|kort|boisk|pilk\w* nozn|gram w pilke|wspinacz|rolki|rolkach)/,
       },
     ],
+    persona: 'aktywny',
     kategorie: { codziennosc: 3 },
     // Obiekty sportowe ZIS (3; tylko Kraków, wykaz 181 obiektów, nie pełny spis), siłownia
     // plenerowa (3), zieleń do biegania (3 + 2), infrastruktura rowerowa (2) i kąpielisko
@@ -748,9 +858,10 @@ export const POTRZEBY: readonly Potrzeba[] = [
       },
     ],
     // #183: na zbiorach 1–7 osoba, która sama studiuje, ma w złocie Singla 9 razy na 12
-    // (pozostałe 3 – null, współlokatorzy), żadnego innego profilu. Reguły i tak dawały Singla
-    // przez słowo „student” w potrzebie `singiel`.
-    persona: 'singiel',
+    // (pozostałe 3 – null, współlokatorzy), żadnego innego profilu – ale profilu Student wtedy
+    // JEV nie znał. Od pełnych opisów profili JEV wybiera Studenta, więc reguły też: złoto
+    // tych zbiorów trzeba przy pomiarze przepisać ze Singla na Studenta.
+    persona: 'student',
     kategorie: { transport: 3 },
     // Akademik (3, neutralny – z kierunkiem): warstwy uczelni nie ma, a domy studenckie stoją
     // przy kampusach (AGH, UJ, UEK, PK). Przystanek i kursy w szczycie (3 + 3) – tani dojazd na
@@ -775,12 +886,32 @@ export const POTRZEBY: readonly Potrzeba[] = [
  * - Senior przed Rodziną: starsza osoba często pisze o wnukach albo dorosłych dzieciach,
  *   a senior z małymi dziećmi w domu to rzadkość. Gdy do rodziny z dziećmi wprowadza się
  *   starszy rodzic, potrzeby seniora (przychodnia, apteka, krawężniki) i tak zostają.
+ * - Profile „z jednej cechy” po Rodzinie: rodzina z psem albo z autem to wciąż Rodzina (te same
+ *   słowa w `nie_dla` opisów profili dla JEV). Wśród nich najpierw sytuacja życiowa, potem
+ *   zdrowie, potem upodobania:
+ *   - Budowa domu: przesądza o rodzaju adresu (działka, media), inne cechy to dodatek.
+ *   - Student: sytuacja na kilka lat, zwykle pisze też o rowerze, sporcie czy knajpach.
+ *   - Alergik: choroba – powietrze przeważa nad psem czy sportem.
+ *   - Psiarz i Praca zdalna: cały dzień w okolicy domu.
+ *   - Rowerzysta przed Kierowcą: „mam auto, ale jeżdżę rowerem” – reguła tego nie odróżni,
+ *     a wzmianka o aucie częściej jest poboczna niż o rowerze na co dzień.
+ *   - Aktywny, Miłośnik kultury, Bezpieczeństwo: upodobanie albo obawa, najsłabsze z cech.
  * - Singiel ostatni: najsłabszy sygnał, wyklucza się z dziećmi i seniorem.
  */
 export const PIERWSZENSTWO_PERSON: readonly PersonaId[] = [
   'inwestor',
   'senior',
   'rodzina',
+  'budowa-domu',
+  'student',
+  'alergik',
+  'psiarz',
+  'zdalny',
+  'rowerzysta',
+  'kierowca',
+  'aktywny',
+  'kultura',
+  'bezpieczenstwo',
   'singiel',
 ]
 
@@ -983,20 +1114,83 @@ function bezOdmowy(tekst: string, slowa: RegExp): string {
   return t
 }
 
+/** Wspólne `nie_dla` profili „z jednej cechy”: dzieci, wiek i wynajem mają własne profile. */
+const NIE_DLA_JEDNEJ_CECHY =
+  'Gdy w domu są dzieci, osoba jest na emeryturze albo kupuje pod wynajem – wybierz tamten profil, nawet jeśli tekst o tym też wspomina.'
+
 /**
  * #155: opisy opcji profilu dla JEV mówią, KIM jest osoba, a nie, co ceni. Opisy z UI
  * („Komunikacja i sklepy pod ręką”) pasowały do każdego, kto chce mieć blisko tramwaj, więc
  * JEV wybierał Singla dla par i rodzin. Nazwy i opisy w UI (`persony.ts`) się nie zmieniają.
+ *
+ * Pełny rekord (wszystkie profile poza „Od zera”): JEV był budowany na czterech profilach,
+ * a od tego czasu w `persony.ts` doszło dziesięć. Bez opisu JEV nie mógł ich wybrać, więc
+ * student dostawał Singla, a osoba z psem – profil bez zmian. Typ wymusza opis dla każdej nowej
+ * persony. Cztery stare opisy zostają tekstem z #155 (zmierzone), poza Singlem: „albo
+ * studiująca” przeszło do profilu Student. Nowe profile to opis strukturalny (#163): `co` mówi,
+ * kim jest osoba, `nie_dla` – kiedy wygrywa sąsiedni profil. Profile „z jednej cechy” (pies,
+ * rower, sport, auto, praca z domu) łatwo pomylić z Rodziną i Seniorem, którzy też mają psa
+ * albo auto – stąd wspólne `nie_dla` o dzieciach, wieku i wynajmie, zgodne z
+ * PIERWSZENSTWO_PERSON. Nowych profili nie ma w złocie zbiorów pomiarowych (WYNIKI.md) –
+ * trafność wyboru profilu trzeba przemierzyć.
  */
-export const OPISY_PROFILI_JEV: Readonly<Partial<Record<Exclude<PersonaId, 'od-zera'>, string>>> = {
+export const OPISY_PROFILI_JEV: Readonly<Record<Exclude<PersonaId, 'od-zera'>, OpisOpcji>> = {
   rodzina: 'Rodzic z dziećmi w domu (także gdy dziecko jest w drodze)',
-  singiel: 'Osoba mieszkająca sama, zwykle młoda, pracująca albo studiująca',
+  singiel: {
+    co: 'Osoba mieszkająca sama, zwykle młoda i pracująca, bez jednej cechy, która przesądza o wyborze okolicy.',
+    nie_dla:
+      'Student, osoba pracująca z domu, z psem, jeżdżąca rowerem albo autem, sportowiec, alergik, miłośnik kultury, budujący dom – gdy tekst mówi głównie o tym, wybierz ten profil.',
+  },
   senior: 'Osoba na emeryturze albo w starszym wieku',
   inwestor: 'Kupujący pod wynajem albo jako lokatę, sam tam nie zamieszka',
+  student: {
+    co: 'Osoba, która teraz studiuje albo zaczyna studia i tam zamieszka – sama, ze współlokatorami albo w akademiku (także gdy szukają dla niej rodzice).',
+    nie_dla:
+      'Kto studia już skończył, wykłada na uczelni albo kupuje mieszkanie pod wynajem dla studentów (to Inwestor).',
+    przyklady: ['Od października zaczynam studia na AGH, szukam pokoju.'],
+  },
+  psiarz: {
+    co: 'Osoba, dla której pies jest głównym powodem wyboru okolicy: spacery, wybieg, weterynarz.',
+    nie_dla: NIE_DLA_JEDNEJ_CECHY,
+    przyklady: ['Mam dwa psy, codziennie chodzimy na długie spacery.'],
+  },
+  rowerzysta: {
+    co: 'Osoba, która na co dzień jeździ rowerem zamiast autem i komunikacją: do pracy, na zakupy.',
+    nie_dla: `Rower tylko rekreacyjnie albo jako trening to profil Aktywny. ${NIE_DLA_JEDNEJ_CECHY}`,
+  },
+  zdalny: {
+    co: 'Osoba pracująca z domu (zdalnie, hybrydowo albo na własny rachunek), która spędza w mieszkaniu większość dnia.',
+    nie_dla: NIE_DLA_JEDNEJ_CECHY,
+  },
+  aktywny: {
+    co: 'Osoba regularnie uprawiająca sport: bieganie, siłownia, basen, gry zespołowe, pływanie.',
+    nie_dla: `Rower jako codzienny dojazd to profil Rowerzysta. ${NIE_DLA_JEDNEJ_CECHY}`,
+  },
+  kierowca: {
+    co: 'Osoba jeżdżąca na co dzień własnym samochodem, dla której liczy się dojazd autem i parkowanie.',
+    nie_dla: NIE_DLA_JEDNEJ_CECHY,
+  },
+  'budowa-domu': {
+    co: 'Osoba, która szuka działki albo chce zbudować własny dom.',
+    nie_dla:
+      'Kupujący gotowe mieszkanie albo dom; kupujący grunt pod wynajem albo jako lokatę (to Inwestor).',
+  },
+  kultura: {
+    co: 'Osoba, której czas wolny to teatr, muzea, kino, koncerty i zabytki, i chce mieć je blisko.',
+    nie_dla: `Bary i kluby nocą to jeszcze nie kultura. ${NIE_DLA_JEDNEJ_CECHY}`,
+  },
+  alergik: {
+    co: 'Osoba z astmą, alergią albo chorobą płuc, dla której jakość powietrza to sprawa zdrowia.',
+    nie_dla: `Kto po prostu woli czyste powietrze, bez choroby. ${NIE_DLA_JEDNEJ_CECHY}`,
+  },
+  bezpieczenstwo: {
+    co: 'Osoba, która przede wszystkim boi się przestępstw i zagrożeń i szuka najbezpieczniejszej okolicy.',
+    nie_dla: `Sama obawa przed powodzią to jeszcze nie ten profil. ${NIE_DLA_JEDNEJ_CECHY}`,
+  },
 }
 /**
- * Profile do wyboru przez JEV – te z opisem powyżej (bez „Od zera” i nowszych person,
- * których nie ma w zbiorach pomiarowych), plus jawne „nie wiadomo”.
+ * Profile do wyboru przez JEV – wszystkie z opisem powyżej (bez „Od zera”, która obiecuje
+ * same zera), w kolejności PERSONY, plus jawne „nie wiadomo”.
  */
 const PROFILE_JEV = PERSONY.filter((p) => p.id in OPISY_PROFILI_JEV)
 const PROFIL_NIEZNANY = 'nieznany'
@@ -1062,7 +1256,7 @@ export function zapytanieOpiszSiebie(tekst: string): ZapytanieJev {
   const pytania: ZapytanieJev['pytania'] = {}
   pytania[ID_PROFILU] = wybor('Który profil najlepiej pasuje do osoby szukającej mieszkania?', {
     ...Object.fromEntries(
-      PROFILE_JEV.map((p) => [p.id, OPISY_PROFILI_JEV[p.id as keyof typeof OPISY_PROFILI_JEV]]),
+      PROFILE_JEV.map((p) => [p.id, OPISY_PROFILI_JEV[p.id as Exclude<PersonaId, 'od-zera'>]]),
     ),
     [PROFIL_NIEZNANY]: OPIS_PROFILU_NIEZNANEGO,
   })
@@ -1161,8 +1355,11 @@ export const PROGI_PROFILU: ProgiProfilu = {
 /**
  * #155: profil pod progiem pewności – deterministycznie, tylko z MOCNYCH potrzeb:
  * - `senior` z noul ≥ PROG_MOCNEJ_POTRZEBY → Senior, `dzieci` z noul ≥ PROG_MOCNEJ_POTRZEBY → Rodzina;
- * - `inwestycja` i `singiel` nie mają twierdzenia dla JEV (pokrywa je wybór profilu), więc mocny
- *   sygnał to jawne słowa z reguł („pod wynajem”, „inwestycja”, „mieszkam sama”, „studiuję”),
+ *   tak samo każda potrzeba z twierdzeniem i profilem (pies → Z psem, rower → Rowerzysta,
+ *   praca zdalna, sport, auto, student – profile z pełnych opisów dla JEV);
+ * - potrzeby bez twierdzenia dla JEV (`inwestycja`, `singiel`, `alergia`, `kultura`,
+ *   `budowa_domu`, `przestepczosc` – pokrywa je wybór profilu), więc mocny
+ *   sygnał to jawne słowa z reguł („pod wynajem”, „inwestycja”, „mieszkam sama”, „astma”),
  *   z tą samą obsługą przeczeń co w `zRegul` – i to tylko wtedy, gdy JEV (pod progiem) wskazał
  *   ten sam profil. Same słowa to słabość reguł (przeczenia, cudza sytuacja, #18).
  * Przy kilku naraz rozstrzyga PIERWSZENSTWO_PERSON. Bez mocnej potrzeby – null (profil bez
