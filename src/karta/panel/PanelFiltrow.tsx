@@ -101,8 +101,9 @@ export function PanelFiltrow() {
         <h2 id="h-tryb" className="etykieta-sekcji">
           Czego szukasz
         </h2>
+        {/* Biznes ma własny ekran „Dla biznesu” w nagłówku, więc tu tylko profile mieszkańca. */}
         <div className="panel-kafle">
-          {TRYBY.map((t) => (
+          {TRYBY.filter((t) => t.id !== 'biznes').map((t) => (
             <button
               key={t.id}
               type="button"
