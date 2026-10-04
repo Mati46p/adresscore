@@ -8,15 +8,18 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { BEZ_FILTROW } from './biznesUslugi.ts'
 import {
+  hrefDla,
   pobierzStan,
   podlaczDane,
   ustawBranze,
   ustawFiltryBiznesu,
   ustawPunktBiznesu,
+  ustawSymulacje,
   wczytajLinkStartowy,
   zastosujUrlPrzedDanymi,
   zastosujZmianeUrl,
 } from './stan.ts'
+import { obiektyDoTekstu } from './symulacjaUrl.ts'
 import { czytajHash, ID_MIEJSC } from './url.ts'
 
 const A = '19.940000,50.060000'
@@ -107,4 +110,35 @@ test('po adresach link Biznesu zastępuje wybór, a gołe #/biznes przywraca dom
   assert.equal(s.branza, 'sklep')
   assert.deepEqual(s.miejsca, miejsca())
   assert.equal(s.filtryBiznesu, BEZ_FILTROW)
+})
+
+test('przełącznik Miasto ↔ Biznes ↔ Miasto (linki z nagłówka) nie gubi wyboru żadnego trybu', () => {
+  // Link z nagłówka to `hrefDla` ze stanem; przeglądarka zamienia go na hashchange, a stan czyta go
+  // tak samo jak każdy inny link.
+  const przejdzLinkiem = (latka: Parameters<typeof hrefDla>[1]) => {
+    const href = hrefDla(pobierzStan(), latka)
+    zastosujZmianeUrl(czytajHash(href.slice(href.indexOf('#'))))
+    return href
+  }
+  zastosujZmianeUrl(czytajHash(`#/biznes?b=dentysta&a=${A}&k=nfz`))
+  const hrefMiasta = przejdzLinkiem({ ekran: 'symulator' })
+  assert.ok(hrefMiasta.startsWith('/#/miasto'), hrefMiasta)
+  assert.equal(pobierzStan().ekran, 'symulator')
+  const obiekt = obiektyDoTekstu([{ typ: 'przystanek', lon: 19.94, lat: 50.06 }])
+  ustawSymulacje({ a: obiekt, b: '' })
+
+  const hrefBiznesu = przejdzLinkiem({ ekran: 'biznes', tryb: 'biznes' })
+  assert.ok(hrefBiznesu.startsWith('/#/biznes?'), hrefBiznesu)
+  let s = pobierzStan()
+  assert.equal(s.ekran, 'biznes')
+  assert.equal(s.branza, 'dentysta')
+  assert.deepEqual(s.miejsca, miejsca(PUNKT_A))
+  assert.deepEqual(s.filtryBiznesu, { min2Zrodla: false, flagi: { nfz: 'tylko' } })
+
+  przejdzLinkiem({ ekran: 'symulator' })
+  s = pobierzStan()
+  assert.equal(s.ekran, 'symulator')
+  assert.equal(s.symulacja.a, obiekt)
+  przejdzLinkiem({ ekran: 'biznes', tryb: 'biznes' })
+  assert.equal(pobierzStan().branza, 'dentysta')
 })
