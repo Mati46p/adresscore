@@ -51,4 +51,3 @@ przejściu online aplikacja, dane, fonty i kafle mapy działają bez sieci.
 
 - [ ] Laptop podłączony do zasilania, rzutnik w 16:9, test HDMI.
 - [ ] Karta z demo otwarta i rozgrzana, druga karta z PDF, plik MP4 na pulpicie.
-- [ ] Telefon z QR (slajd 10) zeskanowany przez sieć komórkową – adres działa.

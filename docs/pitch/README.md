@@ -25,17 +25,6 @@ marginesy: brak, grafika tła: włączona) daje to samo.
 `/` (mapa), `/#/adres/msip-2147483701339` (Grodzka 52), `/#/biznes` (tryb Biznes).
 Mapa i karta potrzebują kilkunastu sekund na wczytanie danych.
 
-## QR dla jury
+## Demo dla jury
 
-Przed przygotowaniem slajdu potwierdź publiczny adres działającego demo na telefonie.
-Lokalny adres `127.0.0.1` nie działa na telefonie jury. Nie podmieniaj go na planowaną domenę,
-dopóki nie odpowiada publicznie. **Adres demo: do potwierdzenia.**
-
-Generator SVG (wymaga `qrencode`, na macOS: `brew install qrencode`):
-
-```sh
-node scripts/generuj-qr-pitch.mjs https://POTWIERDZONY-URL/ docs/pitch/qr-demo.svg
-```
-
-Umieść SVG na slajdzie 10 w miejscu ramki „QR” z krótkim tekstem „Zeskanuj i sprawdź własny adres”.
-Przed wysłaniem PDF zeskanuj kod telefonem przez sieć komórkową i sprawdź adres, mapę 2D oraz kartę okolicy.
+Demo pokazujemy na komputerze (decyzja 2026-10-04): bez kodu QR i bez trybu mobilnego na slajdzie.
