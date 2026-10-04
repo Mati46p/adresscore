@@ -371,16 +371,16 @@ export const OPISY_WARSTW_DLA_JEV: Readonly<Record<string, OpisStrukturalny>> = 
     co: `${M}ego urzędu gminy, miasta albo dzielnicy. Odpowiada na pytania, gdzie załatwić sprawę w urzędzie.`,
   },
   uzbrojenie_gaz_50m: {
-    co: 'Czy w promieniu 50 metrów od adresu jest sieć gazowa (według ewidencji uzbrojenia terenu), tylko gminy wokół Krakowa i obrzeża miasta. Odpowiada na pytania, czy działka ma dostęp do gazu.',
+    co: 'Czy w promieniu 50 metrów od adresu jest sieć gazowa (według ewidencji uzbrojenia terenu), w Krakowie i gminach wokół; brak w ewidencji nie dowodzi braku przyłącza. Odpowiada na pytania, czy działka ma dostęp do gazu.',
   },
   uzbrojenie_kanalizacja_50m: {
-    co: 'Czy w promieniu 50 metrów od adresu jest kanalizacja (według ewidencji uzbrojenia terenu), tylko gminy wokół Krakowa i obrzeża miasta. Odpowiada na pytania, czy jest kanalizacja, czy szambo.',
+    co: 'Czy w promieniu 50 metrów od adresu jest kanalizacja (według ewidencji uzbrojenia terenu), w Krakowie i gminach wokół; brak w ewidencji nie dowodzi braku przyłącza. Odpowiada na pytania, czy jest kanalizacja, czy szambo.',
   },
   uzbrojenie_prad_50m: {
-    co: 'Czy w promieniu 50 metrów od adresu jest sieć elektryczna (według ewidencji uzbrojenia terenu), tylko gminy wokół Krakowa i obrzeża miasta. Odpowiada na pytania, czy działka ma dostęp do prądu.',
+    co: 'Czy w promieniu 50 metrów od adresu jest sieć elektryczna (według ewidencji uzbrojenia terenu), w Krakowie i gminach wokół; brak w ewidencji nie dowodzi braku przyłącza. Odpowiada na pytania, czy działka ma dostęp do prądu.',
   },
   uzbrojenie_woda_50m: {
-    co: 'Czy w promieniu 50 metrów od adresu jest wodociąg (według ewidencji uzbrojenia terenu), tylko gminy wokół Krakowa i obrzeża miasta. Odpowiada na pytania, czy jest woda z wodociągu, czy trzeba mieć studnię.',
+    co: 'Czy w promieniu 50 metrów od adresu jest wodociąg (według ewidencji uzbrojenia terenu), w Krakowie i gminach wokół; brak w ewidencji nie dowodzi braku przyłącza. Odpowiada na pytania, czy jest woda z wodociągu, czy trzeba mieć studnię.',
   },
   weterynarz_odleglosc: {
     co: `${M}ej lecznicy albo gabinetu weterynaryjnego. Odpowiada na pytania o weterynarza dla psa albo kota.`,
@@ -393,6 +393,12 @@ export const OPISY_WARSTW_DLA_JEV: Readonly<Record<string, OpisStrukturalny>> = 
   },
   wykrywalnosc_powiat_2025: {
     co: 'Jaki procent sprawców przestępstw policja wykryła w 2025 roku w całym powiecie (cały Kraków ma jedną wartość). Odpowiada na pytania, jak skutecznie działa tu policja.',
+  },
+  wypadki_heks: {
+    co: 'Ile wypadków i kolizji drogowych zdarzyło się w okolicy adresu (ok. pół kilometra) w latach 2018–2024; zabici i ranni liczą się bardziej niż kolizje bez ofiar. Dane Policji z Systemu Ewidencji Wypadków i Kolizji (SEWIK). Odpowiada na pytania, czy na drogach w okolicy jest niebezpiecznie.',
+  },
+  wypadki_piesi_rowerzysci_heks: {
+    co: 'Ile wypadków i kolizji z udziałem pieszych albo rowerzystów zdarzyło się w okolicy adresu (ok. pół kilometra) w latach 2018–2024; liczą się poszkodowani piesi i rowerzyści. Dane Policji z Systemu Ewidencji Wypadków i Kolizji (SEWIK). Odpowiada na pytania o bezpieczeństwo pieszych i rowerzystów.',
   },
   zabytki_300m: {
     co: 'Liczba zabytków (budynków i miejsc z rejestru i ewidencji zabytków) w promieniu 300 metrów. Odpowiada na pytania, czy okolica jest zabytkowa i historyczna.',
