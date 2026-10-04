@@ -24,7 +24,19 @@ const tekst = (v) => (typeof v === 'string' && v.trim() ? v.trim() : null)
 const zaokr = (x) => Math.round(x * 1e6) / 1e6
 
 export function zloz(plik) {
-  const klucze = ['id', 'miejscowosc', 'ulica', 'nr', 'kod', 'dzielnica', 'gmina', 'teryt', 'lon', 'lat', 'h3']
+  const klucze = [
+    'id',
+    'miejscowosc',
+    'ulica',
+    'nr',
+    'kod',
+    'dzielnica',
+    'gmina',
+    'teryt',
+    'lon',
+    'lat',
+    'h3',
+  ]
   const adresy = []
   for (const p of plik.wiersze) {
     const [lon, lat] = proj4(PRG_CRS, 'EPSG:4326', [p.x, p.y])
