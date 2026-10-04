@@ -92,8 +92,8 @@ export function rankingUlic(
   wyniki: ArrayLike<number>,
   wykluczone: ArrayLike<number>,
   heksy: ReadonlyMap<string, number | null>,
-  ile = 5,
   okolice: PlikOkolic | null = null,
+  ile = 5,
 ): PozycjaUlicy[] {
   const grupy = new Map<string, Grupa>()
   for (let i = 0; i < Math.min(adresy.length, wyniki.length); i++) {

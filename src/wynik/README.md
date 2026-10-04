@@ -435,7 +435,7 @@ node --test 'src/karta/**/*.test.ts' 'src/mapa/**/*.test.ts'
 | `mapa/okolica/wczytajGranice.ts` | Plik granic (1,1 MB) ładuje się przy pierwszym fokusie w polu albo wyborze, raz na aplikację; po błędzie następny wybór próbuje od nowa. |
 | `mapa/okolica/ObrysOkolicy.ts` | Hak wołany z `MapaKrakowa` (prop `okolica`): ciemny obrys z białą poświatą i przelot kamery. Nowy obiekt `okolica` = nowy przelot, także dla tej samej okolicy (prop `granice` reaguje tylko na zmianę liczb). |
 | `karta/okolicaWybrana.ts`, `karta/PasekOkolicy.tsx` | Pasek pod polem: teksty o nazwie z OSM i o braku obrysu są czystymi funkcjami z testem. |
-| `rankingUlic(…, ile, okolice)` | Ranking ulic na Szukaj: `okolica` ulicy zamiast dzielnicy (patrz niżej). |
+| `rankingUlic(…, okolice, ile)` | Ranking ulic na Szukaj: `okolica` ulicy zamiast dzielnicy (patrz niżej). |
 
 Zasady:
 

@@ -12,8 +12,6 @@ import type { Adres } from '../../kontrakty/index.ts'
 import type { PlikOkolic } from '../../kontrakty/okolice.ts'
 import { type Granice, graniceOkolicy } from '../luki/skalaLuk.ts'
 
-export type { Granice }
-
 /** Jednostka SIM w `okolice-granice.geojson`: wielokąt z numerem i nazwą (`etl/okolice.md`). */
 export interface JednostkaGeoJson {
   type: 'Feature'

@@ -19,7 +19,6 @@ export function Ranking() {
     wyniki.naAdres,
     wyniki.wykluczenia.wykluczony,
     wyniki.heksy,
-    5,
     dane.okolice,
   )
   const atrapa = dane.plikAdresow.atrapa || dane.wskazniki.some((w) => w.meta.atrapa)

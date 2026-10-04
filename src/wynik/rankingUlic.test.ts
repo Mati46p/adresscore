@@ -113,7 +113,7 @@ describe('okolica ulicy w rankingu', () => {
   })
   const wszedzie = (n: number) => Float32Array.from({ length: n }, () => 70)
   const rank = (a: Adres[], okolice: PlikOkolic | null, wyniki = wszedzie(a.length)) =>
-    rankingUlic(a, wyniki, new Uint8Array(a.length), new Map([['hex', 70]]), 5, okolice)
+    rankingUlic(a, wyniki, new Uint8Array(a.length), new Map([['hex', 70]]), okolice)
 
   it('ulica w jednej jednostce SIM dostaje jej nazwę', () => {
     const a = [wKrakowie('Długa', '1'), wKrakowie('Długa', '3')]
@@ -173,7 +173,6 @@ describe('okolica ulicy w rankingu', () => {
       Float32Array.from([70, 70, Number.NaN]),
       Uint8Array.from([0, 1, 0]),
       new Map([['hex', 70]]),
-      5,
       okolice,
     )
     // Adres 1 wykluczony filtrem, adres 2 bez wyniku: zostaje tylko Kazimierz.
@@ -284,7 +283,7 @@ describe('rankingUlic na prawdziwych danych', {
         .map((o) => o.nazwa),
     )
     const t = performance.now()
-    const wynik = rankingUlic(adresy, wyniki, brakWykluczen, heksy, 200, prawdziwe)
+    const wynik = rankingUlic(adresy, wyniki, brakWykluczen, heksy, prawdziwe, 200)
     const ms = performance.now() - t
     console.log(
       `rankingUlic: ${ms.toFixed(0)} ms dla ${adresy.length} adresów (200 pozycji z okolicą)`,
@@ -309,8 +308,8 @@ describe('rankingUlic na prawdziwych danych', {
   })
 
   it('ranking z plikiem okolic i bez niego ma tę samą kolejność i te same liczby', () => {
-    const z = rankingUlic(adresy, wyniki, brakWykluczen, heksy, 50, prawdziwe)
-    const bez = rankingUlic(adresy, wyniki, brakWykluczen, heksy, 50, null)
+    const z = rankingUlic(adresy, wyniki, brakWykluczen, heksy, prawdziwe, 50)
+    const bez = rankingUlic(adresy, wyniki, brakWykluczen, heksy, null, 50)
     const bezOkolicy = ({ okolica: _okolica, ...reszta }: PozycjaUlicy) => reszta
     assert.deepEqual(z.map(bezOkolicy), bez.map(bezOkolicy))
     // Zapas to dzielnica z adresu: „Dzielnica …” dla Krakowa i „Gmina …” poza nim.
@@ -318,7 +317,7 @@ describe('rankingUlic na prawdziwych danych', {
   })
 
   it('żaden podpis okolicy nie ma pauzy', () => {
-    const wynik = rankingUlic(adresy, wyniki, brakWykluczen, heksy, 500, prawdziwe)
+    const wynik = rankingUlic(adresy, wyniki, brakWykluczen, heksy, prawdziwe, 500)
     for (const p of wynik) assert.doesNotMatch(p.okolica ?? '', /—/)
   })
 })
