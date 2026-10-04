@@ -22,6 +22,8 @@ import { useWstepnaMapa } from '@/wynik/wstepnaMapa'
 import { opisAdresu } from './adres'
 import type { WybranaOkolica } from './okolicaWybrana'
 import { PasekOkolicy } from './PasekOkolicy'
+import { PanelBudzetu } from './panel/PanelBudzetu'
+import { PanelDojazdu } from './panel/PanelDojazdu'
 import { PanelFiltrow } from './panel/PanelFiltrow'
 import { Ranking } from './Ranking'
 import { adresWKliknietymHeksie } from './wyszukiwarka/heks'
@@ -160,6 +162,8 @@ export function EkranSzukaj() {
         <aside aria-label="Filtry" className="szukaj-filtry">
           <PoleOpiszSiebie />
           <PanelFiltrow />
+          <PanelBudzetu />
+          <PanelDojazdu />
         </aside>
       </div>
 

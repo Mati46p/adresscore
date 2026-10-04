@@ -37,10 +37,27 @@ node etl/dojazd-gtfs.mjs 2026-10-07 19.9366 50.0614
 ```
 
 Wtedy tworzy lokalny `etl/.cache/dojazd_cel.json`, który **nie jest częścią manifestu** i
-nie powinien być commitowany jako ogólny wskaźnik. Do interaktywnego celu wybranego przez
-użytkownika potrzeba osobnego API/cache obliczeń i widoku; obecny kontrakt statycznych plików
-nie przenosi parametrów celu. Nie wolno podpisywać statycznego wyniku dla lotniska jako czasu
-do adresu wybranego przez użytkownika.
+nie powinien być commitowany jako ogólny wskaźnik. Nie wolno podpisywać statycznego wyniku dla
+lotniska jako czasu do adresu wybranego przez użytkownika – do tego służy graf niżej (#85).
+
+## Cel wybrany przez użytkownika (#85)
+
+`node etl/dojazd-gtfs-graf.mjs 2026-10-07 5-23` zapisuje `public/dane/dojazd/graf.json`:
+przystanki z odjazdami w oknie 05:00–23:00 wybranego dnia i kursy zakodowane deltami
+(`[przystanek, Δprzyjazd, postój, flagi wsiadania/wysiadania]`), bez identyfikatorów kursów
+i nazw linii. Rozmiar dla 2026-10-07: 3903 stanowiska, 16 117 kursów, 355 263 zdarzeń –
+3,9 MB, ok. 0,6 MB gzip. Plik pobiera dopiero worker po wybraniu celu w lewym panelu
+(`src/karta/panel/PanelDojazdu.tsx`, silnik `src/wynik/dojazdCel.ts`). Liczenie w przeglądarce
+nie pośredniczy w żadnej usłudze miasta – korzysta z pochodnego, statycznego pliku.
+
+Silnik liczy ten sam profil co wyżej, ale odwrotnie od celu i tylko dla jednej godziny wyjścia
+(pełne godziny 05:00–21:00) z limitem podróży 2 h: raz na (cel zaokrąglony do 0,001°,
+godzina) – ok. 50 ms – i trzyma 8 ostatnich profili w cache. Potem czas z adresu to kilka
+przystanków w promieniu 1,2 km; liczony wyłącznie dla adresu wybranego na mapie i heksów
+w porównaniu (maks. 64 punkty na zapytanie), nigdy dla 176 tys. adresów. Parametry jak wyżej:
+dojścia i przesiadki po prostej, 1,25 m/s, przesiadki do 350 m i min. 2 min. Brak trasy w 2 h
+lub brak przystanku w zasięgu = `null` (w UI „brak trasy”, szare), nie zero. Panel pokazuje
+datę rozkładu, daty feedów i te założenia. Przy zmianie feedu trzeba ponownie uruchomić ETL.
 
 ZTP [określa GTFS jako dane otwarte](https://ztp.krakow.pl/wszystkie-aktualnosci/dane-otwarte/sprawdz-przystanki-infrastrukture-rowerowa-i-parkingi-pr-czyli-otwarte-dane.html).
 Publikując wynik, podajemy źródło, daty i metodę przetworzenia zgodnie z

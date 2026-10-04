@@ -11,7 +11,7 @@ import KDBush from 'kdbush'
 import { csv, odlegloscMetry } from './gtfs-przystanki.mjs'
 import { CACHE, dzis, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
 
-const GRUPY = ['A', 'M', 'T']
+export const GRUPY = ['A', 'M', 'T']
 const BAZA = 'https://gtfs.ztp.krakow.pl'
 const DNI = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
 const START = 7 * 60
@@ -75,7 +75,9 @@ function wierszeStopTimes(bajty, dodaj) {
   if (reszta) dodaj(reszta.replace(/\r$/, '').split(','), naglowek)
 }
 
-export function odczytajFeed(bufor, grupa, data, startId = 0) {
+export function odczytajFeed(bufor, grupa, data, startId = 0, okno = {}) {
+  const odMin = okno.start ?? START
+  const doMin = okno.koniec ?? KONIEC
   const potrzebne = new Set([
     'stops.txt',
     'calendar.txt',
@@ -123,7 +125,7 @@ export function odczytajFeed(bufor, grupa, data, startId = 0) {
       odrzucone++
       return
     }
-    if (dep < START - 5 || dep > KONIEC || arr > KONIEC) return
+    if (dep < odMin - 5 || dep > doMin || arr > doMin) return
     zdarzenia.push({
       trip: `${grupa}:${trip}`,
       stop,
@@ -220,7 +222,7 @@ export function czasAdresu(adres, punkty, model, celPieszy = null) {
   return najlepszy === BRAK ? null : najlepszy - model.start
 }
 
-function dataRobocza() {
+export function dataRobocza() {
   const lokalna = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Europe/Warsaw',
     year: 'numeric',
@@ -233,7 +235,7 @@ function dataRobocza() {
   return d.toISOString().slice(0, 10)
 }
 
-function pobierzGrupe(grupa) {
+export function pobierzGrupe(grupa) {
   mkdirSync(CACHE, { recursive: true })
   const url = `${BAZA}/GTFS_KRK_${grupa}.zip`
   const cel = join(CACHE, `GTFS_KRK_${grupa}.zip`)
