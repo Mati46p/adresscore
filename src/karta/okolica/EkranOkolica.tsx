@@ -26,6 +26,7 @@ import { czyWarstwaWyborow } from '@/wynik/wybory'
 import { Etykieta } from './Etykieta'
 import type { LiteraEtykiety } from './kolory'
 import { LepszySasiad } from './LepszySasiad'
+import { SzczegolyMpzp } from './SzczegolyMpzp'
 import { SzczegolySzkoly } from './SzczegolySzkoly'
 import {
   liczbaPL,
@@ -499,6 +500,9 @@ function NaCoDzien({
               {opisWartosci(w)}
               {w.id === 'szkola_podst_wynik_e8' && w.wartosc !== null && (
                 <SzczegolySzkoly indeks={indeks} wersja={wersja} />
+              )}
+              {w.id === 'mpzp_status' && (
+                <SzczegolyMpzp indeks={indeks} wersja={wersja} wartosc={w.wartosc} />
               )}
             </dd>
           </div>
