@@ -143,6 +143,15 @@
   background: var(--powierzchnia);
   box-shadow: 0 2px 8px rgb(24 32 43 / 0.2);
 }
+.biznes-sterowanie {
+  flex-wrap: wrap;
+  max-width: calc(100% - 24px);
+}
+/* Postawione miejsce ma pełną obwódkę, puste – przerywaną. */
+.biznes-sterowanie button:not([data-postawione]) {
+  border-style: dashed;
+}
+.biznes-limit,
 .biznes-sterowanie span:last-child {
   color: var(--tekst-3);
   font-size: 0.85rem;

@@ -1,14 +1,15 @@
-// Miejsca A i B trybu „Biznes” na mapie (#106).
+// Miejsca A–E trybu „Biznes” na mapie (#106).
 //
 // - Mysz i dotyk: przeciągnięcie przesuwa (`onPrzesun` po puszczeniu).
 // - Klawiatura: znacznik to `<button>` z opisem dla czytnika; strzałki przesuwają o 10 m (z Shift
 //   o 50 m), Delete albo Backspace usuwa. Fokus zostaje na znaczniku po przesunięciu, a po
 //   usunięciu przechodzi na mapę, żeby nie wypaść poza stronę.
 // - Klik w znacznik nie stawia nowego punktu – `MapaKrakowa` pomija kliki z `.mapa-punkt-biznesu`.
-// Znaczniki są kluczowane literą A/B: ta sama litera = ten sam element, więc przy każdej zmianie
+// Znaczniki są kluczowane literą A–E: ta sama litera = ten sam element, więc przy każdej zmianie
 // współrzędnych przesuwamy istniejący znacznik zamiast go odtwarzać (nie ginie fokus).
 import { type Map as MapaLibre, Marker } from 'maplibre-gl'
 import { type RefObject, useEffect, useRef } from 'react'
+import type { IdMiejsca } from '@/wynik/url'
 import { opisZnacznika, type PunktBiznesuNaMapie, polecenieKlawisza } from './model'
 import './znaczniki-biznesu.css'
 
@@ -21,13 +22,13 @@ export function useZnacznikiBiznesu(
   mapaRef: RefObject<MapaLibre | null>,
   gotowa: boolean,
   punkty: readonly PunktBiznesuNaMapie[],
-  onPrzesun: ((id: 'a' | 'b', lon: number, lat: number) => void) | undefined,
-  onUsun: ((id: 'a' | 'b') => void) | undefined,
+  onPrzesun: ((id: IdMiejsca, lon: number, lat: number) => void) | undefined,
+  onUsun: ((id: IdMiejsca) => void) | undefined,
 ): void {
   const punktyRef = useRef(punkty)
   const onPrzesunRef = useRef(onPrzesun)
   const onUsunRef = useRef(onUsun)
-  const wpisyRef = useRef(new Map<'a' | 'b', Wpis>())
+  const wpisyRef = useRef(new Map<IdMiejsca, Wpis>())
   useEffect(() => {
     punktyRef.current = punkty
     onPrzesunRef.current = onPrzesun

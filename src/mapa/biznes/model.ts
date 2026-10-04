@@ -1,7 +1,9 @@
-// Czysta logika znaczników miejsc A i B w trybie „Biznes” (#106): krok klawiatury, polecenia
+// Czysta logika znaczników miejsc A–E w trybie „Biznes” (#106): krok klawiatury, polecenia
 // klawiszy i opis dla czytnika ekranu. Bez maplibre i DOM, żeby dało się ją testować w Node.
+import type { IdMiejsca } from '@/wynik/url'
+
 export interface PunktBiznesuNaMapie {
-  id: 'a' | 'b'
+  id: IdMiejsca
   lon: number
   lat: number
 }

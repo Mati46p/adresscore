@@ -28,8 +28,8 @@ export interface StanUrl {
   /** Twarde filtry (parametr `f`). */
   filtry: TwardyFiltr[]
   branza?: string
-  punktA?: { lon: number; lat: number } | null
-  punktB?: { lon: number; lat: number } | null
+  /** Miejsca A–E trybu „Biznes”, zawsze `MAKS_MIEJSC` pozycji (`null` = puste miejsce). */
+  miejsca?: readonly ({ lon: number; lat: number } | null)[]
   /**
    * Obiekty symulatora (#98) jako tekst `symulacjaUrl.ts`, warianty A i B (parametry `a`, `b`).
    * Tylko na ekranie symulatora – gdzie indziej pola nie ma.
@@ -38,6 +38,11 @@ export interface StanUrl {
 }
 
 export const MAKS_POROWNANIE = 5
+
+/** Ile miejsc testowych można postawić w trybie „Biznes” (A–E). */
+export const ID_MIEJSC = ['a', 'b', 'c', 'd', 'e'] as const
+export type IdMiejsca = (typeof ID_MIEJSC)[number]
+export const MAKS_MIEJSC = ID_MIEJSC.length
 const MAKS_USTAWIENIA = 4096
 
 function czytajUstawienia(tekst: string | null): StanUrl['ustawienia'] {
@@ -96,6 +101,27 @@ export function wGranicachPunktu(lon: number, lat: number): boolean {
   )
 }
 
+/**
+ * Miejsca z linku: `m=lon,lat;;lon,lat` (pusta pozycja = puste miejsce). Stary link z dwoma
+ * punktami (`a=` dla A, `c=` dla B) dalej działa.
+ */
+function czytajMiejsca(parametry: URLSearchParams): ({ lon: number; lat: number } | null)[] {
+  const m = parametry.get('m')
+  const lista: ({ lon: number; lat: number } | null)[] = m
+    ? m.split(';').slice(0, MAKS_MIEJSC).map(czytajPunkt)
+    : [czytajPunkt(parametry.get('a')), czytajPunkt(parametry.get('c'))]
+  while (lista.length < MAKS_MIEJSC) lista.push(null)
+  return lista
+}
+
+function zapiszMiejsca(miejsca: readonly ({ lon: number; lat: number } | null)[]): string {
+  const czesci = miejsca
+    .slice(0, MAKS_MIEJSC)
+    .map((p) => (p ? p.lon.toFixed(6) + ',' + p.lat.toFixed(6) : ''))
+  while (czesci.length && !czesci[czesci.length - 1]) czesci.pop()
+  return czesci.join(';')
+}
+
 function czytajPunkt(tekst: string | null): { lon: number; lat: number } | null {
   if (!tekst) return null
   const czesci = tekst.split(',')
@@ -148,8 +174,7 @@ export function czytajHash(hash: string): StanUrl {
           branza: /^[a-z_]+$/.test(parametry.get('b') ?? '')
             ? (parametry.get('b') as string)
             : 'sklep',
-          punktA: czytajPunkt(parametry.get('a')),
-          punktB: czytajPunkt(parametry.get('c')),
+          miejsca: czytajMiejsca(parametry),
         }
       : {}),
     ...(ekran === 'symulator'
@@ -183,8 +208,8 @@ export function zapiszHash(s: StanUrl): string {
   // ginął przy pierwszej zmianie stanu (odświeżenie strony gubiło branżę i oba punkty).
   if (s.ekran === 'biznes') {
     parametry.set('b', s.branza ?? 'sklep')
-    if (s.punktA) parametry.set('a', s.punktA.lon.toFixed(6) + ',' + s.punktA.lat.toFixed(6))
-    if (s.punktB) parametry.set('c', s.punktB.lon.toFixed(6) + ',' + s.punktB.lat.toFixed(6))
+    const m = zapiszMiejsca(s.miejsca ?? [])
+    if (m) parametry.set('m', m)
   }
   const q = parametry
     .toString()

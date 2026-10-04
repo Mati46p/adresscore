@@ -8,10 +8,10 @@ import { TRYBY } from '@/wynik/persony'
 import type { RozbicieWarstwy, WynikAdresu } from '@/wynik/silnik'
 import {
   dodajDoPorownania,
+  dodajMiejsceBiznesu,
   hrefDla,
   przejdz,
   useStan,
-  ustawPunktBiznesu,
   ustawTryb,
 } from '@/wynik/stan'
 import { useWynikAdresu } from '@/wynik/useWyniki'
@@ -107,7 +107,7 @@ export function EkranOkolica() {
               onClick={() => {
                 ustawTryb(t.id)
                 if (t.id === 'biznes') {
-                  ustawPunktBiznesu('a', { lon: adres.lon, lat: adres.lat })
+                  dodajMiejsceBiznesu({ lon: adres.lon, lat: adres.lat })
                   przejdz('biznes')
                 }
               }}
