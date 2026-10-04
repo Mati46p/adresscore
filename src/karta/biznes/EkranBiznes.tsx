@@ -226,36 +226,6 @@ export function EkranBiznes() {
             wskazaniu miejsca na mapie.
           </p>
         </div>
-        <div className="biznes-wybor">
-          <label className="biznes-branza">
-            Branża
-            <select
-              value={idBranzy}
-              disabled={!katalog}
-              onChange={(e) => ustawBranze(e.target.value)}
-            >
-              {katalog ? (
-                grupujBranze(katalog.branze).map((g) => (
-                  <optgroup label={g.nazwa} key={g.id}>
-                    {g.branze.map((b) => (
-                      <option value={b.id} key={b.id}>
-                        {b.nazwa}
-                      </option>
-                    ))}
-                  </optgroup>
-                ))
-              ) : (
-                <option value={idBranzy}>Wczytuję listę branż…</option>
-              )}
-            </select>
-          </label>
-          <FiltryKonkurencji
-            idBranzy={idBranzy}
-            filtry={filtry}
-            meta={meta}
-            onZmien={ustawFiltryBiznesu}
-          />
-        </div>
       </div>
       {blad && (
         <p role="alert" className="komunikat">
@@ -317,6 +287,36 @@ export function EkranBiznes() {
           </div>
         </div>
         <aside className="biznes-panel">
+          <div className="biznes-wybor">
+            <label className="biznes-branza">
+              Branża
+              <select
+                value={idBranzy}
+                disabled={!katalog}
+                onChange={(e) => ustawBranze(e.target.value)}
+              >
+                {katalog ? (
+                  grupujBranze(katalog.branze).map((g) => (
+                    <optgroup label={g.nazwa} key={g.id}>
+                      {g.branze.map((b) => (
+                        <option value={b.id} key={b.id}>
+                          {b.nazwa}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))
+                ) : (
+                  <option value={idBranzy}>Wczytuję listę branż…</option>
+                )}
+              </select>
+            </label>
+            <FiltryKonkurencji
+              idBranzy={idBranzy}
+              filtry={filtry}
+              meta={meta}
+              onZmien={ustawFiltryBiznesu}
+            />
+          </div>
           <form
             onSubmit={(e) => {
               e.preventDefault()
@@ -348,31 +348,31 @@ export function EkranBiznes() {
             </label>
             <button type="submit">Oceń miejsce {aktywny.toUpperCase()}</button>
           </form>
-          <div className="biznes-porownanie">
-            {ID_MIEJSC.map((id, i) => {
-              const punkt = miejsca[i] ?? null
-              // Puste karty pokazujemy tylko dla A, B i aktywnego miejsca – pięć pustych kart
-              // spychałoby oceny poza ekran.
-              if (!punkt && i > 1 && id !== aktywny) return null
-              return (
-                <Ocena
-                  key={id}
-                  id={id.toUpperCase()}
-                  punkt={punkt}
-                  ocena={oceny[id] ?? null}
-                  branza={idBranzy}
-                  konkurencja={konkurencja}
-                  zFiltrow={zFiltrow}
-                  zasiegM={zasiegM}
-                  onUsun={() => {
-                    ustawPunktBiznesu(id, null)
-                    setAktywny(id)
-                  }}
-                />
-              )
-            })}
-          </div>
         </aside>
+      </div>
+      <div className="biznes-porownanie">
+        {ID_MIEJSC.map((id, i) => {
+          const punkt = miejsca[i] ?? null
+          // Puste karty pokazujemy tylko dla A, B i aktywnego miejsca – pięć pustych kart
+          // spychałoby oceny poza ekran.
+          if (!punkt && i > 1 && id !== aktywny) return null
+          return (
+            <Ocena
+              key={id}
+              id={id.toUpperCase()}
+              punkt={punkt}
+              ocena={oceny[id] ?? null}
+              branza={idBranzy}
+              konkurencja={konkurencja}
+              zFiltrow={zFiltrow}
+              zasiegM={zasiegM}
+              onUsun={() => {
+                ustawPunktBiznesu(id, null)
+                setAktywny(id)
+              }}
+            />
+          )
+        })}
       </div>
       <footer className="biznes-zrodla">
         <h2>Źródła danych</h2>
