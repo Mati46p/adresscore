@@ -49,6 +49,8 @@ const wspolrzedne = (o: Pick<Obiekt, 'lon' | 'lat'>) =>
 export function EkranSymulatora(): JSX.Element {
   const stanDanych = useDane()
   const dane = stanDanych.stan === 'gotowe' ? stanDanych : null
+  // Na ekranie Miasto stan ma zawsze profil mieszkańca, nigdy wagi trybu biznes (`czyDoMieszkanca`
+  // w `trybyAplikacji.ts`): bilans nie zależy od tego, czy użytkownik był w Biznesie (E10, #108).
   const wagi = useStan((s) => s.wagi)
   const kierunki = useStan((s) => s.kierunki)
   const persona = useStan((s) => s.persona)

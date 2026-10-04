@@ -25,6 +25,7 @@ import {
 import type { KierunekOceny, Kierunki } from './silnik.ts'
 import { hashAdresu, hashZeSluga, slugAdresu } from './slug.ts'
 import { PARAMETRY_EKRANU, polaBiznesuZLinku, zPodmienionymiParametrami } from './stanZLinku.ts'
+import { czyDoMieszkanca } from './trybyAplikacji.ts'
 import {
   czytajHash,
   type Ekran,
@@ -111,21 +112,22 @@ let metaWskaznikow: readonly (Pick<WskaznikMeta, 'id' | 'kategoria'> &
 let oczekujacyUrl: StanUrl | null = null
 let odczytujemyHistorie = false
 type UstawieniaTrybu = Pick<StanAplikacji, 'persona' | 'wagi' | 'kierunki' | 'filtry'>
-let mieszkaniePrzedBiznesem: UstawieniaTrybu | null = null
+/** Tryb mieszkańca to każdy poza `biznes`: kupuje albo wynajmuje. */
+type TrybMieszkanca = Exclude<Tryb, 'biznes'>
+type UstawieniaMieszkanca = UstawieniaTrybu & { tryb: TrybMieszkanca }
+const TRYB_MIESZKANCA_DOMYSLNY: TrybMieszkanca =
+  TRYB_DOMYSLNY === 'biznes' ? 'kupuje' : TRYB_DOMYSLNY
+// Mieszkaniec zapamiętany w chwili wejścia w tryb biznes (E10, #108): bez niego powrót z Biznesu
+// zostawiałby wagi sklepu i ludności. Po przeładowaniu strony zmienna znika, wtedy służy sesja karty.
+let mieszkaniePrzedBiznesem: UstawieniaMieszkanca | null = null
 let ostatniBiznes: UstawieniaTrybu | null = null
 
-function ustawieniaBiezacegoTrybu(): UstawieniaTrybu {
-  return {
-    persona: stan.persona,
-    wagi: stan.wagi,
-    kierunki: stan.kierunki,
-    filtry: stan.filtry,
-  }
+function ustawieniaTrybu(s: StanAplikacji): UstawieniaTrybu {
+  return { persona: s.persona, wagi: s.wagi, kierunki: s.kierunki, filtry: s.filtry }
 }
 
-function ustawieniaZSesji(rodzaj: 'mieszkanie' | 'biznes', tryb: Tryb): UstawieniaTrybu | null {
-  const url = odczytajPreferencjeTrybu(rodzaj)
-  if (!url) return null
+/** Ustawienia zapisane w linku (parametry `p`, `u`, `biz`), przeliczone dla `tryb` na żywe warstwy. */
+function ustawieniaZUrl(url: StanUrl, tryb: Tryb): UstawieniaTrybu {
   const persona = url.ustawienia ? 'wlasna' : (url.persona ?? PERSONA_DOMYSLNA)
   const domyslne = ustawieniaPersony(
     persona === 'wlasna' ? PERSONA_DOMYSLNA : persona,
@@ -139,6 +141,69 @@ function ustawieniaZSesji(rodzaj: 'mieszkanie' | 'biznes', tryb: Tryb): Ustawien
   return { persona, wagi, kierunki, filtry: [] }
 }
 
+function ustawieniaZSesji(rodzaj: 'mieszkanie' | 'biznes', tryb: Tryb): UstawieniaTrybu | null {
+  const url = odczytajPreferencjeTrybu(rodzaj)
+  return url ? ustawieniaZUrl(url, tryb) : null
+}
+
+/** Mieszkaniec z sesji karty: tryb i profil ostatnio zapisane poza trybem biznes. */
+function mieszkaniecZSesji(): UstawieniaMieszkanca | null {
+  const url = odczytajPreferencjeTrybu('mieszkanie')
+  if (!url) return null
+  const tryb =
+    url.tryb === 'kupuje' || url.tryb === 'wynajmuje' ? url.tryb : TRYB_MIESZKANCA_DOMYSLNY
+  return { tryb, ...ustawieniaZUrl(url, tryb) }
+}
+
+function zapamietajMieszkanca(s: StanAplikacji) {
+  if (s.tryb !== 'biznes') mieszkaniePrzedBiznesem = { tryb: s.tryb, ...ustawieniaTrybu(s) }
+}
+
+/**
+ * Łatka stanu z powrotem do mieszkańca. Wraca ten, kogo zapamiętało wejście w tryb biznes; po
+ * przeładowaniu strony (zmienne znikają) ten z sesji karty; bez żadnego zapisu profil domyślny,
+ * a persona z `biezacy`. `trybWybrany` to tryb, który użytkownik wskazał sam (kafel „Kupuję”).
+ * Czysta względem stanu: niczego nie zapisuje, więc służy też do składania linków (`hrefDla`).
+ */
+function latkaMieszkanca(
+  biezacy: StanAplikacji,
+  trybWybrany?: TrybMieszkanca,
+): Partial<StanAplikacji> {
+  const zapis = mieszkaniePrzedBiznesem ?? mieszkaniecZSesji()
+  const tryb = trybWybrany ?? zapis?.tryb ?? TRYB_MIESZKANCA_DOMYSLNY
+  const persona =
+    zapis?.persona ?? (biezacy.persona === 'wlasna' ? PERSONA_DOMYSLNA : biezacy.persona)
+  const domyslne = ustawieniaPersony(
+    persona === 'wlasna' ? PERSONA_DOMYSLNA : persona,
+    tryb,
+    metaWskaznikow,
+  )
+  return {
+    tryb,
+    persona,
+    wagi: persona === 'wlasna' && zapis ? zapis.wagi : domyslne.wagi,
+    kierunki: persona === 'wlasna' && zapis ? zapis.kierunki : domyslne.kierunki,
+    filtry: [],
+    warstwa: 'wynik',
+    trybMapy: 'suma',
+    ostatniaWarstwa: null,
+  }
+}
+
+/**
+ * Stan po zmianie, uzgodniony z regułą „tryb biznes należy do ekranu Biznes” (`czyDoMieszkanca`):
+ * po wyjściu z Biznesu i na ekranie Miasto wraca mieszkaniec, a każde wejście w tryb biznes (kafel,
+ * `przejdz`, link z nagłówka, start z linku) zapamiętuje mieszkańca, do którego wrócimy.
+ */
+function zgodnyZTrybem(poprzedni: StanAplikacji, nastepny: StanAplikacji): StanAplikacji {
+  if (czyDoMieszkanca(poprzedni.ekran, nastepny)) {
+    if (poprzedni.tryb === 'biznes') ostatniBiznes = ustawieniaTrybu(poprzedni)
+    return { ...nastepny, ...latkaMieszkanca(nastepny) }
+  }
+  if (nastepny.tryb === 'biznes' && poprzedni.tryb !== 'biznes') zapamietajMieszkanca(poprzedni)
+  return nastepny
+}
+
 export function pobierzStan(): StanAplikacji {
   return stan
 }
@@ -150,7 +215,7 @@ export function subskrybuj(sluchacz: () => void): () => void {
 
 function zmien(latka: Partial<StanAplikacji>) {
   const poprzedni = stan
-  stan = { ...stan, ...latka }
+  stan = zgodnyZTrybem(poprzedni, { ...stan, ...latka })
   if (idAdresow) zapiszPreferencje(doUrl(stan))
   zapiszDoUrl(poprzedni)
   for (const s of sluchacze) s()
@@ -178,7 +243,7 @@ export function wybierzPersone(persona: PersonaId) {
 export function ustawTryb(tryb: Tryb) {
   if (tryb === stan.tryb) return
   if (tryb === 'biznes') {
-    mieszkaniePrzedBiznesem = ustawieniaBiezacegoTrybu()
+    // Mieszkańca zapamiętuje `zmien` (wejście w tryb biznes z każdej drogi, nie tylko z tego kafla).
     const zapis = ostatniBiznes ?? ustawieniaZSesji('biznes', 'biznes')
     const domyslne = ustawieniaPersony(PERSONA_DOMYSLNA, 'biznes', metaWskaznikow, stan.biznes)
     return zmien({
@@ -193,24 +258,8 @@ export function ustawTryb(tryb: Tryb) {
     })
   }
   if (stan.tryb === 'biznes') {
-    ostatniBiznes = ustawieniaBiezacegoTrybu()
-    const zapis = mieszkaniePrzedBiznesem ?? ustawieniaZSesji('mieszkanie', tryb)
-    const persona = zapis?.persona ?? (stan.persona === 'wlasna' ? PERSONA_DOMYSLNA : stan.persona)
-    const domyslne = ustawieniaPersony(
-      persona === 'wlasna' ? PERSONA_DOMYSLNA : persona,
-      tryb,
-      metaWskaznikow,
-    )
-    return zmien({
-      tryb,
-      persona,
-      wagi: persona === 'wlasna' && zapis ? zapis.wagi : domyslne.wagi,
-      kierunki: persona === 'wlasna' && zapis ? zapis.kierunki : domyslne.kierunki,
-      filtry: [],
-      warstwa: 'wynik',
-      trybMapy: 'suma',
-      ostatniaWarstwa: null,
-    })
+    ostatniBiznes = ustawieniaTrybu(stan)
+    return zmien(latkaMieszkanca(stan, tryb))
   }
   if (stan.persona === 'wlasna') return zmien({ tryb })
   const { wagi, kierunki } = ustawieniaPersony(stan.persona, tryb, metaWskaznikow)
@@ -562,10 +611,13 @@ function sciezkaStanu(s: StanAplikacji): string {
 
 /**
  * Stan z łatką jako hash – do `<a href>`. Stan podaj z `useStan((s) => s)`, żeby React
- * Compiler widział zależność i odświeżał link.
+ * Compiler widział zależność i odświeżał link. Link, po którym stan wróciłby do mieszkańca
+ * (wyjście z Biznesu, ekran Miasto), niesie od razu profil mieszkańca, a nie `t=biznes`: pasek adresu
+ * i skopiowany link mówią to samo, co ekran (`czyDoMieszkanca`).
  */
 export function hrefDla(s: StanAplikacji, latka: Partial<StanAplikacji>): string {
-  return sciezkaStanu({ ...s, ...latka })
+  const cel = { ...s, ...latka }
+  return sciezkaStanu(czyDoMieszkanca(s.ekran, cel) ? { ...cel, ...latkaMieszkanca(cel) } : cel)
 }
 
 /**
@@ -613,7 +665,10 @@ export function wczytajLinkStartowy(startowy: StanUrl) {
   oczekujacyUrl = startowy
   stan = { ...stan, ekran: startowy.ekran }
   if (startowy.persona) stan = { ...stan, persona: startowy.persona }
-  if (startowy.tryb) stan = { ...stan, tryb: startowy.tryb }
+  // Miasto liczy na profilu mieszkańca: `t=biznes` w jego linku (stary link, zapis sesji) nie ustawia
+  // trybu, a po wczytaniu adresów `zgodnyZTrybem` dopilnuje reszty (`czyDoMieszkanca`).
+  if (startowy.tryb && !(startowy.ekran === 'miasto' && startowy.tryb === 'biznes'))
+    stan = { ...stan, tryb: startowy.tryb }
   stan = { ...stan, ...zUrlBezSlownika(startowy) }
   if (startowy.ekran === 'biznes') stan = { ...stan, tryb: 'biznes' }
 }

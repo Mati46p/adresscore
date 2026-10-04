@@ -191,6 +191,29 @@ daje wybrany tryb albo `null` na ekranach mieszkańca. Akcent ma w nagłówku je
 na ekranach mieszkańca, tryb na #/miasto i #/biznes. Stan obu trybów (obiekty symulatora, warstwa luk, branża, miejsca
 i filtry Biznesu) zostaje po przejściu na inny ekran i po powrocie, bo link bez ich parametrów niczego nie kasuje.
 
+### Tryb biznes w stanie należy do ekranu Biznes – `czyDoMieszkanca` (#108)
+
+Wejście na ekran Biznes ustawia w stanie tryb „biznes” (`stan.tryb`: wagi sklepu i ludności zamiast profilu
+mieszkańca). Wcześniej tryb zostawał po wyjściu, a symulator Miasta liczy litery na `stan.wagi`, więc po wizycie
+w Biznesie ten sam obiekt dawał inny bilans (przystanek pod Niepołomicami: 163 adresy z awansem przed wizytą w Biznesie,
+zero po niej; pomiar w Chrome na danych produkcyjnych). Reguła to jedna funkcja,
+`czyDoMieszkanca(poprzedniEkran, nastepny)` w `trybyAplikacji.ts`:
+
+- **Miasto zawsze liczy na profilu mieszkańca.** Tryb biznes na tym ekranie, skąd by nie przyszedł (link z `t=biznes`,
+  zapis sesji, kafel z ekranu Szukaj), zamienia się na mieszkańca.
+- **Wyjście z ekranu Biznes** na każdy inny ekran też wraca do mieszkańca. Kafel „Miejsca do założenia biznesu” na
+  ekranach mieszkańca (Szukaj, karta okolicy) zostaje, dopóki użytkownik z niego nie wyjdzie przez Biznes albo Miasto.
+- **Kto wraca:** mieszkaniec zapamiętany przy wejściu w tryb biznes (tryb, persona, wagi, kierunki). Po F5 pamięć
+  w zmiennych znika i służy sesja karty (zapis `mieszkanie`), a bez zapisu profil domyślny.
+- Robi to jeden punkt, `zmien` (`zgodnyZTrybem` w `stan.ts`), więc reguła działa tak samo dla `przejdz`, kafla trybu,
+  linku z nagłówka, Wstecz/Dalej i startu z linku. `hrefDla` składa te same linki: z Biznesu nagłówek prowadzi na adres
+  z profilem mieszkańca (bez `t=biznes`), a link do Biznesu dalej niesie `t=biznes`. Start z `#/miasto?t=biznes`
+  (stary link) też kończy na mieszkańcu.
+- Ekran Biznes się nie zmienia: tryb biznes, branża, miejsca A–E i filtry z linku zostają, a po powrocie do Biznesu wracają.
+
+Test: `miastoPoBiznesie.test.ts` (bilans Miasto → Biznes → Miasto równy bilansowi Miasta od razu, linki z `t=biznes`,
+F5 z sesji). Każdy test bierze własną instancję `stan.ts` (`import('./stan.ts?x')`), bo stan jest jednym obiektem modułu.
+
 ### Link jest źródłem prawdy od pierwszej klatki – `stanZLinku.ts` (#108)
 
 Adresy wczytują się 2–12 s. Wcześniej stan Biznesu dostawał branżę i miejsca z linku dopiero po tym czasie
