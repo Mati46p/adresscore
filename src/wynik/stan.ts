@@ -4,6 +4,7 @@
 
 import { useSyncExternalStore } from 'react'
 import type { Adres, WskaznikMeta } from '@/kontrakty'
+import type { Budzet } from './budzet.ts'
 import { type TwardyFiltr, zPodmienionymFiltrem } from './filtry.ts'
 import {
   PERSONA_DOMYSLNA,
@@ -58,6 +59,8 @@ export interface StanAplikacji {
   ostatniaWarstwa: string | null
   /** Twarde filtry: adres, który ich nie spełnia, jest wykluczony (nie dostaje kary w wyniku). */
   filtry: readonly TwardyFiltr[]
+  /** Budżet zakupu z cen RCN (#77); null = wyłączony. Jak filtry – poza URL. */
+  budzet: Budzet | null
   branza: string
   /** Miejsca testowe A–E trybu „Biznes”, zawsze `MAKS_MIEJSC` pozycji. */
   miejsca: readonly ({ lon: number; lat: number } | null)[]
@@ -80,6 +83,7 @@ let stan: StanAplikacji = {
   trybMapy: 'suma',
   ostatniaWarstwa: null,
   filtry: [],
+  budzet: null,
   branza: 'sklep',
   miejsca: PUSTE_MIEJSCA,
   symulacja: { a: '', b: '' },
@@ -354,6 +358,11 @@ export function usunFiltr(id: string) {
     ostatniaWarstwa: id,
     ...(stan.trybMapy === 'ostatnia' ? { warstwa: id } : {}),
   })
+}
+
+/** Ustawia budżet zakupu (null wyłącza filtr budżetu). */
+export function ustawBudzet(budzet: Budzet | null) {
+  zmien({ budzet })
 }
 
 export function wyczyscFiltry() {

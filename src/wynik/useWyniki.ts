@@ -1,5 +1,6 @@
 // Wyniki dla mapy i list: łączą dane, wagi ze stanu i silnik. Pamięć ostatniego wyniku
 // jest w module, bo mapa, panel i ranking wołają ten hook naraz z tymi samymi wejściami.
+import { filtryZBudzetem } from './budzet.ts'
 import { type Dane, useDane } from './dane.ts'
 import {
   maskujWykluczone,
@@ -105,7 +106,11 @@ export function useWyniki(): Wyniki | null {
   const kierunki = useStan((s) => s.kierunki)
   const warstwa = useStan((s) => s.warstwa)
   const filtry = useStan((s) => s.filtry)
-  return dane.stan === 'gotowe' ? policzWyniki(dane, wagi, kierunki, warstwa, filtry) : null
+  const budzet = useStan((s) => s.budzet)
+  // W trybie „Biznes” budżet mieszkania nie ma sensu – ignorujemy go.
+  const tryb = useStan((s) => s.tryb)
+  const razem = tryb === 'biznes' ? filtry : filtryZBudzetem(filtry, budzet)
+  return dane.stan === 'gotowe' ? policzWyniki(dane, wagi, kierunki, warstwa, razem) : null
 }
 
 /** Pełne rozbicie jednego adresu dla karty okolicy i porównania. */
