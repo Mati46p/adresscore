@@ -254,7 +254,12 @@ export function EkranSymulatora(): JSX.Element {
                 type="button"
                 className={`seg symulator-wariant symulator-wariant--${w}`}
                 aria-pressed={edytowany === w}
-                onClick={() => setEdytowany(w)}
+                onClick={() => {
+                  // Podpowiedź liczono względem obiektów poprzedniego wariantu – w nowym jej
+                  // liczby byłyby fałszywe, a „Postaw tutaj” trafiłoby do innego wariantu.
+                  if (w !== edytowany) setSugestia(null)
+                  setEdytowany(w)
+                }}
               >
                 {w === 'b' && obiekty.b.length === 0 ? 'Porównaj z wariantem B' : NAZWA_WARIANTU[w]}
               </button>

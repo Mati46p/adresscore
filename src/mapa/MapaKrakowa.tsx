@@ -66,6 +66,7 @@ import {
 } from '@/mapa/wykluczenie'
 import { odlegloscM } from '@/miasto3d/laczenie'
 import { trybLekki } from '@/wynik/lekki'
+import type { IdMiejsca } from '@/wynik/url'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import './mapa.css'
 
@@ -80,10 +81,10 @@ export interface MapaKrakowaProps {
   /** h3 r10 wykluczone twardym filtrem (#37) – rysowane inaczej niż brak danych. */
   wykluczone?: ReadonlySet<string>
   punktyUslug?: readonly { lon: number; lat: number; nazwa: string }[]
-  postawionePunkty?: readonly { id: 'a' | 'b'; lon: number; lat: number }[]
-  onPrzesunPunkt?: (id: 'a' | 'b', lon: number, lat: number) => void
+  postawionePunkty?: readonly { id: IdMiejsca; lon: number; lat: number }[]
+  onPrzesunPunkt?: (id: IdMiejsca, lon: number, lat: number) => void
   /** Delete albo Backspace na fokusowanym znaczniku miejsca A/B (tryb „Biznes”). */
-  onUsunPunkt?: (id: 'a' | 'b') => void
+  onUsunPunkt?: (id: IdMiejsca) => void
   etykietySkali?: readonly [string, string, string]
   /** Własna treść legendy (tryb „Dla miasta”, #90). Bez niej: skala wyniku 0–100. */
   legenda?: ReactNode
@@ -116,7 +117,7 @@ export interface MapaKrakowaProps {
 
 const BRAK_WYKLUCZONYCH: ReadonlySet<string> = new Set()
 const BRAK_PUNKTOW: readonly { lon: number; lat: number; nazwa: string }[] = []
-const BRAK_POSTAWIONYCH: readonly { id: 'a' | 'b'; lon: number; lat: number }[] = []
+const BRAK_POSTAWIONYCH: readonly { id: IdMiejsca; lon: number; lat: number }[] = []
 
 // MapLibre 6 szuka workera obok własnego pliku (import.meta.url). Po pre-bundlingu Vite i w buildzie
 // tego pliku tam nie ma (404, mapa bez kafli), więc Vite pakuje worker osobno i podajemy jego adres.
@@ -672,7 +673,7 @@ export function MapaKrakowa({
     })
   }, [gotowa, punktyUslug])
 
-  // Miejsca A i B trybu „Biznes”: przyciski z klawiaturą i opisem dla czytnika (#106).
+  // Miejsca A–E trybu „Biznes”: przyciski z klawiaturą i opisem dla czytnika (#106).
   useZnacznikiBiznesu(mapaRef, gotowa, postawionePunkty, onPrzesunPunkt, onUsunPunkt)
   // Przelot do ramki (okolica z rankingu). Klucz z liczb, bo nowa tablica przy tych samych
   // granicach nie może ruszać kamery.

@@ -77,7 +77,7 @@ test('stary link ze sklepem czytany przez url.ts trafia do sklepu spożywczego',
   assert.equal(stary.branza, 'sklep')
   assert.equal(rozwiazBranze(stary.branza ?? '', ZNANE), 'sklep_spozywczy')
   // Punkty ze starego linku są przy tym zachowane: alias nie czyści stanu.
-  assert.deepEqual(stary.punktA, { lon: 19.94, lat: 50.06 })
+  assert.deepEqual(stary.miejsca?.[0], { lon: 19.94, lat: 50.06 })
   assert.equal(rozwiazBranze(czytajHash('#/biznes?b=przychodnia').branza ?? '', ZNANE), 'poz')
   // Nowe id z podkreśleniem przechodzi regułę parametru `b` i wraca po zapisie.
   const nowy = czytajHash('#/biznes?b=sklep_spozywczy')
