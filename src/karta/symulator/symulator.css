@@ -169,6 +169,16 @@
   position: absolute;
   inset: 0;
 }
+/* Nad mapą, na środku u góry – z dala od legendy i przycisków zoomu. */
+.symulator-wyczysc-mape {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  z-index: 2;
+  transform: translateX(-50%);
+  background: #fff;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.2);
+}
 
 /* ── Bilans jednego wariantu ───────────────────────────────────────────────── */
 .bilans {

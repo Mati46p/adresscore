@@ -400,6 +400,18 @@ export function EkranSymulatora(): JSX.Element {
               }
             : {})}
         />
+        {(obiekty.a.length > 0 || obiekty.b.length > 0) && (
+          <button
+            type="button"
+            className="seg symulator-wyczysc-mape"
+            onClick={() => {
+              setSugestia(null)
+              ustawSymulacje({ a: '', b: '' })
+            }}
+          >
+            Wyczyść wszystkie punkty
+          </button>
+        )}
       </section>
     </main>
   )
