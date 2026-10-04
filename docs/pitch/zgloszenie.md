@@ -24,7 +24,7 @@ bierze pod uwagę (pkt 13).
 - [x] d) opis projektu
 - [x] e) PDF, maks. **10 slajdów** – `adresscore.pdf` (10 slajdów, źródło `slajdy.html`)
 - [x] zrzuty ekranu w PDF – `zrzuty/` (karta adresu, mapa, Biznes) na slajdach 3, 4, 7
-- [ ] link do demo: https://adresscore.pl – **potwierdzić na telefonie przez sieć komórkową**
+- [ ] link do demo: https://adresscore.pl – **sprawdzić na komputerze spoza sieci zespołu**
 - [ ] link do repozytorium – repo jest prywatne; zdecydować: upublicznić albo dodać jury
 
 Język: polski albo angielski. Kategoria: tylko **Smart City**.
@@ -37,7 +37,7 @@ Język: polski albo angielski. Kategoria: tylko **Smart City**.
 | Związek z kategorią Smart City | 20% | 6, 7, 9 (dane MSIP, luki i symulator dla miasta, roadmapa) |
 | Użyteczność | 20% | 3, 4, 7 (karta, porównanie, Biznes) + `scenariusz-demo.md` |
 | Design | 20% | cały PDF + zrzuty; etyka – slajd 8 |
-| Kompletność | 10% | 3, 6, 10 (176 684 adresy, 126 warstw, offline) |
+| Kompletność | 10% | 3, 6, 10 (176 684 adresy, 126 warstw) |
 
 Etap 1: komisja (min. 3 mentorów) ocenia zgłoszenie w HackTribe; do nagrody trzeba ≥ 50% punktów.
 Etap 2: pitch na żywo finalistów przed jury.
@@ -73,7 +73,7 @@ Paweł Sieczkiewicz (psieczk). Dopisać pozostałe osoby, maks. 6.
 > poza zasięgiem usług, a symulator liczy, ile adresów zyska nowy przystanek czy przedszkole.
 >
 > Przy każdej liczbie widać źródło, licencję i rozdzielczość; brak danych to szara kategoria,
-> nigdy zero. Przestępczość tylko na poziomie rejonu, nigdy adresu. Działa na telefonie i offline.
+> nigdy zero. Przestępczość tylko na poziomie rejonu, nigdy adresu.
 > Ujawnienie: szablon repozytorium powstał przed startem hackathonu (11:00); funkcje i dane
 > powstały w trakcie wydarzenia.
 
@@ -94,8 +94,7 @@ Paweł Sieczkiewicz (psieczk). Dopisać pozostałe osoby, maks. 6.
 ## Lista przed wysłaniem finalnym (do 10:00)
 
 1. Wpisać nazwę zespołu i skład (pola wyżej i slajd 1 w `slajdy.html`).
-2. Potwierdzić publiczny adres demo na telefonie przez sieć komórkową; jeśli działa – QR
-   (`README.md`) na slajd 10 i usunąć dopiski „do potwierdzenia”.
+2. Otworzyć https://adresscore.pl na komputerze spoza sieci zespołu i sprawdzić mapę i kartę adresu.
 3. Wpisać na slajdzie 10 commit i datę szablonu sprzed 11:00 (ujawnienie).
 4. Zdecydować o repo (publiczne albo dostęp dla jury) i wpisać link.
 5. Odświeżyć zrzuty, jeśli UI się zmienił, i wygenerować PDF (`README.md`).
@@ -115,7 +114,7 @@ jako „Listed” na YouTube przed finałem.
 
 ```
 Demo online – nic nie trzeba instalować:
-1. Otwórz https://adresscore.pl (komputer albo telefon, Chrome/Edge/Safari/Firefox).
+1. Otwórz https://adresscore.pl (komputer, Chrome/Edge/Safari/Firefox).
 2. Ekran „Szukaj”: mapa Krakowa i 13 gmin obwarzanka w heksach. Wybierz personę
    (np. Rodzina z dziećmi, Senior) albo tryb Kupuję / Wynajmuję – mapa przelicza się na żywo.
 3. Kliknij heks albo wpisz adres (np. „Grodzka 52”) → karta adresu z etykietą A–G,
