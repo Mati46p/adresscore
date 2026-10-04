@@ -26,7 +26,15 @@ import {
   wartoscPiksela,
   zrodloPliku,
 } from './lib/tiff.mjs'
-import { CACHE, DANE, dzis, pobierzDoCache, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
+import {
+  CACHE,
+  DANE,
+  dzis,
+  MIASTO,
+  pobierzDoCache,
+  wczytajAdresy,
+  zapiszWskaznik,
+} from './lib/wspolne.mjs'
 
 export const ROK = 2023
 export const PLIK_RASTRA = `pol_viirs_nvf_${ROK}_100m_v1.tif`
@@ -240,7 +248,9 @@ export function opisWskaznika(kotwice) {
     `Jak jasno jest nocą wokół adresu, widziane z satelity VIIRS: średnia roczna za ${ROK} r. (produkt EOG VNL 2.2), w nW/cm²/sr. Im więcej, tym więcej sztucznego światła widać z kosmosu. ` +
     'Mierzy światło wysyłane w górę z oczka 15″ (ok. 460 m × 300 m), więc opisuje zanieczyszczenie światłem w skali okolicy – nie jasność nieba widzianą z balkonu, oświetlenie ulicy ani wnętrz. ' +
     'Wartość jest wygładzona między sąsiednimi oczkami, dlatego nie ma ostrych granic. ' +
-    `Dla porównania: Rynek Główny w Krakowie ${liczbaPL(kotwice.rynek)}, mediana adresów Krakowa ${liczbaPL(kotwice.medianaKrakowa)}, Las Wolski ${liczbaPL(kotwice.lasWolski)}, Puszcza Niepołomicka ${liczbaPL(kotwice.puszcza)}. ` +
+    (kotwice
+      ? `Dla porównania: Rynek Główny w Krakowie ${liczbaPL(kotwice.rynek)}, mediana adresów Krakowa ${liczbaPL(kotwice.medianaKrakowa)}, Las Wolski ${liczbaPL(kotwice.lasWolski)}, Puszcza Niepołomicka ${liczbaPL(kotwice.puszcza)}. `
+      : '') +
     'Zero oznacza światło poniżej progu czułości satelity, nie brak pomiaru.'
   )
 }
@@ -363,6 +373,17 @@ async function main() {
     )
 
     // Miejsca znane: kontrola sensu fizycznego i georeferencji.
+    // Tryb miejski (ADRESCORE_MIASTO): kotwice i korelacje są krakowskie, więc pomijamy je; raster
+    // jest ogólnopolski i ten sam, a jego georeferencję sprawdził już bieg dla Krakowa.
+    if (MIASTO) {
+      const wartosciM = adresy.map((a) => wartoscPiksela(okno, a.lon, a.lat))
+      const zWartoscia = wartosciM.filter((v) => v !== null)
+      if (!zWartoscia.length) throw new Error('Brak jasności nocnej dla adresów miasta')
+      wypiszRozklad(MIASTO, podsumuj(wartosciM))
+      zapiszWskaznik(metaWskaznika(null), wartosciM)
+      console.log(`Czas: ${sekundy(start)} s`)
+      return
+    }
     const miejsca = sprawdzMiejsca(okno)
     for (const m of miejsca.wyniki) console.log(`  ${m.nazwa}: ${zaokr(m.wartosc)}`)
     if (miejsca.bledy.length)

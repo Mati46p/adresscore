@@ -3,7 +3,7 @@
 import { execFileSync } from 'node:child_process'
 import { writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { CACHE, DANE, dzis, pobierzDoCache, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
+import { CACHE, DANE, MIASTO, dzis, pobierzDoCache, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
 
 const ROK = 2025
 const KG_URL = 'https://www.gov.pl/attachment/d31f40d0-8f3e-44ca-ba34-2970fd4742b0'
@@ -25,7 +25,12 @@ export function dopasujZdarzenia(adresy, tabela) {
   return gminy
 }
 
+// Miasta, w których tabela KG PSP jest ewidentnie niepełna (Poznań: 41 pożarów na ~550 tys. mieszkańców,
+// kilkanaście razy mniej niż w porównywalnych miastach) – brak danych (null), nie zero.
+const NIEPELNE_KG_PSP = new Set(['3064011'])
+
 export function wartoscDlaGminy(teryt, tabela, rodzaj) {
+  if (NIEPELNE_KG_PSP.has(teryt)) return null
   const rekord = tabela[teryt.slice(0, 6)]
   if (!rekord) return null
   if (teryt === '1261011') return rodzaj === 'fires' ? BIP_KRAKOW.fires : null
@@ -46,9 +51,9 @@ async function main() {
     ),
   )
   const gminy = dopasujZdarzenia(adresy, tabela)
-  if (gminy.size !== 14 || !gminy.has('1261011'))
+  if (!MIASTO && (gminy.size !== 14 || !gminy.has('1261011')))
     throw new Error(`Oczekiwano Krakowa i 13 gmin, jest ${gminy.size}`)
-  if (tabela['126101']?.fires !== 224 || tabela['126101']?.threats !== 557)
+  if (!MIASTO && (tabela['126101']?.fires !== 224 || tabela['126101']?.threats !== 557))
     throw new Error('Zmieniono dane KG PSP dla Krakowa – ponów kontrolę z raportem BIP')
   const pobrano = dzis()
   const zrodloKg = {
@@ -67,16 +72,17 @@ async function main() {
     pobrano,
   }
   const wspolnyOpis =
-    'Liczba zdarzeń w całej gminie w 2025 r.; przypisana do adresów tylko jako kontekst gminny. Nie określa zagrożenia w miejscu zamieszkania ani skuteczności służb. Nie jest normalizowana względem ludności lub powierzchni. '
-  const rozbieznosc =
-    'KG PSP w tabeli 1 pokazuje dla Krakowa 224 pożary i 557 miejscowych zagrożeń; raport BIP miasta podaje 2623 pożary. Źródła nie uzgadniają się: dla pożarów w Krakowie używamy BIP, a miejscowe zagrożenia Krakowa oznaczamy jako brak danych. '
+    (MIASTO ? 'Dane KG PSP bywają niepełne w miastach (rozjazdy ewidencji SWD; w Krakowie 224 pożary w KG PSP wobec 2623 w raporcie miasta), więc porównania między miastami są zawodne. ' : '') + 'Liczba zdarzeń w całej gminie w 2025 r.; przypisana do adresów tylko jako kontekst gminny. Nie określa zagrożenia w miejscu zamieszkania ani skuteczności służb. Nie jest normalizowana względem ludności lub powierzchni. '
+  const rozbieznosc = MIASTO
+    ? 'Poznań: tabela KG PSP wykazuje 41 pożarów (ewidentnie niepełne), więc dla Poznania brak danych. '
+    : 'KG PSP w tabeli 1 pokazuje dla Krakowa 224 pożary i 557 miejscowych zagrożeń; raport BIP miasta podaje 2623 pożary. Źródła nie uzgadniają się: dla pożarów w Krakowie używamy BIP, a miejscowe zagrożenia Krakowa oznaczamy jako brak danych. '
   const miary = [
     {
       id: 'pozary_gmina_2025',
       nazwa: 'Pożary w gminie w 2025 r.',
       rodzaj: 'fires',
-      opis: `${wspolnyOpis}${rozbieznosc}Raport BIP podaje dla Krakowa 1450 pożarów w 2024 i 2623 w 2025 r.; trend dotyczy wyłącznie Krakowa i jednego źródła.`,
-      zrodla: [zrodloKg, zrodloBip],
+      opis: `${wspolnyOpis}${rozbieznosc}${MIASTO ? '' : 'Raport BIP podaje dla Krakowa 1450 pożarów w 2024 i 2623 w 2025 r.; trend dotyczy wyłącznie Krakowa i jednego źródła.'}`,
+      zrodla: MIASTO ? [zrodloKg] : [zrodloKg, zrodloBip],
     },
     {
       id: 'miejscowe_zagrozenia_gmina_2025',

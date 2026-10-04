@@ -33,7 +33,7 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import KDBush from 'kdbush'
 import proj4 from 'proj4'
-import { CACHE, dzis, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
+import { CACHE, dzis, MIASTO, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
 
 const MSIP = 'https://msip.um.krakow.pl/arcgis/rest/services/WS/RUCHY_MASOWE_SOPO_2024/MapServer'
 const MSIP_META =
@@ -644,14 +644,18 @@ const dataDanychPig = (zasiegi) => {
 
 function zrodla({ pobranoMsip, pobranoPig, zasiegi }) {
   return [
-    {
-      nazwa:
-        'Gmina Miejska Kraków, Portal MSIP Obserwatorium (https://msip.krakow.pl) – Mapa osuwisk i terenów zagrożonych ruchami masowymi, SOPO 2024 (Kraków)',
-      url: MSIP,
-      licencja: `Regulamin MSIP: ${REGULAMIN_MSIP}; warunki wykorzystania danych SOPO 10k PIG-PIB: ${WARUNKI_PIG}; metadane zbioru: ${MSIP_META}; dane przetworzone (przynależność punktu do osuwiska, odległość), pozyskano ${pobranoMsip}`,
-      dataDanych: '2024 (metadane MSIP: rewizja 2025-04-28)',
-      pobrano: pobranoMsip,
-    },
+    ...(MIASTO
+      ? []
+      : [
+          {
+            nazwa:
+              'Gmina Miejska Kraków, Portal MSIP Obserwatorium (https://msip.krakow.pl) – Mapa osuwisk i terenów zagrożonych ruchami masowymi, SOPO 2024 (Kraków)',
+            url: MSIP,
+            licencja: `Regulamin MSIP: ${REGULAMIN_MSIP}; warunki wykorzystania danych SOPO 10k PIG-PIB: ${WARUNKI_PIG}; metadane zbioru: ${MSIP_META}; dane przetworzone (przynależność punktu do osuwiska, odległość), pozyskano ${pobranoMsip}`,
+            dataDanych: '2024 (metadane MSIP: rewizja 2025-04-28)',
+            pobrano: pobranoMsip,
+          },
+        ]),
     {
       nazwa:
         'Państwowy Instytut Geologiczny – PIB, System Osłony Przeciwosuwiskowej (SOPO) – osuwiska, strefy aktywności i tereny zagrożone (poza Krakowem i uzupełnienie wpisów nowszych niż MSIP)',
@@ -752,22 +756,28 @@ async function main() {
     zakres[2] + MARGINES_STOPNIE,
     zakres[3] + MARGINES_STOPNIE,
   ]
-  const msip8 = await identifyWarstwa({
-    nazwa: 'msip-warstwa8',
-    baza: MSIP,
-    warstwa: 8,
-    idPole: 'FID',
-    limit: 2000,
-    bbox,
-  })
-  const msip9 = await identifyWarstwa({
-    nazwa: 'msip-warstwa9',
-    baza: MSIP,
-    warstwa: 9,
-    idPole: 'FID',
-    limit: 2000,
-    bbox,
-  })
+  // Tryb miejski (ADRESCORE_MIASTO): MSIP obejmuje tylko Kraków, więc go nie pytamy – wszystko z PIG.
+  const pustyMsip = { obiekty: [], pobrano: dzis() }
+  const msip8 = MIASTO
+    ? pustyMsip
+    : await identifyWarstwa({
+        nazwa: 'msip-warstwa8',
+        baza: MSIP,
+        warstwa: 8,
+        idPole: 'FID',
+        limit: 2000,
+        bbox,
+      })
+  const msip9 = MIASTO
+    ? pustyMsip
+    : await identifyWarstwa({
+        nazwa: 'msip-warstwa9',
+        baza: MSIP,
+        warstwa: 9,
+        idPole: 'FID',
+        limit: 2000,
+        bbox,
+      })
   const pig14 = await identifyWarstwa({
     nazwa: 'pig-warstwa14',
     baza: PIG,
@@ -793,7 +803,10 @@ async function main() {
     bbox,
   })
   const stanPrac = await pobierzStanPrac(bbox)
-  if (msip8.obiekty.length < 300 || msip9.obiekty.length < 50 || pig14.obiekty.length < 3000)
+  if (
+    !MIASTO &&
+    (msip8.obiekty.length < 300 || msip9.obiekty.length < 50 || pig14.obiekty.length < 3000)
+  )
     throw new Error(
       'Podejrzanie mało obiektów w źródłach SOPO – usuń etl/.cache/osuwiska i spróbuj ponownie',
     )
@@ -823,7 +836,13 @@ async function main() {
     wyniki.push(klasyfikuj(x, y, kontekst, zasiegi.length > 0))
   }
   const zasiegi = [...zasiegiUzyte].map((z) => z.atrybuty)
-  if (!zasiegi.length) throw new Error('Żaden adres nie leży w zasięgu opracowania SOPO')
+  if (!zasiegi.length) {
+    if (MIASTO) {
+      console.log(`Żaden adres (${MIASTO}) nie leży w zasięgu opracowania SOPO – warstwa pominięta`)
+      return
+    }
+    throw new Error('Żaden adres nie leży w zasięgu opracowania SOPO')
+  }
 
   const pobranoMsip = msip8.pobrano
   const pobranoPig = [pig14, pig13, pig12, stanPrac]

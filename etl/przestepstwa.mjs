@@ -2,7 +2,8 @@
 // Uruchom: node etl/przestepstwa.mjs. Odpowiedzi BDL trafiają do etl/.cache/.
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { DANE, dzis, pobierzDoCache, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
+import { MIASTA, bdlPowiaty } from './lib/miasta.mjs'
+import { DANE, MIASTO, dzis, pobierzDoCache, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
 import { PRZENIESIONE } from './uprosc-kryteria.mjs'
 
 export const ROK = 2025
@@ -21,6 +22,15 @@ export const POWIATY = {
   1219: { bdl: '011212019000', nazwa: 'Powiat wielicki', jednostka: 'KPP w Wieliczce' },
   1214: { bdl: '011212014000', nazwa: 'Powiat proszowicki', jednostka: 'KPP w Proszowicach' },
 }
+
+// Dla ADRESCORE_MIASTO: powiat miasta na prawach powiatu (jedna jednostka BDL, jedno zapytanie unit-id).
+export const POWIATY_MIAST = Object.fromEntries(
+  Object.values(MIASTA).map((m) => [
+    m.teryt4,
+    { bdl: m.bdl, nazwa: m.bdlNazwa, jednostka: `KMP/KPP ${m.nazwa}` },
+  ]),
+)
+const AKTYWNE = MIASTO ? POWIATY_MIAST : POWIATY
 
 // Rejony komisariatów KMP Kraków wg stron „Obsługiwana dzielnica” (stan 2026-10-03).
 const KP = (n, id) =>
@@ -54,7 +64,7 @@ export function wartoscBdl(odpowiedz, jednostka, nazwa, rok = ROK) {
 
 export function powiatAdresu(teryt) {
   if (!/^\d{7}$/.test(teryt ?? '')) throw new Error(`Niepoprawny TERYT adresu: ${teryt}`)
-  return POWIATY[teryt.slice(0, 4)] ? teryt.slice(0, 4) : null
+  return AKTYWNE[teryt.slice(0, 4)] ? teryt.slice(0, 4) : null
 }
 
 const urlZmiennej = (id) =>
@@ -75,11 +85,15 @@ async function main() {
   const { wersja, adresy } = wczytajAdresy()
   const odp = {}
   for (const [k, id] of Object.entries(ZMIENNE)) {
+    if (MIASTO) {
+      odp[k] = await bdlPowiaty(id, ROK, pobierzDoCache)
+      continue
+    }
     const p = await pobierzDoCache(urlZmiennej(id), `bdl-${id}-${ROK}.json`)
     odp[k] = JSON.parse(readFileSync(p, 'utf8'))
   }
   const powiaty = Object.fromEntries(
-    Object.entries(POWIATY).map(([t, p]) => [
+    Object.entries(AKTYWNE).map(([t, p]) => [
       t,
       {
         ...p,
@@ -130,7 +144,9 @@ async function main() {
     {
       id: idPrzestepstw,
       nazwa: `Przestępstwa stwierdzone na 1000 mieszkańców (powiat, ${ROK})`,
-      opis: `${zastrzezenie}Dane per rejon komisariatu KMP Kraków nie są jeszcze dostępne (BIP Krakowa niedostępny z ETL), dlatego cały Kraków ma jedną wartość. Wskaźnik informacyjny – nie wpływa na wynik adresu.`,
+      opis: MIASTO
+        ? `${zastrzezenie}Dane per komisariat nie są publikowane w BDL, dlatego całe miasto ma jedną wartość. Wskaźnik informacyjny.`
+        : `${zastrzezenie}Dane per rejon komisariatu KMP Kraków nie są jeszcze dostępne (BIP Krakowa niedostępny z ETL), dlatego cały Kraków ma jedną wartość. Wskaźnik informacyjny – nie wpływa na wynik adresu.`,
       jednostka: 'na 1000 mieszkańców',
       ...grupa(idPrzestepstw),
       rozdzielczosc: 'rejon',

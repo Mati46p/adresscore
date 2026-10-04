@@ -12,7 +12,15 @@ import { existsSync, mkdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { inflateSync } from 'node:zlib'
-import { CACHE, DANE, dzis, pobierzDoCache, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
+import {
+  CACHE,
+  DANE,
+  dzis,
+  MIASTO,
+  pobierzDoCache,
+  wczytajAdresy,
+  zapiszWskaznik,
+} from './lib/wspolne.mjs'
 
 const NAZWA_KAFLA = 'ESA_WorldCover_10m_2021_v200_N48E018_Map.tif'
 const URL_KAFLA = `https://esa-worldcover.s3.eu-central-1.amazonaws.com/v200/2021/map/${NAZWA_KAFLA}`
@@ -352,7 +360,95 @@ export function opisWskaznika(kor) {
   )
 }
 
+/** Nazwa kafla WorldCover 3° × 3° dla punktu (lewy dolny róg to wielokrotność 3°). */
+export function nazwaKaflaDlaPunktu(lon, lat) {
+  const la = Math.floor(lat / 3) * 3
+  const lo = Math.floor(lon / 3) * 3
+  const ns = la >= 0 ? 'N' : 'S'
+  const ew = lo >= 0 ? 'E' : 'W'
+  return `ESA_WorldCover_10m_2021_v200_${ns}${String(Math.abs(la)).padStart(2, '0')}${ew}${String(Math.abs(lo)).padStart(3, '0')}_Map.tif`
+}
+
+/**
+ * Tryb miejski (ADRESCORE_MIASTO): kafel dobierany do każdego adresu (miasto może leżeć na styku
+ * kafli, np. Warszawa na 21°E). Adres, którego koło 100 m wychodzi poza kafel, dostaje null.
+ * Porównania z MSIP i kontrole krakowskie pomijamy; dekoder i georeferencję sprawdza bieg Krakowa.
+ */
+async function mainMiasto() {
+  const start = performance.now()
+  const { adresy } = wczytajAdresy()
+  const wedlugKafla = new Map()
+  adresy.forEach((a, i) => {
+    const n = nazwaKaflaDlaPunktu(a.lon, a.lat)
+    if (!wedlugKafla.has(n)) wedlugKafla.set(n, [])
+    wedlugKafla.get(n).push(i)
+  })
+  const wartosci = new Array(adresy.length).fill(null)
+  let brzeg = 0
+  const kafle = []
+  mkdirSync(join(CACHE, 'worldcover'), { recursive: true })
+  for (const [nazwa, indeksy] of wedlugKafla) {
+    const url = `https://esa-worldcover.s3.eu-central-1.amazonaws.com/v200/2021/map/${nazwa}`
+    if (!existsSync(join(CACHE, 'worldcover', nazwa)))
+      console.log(`Pobieram kafel ESA WorldCover ${nazwa} (jednorazowo)…`)
+    const bufor = readFileSync(await pobierzDoCache(url, join('worldcover', nazwa)))
+    const naglowek = czytajNaglowekTiff(bufor)
+    const punkty = indeksy.map((i) => adresy[i])
+    const okno = oknoDlaPunktow(bufor, naglowek, punkty)
+    const licznik = new Float64Array(256)
+    for (const kod of okno.piksele) licznik[kod]++
+    for (let k = 0; k < licznik.length; k++)
+      if (licznik[k] > 0 && !KLASY_LEGENDY.includes(k))
+        throw new Error(`Kody spoza legendy WorldCover w ${nazwa}: ${k}`)
+    let zabudowa = 0
+    for (const i of indeksy) {
+      const a = adresy[i]
+      let w
+      try {
+        w = udzialZieleni(okno, a.lon, a.lat)
+      } catch {
+        brzeg++
+        continue
+      }
+      wartosci[i] = w === null ? null : Math.round(w.procent)
+      const c = Math.floor((a.lon - okno.lon0) / okno.dLon)
+      const r = Math.floor((okno.lat0 - a.lat) / okno.dLat)
+      if (okno.piksele[r * okno.szer + c] === 50) zabudowa++
+    }
+    console.log(
+      `${nazwa}: ${indeksy.length} adresów, w pikselu zabudowy ${((100 * zabudowa) / indeksy.length).toFixed(1)}%`,
+    )
+    kafle.push({ nazwa, url })
+  }
+  console.log(`Adresy z kołem poza kafelkiem (null): ${brzeg}`)
+  zapiszWskaznik(
+    {
+      id: 'zielen_worldcover_100m',
+      kategoria: 'spokoj',
+      nazwa: 'Zieleń w promieniu 100 m (ESA WorldCover)',
+      opis:
+        'Odsetek powierzchni w promieniu 100 m od adresu zajęty przez drzewa i trawę według satelitarnej mapy pokrycia terenu ESA WorldCover z 2021 r. (piksel 10 m). ' +
+        'To pokrycie terenu, nie temperatura ani dostęp do parku. Łąki i pastwiska liczą się jak trawa, krzewy i pola uprawne nie.',
+      jednostka: '%',
+      kierunek: 'wiecej-lepiej',
+      rozdzielczosc: 'adres',
+      zakres: [0, 100],
+      zadanie: 112,
+      zrodla: kafle.map((k) => ({
+        nazwa: `ESA WorldCover 10 m 2021 v200, kafel ${k.nazwa.split('_')[4]} (klasy 10 drzewa i 30 trawa)`,
+        url: k.url,
+        licencja: LICENCJA,
+        dataDanych: '2021',
+        pobrano: dzis(),
+      })),
+    },
+    wartosci,
+  )
+  console.log(`Czas: ${((performance.now() - start) / 1000).toFixed(1)} s`)
+}
+
 async function main() {
+  if (MIASTO) return mainMiasto()
   const start = performance.now()
   const { wersja, adresy } = wczytajAdresy()
 

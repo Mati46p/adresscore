@@ -7,7 +7,7 @@
 import { createReadStream, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { cellToParent, latLngToCell } from 'h3-js'
-import { dzis, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
+import { MIASTO, dzis, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
 
 export const RES = 8
 export const LATA = [2018, 2024]
@@ -31,7 +31,10 @@ export const KOD_PIESZEGO = 'I'
 /** Punkt zdarzenia dalej niż tyle od punktu GUS jego miejscowości to błąd współrzędnych (literówka). */
 export const MAKS_KM_OD_GUS = 25
 /** Obwiednia województwa małopolskiego z zapasem: punkt spoza niej to literówka (także bez punktu GUS). */
-const OBWIEDNIA = { lonMin: 18.5, lonMax: 21.5, latMin: 49.0, latMax: 50.7 }
+// ADRESCORE_MIASTO: obwiednia całej Polski (miasta poza Małopolską); filtr przestrzenny i tak robią heksy z adresami.
+const OBWIEDNIA = MIASTO
+  ? { lonMin: 14.0, lonMax: 24.5, latMin: 49.0, latMax: 55.0 }
+  : { lonMin: 18.5, lonMax: 21.5, latMin: 49.0, latMax: 50.7 }
 
 /** Proste pola bloku XML (bez zagnieżdżeń) → { NAZWA: tekst }. Pierwsze wystąpienie wygrywa. */
 export function pola(xml) {

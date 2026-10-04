@@ -40,6 +40,7 @@ import {
   srodekLinii,
   warunekSql,
 } from './lib/osm-uslugi.mjs'
+import { MIASTO_INFO, pbfRegionu, WOJEWODZTWO } from './lib/miasto.mjs'
 import { CACHE, dzis, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
 
 const ZADANIE = 124
@@ -85,6 +86,10 @@ const sq = (s) => s.replaceAll("'", "''")
  * Odświeżenie danych = usunięcie pliku z cache.
  */
 async function ustalPbf() {
+  if (MIASTO_INFO) {
+    const r = await pbfRegionu()
+    return { plik: r.plik, stan: r.stan }
+  }
   mkdirSync(CACHE, { recursive: true })
   const zData = readdirSync(CACHE)
     .map((n) => /^malopolskie-(\d{2})(\d{2})(\d{2})\.osm\.pbf$/.exec(n))
@@ -209,7 +214,10 @@ function zbudujGrupy({ obiekty, wezly }) {
 
 /** Grupy punktów z cache albo z PBF. Cache w formie tablic [lat, lon, nazwa] – jest mały i stabilny. */
 async function grupyOsm(pbf, stan) {
-  const cel = join(CACHE, `osm-uslugi-${stan}-${odciskDefinicji()}.json`)
+  const cel = join(
+    CACHE,
+    `osm-uslugi-${stan}-${odciskDefinicji()}${MIASTO_INFO ? `-${MIASTO_INFO.pbf}` : ''}.json`,
+  )
   const rozwin = (t) => (t ? t.map(([lat, lon, nazwa]) => ({ lat, lon, nazwa })) : null)
   if (existsSync(cel)) {
     const j = JSON.parse(readFileSync(cel, 'utf8'))
@@ -262,18 +270,18 @@ async function pobierzJson(url, naglowki = {}, proby = 4) {
 
 /** Wszystkie punkty InPost województwa (strony po 500), bez tokenu. Wynik z dnia pobrania w cache. */
 async function punktyInPost() {
-  const cel = join(CACHE, `inpost-punkty-${dzis()}.json`)
+  const cel = join(CACHE, `inpost-punkty${MIASTO_INFO ? `-${MIASTO_INFO.pbf}` : ''}-${dzis()}.json`)
   if (existsSync(cel)) return JSON.parse(readFileSync(cel, 'utf8'))
   const items = []
   let zgloszone = 0
   for (let strona = 1, stron = 1; strona <= stron; strona++) {
-    const url = `${INPOST_API}?province=${encodeURIComponent('małopolskie')}&per_page=500&page=${strona}&fields=name,type,status,location`
+    const url = `${INPOST_API}?province=${encodeURIComponent(WOJEWODZTWO)}&per_page=500&page=${strona}&fields=name,type,status,location`
     const j = await pobierzJson(url)
     stron = j.total_pages
     zgloszone = j.count
     items.push(...j.items)
   }
-  if (items.length !== zgloszone || items.length < 2_000)
+  if (items.length !== zgloszone || items.length < (MIASTO_INFO ? 300 : 2_000))
     throw new Error(`InPost: ${items.length} punktów, API zgłasza ${zgloszone}`)
   const wynik = { pobrano: dzis(), items }
   writeFileSync(cel, JSON.stringify(wynik))
@@ -284,6 +292,8 @@ async function punktyInPost() {
 
 /** Ludność ogółem 31.12.2024 z BDL GUS dla 14 gmin obszaru. Map teryt → mieszkańcy. */
 async function ludnoscGmin(adresy) {
+  // Tryb miasta: licznik „na 1000 mieszkańców" porównuje Kraków z obwarzankiem, więc go pomijamy.
+  if (MIASTO_INFO) return null
   const cel = join(CACHE, `bdl-ludnosc-${BDL_ROK}.json`)
   let dane
   if (existsSync(cel)) dane = JSON.parse(readFileSync(cel, 'utf8'))
@@ -418,8 +428,10 @@ const WARSTWY = [
 ]
 
 const zrodloOsm = (tagi, stan) => ({
-  nazwa: `OpenStreetMap, ekstrakt Geofabrik – małopolskie (${tagi})`,
-  url: STRONA_GEOFABRIK,
+  nazwa: MIASTO_INFO
+    ? `OpenStreetMap, ekstrakt województwa ${WOJEWODZTWO} (lustro download.openstreetmap.fr; ${tagi})`
+    : `OpenStreetMap, ekstrakt Geofabrik – małopolskie (${tagi})`,
+  url: MIASTO_INFO ? 'https://download.openstreetmap.fr/extracts/europe/poland/' : STRONA_GEOFABRIK,
   licencja: LICENCJA_OSM,
   dataDanych: stan,
   pobrano: dzis(),
@@ -434,7 +446,9 @@ const zrodloBdl = {
 }
 
 const zdanieLicznika = (l, jak) =>
-  `${jak} na 1000 mieszkańców: ${liczbaPL(l.krakow.na1000)} w Krakowie, ${liczbaPL(l.obwarzanek.na1000)} w 13 gminach obwarzanka.`
+  !l
+    ? ''
+    : `${jak} na 1000 mieszkańców: ${liczbaPL(l.krakow.na1000)} w Krakowie, ${liczbaPL(l.obwarzanek.na1000)} w 13 gminach obwarzanka.`
 
 /** Percentyl z posortowanej tablicy. */
 const pct = (t, p) => (t.length ? t[Math.min(t.length - 1, Math.floor(p * (t.length - 1)))] : null)
@@ -442,7 +456,10 @@ const pct = (t, p) => (t.length ? t[Math.min(t.length - 1, Math.floor(p * (t.len
 function rozklad(adresy, wartosci) {
   const wg = (czyKrakow) =>
     wartosci
-      .filter((v, i) => v !== null && (adresy[i].teryt === TERYT_KRAKOWA) === czyKrakow)
+      .filter(
+        (v, i) =>
+          v !== null && (MIASTO_INFO ? czyKrakow : (adresy[i].teryt === TERYT_KRAKOWA) === czyKrakow),
+      )
       .sort((a, b) => a - b)
   return Object.fromEntries(
     [
@@ -491,7 +508,9 @@ function kontrolaIndeksu(adresy, punkty, wartosci, nazwa) {
   }
 }
 
-const KONTROLA_MIEJSC = [
+const KONTROLA_MIEJSC = MIASTO_INFO
+  ? []
+  : [
   ['Kraków', 'Rynek Główny', '10', 'Rynek Główny 10 (Stare Miasto)'],
   ['Kraków', 'Powstańców Wielkopolskich', '1', 'Powstańców Wielkopolskich 1 (Kraków, Dębniki)'],
   ['Wieliczka', 'Rynek Górny', '7', 'Wieliczka, Rynek Górny 7'],
@@ -520,7 +539,7 @@ export async function licz() {
       id: 'paczkomat_odleglosc',
       grupa: 'inpost',
       nazwa: 'Najbliższy paczkomat InPost',
-      opis: `Odległość w linii prostej do najbliższego paczkomatu InPost z publicznego API operatora (${lockers.length} automatów w Małopolsce; punkty obsługi w sklepach i paczkomaty innych firm nie są liczone). To dane operatora prywatnego, bez licencji otwartej, więc publikujemy wyłącznie odległość.`,
+      opis: `Odległość w linii prostej do najbliższego paczkomatu InPost z publicznego API operatora (${lockers.length} automatów w ${MIASTO_INFO ? `województwie ${WOJEWODZTWO}` : 'Małopolsce'}; punkty obsługi w sklepach i paczkomaty innych firm nie są liczone). To dane operatora prywatnego, bez licencji otwartej, więc publikujemy wyłącznie odległość.`,
       zakres: [0, 1000],
       kategoria: 'codziennosc',
       kierunek: 'mniej-lepiej',
@@ -535,11 +554,9 @@ export async function licz() {
     const punkty = w.g.brzeg ?? w.g.obiekty
     const wartosci = odleglosci(adresy, punkty, MAX_M)
     kontrolaIndeksu(adresy, punkty, wartosci, w.id)
-    const licznik = licznikNa1000(
-      obiektyWGminach(w.g.obiekty, najblizszyAdres),
-      ludnosc,
-      TERYT_KRAKOWA,
-    )
+    const licznik = ludnosc
+      ? licznikNa1000(obiektyWGminach(w.g.obiekty, najblizszyAdres), ludnosc, TERYT_KRAKOWA)
+      : null
     const opis = w.inpost
       ? `${w.opis} ${zdanieLicznika(licznik, 'Paczkomatów')}`
       : `${w.opis} Kompletność mapy OSM jest nierówna. ${zdanieLicznika(licznik, 'Obiektów tej grupy')}`
@@ -558,7 +575,9 @@ export async function licz() {
           w.inpost
             ? {
                 nazwa:
-                  'InPost – publiczne API punktów (ShipX), paczkomaty województwa małopolskiego, migawka z dnia pobrania',
+                  MIASTO_INFO
+                  ? `InPost – publiczne API punktów (ShipX), paczkomaty województwa ${WOJEWODZTWO}, migawka z dnia pobrania`
+                  : 'InPost – publiczne API punktów (ShipX), paczkomaty województwa małopolskiego, migawka z dnia pobrania',
                 url: INPOST_API,
                 licencja:
                   'Dane operatora prywatnego bez licencji otwartej; publikujemy wyłącznie odległość, bez listy punktów',
@@ -566,7 +585,7 @@ export async function licz() {
                 pobrano: inpost.pobrano,
               }
             : zrodloOsm(w.tagi, stan),
-          zrodloBdl,
+          ...(ludnosc ? [zrodloBdl] : []),
         ],
       },
       wartosci,
@@ -586,7 +605,9 @@ export async function licz() {
   for (const r of raport) {
     const f = (x) => [x.p10, x.p50, x.p90, x.p99, x.max].join(' / ')
     console.log(
-      `${r.id.padEnd(28)} w Małopolsce ${String(r.obiektow).padStart(5)} | Kraków ${f(r.rozklad.Kraków)} (${liczbaPL(r.licznik.krakow.na1000)}/1000) | obwarzanek ${f(r.rozklad.obwarzanek)} (${liczbaPL(r.licznik.obwarzanek.na1000)}/1000)`,
+      r.licznik
+        ? `${r.id.padEnd(28)} w Małopolsce ${String(r.obiektow).padStart(5)} | Kraków ${f(r.rozklad.Kraków)} (${liczbaPL(r.licznik.krakow.na1000)}/1000) | obwarzanek ${f(r.rozklad.obwarzanek)} (${liczbaPL(r.licznik.obwarzanek.na1000)}/1000)`
+        : `${r.id.padEnd(28)} w województwie ${String(r.obiektow).padStart(5)} | miasto ${f(r.rozklad.Kraków)}`,
     )
   }
 

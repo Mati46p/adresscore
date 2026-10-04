@@ -1,8 +1,9 @@
 // GUS BDL: dochody gmin z udziału w PIT na mieszkańca i przeciętne wynagrodzenie w powiecie.
 // Uruchom po etl/obwarzanek.mjs: node etl/zamoznosc.mjs. Surowe odpowiedzi są w etl/.cache/.
-import { readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { DANE, dzis, pobierzDoCache, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
+import { MIASTA } from './lib/miasta.mjs'
+import { DANE, MIASTO, dzis, pobierzDoCache, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
 
 export const ROK = 2025
 export const PIT = 149128
@@ -28,6 +29,12 @@ export const GMINY = {
   1206022: ['011212006022', 'Igołomia-Wawrzeńczyce'],
 }
 
+// ADRESCORE_MIASTO: miasto na prawach powiatu = jedna gmina (…011) w jednym powiecie (…000); nazwy z BDL nie są sprawdzane.
+const M = MIASTO ? MIASTA[MIASTO] : null
+if (M) {
+  GMINY[`${M.teryt4}011`] = [`${M.bdl.slice(0, -3)}011`, null]
+}
+
 export const POWIATY = {
   '011212161000': 'Powiat m. Kraków',
   '011212006000': 'Powiat krakowski',
@@ -38,7 +45,8 @@ export const POWIATY = {
 export function wartoscBDL(odpowiedz, id, nazwa, zmienna, rok = ROK) {
   if (
     odpowiedz.unitId !== id ||
-    odpowiedz.unitName?.toLocaleLowerCase('pl-PL') !== nazwa.toLocaleLowerCase('pl-PL')
+    (nazwa !== null &&
+      odpowiedz.unitName?.toLocaleLowerCase('pl-PL') !== nazwa.toLocaleLowerCase('pl-PL'))
   )
     throw new Error(
       `Niezgodna jednostka BDL: ${id} ${nazwa} / ${odpowiedz.unitId} ${odpowiedz.unitName}`,
@@ -59,20 +67,20 @@ async function pobierz(id, nazwa, zmienna) {
 export async function main() {
   const { wersja, adresy } = wczytajAdresy()
   const obecne = [...new Set(adresy.map((a) => a.teryt))]
-  if (obecne.length !== 14 || obecne.some((t) => !GMINY[t]))
+  if (obecne.length !== (M ? 1 : 14) || obecne.some((t) => !GMINY[t]))
     throw new Error(`Nieoczekiwany zbiór gmin: ${obecne.join(', ')}`)
   const gminy = new Map()
   const powiaty = new Map()
   for (const teryt of obecne) {
     const [id, nazwa] = GMINY[teryt]
-    if (adresy.some((a) => a.teryt === teryt && a.gmina !== nazwa))
+    if (nazwa !== null && adresy.some((a) => a.teryt === teryt && a.gmina !== nazwa))
       throw new Error(`Nazwa gminy w adresach nie odpowiada BDL: ${teryt} ${nazwa}`)
     gminy.set(teryt, await pobierz(id, nazwa, PIT))
     const idPowiatu = `${id.slice(0, -3)}000`
     if (!powiaty.has(idPowiatu))
-      powiaty.set(idPowiatu, await pobierz(idPowiatu, POWIATY[idPowiatu], WYNAGRODZENIE))
+      powiaty.set(idPowiatu, await pobierz(idPowiatu, M ? null : POWIATY[idPowiatu], WYNAGRODZENIE))
   }
-  if (powiaty.size !== 4) throw new Error(`Oczekiwano 4 powiatów, jest ${powiaty.size}`)
+  if (powiaty.size !== (M ? 1 : 4)) throw new Error(`Oczekiwano 4 powiatów, jest ${powiaty.size}`)
 
   const pobrano = dzis()
   const zrodlo = (zmienna, nazwa) => ({
@@ -86,7 +94,7 @@ export async function main() {
     {
       id: 'gmina_pit_na_mieszkanca',
       nazwa: 'Dochody gminy z PIT na mieszkańca',
-      opis: `Udział gminy w podatku dochodowym od osób fizycznych w przeliczeniu na mieszkańca w ${ROK} r. To miara dochodów budżetu całej gminy, nie dochód mieszkańca ani gospodarstwa domowego. W Krakowie każda dzielnica ma tę samą wartość. Zmiany zasad finansowania JST utrudniają porównania z poprzednimi latami.`,
+      opis: `Udział gminy w podatku dochodowym od osób fizycznych w przeliczeniu na mieszkańca w ${ROK} r. To miara dochodów budżetu całej gminy, nie dochód mieszkańca ani gospodarstwa domowego. W całym mieście każda dzielnica ma tę samą wartość. Zmiany zasad finansowania JST utrudniają porównania z poprzednimi latami.`,
       jednostka: 'zł/os.',
       kategoria: 'kontekst',
       kierunek: 'neutralny',
@@ -100,7 +108,7 @@ export async function main() {
     {
       id: 'powiat_wynagrodzenie_brutto',
       nazwa: 'Przeciętne wynagrodzenie brutto w powiecie',
-      opis: `Średnie miesięczne wynagrodzenie brutto w ${ROK} r. według powiatu miejsca pracy; statystyka obejmuje m.in. podmioty zatrudniające co najmniej 10 osób. Nie oznacza zarobków mieszkańców tego adresu. Dla całego Krakowa jest jedna wartość.`,
+      opis: `Średnie miesięczne wynagrodzenie brutto w ${ROK} r. według powiatu miejsca pracy; statystyka obejmuje m.in. podmioty zatrudniające co najmniej 10 osób. Nie oznacza zarobków mieszkańców tego adresu. Dla całego miasta jest jedna wartość.`,
       jednostka: 'zł/mies.',
       kategoria: 'kontekst',
       kierunek: 'neutralny',
@@ -113,6 +121,7 @@ export async function main() {
 
   // #44: te same fakty dostępne w maszynowym zestawieniu gmin, także z prawdziwą skalą pomiaru.
   const sciezka = join(DANE, 'gminy-porownanie.json')
+  if (M && !existsSync(sciezka)) return // miasta: porównanie gmin (obwarzanek) nie istnieje
   const porownanie = JSON.parse(readFileSync(sciezka, 'utf8'))
   if (porownanie.wersjaAdresow !== wersja || porownanie.gminy.length !== obecne.length)
     throw new Error('Porównanie gmin nie odpowiada aktualnym adresom')

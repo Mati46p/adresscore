@@ -18,8 +18,11 @@ const WARSTWY_OBRYSOW = [WARSTWA, 'budynki_oczyszczone']
 const ZBIOR = 'https://dane.gov.pl/pl/dataset/662,baza-azbestowa'
 const PROMIEN_M = 100
 const MARGINES_M = 500
-/** Wszystkie jednostki ewidencyjne Krakowa (126101–126104) liczymy jako jedną gminę. */
-const KRAKOW = '1261'
+/**
+ * Miasta podzielone na kilka jednostek ewidencyjnych liczymy jako jedną gminę: Kraków (126101–126104),
+ * Warszawa (146501–146518, adresy mają TERYT miasta 1465011) i Łódź (106101–106105).
+ */
+const MIASTA_WIELOJEDNOSTKOWE = ['1261', '1465', '1061']
 
 /** Kolejność osi w GML: urn:ogc:def:crs:EPSG::2180 podaje północ, wschód; „EPSG:2180” wschód, północ. */
 export function kolejnoscOsi(srsName) {
@@ -68,7 +71,7 @@ export function kluczGminyDzialki(nrDzialki) {
 /** Klucz gminy z 6 pierwszych cyfr TERYT: wszystkie jednostki ewidencyjne Krakowa (1261xx) = „1261”. */
 export function kluczGminy(teryt) {
   const szesc = String(teryt).slice(0, 6)
-  return szesc.startsWith(KRAKOW) ? KRAKOW : szesc
+  return MIASTA_WIELOJEDNOSTKOWE.find((m) => szesc.startsWith(m)) ?? szesc
 }
 
 /** Wartość dla adresu: liczba obrysów w promieniu albo null, gdy gmina adresu nie raportuje. */

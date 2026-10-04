@@ -8,7 +8,11 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { strFromU8, unzipSync } from 'fflate'
+import { MIASTO_INFO, WOJEWODZTWO } from './lib/miasto.mjs'
 import { DANE, dzis, pobierzDoCache, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
+
+/** Nazwa województwa w arkuszu E8 („Małopolskie", „Łódzkie"); bez ADRESCORE_MIASTO zostaje Małopolska. */
+const WOJ_E8 = WOJEWODZTWO.charAt(0).toLocaleUpperCase('pl') + WOJEWODZTWO.slice(1)
 
 const E8_URL =
   'https://mapa.wyniki.edu.pl/MapaEgzaminow/assets/data/CSV/E8/2026/E8_2026_szkoly_09.xlsx'
@@ -39,7 +43,7 @@ function arkuszE8(path) {
       const raw = cell[2]?.match(/<v>([\s\S]*?)<\/v>/)?.[1]
       if (raw !== undefined) cells[col] = /\bt="s"/.test(cell[1]) ? shared[Number(raw)] : raw
     }
-    if (cells.B !== 'Małopolskie' || !cells.G) continue
+    if (cells.B !== WOJ_E8 || !cells.G) continue
     const wyniki = ['N', 'S', 'X'].map((k) => Number(cells[k]))
     if (
       wyniki.some((v) => !Number.isFinite(v) || v < 0 || v > 100) ||
@@ -95,7 +99,12 @@ function norm(s) {
     .replace(/[^a-z0-9]/g, '')
 }
 function miejscowosc(s) {
-  return norm((s ?? '').replace(/^Kraków-.+$/, 'Kraków'))
+  return norm(
+    (s ?? '').replace(/^Kraków-.+$/, 'Kraków').replace(
+      MIASTO_INFO ? new RegExp(`^${MIASTO_INFO.nazwa}[-,].*$`) : /^$^/,
+      MIASTO_INFO?.nazwa ?? '',
+    ),
+  )
 }
 function klucz(miasto, ulica, nr) {
   return `${miejscowosc(miasto)}|${norm(ulica)}|${norm(nr)}`

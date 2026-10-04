@@ -73,13 +73,27 @@ export function zbudujDane(wyniki, listy, adresy) {
   for (const w of wierszeList) numerListy.set(`${w[0]}|${w[2]}`, Number(w[1]))
   const poGminie = new Map()
   for (const w of wiersze) {
-    const teryt = w[iTeryt]
+    let teryt = w[iTeryt]
+    if (/^\d{5}$/.test(teryt ?? '')) teryt = `0${teryt}` // CSV gubi zero wiodące (woj. 02, 04, 06)
     if (!teryt || !/^\d{6}$/.test(teryt)) continue // zagranica, statki
     const okreg = w[iOkreg]
     const wazne = liczba(w[iWazne])
     const glosy = komitety.map((_, k) => liczba(w[iWazne + 1 + k] || '0'))
     const suma = glosy.reduce((a, b) => a + b, 0)
     if (suma !== wazne) throw new Error(`${teryt}: suma list ${suma} ≠ głosy ważne ${wazne}`)
+    // Warszawa: PKW podaje 18 dzielnic (146502…146519) – sumujemy do gminy 146501 (jak w adresach).
+    if (/^1465(0[2-9]|1\d)$/.test(teryt)) {
+      const w0 = poGminie.get('146501')
+      if (w0 && w0.okreg !== okreg) throw new Error('Warszawa: dzielnice w różnych okręgach')
+      poGminie.set('146501', {
+        teryt: '146501',
+        gmina: 'Warszawa',
+        okreg,
+        wazne: (w0?.wazne ?? 0) + wazne,
+        glosy: glosy.map((g, k) => g + (w0?.glosy[k] ?? 0)),
+      })
+      continue
+    }
     if (poGminie.has(teryt)) throw new Error(`Niejednoznaczna gmina ${teryt}`)
     poGminie.set(teryt, { teryt, gmina: w[iGmina], okreg, wazne, glosy })
   }

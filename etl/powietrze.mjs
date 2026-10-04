@@ -24,7 +24,7 @@ import {
   WSKAZNIKI,
   znajdzRok,
 } from './lib/powietrze.mjs'
-import { DANE, dzis, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
+import { DANE, dzis, MIASTO, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
 import { odczytyCzujnikow } from './powietrze-inpost.mjs'
 
 const { adresy, wersja: wersjaPliku } = wczytajAdresy()
@@ -32,7 +32,9 @@ const { rok, warstwy } = await znajdzRok()
 const bbox = bboxAdresow(adresy)
 console.log(`Rok modelu: ${rok}, obszar EPSG:2180: ${bbox.join(', ')}`)
 
-const czujniki = await odczytyCzujnikow(adresy)
+// Tryb miejski (ADRESCORE_MIASTO): czujniki InPost pobieramy tylko dla Małopolski, a doprecyzowanie
+// hałasem i zielenią (mapy Krakowa) nie ma danych – wartość oczka GIOŚ bez zmian, bez etykiet czujników.
+const czujniki = MIASTO ? { etykiety: undefined, zrodlo: null } : await odczytyCzujnikow(adresy)
 // Doprecyzowanie w skali adresu (#131): amplituda rozkładu wartości oczka między jego adresy.
 const AMPLITUDY = { 'PM2.5': 0.1, PM10: 0.15, NO2: 0.35 }
 function wczytajCeche(id) {
@@ -41,9 +43,11 @@ function wczytajCeche(id) {
     throw new Error(`${id}: nieaktualny względem adresów – przelicz najpierw tę warstwę`)
   return plik.wartosci
 }
-const halas = wczytajCeche('halas_ldwn')
-const zielen = wczytajCeche('zielen_udzial')
-const cechy = adresy.map((a, i) => cecha(halas[i], zielen[i], a.gmina === 'Kraków'))
+const halas = MIASTO ? null : wczytajCeche('halas_ldwn')
+const zielen = MIASTO ? null : wczytajCeche('zielen_udzial')
+const cechy = adresy.map((a, i) =>
+  MIASTO ? null : cecha(halas[i], zielen[i], a.gmina === 'Kraków'),
+)
 const punkty = adresy.map((a) => doPuwg(a.lon, a.lat))
 
 const METADANE = {
@@ -138,7 +142,7 @@ for (const [wskaznik, idWarstwy] of Object.entries(warstwy)) {
     uzyte.set(o.fid, o)
     liczba.set(o.fid, (liczba.get(o.fid) ?? 0) + 1)
   }
-  const amplituda = AMPLITUDY[wskaznik]
+  const amplituda = MIASTO ? undefined : AMPLITUDY[wskaznik]
   if (amplituda) wartosci = doprecyzuj(wartosci, oczkoAdresu, cechy, amplituda)
   const rozmiar = opisRozmiaru([...uzyte.values()], liczba)
   console.log(
@@ -169,7 +173,7 @@ for (const [wskaznik, idWarstwy] of Object.entries(warstwy)) {
           dataDanych: rok,
           pobrano: dzis(),
         },
-        ...(wskaznik === 'PM2.5' ? [czujniki.zrodlo] : []),
+        ...(wskaznik === 'PM2.5' && czujniki.zrodlo ? [czujniki.zrodlo] : []),
       ],
     },
     wartosci,

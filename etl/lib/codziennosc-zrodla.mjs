@@ -6,10 +6,18 @@ import { join } from 'node:path'
 import { DuckDBInstance } from '@duckdb/node-api'
 import { unzipSync } from 'fflate'
 import { geokoduj } from './codziennosc-geo.mjs'
+import { bboxMiasta, MIASTO_INFO, pbfRegionu, SUFIKS_REGIONU, TERYT_WOJ, WOJEWODZTWO } from './miasto.mjs'
 import { CACHE, pobierzDoCache } from './wspolne.mjs'
 
 /** Prostokąt Kraków + obwarzanek z zapasem ok. 3 km, żeby najbliższy punkt za granicą gminy był widoczny. */
-export const BBOX = { minLat: 49.84, maxLat: 50.3, minLon: 19.58, maxLon: 20.46 }
+export const BBOX = bboxMiasta() ?? { minLat: 49.84, maxLat: 50.3, minLon: 19.58, maxLon: 20.46 }
+
+/** Tryb miasta: rejestry bez współrzędnych geokodujemy tylko dla wpisów z miejscowości miasta (UUG jest wolny). */
+const wMiescie = (miejscowosc) =>
+  !MIASTO_INFO ||
+  (miejscowosc ?? '').split(/[-,]/)[0].trim().toLocaleLowerCase('pl') ===
+    MIASTO_INFO.nazwa.toLocaleLowerCase('pl')
+
 const wBbox = (p) =>
   p.lat >= BBOX.minLat && p.lat <= BBOX.maxLat && p.lon >= BBOX.minLon && p.lon <= BBOX.maxLon
 
@@ -51,14 +59,14 @@ async function zGeokodowaniem(wejscie) {
 async function wczytajSio() {
   const plik = await pobierzDoCache(URL_SIO, 'sio-2025-09-30.xlsx')
   const c = await duckdb('excel')
-  return wiersze(
+  return (await wiersze(
     c,
     `select "Typ podmiotu" as typ, "Publiczność" as publicznosc, "Specyfika szkoły" as specyfika,
             "Nazwa placówki" as nazwa, Miejscowość as miejscowosc, Ulica as ulica,
             "Numer domu" as nr, "Kod pocztowy" as kod, try_cast("w tym_w oddz_przedszk" as integer) as oddz_przedszk
      from read_xlsx('${sq(plik)}', all_varchar=true)
-     where idTerytWojewodztwo = '12' and "Numer domu" <> ''`,
-  )
+     where idTerytWojewodztwo = '${TERYT_WOJ}' and "Numer domu" <> ''`,
+  )).filter((s) => wMiescie(s.miejscowosc))
 }
 
 const nazwaSzkoly = (s) => (s.nazwa ?? '').replace(/\s+/g, ' ').trim()
@@ -88,14 +96,14 @@ export async function przedszkola() {
 export async function zlobki() {
   const plik = await pobierzDoCache(URL_ZLOBKI, 'zlobki-mrpips.csv')
   const c = await duckdb()
-  const w = await wiersze(
+  const w = (await wiersze(
     c,
     `select Nazwa as nazwa, Miejscowość as miejscowosc, Ulica as ulica, "Nr domu" as nr,
             "Kod pocztowy" as kod, Geolokalizacja as geo
      from read_csv('${sq(plik)}', delim=';', header=true, all_varchar=true)
-     where Województwo ilike 'małopolskie'
+     where Województwo ilike '${sq(WOJEWODZTWO)}'
        and coalesce("Czy podmiot prowadzący zawiesił działalność instytucji opieki?", '') not ilike 'TAK'`,
-  )
+  )).filter((z) => wMiescie(z.miejscowosc))
   const punkty = []
   const bez = []
   for (const z of w) {
@@ -114,12 +122,12 @@ export async function zlobki() {
 // --- Rejestr Aptek (Centrum e-Zdrowia / GIF) -----------------------------------------------
 
 async function pobierzApteki() {
-  const cel = join(CACHE, 'apteki-malopolskie.json')
+  const cel = join(CACHE, `apteki-${MIASTO_INFO ? MIASTO_INFO.pbf : 'malopolskie'}.json`)
   if (existsSync(cel)) return JSON.parse(readFileSync(cel, 'utf8'))
   const wszystkie = []
   const rozmiar = 1000
   for (let strona = 0; ; strona++) {
-    const url = `${URL_APTEKI}?page=${strona}&size=${rozmiar}&sortField=originId&sortDirection=ASC&pharmacyProvince=${encodeURIComponent('małopolskie')}`
+    const url = `${URL_APTEKI}?page=${strona}&size=${rozmiar}&sortField=originId&sortDirection=ASC&pharmacyProvince=${encodeURIComponent(WOJEWODZTWO)}`
     const r = await fetch(url, {
       headers: { accept: 'application/json' },
       signal: AbortSignal.timeout(120_000),
@@ -141,6 +149,7 @@ export async function apteki() {
     .filter((a) => a.pharmacyStatus?.code === 'AKTYWNA' && !a.temporaryClosed)
     .filter((a) => ['APTEKA_OGOLNODOSTEPNA', 'PUNKT_APTECZNY'].includes(a.pharmacyGenre?.code))
     .filter((a) => a.address?.city && a.address?.homeNumber)
+    .filter((a) => wMiescie(a.address.city))
     .map((a) => ({
       nazwa: (a.name ?? 'Apteka').replace(/\s+/g, ' ').trim(),
       miejscowosc: a.address.city,
@@ -170,18 +179,18 @@ export async function przychodniePoz() {
     `read_csv('${sq(join(katalog, p))}', delim=';', quote='"', header=true, all_varchar=true, nullstr='NULL', ignore_errors=true)`
   const c = await duckdb()
   // kodResortVIII 0010 = „poradnia (gabinet) lekarza podstawowej opieki zdrowotnej" (słownik RPWDL).
-  const w = await wiersze(
+  const w = (await wiersze(
     c,
     `select coalesce(z.Nazwa, k."Nazwa komórki") as nazwa, k.Miejscowość as miejscowosc,
             k.Ulica as ulica, k.Budynek as nr,
             k."Kod pocztowy" as kod
      from ${csv('komorki.csv')} k
      left join (select "ID ZOZ" as id, min(Nazwa) as Nazwa from ${csv('zaklady.csv')} group by "ID ZOZ") z on z.id = k."ID ZOZ"
-     where k.kodResortVIII = '0010' and k.Teryt like '12%'
+     where k.kodResortVIII = '0010' and k.Teryt like '${TERYT_WOJ}%'
        and k."Data zakończenia działalności komórki" is null
        and k."Budynek" is not null
      order by miejscowosc, ulica, nr, nazwa`,
-  )
+  )).filter((z) => wMiescie(z.miejscowosc))
   return { ...(await zGeokodowaniem(w)), stan }
 }
 
@@ -215,10 +224,11 @@ async function stanOsm() {
  * zamkniętych linii jako wielokątów. Środek linii = średnia współrzędnych jej węzłów.
  */
 export async function punktyOsm() {
-  const cel = join(CACHE, 'osm-codziennosc.json')
+  const cel = join(CACHE, `osm-codziennosc${SUFIKS_REGIONU}.json`)
   if (existsSync(cel)) return JSON.parse(readFileSync(cel, 'utf8'))
-  const stan = await stanOsm()
-  const pbf = await pobierzDoCache(URL_PBF, 'malopolskie.osm.pbf')
+  const region = MIASTO_INFO ? await pbfRegionu() : null
+  const stan = region ? region.stan : await stanOsm()
+  const pbf = region ? region.plik : await pobierzDoCache(URL_PBF, 'malopolskie.osm.pbf')
   const c = await duckdb('spatial')
   const osm = `ST_ReadOSM('${sq(pbf)}')`
   const tag = (k) => `map_extract_value(tags, '${k}')`

@@ -3,8 +3,10 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { DuckDBInstance } from '@duckdb/node-api'
 import { indeksPrzystankow, najblizszyPrzystanek } from './gtfs-przystanki.mjs'
-import { CACHE, dzis, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
+import { bboxMiasta, MIASTO_INFO, pbfRegionu } from './lib/miasto.mjs'
+import { CACHE, dzis, MIASTO, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
 
 const API = 'https://overpass-api.de/api/interpreter'
 const DEFINICJE = [
@@ -87,7 +89,10 @@ const DEFINICJE = [
   },
 ]
 
-const POLE = { lat: [49.7, 50.5], lon: [19.3, 20.8] }
+const BBOX_MIASTA = bboxMiasta()
+const POLE = BBOX_MIASTA
+  ? { lat: [BBOX_MIASTA.minLat, BBOX_MIASTA.maxLat], lon: [BBOX_MIASTA.minLon, BBOX_MIASTA.maxLon] }
+  : { lat: [49.7, 50.5], lon: [19.3, 20.8] }
 const MIN_PUNKTOW = {
   sklep_odleglosc: 200,
   szkola_odleglosc: 100,
@@ -159,7 +164,63 @@ export function punktyZOverpass(odpowiedz) {
   return new Map([...punkty].map(([id, mapa]) => [id, [...mapa.values()]]))
 }
 
+/**
+ * Tryb miasta: Overpass bywa nieosiągalny, więc te same obiekty (węzły i środki linii z tagami
+ * shop/amenity/healthcare) czytamy z ekstraktu OSM województwa (DuckDB spatial, ST_ReadOSM)
+ * i składamy odpowiedź w formacie Overpass (`elements` z `center`), żeby reszta kodu została ta sama.
+ */
+async function pobierzZPbf() {
+  const { plik, stan, url } = await pbfRegionu()
+  const sciezka = join(CACHE, `uslugi-osm-pbf-${MIASTO}-${stan}.json`)
+  if (existsSync(sciezka)) return JSON.parse(readFileSync(sciezka, 'utf8'))
+  const db = await DuckDBInstance.create(':memory:')
+  const c = await db.connect()
+  await c.run('INSTALL spatial')
+  await c.run('LOAD spatial')
+  const osm = `ST_ReadOSM('${plik.replaceAll("'", "''")}')`
+  const tag = (k) => `map_extract_value(tags, '${k}')`
+  const wiersze = async (sql) => (await c.runAndReadAll(sql)).getRowObjectsJson()
+  const [s, w, n, e] = [POLE.lat[0], POLE.lon[0], POLE.lat[1], POLE.lon[1]]
+  await c.run(
+    `create table kand as
+     select kind, id, refs, lat, lon, ${tag('shop')} as shop, ${tag('amenity')} as amenity,
+            ${tag('healthcare')} as healthcare, ${tag('nursery')} as nursery, ${tag('name')} as name
+     from ${osm}
+     where kind in ('node', 'way') and cardinality(tags) > 0
+       and (${tag('shop')} in ('supermarket','convenience','grocery','bakery','hairdresser')
+         or ${tag('amenity')} in ('school','kindergarten','pharmacy','clinic','doctors','childcare','post_office','parcel_locker','atm')
+         or ${tag('healthcare')} in ('clinic','doctor'))
+       and (kind = 'way' or (lat between ${s} and ${n} and lon between ${w} and ${e}))`,
+  )
+  await c.run(`create table pot as select distinct unnest(refs) as id from kand where kind = 'way'`)
+  await c.run(
+    `create table wezly as select x.id, x.lat, x.lon from ${osm} x semi join pot p on p.id = x.id where x.kind = 'node'`,
+  )
+  const surowe = await wiersze(
+    `select 'node' as typ, id, lat, lon, shop, amenity, healthcare, nursery, name from kand where kind = 'node'
+     union all
+     select 'way', o.id, avg(v.lat), avg(v.lon), any_value(o.shop), any_value(o.amenity),
+            any_value(o.healthcare), any_value(o.nursery), any_value(o.name)
+     from (select id, shop, amenity, healthcare, nursery, name, unnest(refs) as ref from kand where kind = 'way') o
+     join wezly v on v.id = o.ref group by o.id`,
+  )
+  const elements = surowe.map((r) => {
+    const tags = {}
+    for (const k of ['shop', 'amenity', 'healthcare', 'nursery', 'name']) if (r[k] != null) tags[k] = r[k]
+    return { type: r.typ, id: Number(r.id), lat: Number(r.lat), lon: Number(r.lon), tags }
+  })
+  const wynik = {
+    elements,
+    osm3s: { timestamp_osm_base: `${stan}T00:00:00Z` },
+    extract_source: url,
+    region: MIASTO_INFO.pbf,
+  }
+  writeFileSync(sciezka, JSON.stringify(wynik))
+  return wynik
+}
+
 async function pobierz(adresy) {
+  if (MIASTO_INFO) return pobierzZPbf()
   mkdirSync(CACHE, { recursive: true })
   const sciezka = join(CACHE, `uslugi-osm-v2-${dzis()}.json`)
   if (existsSync(sciezka)) return JSON.parse(readFileSync(sciezka, 'utf8'))
@@ -221,7 +282,9 @@ export async function generuj() {
           ...(odpowiedz.extract_source
             ? [
                 {
-                  nazwa: 'Geofabrik: wyciąg OSM dla Małopolski',
+                  nazwa: MIASTO_INFO
+                    ? `Wyciąg OSM dla województwa (${MIASTO_INFO.woj}), lustro download.openstreetmap.fr`
+                    : 'Geofabrik: wyciąg OSM dla Małopolski',
                   url: odpowiedz.extract_source,
                   licencja: 'Open Database License (ODbL) 1.0',
                   dataDanych,
