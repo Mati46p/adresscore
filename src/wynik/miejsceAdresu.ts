@@ -79,6 +79,36 @@ function uwagiJednostki(okolice: PlikOkolic, id: string): string[] {
 }
 
 /**
+ * Okolica o id z `okolice.json` bez adresu (np. wybrana w wyszukiwarce, #185): to samo, co daje
+ * `miejsceAdresu` adresowi leżącemu w tej okolicy. Null, gdy pliku nie ma albo id jest nieznane.
+ */
+export function miejsceOkolicy(
+  okolice: PlikOkolic | null | undefined,
+  id: string,
+): MiejsceAdresu | null {
+  const wpis = okolice?.okolice[id]
+  if (!okolice || !wpis) return null
+  const sim = wpis.rodzaj === 'sim'
+  // Podpis i opis liczy jedno miejsce (`rankingLuk.ts`), więc ranking, karta i wyszukiwarka mówią to samo.
+  const rodzajOkolicy = {
+    typ: wpis.rodzaj,
+    numer: sim ? wpis.numer : undefined,
+    dzielnica: sim ? wpis.dzielnica : undefined,
+    gmina: wpis.gmina,
+  }
+  return {
+    rodzaj: wpis.rodzaj,
+    id,
+    nazwa: wpis.nazwa,
+    podpis: podpisOkolicy(rodzajOkolicy),
+    opis: opisOkolicy(rodzajOkolicy, wpis.liczbaAdresow),
+    liczbaAdresow: wpis.liczbaAdresow,
+    potoczne: sim ? wpis.potoczne : [],
+    uwagi: sim ? uwagiJednostki(okolice, id) : [],
+  }
+}
+
+/**
  * Okolica adresu `i` (indeks w adresy.json) do pokazania na karcie i w porównaniu. Z plikiem okolic
  * to jednostka SIM albo miejscowość; bez pliku, bez okolicy w kolumnie albo poza kolumną – zapas.
  */
@@ -89,18 +119,8 @@ export function miejsceAdresu(
 ): MiejsceAdresu {
   if (!okolice) return zapas(adres)
   const o = okolicaAdresu(adres, i, okolice)
-  const wpis = okolice.okolice[o.id]
-  if (!wpis || (o.typ !== 'sim' && o.typ !== 'miejscowosc')) return zapas(adres)
-  return {
-    rodzaj: o.typ,
-    id: o.id,
-    nazwa: o.nazwa,
-    podpis: podpisOkolicy(o),
-    opis: opisOkolicy(o, wpis.liczbaAdresow),
-    liczbaAdresow: wpis.liczbaAdresow,
-    potoczne: wpis.rodzaj === 'sim' ? wpis.potoczne : [],
-    uwagi: o.typ === 'sim' ? uwagiJednostki(okolice, o.id) : [],
-  }
+  if (o.typ !== 'sim' && o.typ !== 'miejscowosc') return zapas(adres)
+  return miejsceOkolicy(okolice, o.id) ?? zapas(adres)
 }
 
 /** „nazwa”, „nazwy”, „nazw” po liczebniku: 1 nazwa, 2 nazwy, 5 nazw, 12 nazw, 22 nazwy. */

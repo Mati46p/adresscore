@@ -133,7 +133,7 @@ export function zbudujIndeks(adresy: Adres[]): Indeks {
 }
 
 /** Czy a i b różnią się o najwyżej jedną edycję (wstawienie, usunięcie, zamiana, przestawienie). */
-function jedenBlad(a: string, b: string): boolean {
+export function jedenBlad(a: string, b: string): boolean {
   const la = a.length
   const lb = b.length
   if (Math.abs(la - lb) > 1) return false
@@ -327,6 +327,15 @@ export function tytulAdresu(a: Adres): string {
 export function opisAdresu(a: Adres): string {
   const miejsce = a.dzielnica ?? a.gmina
   return a.kod ? `${miejsce}, ${a.kod}` : miejsce
+}
+
+/**
+ * Czy zapytanie zawiera numer domu („Grodzka 52”, „Wieliczka 17a”, „Grodzka 52 Kraków”). Taki wpis
+ * to adres: przy wyszukiwarce adresów i okolic adresy mają wtedy pierwszeństwo (`podpowiedzi.ts`).
+ * „3 Maja” to ulica, nie numer – pierwszy token nigdy nie jest numerem (jak w `szukaj`).
+ */
+export function maNumerDomu(zapytanie: string): boolean {
+  return rozbij(zapytanie).nr !== null
 }
 
 export function szukaj(ind: Indeks, zapytanie: string, limit = 8): Wynik[] {

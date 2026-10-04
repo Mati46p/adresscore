@@ -9,6 +9,7 @@ import {
   krotkaNazwaZrodla,
   MAKS_POTOCZNYCH,
   miejsceAdresu,
+  miejsceOkolicy,
   opisZrodelOkolic,
   URL_PRAW_OSM,
   zdaniePotocznych,
@@ -181,6 +182,36 @@ describe('miejsceAdresu: zapas na dzielnicę i gminę', () => {
   })
 })
 
+describe('miejsceOkolicy: okolica o id, bez adresu (wyszukiwarka)', () => {
+  it('daje to samo, co miejsceAdresu dla adresu leżącego w tej okolicy', () => {
+    assert.deepEqual(miejsceOkolicy(okolice, 'sim-302'), miejsceAdresu(KRAKOW, 1, okolice))
+    assert.deepEqual(miejsceOkolicy(okolice, 'sim-101'), miejsceAdresu(KRAKOW, 0, okolice))
+    assert.deepEqual(miejsceOkolicy(okolice, 'sim-1801'), miejsceAdresu(KRAKOW, 2, okolice))
+    assert.deepEqual(miejsceOkolicy(okolice, 'm-1206063-liszki'), miejsceAdresu(LISZKI, 3, okolice))
+  })
+
+  it('jednostka SIM: podpis, potoczne i uwagi; miejscowość: gmina w podpisie, bez potocznych', () => {
+    const rakowice = miejsceOkolicy(okolice, 'sim-302')
+    assert.equal(rakowice?.rodzaj, 'sim')
+    assert.equal(rakowice?.podpis, 'jednostka SIM III.2, dzielnica III Prądnik Czerwony')
+    assert.deepEqual(rakowice?.potoczne, ['Ugorek', 'Wieczysta'])
+    assert.deepEqual(rakowice?.uwagi, [ROZJAZDY[3]?.opis])
+    const liszki = miejsceOkolicy(okolice, 'm-1206063-liszki')
+    assert.equal(liszki?.rodzaj, 'miejscowosc')
+    assert.equal(liszki?.podpis, 'miejscowość, gmina Liszki')
+    assert.deepEqual(liszki?.potoczne, [])
+    assert.deepEqual(liszki?.uwagi, [])
+  })
+
+  it('nieznane id, id zapasu („dzielnica:…”, „brak”) i brak pliku dają null – wołający ma zapas', () => {
+    assert.equal(miejsceOkolicy(okolice, 'sim-999'), null)
+    assert.equal(miejsceOkolicy(okolice, 'dzielnica:I Stare Miasto'), null)
+    assert.equal(miejsceOkolicy(okolice, 'brak'), null)
+    assert.equal(miejsceOkolicy(null, 'sim-302'), null)
+    assert.equal(miejsceOkolicy(undefined, 'sim-302'), null)
+  })
+})
+
 describe('zdaniePotocznych', () => {
   const nazwy = (n: number) => Array.from({ length: n }, (_, k) => `N${k + 1}`)
 
@@ -346,6 +377,16 @@ describe('miejsceAdresu na prawdziwych danych', {
       assert.equal(m.id, id)
       assert.equal(m.liczbaAdresow, ile, id)
       assert.ok(m.opis?.endsWith(liczbaAdresowOkolicy(ile)), `${id}: ${m.opis}`)
+    }
+  })
+
+  it('miejsceOkolicy daje to samo, co miejsceAdresu, dla każdej z 357 okolic', () => {
+    if (!zgodne) return
+    const kolumna = prawdziwe.kolumny.okolica
+    for (const [p, id] of prawdziwe.idOkolic.entries()) {
+      const i = kolumna.indexOf(p)
+      assert.ok(i >= 0, `okolica ${id} nie ma adresu`)
+      assert.deepEqual(miejsceOkolicy(prawdziwe, id), miejsceAdresu(adres(i), i, prawdziwe), id)
     }
   })
 
