@@ -23,12 +23,11 @@ import {
 import {
   BEZ_FILTROW,
   czytajKatalog,
-  type FiltryUslug,
   type KatalogUslug,
   type MetaBranzy,
 } from '@/wynik/biznesUslugi'
 import { nastepneWolne, ograniczDoGranic, postawionePunkty } from '@/wynik/biznesZnaczniki'
-import { useStan, ustawBranze, ustawPunktBiznesu } from '@/wynik/stan'
+import { useStan, ustawBranze, ustawFiltryBiznesu, ustawPunktBiznesu } from '@/wynik/stan'
 import { GRANICE_PUNKTU, ID_MIEJSC, type IdMiejsca, wGranicachPunktu } from '@/wynik/url'
 import { FiltryKonkurencji } from './FiltryKonkurencji'
 import './biznes.css'
@@ -43,10 +42,11 @@ const LICZBA = new Intl.NumberFormat('pl-PL', { maximumFractionDigits: 0 })
 export function EkranBiznes() {
   const branza = useStan((s) => s.branza)
   const miejsca = useStan((s) => s.miejsca)
+  // Filtry konkurencji żyją w stanie aplikacji i w linku (`k=`, #108): odświeżenie strony i skopiowany
+  // link zachowują wybór, a wyjście z ekranu go nie kasuje.
+  const filtry = useStan((s) => s.filtryBiznesu)
   const [katalog, setKatalog] = useState<KatalogUslug | null>(null)
   const [meta, setMeta] = useState<MetaBranzy | null>(null)
-  // Filtry nie wchodzą do linku (`url.ts` jest poza tym zadaniem), więc żyją tylko w tym oknie.
-  const [filtry, setFiltry] = useState<FiltryUslug>(BEZ_FILTROW)
   const [punkty, setPunkty] = useState<{ lon: number; lat: number; nazwa: string }[]>([])
   const [heksy, setHeksy] = useState<ReadonlyMap<string, number | null>>(PUSTE_HEKSY)
   const [opisy, setOpisy] = useState<Map<string, BialaPlama>>(new Map())
@@ -240,7 +240,12 @@ export function EkranBiznes() {
               )}
             </select>
           </label>
-          <FiltryKonkurencji idBranzy={idBranzy} filtry={filtry} meta={meta} onZmien={setFiltry} />
+          <FiltryKonkurencji
+            idBranzy={idBranzy}
+            filtry={filtry}
+            meta={meta}
+            onZmien={ustawFiltryBiznesu}
+          />
         </div>
       </div>
       {blad && (

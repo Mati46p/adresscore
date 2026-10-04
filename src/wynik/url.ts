@@ -1,5 +1,7 @@
 // Router na hashu bez biblioteki: trzy ekrany i kilka parametrów do udostępniania.
 // Hash, a nie ścieżka, bo hosting SPA nie musi wtedy przepisywać adresów na index.html.
+import { filtryDoTekstuLinku, filtryZTekstuLinku } from './biznesFiltryUrl.ts'
+import { BEZ_FILTROW, type FiltryUslug } from './biznesUslugi.ts'
 import { filtryDoTekstu, filtryZTekstu, type TwardyFiltr } from './filtry.ts'
 import type { PersonaId, RodzajBiznesu, Tryb } from './persony.ts'
 import { BIZNESY, PERSONY } from './persony.ts'
@@ -11,6 +13,7 @@ export type Ekran =
   | 'porownanie'
   | 'metoda'
   | 'katalog'
+  /** Tryb „Miasto” (symulator inwestycji): adres w linku to `#/miasto`, stary `#/symulator` też działa. */
   | 'symulator'
   | 'biznes'
 
@@ -30,6 +33,11 @@ export interface StanUrl {
   branza?: string
   /** Miejsca A–E trybu „Biznes”, zawsze `MAKS_MIEJSC` pozycji (`null` = puste miejsce). */
   miejsca?: readonly ({ lon: number; lat: number } | null)[]
+  /**
+   * Filtry konkurencji trybu „Biznes” (parametr `k`, `biznesFiltryUrl.ts`). Tylko na ekranie Biznes,
+   * jak `branza` i `miejsca`; brak parametru w linku = wszystkie filtry wyłączone.
+   */
+  filtryBiznesu?: FiltryUslug
   /**
    * Obiekty symulatora (#98) jako tekst `symulacjaUrl.ts`, warianty A i B (parametry `a`, `b`).
    * Tylko na ekranie symulatora – gdzie indziej pola nie ma.
@@ -151,7 +159,9 @@ export function czytajHash(hash: string): StanUrl {
     ekran = 'katalog'
   } else if (czesci[0] === 'biznes') {
     ekran = 'biznes'
-  } else if (czesci[0] === 'symulator') {
+  } else if (czesci[0] === 'miasto' || czesci[0] === 'symulator') {
+    // Jeden ekran, dwa adresy: `#/miasto` jest właściwym (tryb Miasto obok Biznesu), `#/symulator` to
+    // adres sprzed #108 i linki z obiektami (`a=`, `b=`) wysłane wcześniej muszą dalej działać.
     ekran = 'symulator'
   }
 
@@ -160,6 +170,9 @@ export function czytajHash(hash: string): StanUrl {
   const b = parametry.get('biz')
   const cmp = parametry.get('cmp')
   const ustawienia = czytajUstawienia(parametry.get('u'))
+  const branzaBiznesu = /^[a-z_]+$/.test(parametry.get('b') ?? '')
+    ? (parametry.get('b') as string)
+    : 'sklep'
   return {
     ekran,
     idAdresu,
@@ -171,10 +184,9 @@ export function czytajHash(hash: string): StanUrl {
     filtry: filtryZTekstu(parametry.get('f')),
     ...(ekran === 'biznes'
       ? {
-          branza: /^[a-z_]+$/.test(parametry.get('b') ?? '')
-            ? (parametry.get('b') as string)
-            : 'sklep',
+          branza: branzaBiznesu,
           miejsca: czytajMiejsca(parametry),
+          filtryBiznesu: filtryZTekstuLinku(parametry.get('k'), branzaBiznesu),
         }
       : {}),
     ...(ekran === 'symulator'
@@ -190,7 +202,7 @@ export function zapiszHash(s: StanUrl): string {
   else if (s.ekran === 'metoda') sciezka = '/metoda'
   else if (s.ekran === 'katalog') sciezka = '/katalog'
   else if (s.ekran === 'biznes') sciezka = '/biznes'
-  else if (s.ekran === 'symulator') sciezka = '/symulator'
+  else if (s.ekran === 'symulator') sciezka = '/miasto'
   const parametry = new URLSearchParams()
   if (s.persona) parametry.set('p', s.persona)
   if (s.tryb) parametry.set('t', s.tryb)
@@ -210,6 +222,9 @@ export function zapiszHash(s: StanUrl): string {
     parametry.set('b', s.branza ?? 'sklep')
     const m = zapiszMiejsca(s.miejsca ?? [])
     if (m) parametry.set('m', m)
+    // Filtry konkurencji (`k=2z,-fast_food`): brak parametru = wszystkie wyłączone.
+    const filtry = filtryDoTekstuLinku(s.filtryBiznesu ?? BEZ_FILTROW, s.branza ?? 'sklep')
+    if (filtry) parametry.set('k', filtry)
   }
   const q = parametry
     .toString()
