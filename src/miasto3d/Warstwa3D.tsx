@@ -16,6 +16,8 @@ import { dymek, efektSwiatla, warstwy, ziemia } from './Okolica3D'
 import { PanelCienia, useSwiatlo } from './PanelCienia'
 
 const NACHYLENIE_3D = 55
+/** Poniżej tego zoomu (podziałka ok. 200 m) kamera wraca do widoku z góry, jak w 2D. */
+const ZOOM_2D = 15
 
 export default function Warstwa3D({
   mapa,
@@ -40,7 +42,8 @@ export default function Warstwa3D({
     const nakladka = new MapboxOverlay({ interleaved: false, layers: [] })
     mapa.addControl(nakladka)
     nakladkaRef.current = nakladka
-    if (mapa.getPitch() < 20) mapa.easeTo({ pitch: NACHYLENIE_3D, duration: 600 })
+    if (mapa.getZoom() >= ZOOM_2D && mapa.getPitch() < 20)
+      mapa.easeTo({ pitch: NACHYLENIE_3D, duration: 600 })
     return () => {
       nakladkaRef.current = null
       mapa.removeControl(nakladka)
@@ -53,6 +56,22 @@ export default function Warstwa3D({
       }
       if (mapa.isMoving()) mapa.once('moveend', wyprostuj)
       else wyprostuj()
+    }
+  }, [mapa])
+
+  // Przy wybranym adresie warstwa zostaje przy każdym zoomie, więc samo odmontowanie nie
+  // prostuje kamery – pilnuje tego próg zoomu: oddalenie poniżej ZOOM_2D kładzie mapę płasko,
+  // powrót powyżej znów ją nachyla.
+  useEffect(() => {
+    const poZoomie = () => {
+      if (mapa.getZoom() < ZOOM_2D) {
+        if (mapa.getPitch() > 0 || mapa.getBearing() !== 0)
+          mapa.easeTo({ pitch: 0, bearing: 0, duration: 400 })
+      } else if (mapa.getPitch() < 20) mapa.easeTo({ pitch: NACHYLENIE_3D, duration: 600 })
+    }
+    mapa.on('zoomend', poZoomie)
+    return () => {
+      mapa.off('zoomend', poZoomie)
     }
   }, [mapa])
 
@@ -81,7 +100,8 @@ export default function Warstwa3D({
   const wybranyBudynek = adres ? budynekAdresu(budynki, adres) : null
   const swiatlo = useSwiatlo(lon, lat)
   const s = swiatlo.swiatlo
-  const cien = s?.cien === true && !s.noc
+  // Cień (i ziemia pod nim) nie zależy od nocy – patrz efektSwiatla.
+  const cien = s?.cien === true
 
   useEffect(() => {
     nakladkaRef.current?.setProps({
