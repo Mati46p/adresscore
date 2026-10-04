@@ -15,7 +15,10 @@ export interface PanelLukProps {
   warstwa: string | null
   /** Użytkownik wybrał inną warstwę – zapisz ją w stanie (np. w URL `?w=`). */
   onZmienWarstwe: (id: string) => void
-  /** Klik w okolicę: `okolicaAdresu(...).id` („dzielnica:<nazwa>” | „gmina:<nazwa>”) – mapa (#90) przelatuje do niej. */
+  /**
+   * Klik w okolicę: `okolicaAdresu(...).id` („sim-803”, „m-1219064-grabowki”; bez `okolice.json`
+   * „dzielnica:<nazwa>” | „gmina:<nazwa>”) – mapa (#90) przelatuje do niej.
+   */
   onWybierzOkolice: (id: string) => void
   /** Okolica pokazana teraz na mapie – wiersz dostaje `aria-current`. */
   wybranaOkolica?: string | null
@@ -52,7 +55,7 @@ export function PanelLuk({
     )
   }
 
-  const wynik = policzLuki(aktywna, dane.adresy, dane.grupyHeksow)
+  const wynik = policzLuki(aktywna, dane.adresy, dane.grupyHeksow, dane.okolice)
   if (!wynik) return null
   const ranking = rankingLuk(wynik, sortowanie)
   const n = ranking.naglowek
@@ -143,7 +146,7 @@ export function PanelLuk({
               >
                 <span className="luki-nazwa">
                   {o.nazwa}
-                  {o.typ === 'gmina' && <span className="luki-typ"> gmina</span>}
+                  <span className="luki-typ">{o.opis}</span>
                   <span className="sr-only">,</span>
                 </span>
                 <span className="luki-wluce luki-num">
@@ -160,9 +163,12 @@ export function PanelLuk({
                     {o.procent === null ? (
                       <span className="luki-szary">brak danych</span>
                     ) : (
-                      <strong>{o.procent}</strong>
-                    )}{' '}
-                    {o.podstawa}
+                      // Liczba adresów stoi przy nazwie (`o.opis`) – tu podstawa tylko słowami.
+                      <>
+                        <strong>{o.procent}</strong>
+                        <span className="luki-dopisek"> adresów okolicy</span>
+                      </>
+                    )}
                     <span className="sr-only">,</span>
                   </span>
                 </span>

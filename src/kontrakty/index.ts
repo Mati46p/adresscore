@@ -2,6 +2,10 @@
 // Dlaczego surowe wartości, a nie gotowe oceny: wagi zmienia użytkownik na żywo (persony, JEV),
 // więc przeliczenie na 0–100 należy do silnika w src/wynik. ETL dostarcza pomiar + metadane.
 // Opis formatu plików i przykłady: docs/etapy/kontrakt-danych.md.
+import { niezgodnoscOkolic, type PlikOkolic } from './okolice.ts'
+
+// Okolice adresów (#75): typy i kontrola wersji leżą w osobnym pliku bez `import.meta.env`.
+export * from './okolice.ts'
 
 export const KATEGORIE = {
   codziennosc: 'Codzienność pieszo',
@@ -160,6 +164,24 @@ export async function wczytajWskaznik(
   const p = await pobierz<PlikWskaznika>(`wskazniki/${id}.json`)
   if (p.wersjaAdresow !== wersjaAdresow) {
     console.warn(`Wskaźnik ${id} liczony dla adresów ${p.wersjaAdresow}, mamy ${wersjaAdresow}`)
+    return null
+  }
+  return p
+}
+
+/**
+ * Okolice adresów (#75, #185): jednostki SIM w Krakowie, miejscowości poza nim. Zwraca null, gdy
+ * plik policzono dla innej wersji adresów (albo kolumna ma inną długość) – wtedy front zostaje przy
+ * dzielnicy i gminie. Błąd pobrania leci wyjątkiem, jak w `wczytajWskaznik`; łapie go `dane.ts`.
+ */
+export async function wczytajOkolice(
+  wersjaAdresow: string,
+  liczbaAdresow?: number,
+): Promise<PlikOkolic | null> {
+  const p = await pobierz<PlikOkolic>('okolice.json')
+  const powod = niezgodnoscOkolic(p, wersjaAdresow, liczbaAdresow)
+  if (powod !== null) {
+    console.warn(`Okolice (okolice.json) pominięte: ${powod}`)
     return null
   }
   return p

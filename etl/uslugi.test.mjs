@@ -14,13 +14,17 @@ import {
   kategorieOverture,
   klasyfikujOsm,
   klasyfikujOverture,
+  nazwaCukierniPodobna,
+  nazwaDrogeriaPodobna,
   nazwaLabPodobna,
   nazwaMozeBycMyjnia,
   nazwaPozPodobna,
+  nazwaTylkoCukierni,
   OPISY_ZRODEL,
   pasujeKategoriaOverture,
   pkdDoParametru,
   rozbierzRegule,
+  selektoryOsm,
   zakonczeniaKategoriiOverture,
 } from './lib/uslugi-katalog.mjs'
 import { wygladaNaOsobe } from './lib/uslugi-nazwy.mjs'
@@ -60,7 +64,7 @@ const pkt = (zrodlo, branza, nazwa, wschodM = 0, polnocM = 0, flagi = []) => ({
 
 // --- Katalog ---------------------------------------------------------------------------------
 
-test('katalog: branże v1 i #160 bez paczkomatu, spójne identyfikatory i mapowania', () => {
+test('katalog: branże v1, #160 i druga partia #160 (26 z paczkomatem), spójne identyfikatory i mapowania', () => {
   assert.deepEqual(
     BRANZE.map((b) => b.id),
     [
@@ -81,6 +85,15 @@ test('katalog: branże v1 i #160 bez paczkomatu, spójne identyfikatory i mapowa
       'salon_kosmetyczny',
       'kwiaciarnia',
       'optyk',
+      'drogeria',
+      'cukiernia',
+      'sklep_miesny',
+      'warzywniak',
+      'pralnia',
+      'sklep_zoologiczny',
+      'bar',
+      'lodziarnia',
+      'paczkomat',
     ],
   )
   assert.equal(new Set(BRANZE.map((b) => b.id)).size, BRANZE.length)
@@ -92,7 +105,6 @@ test('katalog: branże v1 i #160 bez paczkomatu, spójne identyfikatory i mapowa
     if (b.zrodloPrawdy) assert.ok(b.rejestr && OPISY_ZRODEL[b.rejestr], `${b.id}: rejestr`)
     if (b.rejestr) assert.ok(OPISY_ZRODEL[b.rejestr], `${b.id}: opis rejestru`)
   }
-  assert.equal(BRANZE_PO_ID.paczkomat, undefined)
 })
 
 test('katalog: bity źródeł to różne potęgi dwójki, każde źródło ma opis licencji', () => {
@@ -119,16 +131,18 @@ test('mapowanie OSM: sklep, apteka, fryzjer z flagą barber, piekarnia z kawiarn
   const ids = (t) => klasyfikujOsm(t).map((x) => x.branza)
   assert.deepEqual(ids({ shop: 'convenience' }), ['sklep_spozywczy'])
   assert.deepEqual(ids({ shop: 'supermarket' }), ['sklep_spozywczy'])
-  assert.deepEqual(ids({ shop: 'greengrocer' }), ['sklep_spozywczy'])
-  assert.deepEqual(ids({ shop: 'butcher' }), [])
+  // Warzywniak zostaje w sklepie spożywczym i ma też własną branżę (decyzja z drugiej partii #160).
+  assert.deepEqual(ids({ shop: 'greengrocer' }), ['sklep_spozywczy', 'warzywniak'])
+  assert.deepEqual(ids({ shop: 'butcher' }), ['sklep_miesny'])
   assert.deepEqual(ids({ amenity: 'pharmacy' }), ['apteka'])
   assert.deepEqual(ids({ amenity: 'pharmacy', dispensing: 'no' }), [])
   const barber = klasyfikujOsm({ shop: 'hairdresser', hairdresser: 'barber' })
   assert.deepEqual(barber, [{ branza: 'fryzjer', flagi: ['barber'] }])
   assert.deepEqual(klasyfikujOsm({ shop: 'hairdresser' }), [{ branza: 'fryzjer', flagi: [] }])
   assert.deepEqual(ids({ shop: 'bakery', amenity: 'cafe' }).sort(), ['kawiarnia', 'piekarnia'])
-  assert.deepEqual(ids({ shop: 'pastry' }), ['piekarnia'])
-  assert.deepEqual(ids({ shop: 'confectionery' }), [])
+  // Piekarnia to sam shop=bakery; shop=pastry i confectionery przeszły do cukierni.
+  assert.deepEqual(ids({ shop: 'pastry' }), ['cukiernia'])
+  assert.deepEqual(ids({ shop: 'confectionery' }), ['cukiernia'])
 })
 
 test('mapowanie OSM: obiekty nieczynne (disused:, abandoned:) odpadają', () => {
@@ -161,7 +175,9 @@ test('mapowanie Overture: kategorie branż, flaga barber, filtr POZ po nazwie', 
   assert.deepEqual(ids({ kat: 'convenience_store', nazwa: 'Żabka' }), ['sklep_spozywczy'])
   assert.deepEqual(ids({ kat: 'grocery_store', nazwa: 'Lidl' }), ['sklep_spozywczy'])
   assert.deepEqual(ids({ kat: 'pharmacy', nazwa: 'Apteka' }), ['apteka'])
-  assert.deepEqual(ids({ kat: 'drugstore', nazwa: 'Rossmann' }), [])
+  // `drugstore` to w Overture w większości apteki, więc drogerią jest dopiero nazwa drogeryjna (filtr `drogeria`).
+  assert.deepEqual(ids({ kat: 'drugstore', nazwa: 'Rossmann' }), ['drogeria'])
+  assert.deepEqual(ids({ kat: 'drugstore', nazwa: 'Apteka Galen' }), [])
   assert.deepEqual(klasyfikujOverture({ kat: 'barber', nazwa: 'X' }), [
     { branza: 'fryzjer', flagi: ['barber'] },
   ])
@@ -694,7 +710,8 @@ test('mapowanie OSM #160: restauracja z flagą fast_food, warsztat, myjnia, salo
   assert.deepEqual(klasyfikujOsm({ amenity: 'fast_food' }), [
     { branza: 'restauracja', flagi: ['fast_food'] },
   ])
-  assert.deepEqual(klasyfikujOsm({ amenity: 'pub' }), [])
+  // Puby i bary od drugiej partii #160 mają własną branżę `bar`, restauracja ich nie bierze.
+  assert.deepEqual(klasyfikujOsm({ amenity: 'pub' }), [{ branza: 'bar', flagi: [] }])
   assert.deepEqual(klasyfikujOsm({ amenity: 'cafe' }), [{ branza: 'kawiarnia', flagi: [] }])
   const ids = (t) => klasyfikujOsm(t).map((x) => x.branza)
   assert.deepEqual(ids({ shop: 'car_repair' }), ['warsztat'])
@@ -1514,6 +1531,270 @@ test('pliki w public/dane/uslugi: każda branża z katalogu ma plik, strażnika,
   assert.ok(katalog.zrodla.nfz.dopasowanych > 0)
   for (const id of ['dentysta', 'fizjoterapia', 'laboratorium'])
     assert.ok(katalog.branze.find((b) => b.id === id).pokrycie.osm, id)
+})
+
+// --- Druga partia #160: drogeria, cukiernia, sklep mięsny, warzywniak, pralnia, sklep zoologiczny, bar,
+// lodziarnia i paczkomat ---------------------------------------------------------------------------
+
+const NOWE_BRANZE = {
+  drogeria: 800,
+  cukiernia: 800,
+  sklep_miesny: 800,
+  warzywniak: 500,
+  pralnia: 1000,
+  sklep_zoologiczny: 1000,
+  bar: 800,
+  lodziarnia: 500,
+  paczkomat: 500,
+}
+
+test('katalog, druga partia #160: zasięgi 500–1500 m, CEIDG wyłączony, bez rejestru i flag, strażnik ustawiony na pomiar', () => {
+  for (const [id, metry] of Object.entries(NOWE_BRANZE)) {
+    const b = BRANZE_PO_ID[id]
+    assert.equal(b.zasiegPieszyM, metry, id)
+    assert.ok(b.zasiegPieszyM >= 500 && b.zasiegPieszyM <= 1500, `${id}: zasięg z zakresu zadania`)
+    assert.deepEqual(b.pkd, [], `${id}: CEIDG zostaje wyłączony`)
+    assert.equal(b.rejestr, undefined, `${id}: bez rejestru`)
+    assert.equal(b.flagi, undefined, `${id}: bez flag`)
+    assert.ok(b.minPunktow > 1, `${id}: strażnik pliku ustawiony na pomiar`)
+    assert.ok(b.minZrodel.osm > 1 && b.minZrodel.overture > 1, `${id}: strażnik per źródło`)
+  }
+  // Paczkomaty bierzemy z OSM i Overture; API InPost nie jest źródłem (brak licencji na punkty).
+  assert.deepEqual(
+    Object.keys(OPISY_ZRODEL).filter((z) => /inpost/i.test(z)),
+    [],
+  )
+  assert.deepEqual(BRANZE_PO_ID.paczkomat.osm, ['amenity=parcel_locker'])
+  assert.deepEqual(BRANZE_PO_ID.paczkomat.overture, ['package_locker'])
+})
+
+test('mapowanie OSM, druga partia #160: drogeria, sklep mięsny, pralnia, zoologiczny, bar, lodziarnia, paczkomat', () => {
+  const ids = (t) => klasyfikujOsm(t).map((x) => x.branza)
+  assert.deepEqual(ids({ shop: 'chemist' }), ['drogeria'])
+  assert.deepEqual(ids({ shop: 'cosmetics' }), [], 'sklepy z kosmetykami to nie drogerie')
+  assert.deepEqual(ids({ shop: 'butcher' }), ['sklep_miesny'])
+  assert.deepEqual(ids({ shop: 'laundry' }), ['pralnia'])
+  assert.deepEqual(ids({ shop: 'dry_cleaning' }), ['pralnia'])
+  assert.deepEqual(ids({ shop: 'pet' }), ['sklep_zoologiczny'])
+  assert.deepEqual(ids({ shop: 'pet_grooming' }), [], 'groomerzy są poza branżą')
+  assert.deepEqual(ids({ amenity: 'bar' }), ['bar'])
+  assert.deepEqual(ids({ amenity: 'pub' }), ['bar'])
+  assert.deepEqual(ids({ amenity: 'biergarten' }), [], 'ogródki piwne są poza branżą')
+  assert.deepEqual(ids({ amenity: 'ice_cream' }), ['lodziarnia'])
+  assert.deepEqual(ids({ shop: 'ice_cream' }), ['lodziarnia'])
+  assert.deepEqual(ids({ amenity: 'parcel_locker' }), ['paczkomat'])
+  assert.deepEqual(ids({ amenity: 'post_office' }), [], 'poczta to nie automat paczkowy')
+  // Nieczynne odpadają tak samo jak w starszych branżach.
+  assert.deepEqual(ids({ amenity: 'parcel_locker', 'disused:amenity': 'parcel_locker' }), [])
+  assert.deepEqual(ids({ shop: 'chemist', 'was:shop': 'chemist' }), [])
+})
+
+test('mapowanie Overture, druga partia #160: kategorie branż i odrzucone sąsiednie kategorie', () => {
+  const ids = (kat, nazwa = 'X') => klasyfikujOverture({ kat, nazwa }).map((x) => x.branza)
+  assert.deepEqual(ids('butcher_shop'), ['sklep_miesny'])
+  assert.deepEqual(ids('meat_wholesaler'), [], 'hurtownia mięsa to nie sklep')
+  assert.deepEqual(ids('produce_store'), ['warzywniak'])
+  assert.deepEqual(ids('produce_wholesaler'), [])
+  for (const kat of ['laundry_service', 'dry_cleaning', 'laundromat'])
+    assert.deepEqual(ids(kat), ['pralnia'], kat)
+  assert.deepEqual(ids('carpet_cleaning'), [], 'pranie dywanów to inna usługa')
+  for (const kat of ['pet_store', 'aquatic_pet_store'])
+    assert.deepEqual(ids(kat), ['sklep_zoologiczny'], kat)
+  assert.deepEqual(ids('pet_groomer'), [])
+  assert.deepEqual(ids('pet_boarding'), [])
+  for (const kat of [
+    'bar',
+    'pub',
+    'cocktail_bar',
+    'wine_bar',
+    'beer_bar',
+    'sports_bar',
+    'irish_pub',
+    'gastropub',
+    'dive_bar',
+    'gay_bar',
+    'tapas_bar',
+    'hotel_bar',
+    'whiskey_bar',
+  ])
+    assert.deepEqual(ids(kat), ['bar'], kat)
+  // Gwiazdka `*_bar` wciągnęłaby te kategorie, więc lista jest jawna.
+  for (const kat of ['milk_bar', 'salad_bar', 'smoothie_juice_bar', 'hookah_bar', 'beer_garden'])
+    assert.deepEqual(ids(kat), [], kat)
+  assert.deepEqual(ids('bar_and_grill_restaurant'), ['restauracja'], 'to restauracja, nie bar')
+  for (const kat of ['ice_cream_shop', 'frozen_yogurt_shop'])
+    assert.deepEqual(ids(kat), ['lodziarnia'], kat)
+  assert.deepEqual(ids('package_locker'), ['paczkomat'])
+  for (const kat of ['post_office', 'courier_and_delivery_service', 'shipping_center'])
+    assert.deepEqual(ids(kat), [], kat)
+})
+
+test('filtr drogeria: Rossmann, Hebe i Super-Pharm z różnych kategorii Overture tak, apteki spod drugstore nie', () => {
+  const ids = (kat, nazwa) => klasyfikujOverture({ kat, nazwa }).map((x) => x.branza)
+  for (const kat of [
+    'drugstore',
+    'beauty_supply_store',
+    'cosmetics_and_fragrance_store',
+    'beauty_product_supplier',
+    'hair_supply_store',
+    'shopping',
+  ])
+    assert.deepEqual(ids(kat, 'Rossmann Polska'), ['drogeria'], kat)
+  assert.deepEqual(ids('beauty_supply_store', 'Hebe'), ['drogeria'])
+  assert.deepEqual(ids('beauty_product_supplier', 'Super-Pharm Drogeria'), ['drogeria'])
+  assert.deepEqual(ids('shopping', 'Drogeria Kosmyk'), ['drogeria'])
+  // Perfumerie i sklepy sieciowe z tej samej kategorii nie są drogeriami.
+  assert.deepEqual(ids('beauty_supply_store', 'Sephora'), [])
+  assert.deepEqual(ids('cosmetics_and_fragrance_store', 'Douglas'), [])
+  assert.deepEqual(ids('shopping', 'Lewiatan'), [])
+  // 12 z 14 miejsc `drugstore` w obszarze to apteki: bez nazwy drogeryjnej odpadają.
+  assert.deepEqual(ids('drugstore', 'Apteka Galen'), [])
+  assert.deepEqual(ids('drugstore', 'Eurolek sp.j'), [])
+  // Apteka z kategorii `pharmacy` zostaje apteką; drogeria w tej kategorii jest też drogerią.
+  assert.deepEqual(ids('pharmacy', 'Apteka Dbam o Zdrowie'), ['apteka'])
+  assert.deepEqual(ids('pharmacy', 'Super-Pharm'), ['apteka', 'drogeria'])
+  assert.equal(nazwaDrogeriaPodobna('Drogeria Rossmann'), true)
+  assert.equal(nazwaDrogeriaPodobna('dm-drogerie markt Polska'), true)
+  assert.equal(
+    nazwaDrogeriaPodobna('Adwokat Paulina Chebel'),
+    false,
+    'hebe tylko jako osobne słowo',
+  )
+  assert.equal(nazwaDrogeriaPodobna(null), false)
+})
+
+test('piekarnia i cukiernia: OSM rozdziela shop=bakery od pastry i confectionery, Overture bakery dzieli się po nazwie', () => {
+  const ids = (kat, nazwa) => klasyfikujOverture({ kat, nazwa }).map((x) => x.branza)
+  // OSM: żaden obiekt nie trafia do obu branż.
+  for (const [tagi, branza] of [
+    [{ shop: 'bakery' }, 'piekarnia'],
+    [{ shop: 'pastry' }, 'cukiernia'],
+    [{ shop: 'confectionery' }, 'cukiernia'],
+  ])
+    assert.deepEqual(
+      klasyfikujOsm(tagi).map((x) => x.branza),
+      [branza],
+      JSON.stringify(tagi),
+    )
+  // Overture `bakery`: zwykła piekarnia albo bez nazwy zostaje w piekarni, czysto cukiernicza idzie do cukierni.
+  assert.deepEqual(ids('bakery', 'Piekarnia Czajczyk'), ['piekarnia'])
+  assert.deepEqual(ids('bakery', 'Żabka'), ['piekarnia'])
+  assert.deepEqual(ids('bakery', null), ['piekarnia'])
+  for (const nazwa of [
+    'Cukiernia Zając',
+    'Pracownia Cukiernicza KWIATEK',
+    'Ciastkarnia IZA',
+    'Fit Cake',
+    'Torty z Pomysłem',
+  ])
+    assert.deepEqual(ids('bakery', nazwa), ['cukiernia'], nazwa)
+  // „Piekarnia i Cukiernia" to jedno i drugie.
+  for (const nazwa of [
+    'Piekarnia i Cukiernia Buczek',
+    'Pieczywo Buczek Cukiernia, Piekarnia, Kawiarnia',
+    'Piekarnia Cukiernia Awiteks',
+  ])
+    assert.deepEqual(ids('bakery', nazwa), ['piekarnia', 'cukiernia'], nazwa)
+  // Kategorie słodyczy i deserów to cukiernia niezależnie od nazwy.
+  for (const kat of [
+    'dessert_shop',
+    'patisserie_cake_shop',
+    'cupcake_shop',
+    'candy_store',
+    'chocolatier',
+  ])
+    assert.deepEqual(ids(kat, 'X'), ['cukiernia'], kat)
+  assert.equal(nazwaCukierniPodobna('Cukiernia Sowa'), true)
+  assert.equal(nazwaCukierniPodobna('Piekarnia Wawel'), false)
+  assert.equal(nazwaTylkoCukierni('Cukiernia Sowa'), true)
+  assert.equal(nazwaTylkoCukierni('Piekarnia i Cukiernia Buczek'), false)
+  assert.equal(nazwaTylkoCukierni('Piekarnia Wawel'), false)
+  assert.equal(nazwaTylkoCukierni(null), false)
+  // PKD 10.71.Z zostaje przy piekarni: kod nie rozdziela piekarni od cukierni.
+  assert.deepEqual(BRANZE_PO_ID.piekarnia.pkd, ['10.71.Z'])
+  assert.deepEqual(BRANZE_PO_ID.cukiernia.pkd, [])
+})
+
+test('wstępne filtry źródeł obejmują nowe branże: selektory OSM i kategorie Overture', () => {
+  const osm = selektoryOsm()
+  for (const v of [
+    'chemist',
+    'confectionery',
+    'pastry',
+    'bakery',
+    'butcher',
+    'greengrocer',
+    'laundry',
+    'dry_cleaning',
+    'pet',
+    'ice_cream',
+  ])
+    assert.ok(osm.get('shop').has(v), `shop=${v}`)
+  for (const v of ['bar', 'pub', 'ice_cream', 'parcel_locker'])
+    assert.ok(osm.get('amenity').has(v), `amenity=${v}`)
+  const kategorie = kategorieOverture()
+  for (const k of [
+    'drugstore',
+    'shopping',
+    'bakery',
+    'dessert_shop',
+    'butcher_shop',
+    'produce_store',
+    'laundromat',
+    'aquatic_pet_store',
+    'cocktail_bar',
+    'ice_cream_shop',
+    'package_locker',
+  ])
+    assert.ok(kategorie.includes(k), k)
+})
+
+test('druga partia #160 w plikach: kolumny bez flag, licencja OSM i Overture, ten sam lokal z dwóch źródeł to jeden punkt', () => {
+  const nazwy = {
+    drogeria: 'Rossmann',
+    cukiernia: 'Cukiernia Sowa',
+    sklep_miesny: 'Masarnia Kowalski',
+    warzywniak: 'Warzywniak Bananek',
+    pralnia: 'Pralnia Speed Queen',
+    sklep_zoologiczny: 'Maxi Zoo',
+    bar: 'Pub Terapia Grupowa',
+    lodziarnia: 'Grycan',
+    paczkomat: 'Paczkomat InPost',
+  }
+  const wejscie = Object.entries(nazwy).flatMap(([id, nazwa]) => [
+    pkt('osm', id, nazwa, 0, 0),
+    pkt('overture', id, nazwa, 9, 0),
+    pkt('osm', id, 'Inny lokal', 700, 0),
+  ])
+  const { pliki, katalog } = zlozWyjscie({ wejscie, meta: META })
+  for (const id of Object.keys(nazwy)) {
+    const plik = pliki[id]
+    assert.equal(plik.n, 2, id)
+    assert.deepEqual(Object.keys(plik.kolumny), ['lon', 'lat', 'zr', 'nazwa'], id)
+    assert.equal(plik.bityFlag, undefined, id)
+    assert.equal(plik.zasiegPieszyM, NOWE_BRANZE[id], id)
+    assert.ok(
+      plik.kolumny.zr.includes(BITY_ZRODEL.osm | BITY_ZRODEL.overture),
+      `${id}: punkt z OSM i Overture`,
+    )
+    assert.match(plik.atrybucja, /© OpenStreetMap contributors, ODbL/, id)
+    assert.match(plik.atrybucja, /Overture Maps Foundation/, id)
+    assert.match(plik.licencja, /ODbL 1\.0/, id)
+    const wpis = katalog.branze.find((b) => b.id === id)
+    assert.equal(wpis.liczby.potwierdzoneWielomaZrodlami, 1, id)
+    assert.equal(wpis.pokrycie, undefined, `${id}: bez rejestru nie ma pokrycia`)
+    assert.deepEqual(sprawdzWyjscie({ pliki: { [id]: plik }, bbox: BBOX }), [], id)
+  }
+})
+
+test('dokumentacja: tabela mapowania w uslugi.md ma wiersz i zasięg każdej branży z katalogu', () => {
+  const md = readFileSync(fileURLToPath(new URL('./uslugi.md', import.meta.url)), 'utf8')
+  const wiersze = md.split('\n')
+  for (const b of BRANZE) {
+    const wiersz = wiersze.find((l) => l.startsWith(`| \`${b.id}\``) && l.includes(' m |'))
+    assert.ok(wiersz, `${b.id}: brak wiersza w tabeli mapowania`)
+    assert.ok(wiersz.includes(`| ${b.zasiegPieszyM} m |`), `${b.id}: zasięg ${b.zasiegPieszyM} m`)
+  }
 })
 
 // --- Podział wg obszaru ---------------------------------------------------------------------------

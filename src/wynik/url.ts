@@ -73,20 +73,31 @@ function odkoduj(tekst: string): string | null {
   }
 }
 
+/**
+ * Prostokąt (Małopolska), w którym punkt trybu „Biznes” jest dozwolony. Poza nim link go odrzuca,
+ * a dane o popycie i punktach i tak się kończą – stąd jedno miejsce prawdy dla linku, formularza
+ * współrzędnych i przeciągania znaczników.
+ */
+export const GRANICE_PUNKTU = { lonMin: 19.3, lonMax: 20.8, latMin: 49.7, latMax: 50.5 } as const
+
+export function wGranicachPunktu(lon: number, lat: number): boolean {
+  return (
+    Number.isFinite(lon) &&
+    Number.isFinite(lat) &&
+    lon >= GRANICE_PUNKTU.lonMin &&
+    lon <= GRANICE_PUNKTU.lonMax &&
+    lat >= GRANICE_PUNKTU.latMin &&
+    lat <= GRANICE_PUNKTU.latMax
+  )
+}
+
 function czytajPunkt(tekst: string | null): { lon: number; lat: number } | null {
   if (!tekst) return null
   const czesci = tekst.split(',')
   if (czesci.length !== 2) return null
   const lon = Number(czesci[0])
   const lat = Number(czesci[1])
-  return Number.isFinite(lon) &&
-    Number.isFinite(lat) &&
-    lon >= 19.3 &&
-    lon <= 20.8 &&
-    lat >= 49.7 &&
-    lat <= 50.5
-    ? { lon, lat }
-    : null
+  return wGranicachPunktu(lon, lat) ? { lon, lat } : null
 }
 
 export function czytajHash(hash: string): StanUrl {
@@ -162,6 +173,9 @@ export function zapiszHash(s: StanUrl): string {
     if (s.symulacja.a) parametry.set('a', s.symulacja.a)
     if (s.symulacja.b) parametry.set('b', s.symulacja.b)
   }
+  // Parametry biznesu muszą trafić do `parametry` PRZED zbudowaniem `q`. Wcześniej `q` powstawało
+  // pierwsze, więc `#/biznes?b=apteka&a=…&c=…` zapisywał się jako `#/biznes` i link z punktami
+  // ginął przy pierwszej zmianie stanu (odświeżenie strony gubiło branżę i oba punkty).
   if (s.ekran === 'biznes') {
     parametry.set('b', s.branza ?? 'sklep')
     if (s.punktA) parametry.set('a', s.punktA.lon.toFixed(6) + ',' + s.punktA.lat.toFixed(6))

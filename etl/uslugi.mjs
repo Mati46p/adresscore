@@ -1,10 +1,11 @@
-// Punkty usług dla trybu „Biznes" (#104, #160): sklep spożywczy, apteka, fryzjer, piekarnia, kawiarnia, POZ
-// oraz dentysta, fizjoterapia, laboratorium, siłownia, weterynarz, restauracja, warsztat, myjnia, salon
-// kosmetyczny, kwiaciarnia i optyk w Krakowie i obwarzanku. Same punkty (bez wskaźników na adres) z
-// pięciu źródeł: OpenStreetMap (Geofabrik), Overture Places, Rejestr Aptek, RPWDL (POZ, dentysta,
-// fizjoterapia, laboratorium) i – tylko jako flaga `nfz` dentysty – NFZ Terminy Leczenia. CEIDG
-// domyślnie wyłączony: adres działalności to często adres domowy, nie lokal, więc punkty wprowadzały
-// szum (decyzja 2026-10-03).
+// Punkty usług dla trybu „Biznes" (#104, #160): sklep spożywczy, apteka, fryzjer, piekarnia, kawiarnia, POZ,
+// dentysta, fizjoterapia, laboratorium, siłownia, weterynarz, restauracja, warsztat, myjnia, salon
+// kosmetyczny, kwiaciarnia i optyk oraz (druga partia #160) drogeria, cukiernia, sklep mięsny, warzywniak,
+// pralnia, sklep zoologiczny, bar, lodziarnia i paczkomat w Krakowie i obwarzanku. Same punkty (bez
+// wskaźników na adres) z pięciu źródeł: OpenStreetMap (Geofabrik), Overture Places, Rejestr Aptek, RPWDL
+// (POZ, dentysta, fizjoterapia, laboratorium) i – tylko jako flaga `nfz` dentysty – NFZ Terminy Leczenia.
+// CEIDG domyślnie wyłączony: adres działalności to często adres domowy, nie lokal, więc punkty
+// wprowadzały szum (decyzja 2026-10-03).
 // Uruchom: node etl/uslugi.mjs [--z-ceidg] [--budzet-ceidg=300]. Opis źródeł i licencji: etl/uslugi.md.
 // Surowe pobrania trafiają do etl/.cache, drugi bieg ich nie pobiera.
 // Wynik: public/dane/uslugi/katalog.json i public/dane/uslugi/<branza>.json.
