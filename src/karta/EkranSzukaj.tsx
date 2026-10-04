@@ -18,6 +18,7 @@ import { useWyniki } from '@/wynik/useWyniki'
 import { useWstepnaMapa } from '@/wynik/wstepnaMapa'
 import { opisAdresu } from './adres'
 import { PanelBudzetu } from './panel/PanelBudzetu'
+import { PanelDojazdu } from './panel/PanelDojazdu'
 import { PanelFiltrow } from './panel/PanelFiltrow'
 import { Ranking } from './Ranking'
 import { adresWKliknietymHeksie } from './wyszukiwarka/heks'
@@ -86,6 +87,7 @@ export function EkranSzukaj() {
           <PoleOpiszSiebie />
           <PanelFiltrow />
           <PanelBudzetu />
+          <PanelDojazdu />
         </aside>
       </div>
 
