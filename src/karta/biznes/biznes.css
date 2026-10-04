@@ -7,7 +7,7 @@
 .biznes-glowa {
   display: flex;
   justify-content: space-between;
-  align-items: end;
+  align-items: start;
   gap: 24px;
   max-width: 1500px;
   margin: 0 auto 24px;
@@ -26,11 +26,80 @@
   font-weight: 700;
   letter-spacing: 0.12em;
 }
+/* Prawa kolumna nagłówka: wybór branży i przełączniki konkurencji. */
+.biznes-wybor {
+  display: grid;
+  gap: 14px;
+  flex: 0 0 auto;
+  width: min(100%, 380px);
+}
 .biznes-branza {
   display: grid;
   gap: 6px;
   min-width: 230px;
   font-weight: 700;
+}
+.biznes-filtry {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  margin: 0;
+  padding: 8px 14px 12px;
+  border: 1px solid var(--ramka);
+  border-radius: 10px;
+  background: var(--powierzchnia);
+}
+.biznes-filtry legend {
+  padding: 0 6px;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+.biznes-filtr {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+  min-height: var(--cel-dotyku);
+  margin: 0 -8px;
+  padding: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.biznes-filtr input {
+  width: 20px;
+  height: 20px;
+  margin: 1px 0 0;
+  accent-color: var(--akcent);
+  cursor: pointer;
+}
+.biznes-filtr strong {
+  display: block;
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+.biznes-filtr small {
+  display: block;
+  margin-top: 2px;
+  color: var(--tekst-3);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+.biznes-filtry-pusto {
+  margin: 4px 0 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--ostrzezenie-tlo);
+  color: var(--ostrzezenie-tekst);
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+.biznes-komunikat {
+  max-width: 1500px;
+  margin: 0 auto 16px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: var(--ostrzezenie-tlo);
+  color: var(--ostrzezenie-tekst);
 }
 .biznes-branza select,
 .biznes-panel input {
@@ -101,6 +170,9 @@
   .biznes-panel button:hover {
     background: var(--akcent-jasny);
   }
+  .biznes-filtr:hover {
+    background: var(--akcent-jasny);
+  }
   .biznes-sterowanie button[aria-pressed="true"]:hover,
   .biznes-panel button[type="submit"]:hover {
     background: var(--akcent-hover);
@@ -158,6 +230,11 @@
 .biznes-glowna p {
   margin: 0;
   line-height: 1.4;
+}
+.biznes-glowna .biznes-glowna-filtry {
+  margin-top: 8px;
+  color: var(--tekst-2);
+  font-size: 0.85rem;
 }
 .biznes-glowna strong {
   display: block;
@@ -241,8 +318,9 @@
   .biznes-glowa {
     display: block;
   }
-  .biznes-branza {
+  .biznes-wybor {
     margin-top: 18px;
+    width: 100%;
   }
   .biznes-mapa {
     min-height: 390px;
