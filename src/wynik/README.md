@@ -226,9 +226,11 @@ Zasady:
 - `percentyl` to pozycja wśród ISTNIEJĄCYCH punktów branży, które mają popyt w zasięgu; `null` =
   nie ma z czym porównać (miejsce bez adresów w zasięgu albo brak punktów odniesienia). Karta
   podaje go słowami („więcej klientów w zasięgu niż 7 na 10 istniejących aptek”), bez znaku %.
-  Usługi obejmują cały obwarzanek, a popyt tylko część obszaru: punkty bez żadnego heksu popytu
-  w zasięgu nie wchodzą do rozkładu (test na wszystkich 26 plikach), ale liczą się jako konkurenci
-  miejsc, w których zasięgu leżą.
+  Popyt obejmuje Kraków i 13 gmin obwarzanka (14 gmin, `etl/biznes-popyt.md`), a katalog usług leży
+  w większym prostokącie z marginesem ok. 3 km. Punkty poza tymi 14 gminami (margines prostokąta
+  i sąsiednie gminy) nie mają heksu popytu w zasięgu, więc nie wchodzą do rozkładu (test na wszystkich
+  26 plikach), ale liczą się jako konkurenci miejsc, w których zasięgu leżą. To nie jest brak popytu
+  w obwarzanku: każda z 13 gmin ma heksy popytu.
 - Heks bez żadnego punktu w zasięgu to osobna kategoria: `adresyNaPunkt: null`, `bezPunktu(plama)`.
   Próg nasycenia skali liczy się tylko z heksów, które mają punkt (`progSkaliPlam`).
 - Zasięg to `zasiegPieszyM` z katalogu (500–2000 m zależnie od branży), nie stała w kodzie.

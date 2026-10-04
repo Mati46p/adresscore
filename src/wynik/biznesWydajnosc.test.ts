@@ -235,8 +235,10 @@ for (const branza of ['paczkomat', 'restauracja'] as const)
     },
   )
 
+// Popyt obejmuje Kraków i 13 gmin obwarzanka (14 gmin), a katalog usług leży w większym prostokącie
+// (margines ok. 3 km), więc część punktów leży poza tymi 14 gminami i nie ma popytu w zasięgu.
 test(
-  'rozkład porównawczy pomija punkty spoza obszaru popytu (usługi obejmują też obwarzanek)',
+  'rozkład porównawczy pomija punkty spoza 14 gmin z popytem (margines katalogu usług)',
   opcje,
   () => {
     const katalog = JSON.parse(readFileSync(sciezka('uslugi/katalog.json'), 'utf8')) as KatalogUslug
