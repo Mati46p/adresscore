@@ -70,6 +70,11 @@ export interface StanAplikacji {
   filtryBiznesu: FiltryUslug
   /** Obiekty symulatora (#98), warianty A i B jako tekst `symulacjaUrl.ts`. */
   symulacja: { a: string; b: string }
+  /**
+   * Warstwa rankingu i mapy luk trybu „Miasto” (#92, parametr `w` linku). `null` = pierwsza warstwa
+   * z progiem luki.
+   */
+  warstwaLuk: string | null
 }
 
 const PUSTE_MIEJSCA: readonly null[] = ID_MIEJSC.map(() => null)
@@ -91,6 +96,7 @@ let stan: StanAplikacji = {
   miejsca: PUSTE_MIEJSCA,
   filtryBiznesu: BEZ_FILTROW,
   symulacja: { a: '', b: '' },
+  warstwaLuk: null,
 }
 
 const sluchacze = new Set<() => void>()
@@ -313,7 +319,13 @@ export function ustawFiltryBiznesu(filtry: FiltryUslug) {
   zmien({ filtryBiznesu: filtry })
 }
 
-/** Warianty symulatora (#98); zapis do URL tylko na ekranie symulatora. */
+/** Warstwa rankingu i mapy luk (#92); trafia do linku jako `w=` na ekranie Miasto. */
+export function ustawWarstweLuk(warstwa: string | null) {
+  if (warstwa === stan.warstwaLuk) return
+  zmien({ warstwaLuk: warstwa })
+}
+
+/** Warianty symulatora (#98); zapis do URL tylko na ekranie Miasto. */
 export function ustawSymulacje(symulacja: { a: string; b: string }) {
   if (symulacja.a === stan.symulacja.a && symulacja.b === stan.symulacja.b) return
   zmien({ symulacja })
@@ -442,13 +454,14 @@ function zUrlZeSlownikiem(url: StanUrl): Partial<StanAplikacji> {
 /**
  * Pola linku niezależne od słownika adresów: stan dostaje je od razu (start, zmiana hasha przed
  * wczytaniem adresów), nie czeka na dane. Biznes tylko z linku Biznesu (`polaBiznesuZLinku`),
- * symulator tylko z linku symulatora – inne ekrany nie kasują wyboru z tych trybów.
+ * symulator i warstwa luk tylko z linku Miasta – inne ekrany nie kasują wyboru z tych trybów.
  */
 function zUrlBezSlownika(url: StanUrl): Partial<StanAplikacji> {
   return {
     filtry: [],
     biznes: url.biznes ?? stan.biznes,
     ...(url.symulacja ? { symulacja: url.symulacja } : {}),
+    ...(url.warstwaLuk !== undefined ? { warstwaLuk: url.warstwaLuk } : {}),
     ...polaBiznesuZLinku(url),
   }
 }
@@ -506,7 +519,7 @@ function doUrl(s: StanAplikacji): StanUrl {
     ustawienia:
       s.persona === 'wlasna' ? { wagi: { ...s.wagi }, kierunki: { ...s.kierunki } } : null,
     filtry: [],
-    ...(s.ekran === 'symulator' ? { symulacja: s.symulacja } : {}),
+    ...(s.ekran === 'miasto' ? { symulacja: s.symulacja, warstwaLuk: s.warstwaLuk } : {}),
     branza: s.branza,
     miejsca: s.miejsca,
     filtryBiznesu: s.filtryBiznesu,

@@ -147,7 +147,7 @@ const sasiedzi = usePropsSasiadowMapy()
 
 - `useStan((s) => s.pole)` czyta stan. Selektor zwraca pole stanu albo prymityw, nigdy nowy obiekt.
 - Pola: `ekran`, `tryb`, `persona` (`'wlasna'` po ręcznej zmianie wagi), `wagi`, `kierunki`, `wybrany` (indeks | null), `porownanie` (do 5 indeksów), `warstwa` (`'wynik'` albo id wskaźnika).
-- Pola trybów Miasto i Biznes (#98, #108): `symulacja` (`{ a, b }`, obiekty wariantów), `branza`, `miejsca` (miejsca testowe A–E, zawsze 5 pozycji, `null` = puste), `filtryBiznesu`. Akcje: `ustawSymulacje`, `ustawBranze` (miejsca zostają), `ustawPunktBiznesu('a'..'e', punkt | null)`, `dodajMiejsceBiznesu(punkt)`, `ustawFiltryBiznesu`.
+- Pola trybów Miasto i Biznes (#92, #98, #108): `symulacja` (`{ a, b }`, obiekty wariantów), `warstwaLuk` (warstwa rankingu i mapy luk albo `null` = pierwsza z progiem), `branza`, `miejsca` (miejsca testowe A–E, zawsze 5 pozycji, `null` = puste), `filtryBiznesu`. Akcje: `ustawSymulacje`, `ustawWarstweLuk`, `ustawBranze` (miejsca zostają), `ustawPunktBiznesu('a'..'e', punkt | null)`, `dodajMiejsceBiznesu(punkt)`, `ustawFiltryBiznesu`.
 - Akcje: `wybierzPersone`, `ustawTryb`, `ustawWage(id, 0–4)`, `ustawKierunek(id, k | null)`, `wybierzAdres(i | null)`, `pokazOkolice(i)`, `przejdz(ekran)`, `dodajDoPorownania`, `usunZPorownania`, `przelaczPorownanie`, `wyczyscPorownanie`, `ustawWarstwe`.
 - Twarde filtry: pole `filtry` (`{ id, warunek: 'max' | 'min' | 'rowne-zero', prog }`, jeden na warstwę), akcje `ustawFiltr`, `usunFiltr`, `wyczyscFiltry`. W URL: `f=halas_ldwn:max:55,powodz_1proc:zero`.
 - `hrefDla(stan, latka)` daje hash do `<a href>`. Stan weź z `useStan((s) => s)`.
@@ -161,19 +161,34 @@ const sasiedzi = usePropsSasiadowMapy()
 | `#/adres/<id adresu>` | 2 Okolica |
 | `#/porownanie` | 3 Porównanie |
 | `#/katalog`, `#/metoda` | katalog adresów, metoda i źródła |
-| `#/miasto?a=<obiekty>&b=<obiekty>` | tryb Miasto: symulator inwestycji (#96–#98), warianty A i B. Stary adres `#/symulator` dalej działa (ten sam ekran), a link zapisuje się już jako `#/miasto` |
+| `#/miasto?w=<warstwa>&a=<obiekty>&b=<obiekty>` | tryb Miasto, dwa widoki (niżej): luki w usługach (`w` = warstwa rankingu i mapy luk, link do konkretnej luki, #92) i symulator inwestycji (`a`, `b` = obiekty wariantów A i B, #96–#98). Stary adres `#/symulator` dalej działa (ten sam ekran), a link zapisuje się już jako `#/miasto` |
 | `#/biznes?b=<branża>&m=<lon,lat;lon,lat;…>&k=<filtry>` | tryb Biznes (E10): branża, miejsca A–E (`m`, puste pozycje między średnikami), filtry konkurencji (`k`). Stare linki z `a=` i `c=` (miejsca A i B) działają. Opis niżej |
 
 Uszkodzony hash (np. `#/adres/%`) daje ekran Szukaj.
 Parametry: `p` (persona), `t` (tryb), `cmp` (id adresów do porównania, po przecinku).
 Stan i hash synchronizują się w obie strony. Zmiana ekranu albo adresu dodaje krok w historii przeglądarki.
 
+### Tryb „Dla miasta”: luki w usługach i symulator – `karta/miasto`, `widokMiasta.ts` (#91, #92, #108)
+
+Jeden adres `#/miasto`, dwa widoki pod paskiem „Luki w usługach” / „Symulator inwestycji” (`EkranMiasto`):
+
+- **Luki w usługach** (`WidokLuk`): ranking okolic `PanelLuk` (#91) obok mapy luk `MapaLuk` (#90). Warstwę wybiera
+  pasek nad mapą (panel go nie powtarza, `bezWyboruWarstwy`) i trafia do stanu (`warstwaLuk`) oraz linku (`w=`);
+  klik w okolicę z rankingu przelatuje mapą do niej. Na telefonie pasek warstw to jeden przewijany rząd.
+- **Symulator inwestycji** (`EkranSymulatora`, #96–#98): ładowany dopiero po wejściu w ten widok; worker obliczeń
+  żyje tylko w nim (widok luk workera nie uruchamia).
+- **Który widok otwiera link**: `widokPoczatkowy` – obiekty symulatora w linku (`a=`, `b=`) otwierają symulator,
+  każdy inny link (gołe `#/miasto`, `#/miasto?w=…`) otwiera luki. Potem widok zmienia już tylko użytkownik
+  (pasek stoi nad widokiem, więc przełączenie nie gubi fokusu klawiatury).
+- `w=` jest poprawnym id warstwy (małe litery, cyfry, podkreślenia, do 64 znaków) albo odpada. Nieznane id panel
+  zamienia na pierwszą warstwę z progiem luki, więc stary link nie kończy się pustym ekranem.
+
 ### Przełącznik trybów w nagłówku – `trybyAplikacji.ts` (#92, #108)
 
 Obok kroków mieszkańca (Szukaj, Katalog, Porównanie, Metoda) nagłówek ma osobny przełącznik „Dla miasta”
 (`#/miasto`) i „Dla biznesu” (`#/biznes`). `TRYBY_APLIKACJI` to tablica (ekran, napis), `trybEkranu(ekran)`
 daje wybrany tryb albo `null` na ekranach mieszkańca. Akcent ma w nagłówku jeden element naraz: krok
-na ekranach mieszkańca, tryb na #/miasto i #/biznes. Stan obu trybów (obiekty symulatora, branża, miejsca
+na ekranach mieszkańca, tryb na #/miasto i #/biznes. Stan obu trybów (obiekty symulatora, warstwa luk, branża, miejsca
 i filtry Biznesu) zostaje po przejściu na inny ekran i po powrocie, bo link bez ich parametrów niczego nie kasuje.
 
 ### Link jest źródłem prawdy od pierwszej klatki – `stanZLinku.ts` (#108)
@@ -186,7 +201,7 @@ Adresy wczytują się 2–12 s. Wcześniej stan Biznesu dostawał branżę i mie
 - `podlaczDane` (po adresach) bierze z linku tylko to, co potrzebuje słownika: id adresu i listę porównania.
   Nie czyta już branży, miejsc, filtrów ani symulatora, więc nie cofa zmiany z okna ładowania.
 - Przed adresami `zapiszDoUrl` nie składa hasha od zera (zgubiłby `u=`, `cmp=`, `p=`), ale podmienia w bieżącym linku
-  parametry ekranu (`PARAMETRY_EKRANU`: Biznes `b m a c k`, Miasto `a b`), bez nowego wpisu w historii. Zmiana
+  parametry ekranu (`PARAMETRY_EKRANU`: Biznes `b m a c k`, Miasto `a b w`), bez nowego wpisu w historii. Zmiana
   branży, miejsca albo filtra w pierwszych sekundach trafia więc do linku i przeżywa F5.
 - Link bez parametrów Biznesu (np. `#/porownanie`) nie kasuje wyboru Biznesu; gołe `#/biznes` jest linkiem do Biznesu
   i przywraca domyślną branżę (`polaBiznesuZLinku`).
@@ -295,9 +310,12 @@ Dlaczego jeden worker, ale z osobnymi stanami i zwalnianiem (decyzja #108, komen
 - Tryby mają jednak **różne dane i różny cykl życia**: Miasto dostaje od wątku głównego bazę (kopia danych 176 tys.
   adresów, po zmianie wag), Biznes sam pobiera popyt i pliki branż. Połączenie „na zawsze” trzymałoby bazę Miasta
   po wyjściu na Szukaj, a oddzielne stałe workery dwa razy tyle. Dlatego stany są rozłączne i zwalniane osobno.
-- Cena zwalniania: powrót do Miasta wysyła bazę od nowa. Pomiar (Chrome 154, dane produkcyjne): `postMessage(baza)`
-  ok. 50 ms w wątku głównym (47–63 ms), a samo przeliczenie jednego obiektu 8–95 ms w workerze. Czasu do wyniku
-  po powrocie (ok. 0,7–1 s) nie wyznacza worker, tylko montaż mapy.
+- Cena zwalniania: powrót do Miasta wysyła bazę do nowego workera. Pomiar (Chrome 154, dane produkcyjne):
+  `postMessage(baza)` to 50–100 ms w wątku głównym, a samo przeliczenie jednego obiektu 8–95 ms w workerze.
+  Dziś ta cena nie jest nowa: stary układ (stały worker Miasta) też wysyłał bazę przy każdym powrocie, bo każda
+  zmiana hasha (`zastosujZmianeUrl`) składa nowe wagi, więc `bazaDla` buduje nową bazę. Czas od kliknięcia
+  „Dla miasta” na Szukaj do wyniku: mediana ok. 0,9 s w obu układach (6 powrotów każdy), bo wyznacza go
+  montaż mapy, a nie worker.
 - W trybie dev (React StrictMode) efekty montują się dwa razy, więc worker powstaje, jest zamykany i powstaje
   ponownie; na buildzie produkcyjnym konstruktor woła się raz na wejście w tryb.
 

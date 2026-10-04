@@ -89,7 +89,7 @@ describe('zPodmienionymiParametrami', () => {
   })
 
   it('własne parametry mają tylko ekrany, które ich potrzebują', () => {
-    assert.deepEqual(Object.keys(PARAMETRY_EKRANU).sort(), ['biznes', 'symulator'])
-    assert.deepEqual(PARAMETRY_EKRANU.symulator, ['a', 'b'])
+    assert.deepEqual(Object.keys(PARAMETRY_EKRANU).sort(), ['biznes', 'miasto'])
+    assert.deepEqual(PARAMETRY_EKRANU.miasto, ['a', 'b', 'w'])
   })
 })

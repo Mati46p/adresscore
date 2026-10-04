@@ -41,14 +41,14 @@ export function polaBiznesuZLinku(url: StanUrl): PolaBiznesu | null {
 
 /**
  * Parametry linku, które należą do ekranu i nie zależą od słownika adresów (Biznes: `b`, `m` i stare
- * `a`, `c` sprzed miejsc A–E, żeby podmiana usunęła stary zapis; Miasto: `a`, `b`). Przed wczytaniem adresów
+ * `a`, `c` sprzed miejsc A–E, żeby podmiana usunęła stary zapis; Miasto: `a`, `b`, `w`). Przed wczytaniem adresów
  * `zapiszDoUrl` nie składa hasha od zera (zgubiłby `u=`, `cmp=`, `p=`, które stan dostaje dopiero po
  * adresach), ale te klucze wolno podmienić w bieżącym linku: odświeżenie strony zaraz po zmianie
  * nie cofa wyboru.
  */
 export const PARAMETRY_EKRANU: Readonly<Partial<Record<Ekran, readonly string[]>>> = {
   biznes: ['b', 'm', 'a', 'c', 'k'],
-  symulator: ['a', 'b'],
+  miasto: ['a', 'b', 'w'],
 }
 
 function kluczSegmentu(segment: string): string {

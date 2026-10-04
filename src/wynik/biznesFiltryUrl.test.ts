@@ -134,8 +134,8 @@ describe('filtry Biznesu w hashu', () => {
     const zBiznesu = czytajHash('#/biznes?b=dentysta&k=nfz')
     const zapis = zapiszHash({ ...zBiznesu, ekran: 'szukaj' })
     assert.ok(!/[?&]k=/.test(zapis), zapis)
-    // Symulator ma własne `a=`/`b=`, więc `k` też go nie dotyczy.
-    assert.ok(!/[?&]k=/.test(zapiszHash({ ...zBiznesu, ekran: 'symulator' })))
+    // Miasto ma własne `a=`/`b=`/`w=`, więc `k` też go nie dotyczy.
+    assert.ok(!/[?&]k=/.test(zapiszHash({ ...zBiznesu, ekran: 'miasto' })))
   })
 
   it('zmiana branży w linku odrzuca filtry flagowe poprzedniej branży', () => {

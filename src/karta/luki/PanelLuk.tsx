@@ -23,6 +23,11 @@ export interface PanelLukProps {
   onWybierzOkolice: (id: string) => void
   /** Okolica pokazana teraz na mapie – wiersz dostaje `aria-current`. */
   wybranaOkolica?: string | null
+  /**
+   * Wybór warstwy stoi gdzie indziej (np. w pasku nad mapą luk w trybie Miasto), więc panel nie
+   * powtarza przycisków: ranking jest od razu widoczny, a nie dopiero pod listą kilkunastu usług.
+   */
+  bezWyboruWarstwy?: boolean
 }
 
 /**
@@ -34,6 +39,7 @@ export function PanelLuk({
   onZmienWarstwe,
   onWybierzOkolice,
   wybranaOkolica = null,
+  bezWyboruWarstwy = false,
 }: PanelLukProps) {
   const dane = useDane()
   const [sortowanie, setSortowanie] = useState<SortowanieLuk>('liczba')
@@ -68,7 +74,7 @@ export function PanelLuk({
         <h2 id="h-luki" className="etykieta-sekcji">
           Gdzie miasto ma luki
         </h2>
-        {dostepne.length > 1 && (
+        {dostepne.length > 1 && !bezWyboruWarstwy && (
           <fieldset className="luki-warstwy">
             <legend className="sr-only">Usługa</legend>
             {dostepne.map((w) => (

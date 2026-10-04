@@ -92,7 +92,7 @@ test('po adresach link bez parametrów Biznesu nie kasuje wyboru (jak obiekty sy
 
   zastosujZmianeUrl(czytajHash('#/miasto'))
   s = pobierzStan()
-  assert.equal(s.ekran, 'symulator')
+  assert.equal(s.ekran, 'miasto')
   assert.equal(s.branza, 'fryzjer')
 })
 
@@ -121,9 +121,9 @@ test('przełącznik Miasto ↔ Biznes ↔ Miasto (linki z nagłówka) nie gubi w
     return href
   }
   zastosujZmianeUrl(czytajHash(`#/biznes?b=dentysta&a=${A}&k=nfz`))
-  const hrefMiasta = przejdzLinkiem({ ekran: 'symulator' })
+  const hrefMiasta = przejdzLinkiem({ ekran: 'miasto' })
   assert.ok(hrefMiasta.startsWith('/#/miasto'), hrefMiasta)
-  assert.equal(pobierzStan().ekran, 'symulator')
+  assert.equal(pobierzStan().ekran, 'miasto')
   const obiekt = obiektyDoTekstu([{ typ: 'przystanek', lon: 19.94, lat: 50.06 }])
   ustawSymulacje({ a: obiekt, b: '' })
 
@@ -135,9 +135,9 @@ test('przełącznik Miasto ↔ Biznes ↔ Miasto (linki z nagłówka) nie gubi w
   assert.deepEqual(s.miejsca, miejsca(PUNKT_A))
   assert.deepEqual(s.filtryBiznesu, { min2Zrodla: false, flagi: { nfz: 'tylko' } })
 
-  przejdzLinkiem({ ekran: 'symulator' })
+  przejdzLinkiem({ ekran: 'miasto' })
   s = pobierzStan()
-  assert.equal(s.ekran, 'symulator')
+  assert.equal(s.ekran, 'miasto')
   assert.equal(s.symulacja.a, obiekt)
   przejdzLinkiem({ ekran: 'biznes', tryb: 'biznes' })
   assert.equal(pobierzStan().branza, 'dentysta')

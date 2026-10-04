@@ -7,7 +7,7 @@ export type TrybAplikacji = 'miasto' | 'biznes'
 
 export interface WpisTrybu {
   id: TrybAplikacji
-  /** Ekran, który otwiera tryb. Adres w linku: `#/miasto` dla symulatora, `#/biznes` dla Biznesu. */
+  /** Ekran, który otwiera tryb. Adres w linku: `#/miasto` albo `#/biznes`. */
   ekran: Ekran
   /** Napis na przełączniku. */
   etykieta: string
@@ -15,7 +15,7 @@ export interface WpisTrybu {
 
 /** Kolejność jest kolejnością na ekranie. */
 export const TRYBY_APLIKACJI: readonly WpisTrybu[] = [
-  { id: 'miasto', ekran: 'symulator', etykieta: 'Dla miasta' },
+  { id: 'miasto', ekran: 'miasto', etykieta: 'Dla miasta' },
   { id: 'biznes', ekran: 'biznes', etykieta: 'Dla biznesu' },
 ]
 
