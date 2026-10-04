@@ -6,6 +6,7 @@ import { Wyszukiwarka } from '@/karta/wyszukiwarka/Wyszukiwarka'
 import { KATEGORIE } from '@/kontrakty'
 import { useDane } from '@/wynik/dane'
 import { ocenFiltr, opisFiltru, type TwardyFiltr } from '@/wynik/filtry'
+import { miejsceAdresu } from '@/wynik/miejsceAdresu'
 import type { RozbicieWarstwy } from '@/wynik/silnik'
 import { wynikAdresu } from '@/wynik/silnik'
 import { dodajDoPorownania, hrefDla, useStan, usunZPorownania } from '@/wynik/stan'
@@ -74,6 +75,17 @@ function TabelaAtrybutow({
             </tr>
           </thead>
           <tbody>
+            <tr className="porownanie-tabela__okolica">
+              <th scope="row">
+                Okolica<small>Jednostka SIM w Krakowie, miejscowość poza nim</small>
+              </th>
+              {okolice.map((o) => (
+                <td key={o.id}>
+                  <strong>{o.miejsce?.nazwa ?? 'Brak danych'}</strong>
+                  {o.miejsce?.opis && <small>{o.miejsce.opis}</small>}
+                </td>
+              ))}
+            </tr>
             <tr className="porownanie-tabela__wynik">
               <th scope="row">
                 Wynik łączny<small>Według obecnych wag</small>
@@ -328,6 +340,8 @@ export function EkranPorownanie() {
                   i,
                   kolor: KOLORY[pozycja],
                   nazwa: opisAdresu(adres),
+                  // Okolica z okolice.json (jednostka SIM, miejscowość); bez pliku dzielnica albo gmina.
+                  miejsce: miejsceAdresu(adres, i, dane.okolice),
                   wynik: wynikAdresu(i, dane.wskazniki, stan.wagi, stan.kierunki),
                   href: hrefDla(stan, { ekran: 'okolica', wybrany: i }),
                 },

@@ -17,6 +17,17 @@ export interface WynikPorownania {
   warstwy: readonly RozbicieWarstwy[]
 }
 
+/**
+ * Okolica adresu do podpisu w tabeli (#185): nazwa jednostki SIM albo miejscowości i, gdy pochodzi
+ * z okolice.json, rodzaj z liczbą adresów. Strukturalnie zgodna z `MiejsceAdresu` (src/wynik).
+ */
+export interface MiejscePorownania {
+  /** „Kazimierz”; bez okolicy z pliku „Dzielnica I Stare Miasto” albo „Gmina Liszki”. */
+  nazwa: string
+  /** „jednostka SIM I.2, dzielnica I Stare Miasto · 1 234 adresy”; null bez okolicy z pliku. */
+  opis: string | null
+}
+
 export interface OkolicaPorownania {
   id: string
   nazwa: string
@@ -24,6 +35,8 @@ export interface OkolicaPorownania {
   href?: string
   /** Stały kolor adresu także po wykluczeniu innego adresu twardym filtrem. */
   kolor?: string
+  /** Okolica adresu (jednostka SIM, miejscowość); brak = tabela pokazuje „Brak danych”. */
+  miejsce?: MiejscePorownania
 }
 
 export const OSIE: readonly KategoriaId[] = [
