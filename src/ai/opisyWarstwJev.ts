@@ -10,6 +10,9 @@
 // rodzina powietrza, hałas a komunikacja, cena a „nie wiem”). Pozostałe – samo `co`.
 // #176: po #171 powódź to jedna warstwa (`powodz_10proc`), a hałas i pozwolenia na budowę
 // obejmują Kraków i gminy wokół w jednej warstwie.
+// #192, #69: w opisach uzbrojenia (po #72 cały Kraków i gminy wokół, promień 50 m) i wypadków
+// (lata 2018–2024, obszar ok. 0,74 km²) zasięg i liczby są z meta warstwy, nie z szacunku ani
+// z dokumentacji ETL (np. „pół kilometra” zamiast 0,74 km²); pilnuje tego opisyWarstwJev.test.ts.
 // Dopiski z #147 (park, skwer, smog, „słychać tramwaje”…) są wplecione w zdania.
 //
 // Nowa warstwa bez wpisu tu dostaje w aplikacji opis z danych (`listaWarstw`), ale test
@@ -395,10 +398,10 @@ export const OPISY_WARSTW_DLA_JEV: Readonly<Record<string, OpisStrukturalny>> = 
     co: 'Jaki procent sprawców przestępstw policja wykryła w 2025 roku w całym powiecie (cały Kraków ma jedną wartość). Odpowiada na pytania, jak skutecznie działa tu policja.',
   },
   wypadki_heks: {
-    co: 'Ile wypadków i kolizji drogowych zdarzyło się w okolicy adresu (ok. pół kilometra) w latach 2018–2024; zabici i ranni liczą się bardziej niż kolizje bez ofiar. Dane Policji z Systemu Ewidencji Wypadków i Kolizji (SEWIK). Odpowiada na pytania, czy na drogach w okolicy jest niebezpiecznie.',
+    co: 'Ile wypadków i kolizji drogowych było w okolicy adresu (ok. 0,74 kilometra kwadratowego) w latach 2018–2024; zabici i ranni liczą się bardziej niż kolizje bez ofiar. Dane Policji z Systemu Ewidencji Wypadków i Kolizji (SEWIK). Odpowiada na pytania, czy na drogach w okolicy jest niebezpiecznie.',
   },
   wypadki_piesi_rowerzysci_heks: {
-    co: 'Ile wypadków i kolizji z udziałem pieszych albo rowerzystów zdarzyło się w okolicy adresu (ok. pół kilometra) w latach 2018–2024; liczą się poszkodowani piesi i rowerzyści. Dane Policji z Systemu Ewidencji Wypadków i Kolizji (SEWIK). Odpowiada na pytania o bezpieczeństwo pieszych i rowerzystów.',
+    co: 'Ile wypadków i kolizji z pieszymi albo rowerzystami było w okolicy adresu (ok. 0,74 kilometra kwadratowego) w latach 2018–2024; liczą się poszkodowani piesi i rowerzyści. Dane Policji z Systemu Ewidencji Wypadków i Kolizji (SEWIK). Odpowiada na pytania o bezpieczeństwo pieszych i rowerzystów.',
   },
   zabytki_300m: {
     co: 'Liczba zabytków (budynków i miejsc z rejestru i ewidencji zabytków) w promieniu 300 metrów. Odpowiada na pytania, czy okolica jest zabytkowa i historyczna.',
