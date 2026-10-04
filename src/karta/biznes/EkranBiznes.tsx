@@ -236,7 +236,7 @@ export function EkranBiznes() {
         </p>
       )}
       <div className="biznes-uklad">
-        <div className="biznes-mapa">
+        <div className="biznes-kolumna-mapy">
           <div className="biznes-sterowanie">
             <span>Stawiasz miejsce:</span>
             <button type="button" aria-pressed={aktywny === 'a'} onClick={() => setAktywny('a')}>
@@ -247,29 +247,31 @@ export function EkranBiznes() {
             </button>
             <span role="status">{meta ? podpisPunktow(meta) : 'Wczytuję dane…'}</span>
           </div>
-          <Suspense fallback={<p role="status">Wczytuję mapę…</p>}>
-            <MapaKrakowa
-              heksy={heksy}
-              podpisWarstwy="Adresy w zasięgu na 1 punkt: więcej = słabiej obsłużone"
-              punktyUslug={punkty}
-              postawionePunkty={postawione}
-              onPrzesunPunkt={(id, lon, lat) => {
-                // Przeciągnięcie i strzałki nie wypchną punktu poza obszar, który przyjmuje link.
-                const [l, b] = ograniczDoGranic(lon, lat)
-                ustawPunktBiznesu(id, { lon: l, lat: b })
-              }}
-              onUsunPunkt={(id) => ustawPunktBiznesu(id, null)}
-              onKlik={postaw}
-              opisHeksu={(heksyR10, res) =>
-                opisHeksuBiznesu(
-                  heksyR10.flatMap((h) => opisy.get(h) ?? []),
-                  res,
-                  zasiegM,
-                )
-              }
-              etykietySkali={skala}
-            />
-          </Suspense>
+          <div className="biznes-mapa">
+            <Suspense fallback={<p role="status">Wczytuję mapę…</p>}>
+              <MapaKrakowa
+                heksy={heksy}
+                podpisWarstwy="Adresy w zasięgu na 1 punkt: więcej = słabiej obsłużone"
+                punktyUslug={punkty}
+                postawionePunkty={postawione}
+                onPrzesunPunkt={(id, lon, lat) => {
+                  // Przeciągnięcie i strzałki nie wypchną punktu poza obszar, który przyjmuje link.
+                  const [l, b] = ograniczDoGranic(lon, lat)
+                  ustawPunktBiznesu(id, { lon: l, lat: b })
+                }}
+                onUsunPunkt={(id) => ustawPunktBiznesu(id, null)}
+                onKlik={postaw}
+                opisHeksu={(heksyR10, res) =>
+                  opisHeksuBiznesu(
+                    heksyR10.flatMap((h) => opisy.get(h) ?? []),
+                    res,
+                    zasiegM,
+                  )
+                }
+                etykietySkali={skala}
+              />
+            </Suspense>
+          </div>
         </div>
         <aside className="biznes-panel">
           <form
