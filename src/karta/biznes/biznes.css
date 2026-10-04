@@ -114,10 +114,16 @@
 }
 .biznes-uklad {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(320px, 400px);
+  grid-template-columns: minmax(320px, 400px) minmax(0, 1fr);
   gap: 20px;
   max-width: 1500px;
   margin: auto;
+}
+/* Panel po lewej jak w trybie mieszkańca; na wąskim ekranie (jedna kolumna) mapa zostaje pierwsza. */
+@media (min-width: 1051px) {
+  .biznes-panel {
+    order: -1;
+  }
 }
 .biznes-mapa {
   min-width: 0;
