@@ -398,6 +398,7 @@ i gminę (`useDane().okolice`; `null` = plik się nie wczytał albo jest z innej
 | Funkcja | Co robi |
 |---|---|
 | `miejsceAdresu(adres, i, okolice)` | Daje `MiejsceAdresu`: `rodzaj` (`sim`, `miejscowosc`, `zapas`), `id` jak w rankingach luk, `nazwa`, `podpis` („jednostka SIM I.2, dzielnica I Stare Miasto”), `opis` (podpis i liczba adresów), `potoczne`, `uwagi`. |
+| `miejsceOkolicy(okolice, id)` | To samo co `miejsceAdresu`, ale dla okolicy o danym id, bez adresu (wyszukiwarka, #185). `null`, gdy pliku nie ma albo id jest nieznane (id zapasu „dzielnica:…” też). `miejsceAdresu` korzysta z niej, więc karta, porównanie i wyszukiwarka mówią to samo. |
 | `zdaniePotocznych(potoczne, limit?)` | „W tej jednostce leżą też osiedla i części miasta z OpenStreetMap: …”; do `MAKS_POTOCZNYCH` (6) nazw, reszta liczbą („i jeszcze 12 nazw”). Brak nazw = `null`. |
 | `zrodlaOkolic(plik)`, `krotkaNazwaZrodla(nazwa)` | Źródła z pliku z krótką nazwą, datą i znacznikiem OSM (atrybucja ODbL, `URL_PRAW_OSM`). |
 | `opisZrodelOkolic(plik)` | Zdanie pod rankingiem luk: źródła okolic bez OSM (ranking nie pokazuje nazw potocznych). |
@@ -413,3 +414,50 @@ Zasady:
   najwyżej dwie (pilnuje test na prawdziwym pliku).
 - Test `miejsceAdresu.test.ts` jedzie też na `public/dane` (każdy z 176 684 adresów ma okolicę z pliku; podpis niesie
   dzielnicę adresu; liczba adresów zgadza się z kolumną) i jest pomijany, gdy plików nie ma.
+
+## Szukanie okolic na ekranie Szukaj – `karta/wyszukiwarka`, `mapa/okolica` (#185)
+
+Pole „Nazwa okolicy” na Szukaj podpowiada okolicę po nazwie („Ruczaj”, „Rakowice”, „kurdwanow”, „na Ruczaju”), wybór leci
+na mapie do granic jednostki SIM i rysuje jej obrys, a pod polem stoi pasek z nazwą, rodzajem i liczbą adresów. Logika jest
+czysta (bez DOM), testy jadą na gołym `node --test`, część na prawdziwych plikach z `public/dane`:
+
+```
+node --test 'src/karta/**/*.test.ts' 'src/mapa/**/*.test.ts'
+```
+
+| Moduł | Co robi |
+|---|---|
+| `wyszukiwarka/szukajOkolic.ts` | `szukajOkolic(indeksOkolicDla(plik), zapytanie, limit?)` daje `WynikOkolicy[]` (`id`, `rodzaj`, `nazwa`, `tytul`, `nazwaOsm`, `opis`). Szuka po nazwie jednostki SIM, miejscowości i nazwach OSM z jednostek (`potoczne`). `spojnyOpis` wiąże separator i liczbę adresów twardą spacją, żeby wiersz nie zaczynał się od kropki. |
+| `wyszukiwarka/podpowiedzi.ts` | `podpowiedzi(zapytanie, { adresy, okolice }, limit?)`: adresy i okolice w jednej liście. Źródło `null` = pole go nie szuka i nie buduje jego indeksu. |
+| `wyszukiwarka/indeks.ts` | `maNumerDomu(zapytanie)` (wpis z numerem to adres), `jedenBlad` użyty też do literówek w nazwach okolic. |
+| `wyszukiwarka/Wyszukiwarka.tsx` | Combobox: `adresy` + `onWybierz` szukają adresów (Porównanie, bez zmian), `okolice` + `onWybierzOkolice` okolic; oba naraz też działają. Ekran Szukaj podaje same okolice. |
+| `mapa/okolica/granice.ts` | `okolicaNaMapie(id, granice, adresy, okolice)` daje `OkolicaNaMapie`: ramka do przelotu i obrys jednostki z `okolice-granice.geojson`. Miejscowość i jednostka bez wpisu w pliku granic dostają ramkę adresów okolicy (`graniceOkolicy` z mapy luk) i nie mają obrysu. |
+| `mapa/okolica/wczytajGranice.ts` | Plik granic (1,1 MB) ładuje się przy pierwszym fokusie w polu albo wyborze, raz na aplikację; po błędzie następny wybór próbuje od nowa. |
+| `mapa/okolica/ObrysOkolicy.ts` | Hak wołany z `MapaKrakowa` (prop `okolica`): ciemny obrys z białą poświatą i przelot kamery. Nowy obiekt `okolica` = nowy przelot, także dla tej samej okolicy (prop `granice` reaguje tylko na zmianę liczb). |
+| `karta/okolicaWybrana.ts`, `karta/PasekOkolicy.tsx` | Pasek pod polem: teksty o nazwie z OSM i o braku obrysu są czystymi funkcjami z testem. |
+| `rankingUlic(…, okolice, ile)` | Ranking ulic na Szukaj: `okolica` ulicy zamiast dzielnicy (patrz niżej). |
+
+Zasady:
+
+- **Szukaj nie szuka adresów.** Decyzja właściciela z 2026-10-03 (commit 80c7aad, #56): na Szukaj oglądamy mapę, kartę otwiera
+  klik w mapę albo ranking. Pole szuka więc okolic, a wpis wyglądający na adres („Grodzka 52”) dostaje wskazówkę zamiast
+  pustej listy. Włączenie adresów to `adresy` + `onWybierz` w `EkranSzukaj`; wpis z numerem domu zostaje wtedy adresem
+  i wyprzedza okolice.
+- Nazwa z OSM („Salwator”) to punkt leżący w jednostce, nie granice osiedla (`etl/okolice.md`). Podpowiedź mówi „nazwa z
+  OpenStreetMap · Zwierzyniec (jednostka SIM …)”, wybór pokazuje całą jednostkę, a pasek mówi o tym wprost i podaje
+  atrybucję ODbL. Jedna okolica to jedna podpowiedź; przy remisie wygrywa nazwa okolicy (nie OSM).
+- Dopasowanie słowa: pełne, początek (pisanie w toku), odmiana z końcówkami o łącznej długości do 2 liter („Ruczaju”,
+  „Krowodrzy”) albo jedna literówka od 5 liter. Odmiana jest ciasna celowo: „Mogilska” (ulica) to nie „Mogiła”, „Podgórze”
+  to nie „Podgórki”. „osiedle”, „dzielnica”, „na” wypadają z zapytania i z nazw; wieś „Ulica” znajduje się po nazwie.
+- Okolica z wyszukiwarki żyje w stanie ekranu (`useState` w `EkranSzukaj`), nie w linku: `url.ts` i `stan.ts` jej nie znają.
+  Powrót z karty do mapy czyści wybór.
+- Telefon: lista podpowiedzi leży nad przyklejoną mapą (`z-index` bloku pola), a po wyborze mapa przewija się tak, żeby była
+  cała widoczna (`scrollIntoView({ block: 'nearest' })`, bez animacji przy ograniczonym ruchu).
+- Ranking ulic: `okolicaUlicy` liczy okolice z adresów, które weszły do oceny ulicy (bez wykluczonych i bez wyniku). Ulica w
+  jednej jednostce dostaje jej nazwę, w kilku: dwie największe i „i jeszcze N okolic” (przy trzech wszystkie nazwy). Miejscowość
+  poza Krakowem, nazwana tak samo jak przy ulicy, nic nie dopisuje. Bez pliku okolic zapas z `miejsceAdresu`: „Dzielnica …”
+  albo „Gmina …”. Kolejność i liczby rankingu nie zależą od okolic (pilnuje test), czas ten sam (ok. 155 ms na 176 684 adresach).
+- Pasek wybranego adresu na Szukaj: „Okolica: Kazimierz, jednostka SIM I.8, dzielnica I Stare Miasto”, w zapasie sama dzielnica
+  albo gmina. Pod rankingiem ulic stoi zdanie o źródle okolic (`opisZrodelOkolic`).
+- Nie dodajemy średniej oceny okolicy: ranking i mapa pokazują ulice i heksy, a jedna liczba dla całej jednostki czytałaby się
+  jak tablica wstydu (docs/burza-decyzje.md, sekcja o etyce score).

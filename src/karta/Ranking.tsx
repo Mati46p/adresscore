@@ -1,4 +1,5 @@
 import { useDane } from '@/wynik/dane'
+import { opisZrodelOkolic } from '@/wynik/miejsceAdresu'
 import { rankingUlic } from '@/wynik/rankingUlic'
 import { slugUlicy } from '@/wynik/slug'
 import { dodajDoPorownania, hrefDla, useStan, usunZPorownania } from '@/wynik/stan'
@@ -18,6 +19,7 @@ export function Ranking() {
     wyniki.naAdres,
     wyniki.wykluczenia.wykluczony,
     wyniki.heksy,
+    dane.okolice,
   )
   const atrapa = dane.plikAdresow.atrapa || dane.wskazniki.some((w) => w.meta.atrapa)
 
@@ -61,8 +63,8 @@ export function Ranking() {
                     <span className="ranking-ulica__opis">
                       <span>
                         {ulica.nazwa}, {ulica.miejscowosc}
-                        {ulica.dzielnica && (
-                          <span style={{ color: 'var(--tekst-3)' }}> · {ulica.dzielnica}</span>
+                        {ulica.okolica && (
+                          <span style={{ color: 'var(--tekst-3)' }}> · {ulica.okolica}</span>
                         )}
                       </span>
                       {adresPorownania && (
@@ -96,6 +98,9 @@ export function Ranking() {
               )
             })}
           </ol>
+          <p style={{ margin: 0, color: 'var(--tekst-3)', fontSize: '0.85em' }}>
+            {opisZrodelOkolic(dane.okolice)}
+          </p>
         </>
       )}
     </section>
