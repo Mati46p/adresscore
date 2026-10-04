@@ -53,3 +53,20 @@ test('MPZP: status i szczegóły odnoszą się do tych samych punktów adresowyc
   assert.ok(objetePlanem > 0)
   assert.ok(bezPlanu > 0)
 })
+
+test('MPZP: sąsiedztwo 100 m wskazuje tylko tereny i nie powtarza terenów adresu', async () => {
+  const { terenySasiadow } = await import('./mpzp-sasiedztwo.mjs')
+  assert.deepEqual(
+    terenySasiadow([1], [0, 2], [[1, 3], null, [5, 4]], (k) => k !== 4),
+    [3, 5],
+  )
+  const adresy = JSON.parse(readFileSync(join(DANE, 'adresy.json'), 'utf8'))
+  const katalog = JSON.parse(readFileSync(join(DANE, 'mpzp_adresy.json'), 'utf8'))
+  const s = JSON.parse(readFileSync(join(DANE, 'mpzp_sasiedztwo.json'), 'utf8'))
+  assert.equal(s.wersjaAdresow, adresy.wersja)
+  assert.equal(s.adresy.length, adresy.kolumny.teryt.length)
+  for (let i = 0; i < s.adresy.length; i++) {
+    if (adresy.kolumny.teryt[i] !== '1261011') assert.equal(s.adresy[i], null)
+    else for (const k of s.adresy[i]) assert.equal(katalog.slownik[k].typ, 'teren')
+  }
+})
