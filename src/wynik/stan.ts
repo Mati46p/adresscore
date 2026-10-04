@@ -4,8 +4,8 @@
 
 import { useSyncExternalStore } from 'react'
 import type { Adres, WskaznikMeta } from '@/kontrakty'
-import type { Budzet } from './budzet.ts'
 import { BEZ_FILTROW, type FiltryUslug } from './biznesUslugi.ts'
+import type { Budzet } from './budzet.ts'
 import { type TwardyFiltr, zPodmienionymFiltrem } from './filtry.ts'
 import {
   PERSONA_DOMYSLNA,

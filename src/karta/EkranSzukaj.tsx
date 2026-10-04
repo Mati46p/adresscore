@@ -20,13 +20,10 @@ import { usePropsSasiadowMapy } from '@/wynik/useSasiedzi'
 import { useWyniki } from '@/wynik/useWyniki'
 import { useWstepnaMapa } from '@/wynik/wstepnaMapa'
 import { opisAdresu } from './adres'
-<<<<<<< HEAD
-import { PanelBudzetu } from './panel/PanelBudzetu'
-import { PanelDojazdu } from './panel/PanelDojazdu'
-=======
 import type { WybranaOkolica } from './okolicaWybrana'
 import { PasekOkolicy } from './PasekOkolicy'
->>>>>>> origin/main
+import { PanelBudzetu } from './panel/PanelBudzetu'
+import { PanelDojazdu } from './panel/PanelDojazdu'
 import { PanelFiltrow } from './panel/PanelFiltrow'
 import { Ranking } from './Ranking'
 import { adresWKliknietymHeksie } from './wyszukiwarka/heks'
