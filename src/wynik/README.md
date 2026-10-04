@@ -164,33 +164,70 @@ Uszkodzony hash (np. `#/adres/%`) daje ekran Szukaj.
 Parametry: `p` (persona), `t` (tryb), `cmp` (id adresów do porównania, po przecinku).
 Stan i hash synchronizują się w obie strony. Zmiana ekranu albo adresu dodaje krok w historii przeglądarki.
 
-## Tryb „Biznes” – `biznes.ts`, `biznesOpis.ts` (E10, #105–#107)
+## Tryb „Biznes” – `biznes.ts`, `biznesUslugi.ts`, `biznesBranze.ts`, `biznesOpis.ts` (E10, #105–#107)
 
 Czyste funkcje. Worker `biznes.worker.ts` trzyma indeks, ekran `src/karta/biznes/EkranBiznes.tsx`
-tylko wyświetla. Testy: `biznes.test.ts` (dane syntetyczne i wyrocznia `biznesOdniesienie.ts`
-liczona „na brute force”), `biznesWydajnosc.test.ts` (prawdziwe pliki z `public/dane/biznes`,
-pomijany bez nich).
+(z `FiltryKonkurencji.tsx`) tylko wyświetla. Dane: popyt z `public/dane/biznes/popyt.json`, punkty
+usług z katalogu `public/dane/uslugi` (#104 i #160: `katalog.json` i po jednym pliku na branżę, 26
+branż). Testy: `biznes.test.ts` (dane syntetyczne i wyrocznia `biznesOdniesienie.ts` liczona „na brute
+force”), `biznesUslugi.test.ts` i `biznesBranze.test.ts` (adapter, filtry, aliasy, grupy, zgodność
+z prawdziwym katalogiem), `biznesWydajnosc.test.ts` (silnik na prawdziwych plikach: wyrocznia pełna
+dla sklepu, paczkomatu i restauracji, rozkład bez punktów spoza popytu, filtry). Testy na plikach są
+pomijane, gdy plików nie ma.
 
 | Funkcja | Co robi |
 |---|---|
 | `przygotujKomorki(dane)` | Heksy popytu jako tablice i siatka wyszukiwania. Raz na worker, nie zależy od branży. |
-| `zbudujIndeks(komorki, punkty, promien)` | Przydziały Huffa istniejących punktów, rozkład porównawczy, najbliższy punkt w heksie. Raz na branżę (ok. 25 ms). |
-| `ocenMiejsceWIndeksie(indeks, miejsce)` | Ocena stawianego miejsca: liczy tylko heksy w jego promieniu (poniżej 1 ms). Wynik jest taki sam jak po przeliczeniu całego miasta – pilnuje tego test. |
-| `bialePlamyZIndeksu(indeks)` | Per heks: adresy w zasięgu, punkty w zasięgu, najbliższy konkurent, skala 0–100 (ok. 150 ms). |
+| `zbudujIndeks(komorki, punkty, promien)` | Przydziały Huffa istniejących punktów, rozkład porównawczy, najbliższy punkt w heksie. Raz na branżę i na zestaw filtrów (4–27 ms). |
+| `ocenMiejsceWIndeksie(indeks, miejsce)` | Ocena stawianego miejsca: liczy tylko heksy w jego promieniu (mediana 0,01–0,2 ms, najdłuższy zasięg 2000 m). Wynik jest taki sam jak po przeliczeniu całego miasta – pilnuje tego test na prawdziwych danych. |
+| `bialePlamyZIndeksu(indeks)` | Per heks: adresy w zasięgu, punkty w zasięgu, najbliższy konkurent, skala 0–100 (45–360 ms, rośnie z zasięgiem branży). |
 | `ocenMiejsce`, `obliczBialePlamy` | To samo „od zera” (indeks budowany przy każdym wywołaniu): do testów i jednorazowych obliczeń. |
 | `czynnikiOceny`, `PROGI_POZYCJI`, `PROGI_CZYNNIKOW` | 2–3 czynniki za i przeciw słowami; progi w jednym miejscu, z uzasadnieniem. |
 | `rozbicieZasiegu` | Udziały na karcie: miejsce + konkurenci = adresy w zasięgu (liczby całkowite, procenty dają 100). |
-| `zdaniePozycji`, `opisHeksuBiznesu`, `wpisyZrodel` (`biznesOpis.ts`) | Zdanie główne karty, dymki heksów i atrybucja źródeł. |
+| `punktyBranzy(plik, filtry)` (`biznesUslugi.ts`) | Adapter: plik branży (kolumny `lon`, `lat`, `zr`, `flagi`, `nazwa`) → `PunktUslugi[]` dla silnika, po filtrach. Punkt z samym bitem `ceidg` odpada zawsze. `wPliku` to podstawa „z N”. |
+| `czytajKatalog`, `metaBranzy` (`biznesUslugi.ts`) | Kontrola katalogu po pobraniu i meta wczytanej branży (nazwa, zasięg, liczba punktów przed i po filtrach, filtry, dla których policzono wynik). |
+| `rozwiazBranze`, `grupujBranze` (`biznesBranze.ts`) | Id z linku → id z katalogu (alias, nieznane = domyślna branża); lista branż w grupach (Zdrowie, Jedzenie i picie, Usługi, Handel, Auto). |
+| `filtryFlagBranzy`, `konkurencjaWDopelniaczu`, `opisFiltrow` (`biznesBranze.ts`) | Filtry flagowe branży (etykieta, opis, konkurencja w dopełniaczu), zdanie o tym, z kim porównano, i zdanie o filtrach na karcie. |
+| `zdaniePozycji`, `opisHeksuBiznesu`, `wpisyZrodel`, `wpisyZrodelBranzy` (`biznesOpis.ts`) | Zdanie główne karty, dymki heksów, atrybucja popytu i atrybucja punktów wybranej branży. |
 
 Zasady:
 
 - `percentyl` to pozycja wśród ISTNIEJĄCYCH punktów branży, które mają popyt w zasięgu; `null` =
   nie ma z czym porównać (miejsce bez adresów w zasięgu albo brak punktów odniesienia). Karta
   podaje go słowami („więcej klientów w zasięgu niż 7 na 10 istniejących aptek”), bez znaku %.
+  Usługi obejmują cały obwarzanek, a popyt tylko część obszaru: punkty bez żadnego heksu popytu
+  w zasięgu nie wchodzą do rozkładu (test na wszystkich 26 plikach), ale liczą się jako konkurenci
+  miejsc, w których zasięgu leżą.
 - Heks bez żadnego punktu w zasięgu to osobna kategoria: `adresyNaPunkt: null`, `bezPunktu(plama)`.
   Próg nasycenia skali liczy się tylko z heksów, które mają punkt (`progSkaliPlam`).
-- Link: `#/biznes?b=<branża>&a=<lon,lat>&c=<lon,lat>`; dozwolony obszar punktu to `GRANICE_PUNKTU`
-  w `url.ts` (formularz, przeciąganie i parser linku używają tej samej definicji).
+- Zasięg to `zasiegPieszyM` z katalogu (500–2000 m zależnie od branży), nie stała w kodzie.
+- Filtry konkurencji (domyślnie wyłączone) działają PRZED silnikiem: adapter wycina punkty, a silnik
+  liczy konkurentów, przydziały i percentyl tak, jakby wyciętych punktów nie było (test porównuje
+  wynik z wyrocznią pełną na zawężonej liście). Są trzy rodzaje: „tylko punkty potwierdzone w co
+  najmniej 2 źródłach” (liczba bitów `zr`, każda branża), flagi z plików branż (dentysta
+  „tylko z umową NFZ”, restauracja „bez fast foodów”, fryzjer „tylko barber”). Flaga `nfz` znaczy
+  „gabinet jest w Informatorze o Terminach Leczenia”, a brak flagi nie dowodzi braku umowy, więc opis
+  filtra to mówi. Filtry nie wchodzą do linku (`url.ts` jest poza tym zadaniem), więc żyją w oknie.
+- Karta opisuje konkurencję z filtrów, dla których policzono wynik (`meta.filtry`), a nie z przełączników:
+  po kliknięciu zmieniają się wcześniej niż liczby.
+- Link: `#/biznes?b=<branża>&a=<lon,lat>&c=<lon,lat>`; `b` to id z katalogu usług (`sklep_spozywczy`,
+  `poz`, `salon_kosmetyczny`...). Stare id (`sklep`, `przychodnia`, `kosmetyczka`, `mieso`, `zoologiczny`)
+  działają przez `ALIASY_BRANZ` w `biznesBranze.ts`: `url.ts` czyta parametr bez zmian, a ekran
+  zamienia id przy wyborze pliku. Id spoza katalogu pokazuje domyślną branżę z komunikatem.
+  Dozwolony obszar punktu to `GRANICE_PUNKTU` w `url.ts` (formularz, przeciąganie i parser linku
+  używają tej samej definicji).
+- Atrybucja pod mapą bierze z `katalog.json` tylko źródła wybranej branży: OSM (ODbL, odnośnik do
+  praw), Overture (CDLA), Rejestr Aptek albo RPWDL, NFZ (tylko dentysta); do tego źródła popytu.
+
+### Nowa branża w katalogu usług
+
+Branże dopisuje się w `etl/lib/uslugi-katalog.mjs` (mapowanie OSM, Overture, rejestr, zasięg pieszy,
+flagi) i generuje `node etl/uslugi.mjs`; tryb Biznes widzi ją sam z `katalog.json`. Po stronie frontu
+trzeba dopisać w `biznesBranze.ts` grupę listy (`GRUPY_BRANZ`), nazwę w dopełniaczu mnogim
+(`BRANZE_W_DOPELNIACZU`) i, gdy branża ma flagi, filtr (`FILTRY_FLAG`). Bez tego branża trafia do
+grupy „Inne” i dostaje zdanie „punktów tej branży”, a testy na prawdziwym katalogu (`biznesBranze.test.ts`)
+nie przejdą. Usunięty został stary eksport `public/dane/biznes/<branza>.json` (7 branż, sam OSM);
+`etl/biznes-poi.py` zostaje w repo bez zmian i zapisywałby tam z powrotem, ale front go nie czyta.
 
 ## Sloty i kto je wypełnia
 
