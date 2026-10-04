@@ -64,6 +64,9 @@ export function EkranSzukaj() {
         })
       : []
   const wynikWybranego = adres && wyniki ? wyniki.naAdres[adres.i] : undefined
+  const ogloszenieOkolicy = okolica
+    ? `Wybrano okolicę ${okolica.miejsce.nazwa}. ${okolica.miejsce.opis ?? ''}`.trim()
+    : komunikatOkolicy
   // Okolica wybranego adresu: jednostka SIM albo miejscowość z okolice.json, bez pliku dzielnica albo gmina.
   const miejsceWybranego =
     adres && dane.stan === 'gotowe' ? miejsceAdresu(adres, adres.i, dane.okolice) : null
@@ -147,12 +150,12 @@ export function EkranSzukaj() {
           ) : dane.stan === 'ladowanie' ? (
             <p className="etykieta-sekcji">Wczytuję okolice…</p>
           ) : null}
-          {komunikatOkolicy && (
-            <p className="szukaj-okolica-komunikat" role="status">
-              {komunikatOkolicy}
-            </p>
-          )}
+          {komunikatOkolicy && <p className="szukaj-okolica-komunikat">{komunikatOkolicy}</p>}
           {okolica && <PasekOkolicy okolica={okolica} onZamknij={wyczyscOkolice} />}
+          {/* Stały region: czytnik ogłasza zmianę tekstu, a nie samo pojawienie się paska z treścią. */}
+          <span className="sr-only" role="status">
+            {ogloszenieOkolicy}
+          </span>
         </div>
         <aside aria-label="Filtry" className="szukaj-filtry">
           <PoleOpiszSiebie />

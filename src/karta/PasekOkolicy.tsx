@@ -19,7 +19,7 @@ export function PasekOkolicy({ okolica, onZamknij }: Props) {
   const bezObrysu = zdanieBezObrysu(okolica)
   return (
     <section className="wybrana-okolica" aria-label="Wybrana okolica">
-      <div className="wybrana-okolica__tekst" role="status">
+      <div className="wybrana-okolica__tekst">
         <p className="wybrana-okolica__glowa">
           <span className="wybrana-okolica__etykieta">Okolica</span>
           <strong className="wybrana-okolica__nazwa">{miejsce.nazwa}</strong>
