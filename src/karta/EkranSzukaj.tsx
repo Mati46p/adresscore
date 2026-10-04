@@ -49,6 +49,8 @@ export function EkranSzukaj() {
   const kierunki = useStan((s) => s.kierunki)
   const [komunikatHeksow, setKomunikatHeksow] = useState('')
   const [warstwyRozwiniete, setWarstwyRozwiniete] = useState(false)
+  // Telefon: mapę da się zwinąć do paska warstw, żeby filtry i ranking dostały cały ekran.
+  const [mapaZwinieta, setMapaZwinieta] = useState(false)
   // Okolica z pola wyszukiwarki żyje w stanie ekranu: link i stan aplikacji nie znają okolic (url.ts, stan.ts).
   const [okolica, setOkolica] = useState<WybranaOkolica | null>(null)
   const [komunikatOkolicy, setKomunikatOkolicy] = useState('')
@@ -168,7 +170,12 @@ export function EkranSzukaj() {
       </div>
 
       <div className="szukaj-prawa">
-        <section aria-label="Mapa Krakowa" className="szukaj-mapa" ref={sekcjaMapy}>
+        <section
+          aria-label="Mapa Krakowa"
+          className="szukaj-mapa"
+          data-zwinieta={mapaZwinieta || undefined}
+          ref={sekcjaMapy}
+        >
           <div role="group" aria-label="Co pokazuje mapa" className="pasek-warstw">
             <button
               type="button"
@@ -202,7 +209,7 @@ export function EkranSzukaj() {
               </button>
             )}
           </div>
-          <div className="slot-mapy" data-slot="mapa">
+          <div className="slot-mapy" data-slot="mapa" id="slot-mapy">
             <Suspense
               fallback={
                 <p className="komunikat" role="status">
@@ -318,6 +325,15 @@ export function EkranSzukaj() {
               </button>
             </div>
           )}
+          <button
+            type="button"
+            className="szukaj-mapa__zwin"
+            aria-expanded={!mapaZwinieta}
+            aria-controls="slot-mapy"
+            onClick={() => setMapaZwinieta(!mapaZwinieta)}
+          >
+            {mapaZwinieta ? 'Pokaż mapę ▾' : 'Zwiń mapę ▴'}
+          </button>
         </section>
         <Ranking />
       </div>

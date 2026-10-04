@@ -76,6 +76,16 @@ a:hover {
   background: var(--powierzchnia);
   border-bottom: 1px solid var(--ramka);
 }
+/* Na szerokim ekranie opakowanie nawigacji nie istnieje dla układu, a przycisk menu jest ukryty. */
+.naglowek-nawigacja {
+  display: contents;
+}
+.naglowek-menu {
+  display: none;
+}
+.szukaj-mapa__zwin {
+  display: none;
+}
 .logo {
   display: flex;
   align-items: center;
@@ -249,8 +259,61 @@ a:hover {
    Kontenery lewej i prawej kolumny znikają (display: contents), żeby ich dzieci dało się
    ułożyć naprzemiennie przez order. */
 @media (max-width: 860px) {
+  /* Telefon: nagłówek w jednym wierszu (logo + Menu), kroki i tryby w rozwijanym panelu pod nim. */
+  :root {
+    --wys-naglowka: 57px;
+  }
   .naglowek {
-    padding: 10px 16px;
+    position: relative;
+    z-index: 30;
+    flex-wrap: nowrap;
+    height: var(--wys-naglowka);
+    min-height: 0;
+    padding: 6px 16px;
+  }
+  .naglowek-menu {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--cel-dotyku);
+    padding: 0 16px;
+    border: 1px solid var(--ramka-pola);
+    border-radius: 999px;
+    background: var(--powierzchnia);
+    color: var(--tekst);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .naglowek[data-menu="otwarte"] .naglowek-menu {
+    border-color: var(--tekst);
+  }
+  .naglowek-nawigacja {
+    display: none;
+  }
+  .naglowek[data-menu="otwarte"] .naglowek-nawigacja {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-height: calc(100dvh - var(--wys-naglowka));
+    overflow-y: auto;
+    padding: 16px;
+    background: var(--powierzchnia);
+    border-bottom: 1px solid var(--ramka);
+    box-shadow: 0 12px 24px rgb(20 41 31 / 14%);
+  }
+  .naglowek-nawigacja .kroki {
+    flex-direction: column;
+  }
+  .naglowek-nawigacja .tryby {
+    align-self: flex-start;
+  }
+  .logo-miasto {
+    display: none;
   }
   /* Pół na pół w pionie: mapa przyklejona w górnej połowie, filtry przewijają się pod nią. */
   .szukaj {
@@ -307,10 +370,28 @@ a:hover {
     scroll-snap-align: start;
     white-space: nowrap;
   }
+  /* Mapa ok. 40% wysokości (svh: pasek adresu przeglądarki nie skacze mapą przy przewijaniu). */
   .slot-mapy {
     flex: none;
-    height: calc(50dvh - var(--wys-naglowka) / 2 - 60px);
-    min-height: 220px;
+    height: 40svh;
+    min-height: 200px;
+  }
+  .szukaj-mapa[data-zwinieta] .slot-mapy {
+    display: none;
+  }
+  /* Uchwyt zwijania: pełna szerokość pod mapą, jak uchwyt arkusza w aplikacjach mapowych. */
+  .szukaj-mapa__zwin {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 32px;
+    margin: -4px -16px -8px;
+    border: 0;
+    background: none;
+    color: var(--tekst-2);
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
   }
 }
 
