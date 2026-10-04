@@ -346,3 +346,39 @@
 .panel-grupa--wybory[open] > summary .panel-grupa-podsumowanie::after {
   content: "▴";
 }
+
+/* Dojazd do celu użytkownika (#85) */
+.dojazd-cel__cel {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.dojazd-cel__godzina {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+.dojazd-cel__lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.dojazd-cel__lista li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 14px;
+}
+.dojazd-cel__lista li[data-brak] strong {
+  color: var(--tekst-2);
+  font-weight: 400;
+}
+.dojazd-cel__zalozenia {
+  font-size: 12px;
+}

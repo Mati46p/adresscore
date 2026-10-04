@@ -17,6 +17,7 @@ import { usePropsSasiadowMapy } from '@/wynik/useSasiedzi'
 import { useWyniki } from '@/wynik/useWyniki'
 import { useWstepnaMapa } from '@/wynik/wstepnaMapa'
 import { opisAdresu } from './adres'
+import { PanelDojazdu } from './panel/PanelDojazdu'
 import { PanelFiltrow } from './panel/PanelFiltrow'
 import { Ranking } from './Ranking'
 import { adresWKliknietymHeksie } from './wyszukiwarka/heks'
@@ -84,6 +85,7 @@ export function EkranSzukaj() {
         <aside aria-label="Filtry" className="szukaj-filtry">
           <PoleOpiszSiebie />
           <PanelFiltrow />
+          <PanelDojazdu />
         </aside>
       </div>
 
