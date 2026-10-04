@@ -123,10 +123,34 @@
   margin: 0;
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
+  gap: 4px 8px;
+  align-items: baseline;
   font-size: 15px;
   color: var(--tekst-2);
+}
+/* Okolica z okolice.json (#185): etykieta, nazwa jednostki w osobnym stopniu, pod nią rodzaj i dzielnica. */
+.okol-miejsce-etykieta {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--tekst-3);
+}
+.okol-miejsce-nazwa {
+  font-size: 17px;
+  color: var(--tekst);
+}
+/* Pod nagłówkiem karty: nazwy osiedli z OSM w jednostce i uwagi o jej nazwie. */
+.okol-okolica-opis {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--tekst-2);
+}
+.okol-okolica-opis p {
+  margin: 0;
 }
 .okol-wynik {
   display: flex;

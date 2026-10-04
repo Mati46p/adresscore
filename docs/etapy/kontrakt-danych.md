@@ -39,7 +39,8 @@ const { wskazniki } = await wczytajManifest()     // metadane: kategoria, kierun
 const halas = await wczytajWskaznik('halas_ldwn', plik.wersja) // null = nieaktualny plik
 const okolice = await wczytajOkolice(plik.wersja, adresy.length) // null = nieaktualny plik
 // Okolica i-tego adresu: okolice.okolice[okolice.idOkolic[okolice.kolumny.okolica[i]]]
-// (null w kolumnie = brak danych). W kodzie wyniku: okolicaAdresu(adres, i, okolice) z src/wynik/luki.ts.
+// (null w kolumnie = brak danych). W kodzie wyniku: okolicaAdresu(adres, i, okolice) z src/wynik/luki.ts;
+// na karcie i w porównaniu: miejsceAdresu(adres, i, okolice) z src/wynik/miejsceAdresu.ts (zapas: dzielnica, gmina).
 ```
 
 Heatmapa: grupuj adresy po `h3`, wynik heksu = średnia wyników adresów (wagi zmienia użytkownik,

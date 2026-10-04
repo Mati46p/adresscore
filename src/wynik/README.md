@@ -293,3 +293,30 @@ Czyste funkcje dla `src/karta/luki/PanelLuk.tsx`. Dane z `policzLuki`, tu tylko 
   Ten sam opis ma tabela bilansu w symulatorze (`BilansOkolicy.liczbaAdresow`).
 - `procentUdzialu` nie zaokrągla do kłamstwa: „<1%” zamiast „0%”, „>99%” zamiast „100%”.
 - `rozdzielczoscWarstwy(meta)`, `zrodlaWarstwy(meta)` – podpis pod rankingiem.
+- Pod rankingiem stoi zdanie o źródle okolic (`opisZrodelOkolic`), a bez pliku okolic panel ostrzega, że okolicą
+  jest dzielnica albo gmina.
+
+## Okolica adresu na karcie i w porównaniu – `miejsceAdresu.ts` (#185)
+
+Czyste funkcje dla `src/karta/okolica/EkranOkolica.tsx` i tabeli w `src/karta/porownanie/EkranPorownanie.tsx`.
+Okolica adresu to jednostka SIM (Kraków) albo miejscowość (poza Krakowem) z `okolice.json`, z zapasem na dzielnicę
+i gminę (`useDane().okolice`; `null` = plik się nie wczytał albo jest z innej wersji adresów).
+
+| Funkcja | Co robi |
+|---|---|
+| `miejsceAdresu(adres, i, okolice)` | Daje `MiejsceAdresu`: `rodzaj` (`sim`, `miejscowosc`, `zapas`), `id` jak w rankingach luk, `nazwa`, `podpis` („jednostka SIM I.2, dzielnica I Stare Miasto”), `opis` (podpis i liczba adresów), `potoczne`, `uwagi`. |
+| `zdaniePotocznych(potoczne, limit?)` | „W tej jednostce leżą też osiedla i części miasta z OpenStreetMap: …”; do `MAKS_POTOCZNYCH` (6) nazw, reszta liczbą („i jeszcze 12 nazw”). Brak nazw = `null`. |
+| `zrodlaOkolic(plik)`, `krotkaNazwaZrodla(nazwa)` | Źródła z pliku z krótką nazwą, datą i znacznikiem OSM (atrybucja ODbL, `URL_PRAW_OSM`). |
+| `opisZrodelOkolic(plik)` | Zdanie pod rankingiem luk: źródła okolic bez OSM (ranking nie pokazuje nazw potocznych). |
+
+Zasady:
+
+- Zapas dostaje adres bez pliku okolic, z `null` w kolumnie i poza kolumną: „Dzielnica I Stare Miasto” albo „Gmina Liszki”,
+  bez podpisu i bez liczby adresów. Brak okolicy nie jest zerem ani pustym polem.
+- Nazwy potoczne to punkty OSM leżące w jednostce, nie granice osiedli (`etl/okolice.md`). Karta mówi, co leży w jednostce,
+  i nie twierdzi, że adres leży w konkretnym osiedlu.
+- `uwagi` to `rozjazdy[].opis` o tej jednostce: nazwa jak dzielnica, nazwa z innej dzielnicy, nazwa OSM leżąca w innej
+  jednostce. Rozjazdy o wyszukiwaniu i o braku miejsc OSM nie mówią nic o adresie, więc na kartę nie idą. Jednostka ma ich
+  najwyżej dwie (pilnuje test na prawdziwym pliku).
+- Test `miejsceAdresu.test.ts` jedzie też na `public/dane` (każdy z 176 684 adresów ma okolicę z pliku; podpis niesie
+  dzielnicę adresu; liczba adresów zgadza się z kolumną) i jest pomijany, gdy plików nie ma.

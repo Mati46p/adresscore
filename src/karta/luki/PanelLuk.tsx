@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useDane } from '@/wynik/dane'
 import { policzLuki, progLuki } from '@/wynik/luki'
+import { opisZrodelOkolic } from '@/wynik/miejsceAdresu'
 import {
   liczbaPelna,
   rankingLuk,
@@ -100,6 +101,11 @@ export function PanelLuk({
             Warstwa się nie wczytała, więc każdy adres liczy się jako brak danych.
           </p>
         )}
+        {dane.okolice === null && (
+          <p className="luki-uwaga">
+            Plik okolic się nie wczytał, więc okolicą jest dzielnica Krakowa albo cała gmina.
+          </p>
+        )}
       </div>
 
       <div className="luki-sterowanie">
@@ -193,6 +199,7 @@ export function PanelLuk({
           Dane: {zrodlaWarstwy(meta)}. Rozdzielczość: {rozdzielczoscWarstwy(meta)}. Liczymy{' '}
           {wynik.jednostka}, nie mieszkańców.
         </p>
+        <p>{opisZrodelOkolic(dane.okolice)}</p>
       </div>
     </section>
   )
