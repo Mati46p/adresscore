@@ -16,9 +16,11 @@ export const DOMYSLNA_BRANZA = 'sklep_spozywczy'
 /**
  * Stare identyfikatory z linków sprzed katalogu usług (`#/biznes?b=sklep`) → id z katalogu.
  * Parametr `b` czyta `url.ts` (bez zmian), a alias stosuje się dopiero przy wyborze pliku.
- * Pierwsze dwa to branże starego eksportu z `public/dane/biznes` (sklep i przychodnia zmieniły
- * nazwę, pozostałe pięć ma to samo id), kolejne trzy to nazwy z rozszerzonego eksportu OSM
- * opisanego w `etl/uslugi.md`. Alias nie może przesłonić id z katalogu (pilnuje test).
+ * Pierwsze dwa to jedyne branże starego eksportu z `public/dane/biznes`, które zmieniły id
+ * (apteka, fryzjer, piekarnia, kawiarnia i paczkomat mają w katalogu to samo id i aliasu nie
+ * potrzebują). Kolejne trzy to nazwy z rozszerzonego eksportu OSM opisanego w `etl/uslugi.md`;
+ * żaden link z nimi nie powinien istnieć, ale alias nic nie kosztuje, a stary link nie zgłosi
+ * błędu. Alias nie może przesłonić id z katalogu (pilnuje test).
  */
 export const ALIASY_BRANZ: Readonly<Record<string, string>> = {
   sklep: 'sklep_spozywczy',
@@ -266,7 +268,8 @@ export function opisFiltrow(id: string, filtry: FiltryUslug): string | null {
 /**
  * Konkurencja w dopełniaczu do zdania na karcie. Aktywny filtr flagowy zmienia znaczenie
  * rzeczownika („restauracji bez fast foodów”), więc zdanie mówi, z kim naprawdę porównano.
- * Filtr „≥ 2 źródeł” nie zmienia rodzaju punktów, tylko ich pewność, więc ma osobną linię w panelu.
+ * Filtr „≥ 2 źródeł” nie zmienia rodzaju punktów, tylko ich pewność, więc ma osobne zdanie na
+ * karcie (`opisFiltrow`).
  */
 export function konkurencjaWDopelniaczu(id: string, filtry: FiltryUslug): string {
   const aktywne = filtryFlagBranzy(id).filter((def) => filtrFlagiWlaczony(filtry, def))
