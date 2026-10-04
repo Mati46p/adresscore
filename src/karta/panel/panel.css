@@ -332,19 +332,12 @@
   border-color: var(--ostrzezenie);
 }
 
-/* Wybory to jedna z pomniejszych warstw informacyjnych – zwinięte na końcu listy. */
-.panel-grupa--wybory > summary {
-  cursor: pointer;
+/* Wybory w grupie „Społeczność”: wybierak komitetu nad jedyną warstwą. */
+.panel-wybory {
   list-style: none;
 }
-.panel-grupa--wybory > summary::-webkit-details-marker {
-  display: none;
-}
-.panel-grupa--wybory > summary .panel-grupa-podsumowanie::after {
-  content: "▾";
-}
-.panel-grupa--wybory[open] > summary .panel-grupa-podsumowanie::after {
-  content: "▴";
+.panel-wybory > ul {
+  padding: 0;
 }
 
 /* Dojazd do celu użytkownika (#85) */

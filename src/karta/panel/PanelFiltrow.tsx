@@ -224,43 +224,24 @@ export function PanelFiltrow() {
               return (pozycjaA < 0 ? 99 : pozycjaA) - (pozycjaB < 0 ? 99 : pozycjaB)
             })
           }
-          if (warstwy.length === 0) return null
+          // Wybory to jedna warstwa w „Społeczności” z wyborem komitetu, nie osobna grupa.
+          const wybory =
+            tryb !== 'biznes' && kat === 'spolecznosc' && wybranyKomitet
+              ? { komitet: wybranyKomitet, komitety: wyborcze }
+              : undefined
+          if (warstwy.length === 0 && !wybory) return null
           return (
             <GrupaWarstw
               key={`${tryb}-${kat}`}
               kategoria={kat}
               warstwy={warstwy}
+              wybory={wybory}
               wagi={wagi}
               kierunki={kierunki}
               poczatkowoOtwarta={tryb === 'biznes' || i === 0}
             />
           )
         })}
-        {tryb !== 'biznes' && wybranyKomitet && (
-          <details className="panel-grupa panel-grupa--wybory">
-            <summary className="panel-grupa-glowa">
-              <span className="panel-grupa-tytul">Wybory do Sejmu 2023</span>
-              <span className="panel-grupa-podsumowanie">
-                <span>informacyjnie · waga 0</span>
-              </span>
-            </summary>
-            <div className="panel-warstwy">
-              <WybierakKomitetu
-                komitety={wyborcze.map((w) => ({ id: w.meta.id, nazwa: w.meta.nazwa }))}
-                wybranyId={wybranyKomitet.meta.id}
-                onChange={ustawKomitet}
-              />
-              <p className="panel-uwaga">
-                Udział głosów ważnych w gminie adresu. To wynik z 15 października 2023 r., nie
-                poglądy mieszkańców budynku. Wybór komitetu nie zmienia wyniku; domyślna waga wynosi
-                0.
-              </p>
-              <ul>
-                <Warstwa w={wybranyKomitet} wagi={wagi} kierunki={kierunki} />
-              </ul>
-            </div>
-          </details>
-        )}
         <div className="panel-tryb-mapy" role="group" aria-label="Widok mapy">
           <span className="panel-tryb-mapy-etykieta">Mapa pokazuje</span>
           <div className="panel-tryb-mapy-opcje">
@@ -298,11 +279,24 @@ interface GrupaProps {
   wagi: Readonly<Record<string, number>>
   kierunki: Readonly<Record<string, KierunekOceny>>
   poczatkowoOtwarta: boolean
+  /** Warstwa wyborów: liczona razem z grupą (waga i suma), komitet wybierany w miejscu. */
+  wybory?: {
+    komitet: WskaznikPrzygotowany
+    komitety: readonly WskaznikPrzygotowany[]
+  }
 }
 
-function GrupaWarstw({ kategoria, warstwy, wagi, kierunki, poczatkowoOtwarta }: GrupaProps) {
+function GrupaWarstw({
+  kategoria,
+  warstwy: warstwyBez,
+  wybory,
+  wagi,
+  kierunki,
+  poczatkowoOtwarta,
+}: GrupaProps) {
   const [otwarta, setOtwarta] = useState(poczatkowoOtwarta)
   const informacyjna = kategoria === 'kontekst'
+  const warstwy = wybory ? [...warstwyBez, wybory.komitet] : warstwyBez
   const aktywne = warstwy.filter(
     (w) => wagaUzytkownika(wagi, w.meta.id) > 0 && kierunekEfektywny(w.meta, kierunki) !== null,
   ).length
@@ -332,9 +326,25 @@ function GrupaWarstw({ kategoria, warstwy, wagi, kierunki, poczatkowoOtwarta }: 
       </button>
       {otwarta && (
         <ul id={idListy} className="panel-warstwy">
-          {warstwy.map((w) => (
+          {warstwyBez.map((w) => (
             <Warstwa key={w.meta.id} w={w} wagi={wagi} kierunki={kierunki} />
           ))}
+          {wybory && (
+            <li className="panel-wybory">
+              <WybierakKomitetu
+                komitety={wybory.komitety.map((w) => ({ id: w.meta.id, nazwa: w.meta.nazwa }))}
+                wybranyId={wybory.komitet.meta.id}
+                onChange={ustawKomitet}
+              />
+              <p className="panel-uwaga">
+                Udział głosów ważnych w gminie adresu w wyborach do Sejmu 15 października 2023 r.,
+                nie poglądy mieszkańców budynku.
+              </p>
+              <ul>
+                <Warstwa w={wybory.komitet} wagi={wagi} kierunki={kierunki} />
+              </ul>
+            </li>
+          )}
         </ul>
       )}
     </div>
