@@ -23,7 +23,15 @@ import {
 } from './sesja.ts'
 import type { KierunekOceny, Kierunki } from './silnik.ts'
 import { hashAdresu, hashZeSluga, slugAdresu } from './slug.ts'
-import { czytajHash, type Ekran, MAKS_POROWNANIE, type StanUrl, zapiszHash } from './url.ts'
+import {
+  czytajHash,
+  type Ekran,
+  ID_MIEJSC,
+  type IdMiejsca,
+  MAKS_POROWNANIE,
+  type StanUrl,
+  zapiszHash,
+} from './url.ts'
 import { czyWarstwaWyborow, zmienKomitet } from './wybory.ts'
 
 /** `'wynik'` = wynik łączny; inaczej id wskaźnika pokazywanego na mapie. */
@@ -51,11 +59,13 @@ export interface StanAplikacji {
   /** Twarde filtry: adres, który ich nie spełnia, jest wykluczony (nie dostaje kary w wyniku). */
   filtry: readonly TwardyFiltr[]
   branza: string
-  punktA: { lon: number; lat: number } | null
-  punktB: { lon: number; lat: number } | null
+  /** Miejsca testowe A–E trybu „Biznes”, zawsze `MAKS_MIEJSC` pozycji. */
+  miejsca: readonly ({ lon: number; lat: number } | null)[]
   /** Obiekty symulatora (#98), warianty A i B jako tekst `symulacjaUrl.ts`. */
   symulacja: { a: string; b: string }
 }
+
+const PUSTE_MIEJSCA: readonly null[] = ID_MIEJSC.map(() => null)
 
 let stan: StanAplikacji = {
   ekran: 'szukaj',
@@ -71,8 +81,7 @@ let stan: StanAplikacji = {
   ostatniaWarstwa: null,
   filtry: [],
   branza: 'sklep',
-  punktA: null,
-  punktB: null,
+  miejsca: PUSTE_MIEJSCA,
   symulacja: { a: '', b: '' },
 }
 
@@ -275,11 +284,20 @@ export function przejdz(ekran: Ekran) {
 }
 
 export function ustawBranze(branza: string) {
-  zmien({ branza, punktA: null, punktB: null })
+  // Miejsca zostają: te same lokalizacje można porównać dla innej branży.
+  zmien({ branza })
 }
 
-export function ustawPunktBiznesu(id: 'a' | 'b', punkt: { lon: number; lat: number } | null) {
-  zmien(id === 'a' ? { punktA: punkt } : { punktB: punkt })
+export function ustawPunktBiznesu(id: IdMiejsca, punkt: { lon: number; lat: number } | null) {
+  const i = ID_MIEJSC.indexOf(id)
+  if (i < 0 || stan.miejsca[i] === punkt) return
+  zmien({ miejsca: stan.miejsca.map((p, j) => (j === i ? punkt : p)) })
+}
+
+/** Stawia punkt w pierwszym wolnym miejscu A–E; gdy wszystkie zajęte, nadpisuje ostatnie. */
+export function dodajMiejsceBiznesu(punkt: { lon: number; lat: number }) {
+  const i = stan.miejsca.findIndex((p) => !p)
+  ustawPunktBiznesu(ID_MIEJSC[i < 0 ? ID_MIEJSC.length - 1 : i] ?? 'a', punkt)
 }
 
 /** Warianty symulatora (#98); zapis do URL tylko na ekranie symulatora. */
@@ -404,8 +422,7 @@ function zUrl(url: StanUrl): Partial<StanAplikacji> {
     biznes: url.biznes ?? stan.biznes,
     ...(url.symulacja ? { symulacja: url.symulacja } : {}),
     branza: url.branza ?? 'sklep',
-    punktA: url.punktA ?? null,
-    punktB: url.punktB ?? null,
+    miejsca: url.miejsca ?? PUSTE_MIEJSCA,
   }
 }
 
@@ -445,8 +462,7 @@ function doUrl(s: StanAplikacji): StanUrl {
     filtry: [],
     ...(s.ekran === 'symulator' ? { symulacja: s.symulacja } : {}),
     branza: s.branza,
-    punktA: s.punktA,
-    punktB: s.punktB,
+    miejsca: s.miejsca,
   }
 }
 

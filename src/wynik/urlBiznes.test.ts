@@ -6,21 +6,35 @@ import { czytajHash, zapiszHash } from './url.ts'
 const A = '19.940000,50.060000'
 const C = '19.950000,50.070000'
 
-test('link biznesu z branżą i dwoma punktami przeżywa parsuj → serializuj → parsuj', () => {
+test('link biznesu z pięcioma miejscami przeżywa parsuj → serializuj → parsuj', () => {
+  const piec = [A, C, '19.960000,50.080000', '19.970000,50.090000', '19.980000,50.100000']
+  const stan = czytajHash(`#/biznes?b=apteka&m=${piec.join(';')}`)
+  assert.equal(stan.miejsca?.filter(Boolean).length, 5)
+  const zapis = zapiszHash(stan)
+  assert.ok(zapis.includes(`m=${piec.join(';')}`), zapis)
+  assert.deepEqual(czytajHash(zapis), stan)
+  // Luki zostają na swoich literach, nadmiar ponad pięć odpada.
+  const dziury = czytajHash(`#/biznes?m=;;${A};;;${C}`)
+  assert.deepEqual(dziury.miejsca, [null, null, { lon: 19.94, lat: 50.06 }, null, null])
+  assert.ok(zapiszHash(dziury).includes(`m=;;${A}`))
+})
+
+test('stary link biznesu (a= i c=) z branżą i dwoma punktami przeżywa parsuj → serializuj → parsuj', () => {
   const hash = `#/biznes?b=apteka&a=${A}&c=${C}`
   const stan = czytajHash(hash)
   assert.equal(stan.ekran, 'biznes')
   assert.equal(stan.branza, 'apteka')
-  assert.deepEqual(stan.punktA, { lon: 19.94, lat: 50.06 })
-  assert.deepEqual(stan.punktB, { lon: 19.95, lat: 50.07 })
+  assert.deepEqual(stan.miejsca?.slice(0, 2), [
+    { lon: 19.94, lat: 50.06 },
+    { lon: 19.95, lat: 50.07 },
+  ])
 
   const zapis = zapiszHash(stan)
   // Regresja P0: `q` było liczone przed dopisaniem b/a/c, więc zapis dawał gołe `#/biznes`.
   assert.notEqual(zapis, '#/biznes')
   assert.match(zapis, /^#\/biznes\?/)
   assert.ok(zapis.includes('b=apteka'), zapis)
-  assert.ok(zapis.includes(`a=${A}`), zapis)
-  assert.ok(zapis.includes(`c=${C}`), zapis)
+  assert.ok(zapis.includes(`m=${A};${C}`), zapis)
   assert.deepEqual(czytajHash(zapis), stan)
 })
 
@@ -46,10 +60,9 @@ test('sama branża, jeden punkt i domyślna branża też wracają po zapisie', (
 
 test('punkt poza Małopolską albo uszkodzony nie wchodzi do linku', () => {
   const stan = czytajHash('#/biznes?b=apteka&a=10,10&c=abc')
-  assert.equal(stan.punktA, null)
-  assert.equal(stan.punktB, null)
+  assert.ok(stan.miejsca?.every((p) => p === null))
   const zapis = zapiszHash(stan)
-  assert.ok(!/[?&](a|c)=/.test(zapis), zapis)
+  assert.ok(!/[?&](a|c|m)=/.test(zapis), zapis)
   assert.ok(zapis.includes('b=apteka'), zapis)
 })
 
@@ -64,7 +77,7 @@ test('link biznesu zachowuje też tryb i personę', () => {
   const zapis = zapiszHash(stan)
   assert.deepEqual(czytajHash(zapis), stan)
   assert.ok(zapis.includes('t=biznes') && zapis.includes('p=senior'), zapis)
-  assert.ok(zapis.includes('b=kawiarnia') && zapis.includes(`a=${A}`), zapis)
+  assert.ok(zapis.includes('b=kawiarnia') && zapis.includes(`m=${A}`), zapis)
 })
 
 test('parametry a/b symulatora nie przeciekają do biznesu i odwrotnie', () => {
@@ -72,7 +85,7 @@ test('parametry a/b symulatora nie przeciekają do biznesu i odwrotnie', () => {
   assert.ok(symulator.includes('a=xyz') && symulator.includes('b=uvw'), symulator)
   assert.ok(!symulator.includes('c='), symulator)
   const szukaj = zapiszHash({ ...czytajHash(`#/biznes?b=apteka&a=${A}`), ekran: 'szukaj' })
-  assert.ok(!/[?&](a|b|c)=/.test(szukaj), szukaj)
+  assert.ok(!/[?&](a|b|c|m)=/.test(szukaj), szukaj)
 })
 
 test('stan aplikacji składa link biznesu z branżą i punktami (odświeżenie nie gubi wyboru)', () => {
@@ -84,12 +97,13 @@ test('stan aplikacji składa link biznesu z branżą i punktami (odświeżenie n
   const href = hrefDla(s, {})
   assert.ok(href.includes('#/biznes?'), href)
   assert.ok(href.includes('b=apteka'), href)
-  assert.ok(href.includes(`a=${A}`), href)
-  assert.ok(href.includes(`c=${C}`), href)
+  assert.ok(href.includes(`m=${A};${C}`), href)
   // Ten sam link czytany z powrotem (jak po F5) odtwarza branżę i punkty.
   const odczyt = czytajHash(href.slice(href.indexOf('#')))
   assert.equal(odczyt.ekran, 'biznes')
   assert.equal(odczyt.branza, 'apteka')
-  assert.deepEqual(odczyt.punktA, { lon: 19.94, lat: 50.06 })
-  assert.deepEqual(odczyt.punktB, { lon: 19.95, lat: 50.07 })
+  assert.deepEqual(odczyt.miejsca?.slice(0, 2), [
+    { lon: 19.94, lat: 50.06 },
+    { lon: 19.95, lat: 50.07 },
+  ])
 })

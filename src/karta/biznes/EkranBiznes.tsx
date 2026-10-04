@@ -27,9 +27,9 @@ import {
   type KatalogUslug,
   type MetaBranzy,
 } from '@/wynik/biznesUslugi'
-import { ograniczDoGranic, postawionePunkty } from '@/wynik/biznesZnaczniki'
+import { nastepneWolne, ograniczDoGranic, postawionePunkty } from '@/wynik/biznesZnaczniki'
 import { useStan, ustawBranze, ustawPunktBiznesu } from '@/wynik/stan'
-import { GRANICE_PUNKTU, wGranicachPunktu } from '@/wynik/url'
+import { GRANICE_PUNKTU, ID_MIEJSC, type IdMiejsca, wGranicachPunktu } from '@/wynik/url'
 import { FiltryKonkurencji } from './FiltryKonkurencji'
 import './biznes.css'
 
@@ -42,8 +42,7 @@ const LICZBA = new Intl.NumberFormat('pl-PL', { maximumFractionDigits: 0 })
 
 export function EkranBiznes() {
   const branza = useStan((s) => s.branza)
-  const punktA = useStan((s) => s.punktA)
-  const punktB = useStan((s) => s.punktB)
+  const miejsca = useStan((s) => s.miejsca)
   const [katalog, setKatalog] = useState<KatalogUslug | null>(null)
   const [meta, setMeta] = useState<MetaBranzy | null>(null)
   // Filtry nie wchodzą do linku (`url.ts` jest poza tym zadaniem), więc żyją tylko w tym oknie.
@@ -53,10 +52,11 @@ export function EkranBiznes() {
   const [opisy, setOpisy] = useState<Map<string, BialaPlama>>(new Map())
   const [zrodlaPopytu, setZrodlaPopytu] = useState<ZrodloDanych[]>([])
   const [skala, setSkala] = useState<readonly [string, string, string]>(['0', '50', '100'])
-  const [ocenaA, setOcenaA] = useState<OcenaMiejsca | null>(null)
-  const [ocenaB, setOcenaB] = useState<OcenaMiejsca | null>(null)
+  const [oceny, setOceny] = useState<Partial<Record<IdMiejsca, OcenaMiejsca>>>({})
   const [blad, setBlad] = useState('')
-  const [aktywny, setAktywny] = useState<'a' | 'b'>('a')
+  const [aktywny, setAktywny] = useState<IdMiejsca>(
+    () => ID_MIEJSC.find((_, i) => !miejsca[i]) ?? 'a',
+  )
   const [lonTekst, setLonTekst] = useState('19.940000')
   const [latTekst, setLatTekst] = useState('50.060000')
   // Wersja wczytanej branży (0 = nic nie wczytano). Oceny liczymy dopiero po jej ustawieniu,
@@ -74,8 +74,8 @@ export function EkranBiznes() {
   )
   const wpisBranzy = katalog?.branze.find((b) => b.id === idBranzy) ?? null
 
-  // Pola współrzędnych podążają za aktywnym punktem, a nie za każdą zmianą drugiego punktu.
-  const wybrany = aktywny === 'a' ? punktA : punktB
+  // Pola współrzędnych podążają za aktywnym punktem, a nie za każdą zmianą pozostałych.
+  const wybrany = miejsca[ID_MIEJSC.indexOf(aktywny)] ?? null
   useEffect(() => {
     if (wybrany) {
       setLonTekst(wybrany.lon.toFixed(6))
@@ -119,8 +119,8 @@ export function EkranBiznes() {
         setGotowa(d.wersja)
       }
       if (d.typ === 'ocena' && d.wersja === wersja.current) {
-        if (d.id === 'a') setOcenaA(d.ocena)
-        else setOcenaB(d.ocena)
+        const id = d.id as IdMiejsca
+        setOceny((o) => ({ ...o, [id]: d.ocena as OcenaMiejsca }))
       }
     }
     return () => {
@@ -137,8 +137,7 @@ export function EkranBiznes() {
     if (wczytanaBranza.current !== idBranzy) {
       wczytanaBranza.current = idBranzy
       setMeta(null)
-      setOcenaA(null)
-      setOcenaB(null)
+      setOceny({})
     }
     wersja.current = 0
     setGotowa(0)
@@ -147,29 +146,47 @@ export function EkranBiznes() {
   }, [katalog, idBranzy, filtry])
 
   // Przesunięcie punktu zostawia poprzednią ocenę do czasu nowej (bez migania karty przy każdym
-  // kroku strzałki); wyczyszczenie jej wymaga usunięcia punktu albo zmiany branży.
+  // kroku strzałki); wyczyszczenie jej wymaga usunięcia punktu albo zmiany branży. Wysyłamy tylko
+  // miejsca, które zmieniły się od ostatniej wysyłki (albo wszystkie po wczytaniu nowej branży).
+  const wyslane = useRef<{ wersja: number; miejsca: readonly (Punkt | null)[] }>({
+    wersja: 0,
+    miejsca: [],
+  })
   useEffect(() => {
-    if (!punktA) {
-      setOcenaA(null)
-      return
-    }
-    if (gotowa) worker.current?.postMessage({ typ: 'ocen', id: 'a', punkt: punktA, wersja: gotowa })
-  }, [punktA, gotowa])
-  useEffect(() => {
-    if (!punktB) {
-      setOcenaB(null)
-      return
-    }
-    if (gotowa) worker.current?.postMessage({ typ: 'ocen', id: 'b', punkt: punktB, wersja: gotowa })
-  }, [punktB, gotowa])
+    const poprzednie = wyslane.current
+    const usuniete = ID_MIEJSC.filter((_, i) => !miejsca[i])
+    if (usuniete.length)
+      setOceny((o) =>
+        usuniete.some((id) => o[id])
+          ? Object.fromEntries(
+              Object.entries(o).filter(([id]) => !usuniete.includes(id as IdMiejsca)),
+            )
+          : o,
+      )
+    if (!gotowa) return
+    ID_MIEJSC.forEach((id, i) => {
+      const punkt = miejsca[i]
+      if (!punkt) return
+      if (poprzednie.wersja === gotowa && poprzednie.miejsca[i] === punkt) return
+      worker.current?.postMessage({ typ: 'ocen', id, punkt, wersja: gotowa })
+    })
+    wyslane.current = { wersja: gotowa, miejsca }
+  }, [miejsca, gotowa])
+
+  const wszystkieZajete = miejsca.every(Boolean)
 
   function postaw(lon: number, lat: number) {
     if (!wGranicachPunktu(lon, lat)) return
     ustawPunktBiznesu(aktywny, { lon, lat })
-    if (aktywny === 'a') setAktywny('b')
+    // Następny klik stawia kolejne wolne miejsce; gdy wszystkie zajęte, przesuwa aktywne.
+    const nastepne = nastepneWolne(
+      miejsca.map((p, i) => (ID_MIEJSC[i] === aktywny ? { lon, lat } : p)),
+      aktywny,
+    )
+    if (nastepne) setAktywny(nastepne)
   }
 
-  const postawione = postawionePunkty(punktA, punktB)
+  const postawione = postawionePunkty(miejsca)
   const nazwaBranzy = meta?.nazwa ?? wpisBranzy?.nazwa ?? 'branży'
   const zasiegM = meta?.zasiegM ?? wpisBranzy?.zasiegPieszyM ?? 0
   // Opis konkurencji na karcie bierze filtry, dla których policzono wynik (`meta.filtry`), a nie
@@ -191,12 +208,13 @@ export function EkranBiznes() {
           <p className="biznes-etykieta">TRYB BIZNESOWY</p>
           <h1 tabIndex={-1}>Lokalizacja dla branży „{nazwaBranzy}”</h1>
           <p>
-            Wybierz branżę, a następnie postaw punkt A lub B na mapie. Kolor pokazuje liczbę adresów
-            w zasięgu na jeden istniejący punkt: im ciemniejszy, tym słabiej obsłużony popyt.
-            Najmocniejszy kolor zaczyna się przy 95. percentylu heksów, które mają jakikolwiek
-            punkt. Heks bez żadnego punktu w zasięgu to osobna kategoria: jego kolor wynika z liczby
-            adresów w zasięgu (tak, jakby stał tam jeden punkt), a dymek mówi wprost, że punktu nie
-            ma. Dokładne liczby zobaczysz po wskazaniu miejsca na mapie.
+            Wybierz branżę, a następnie postaw na mapie do {ID_MIEJSC.length} miejsc testowych (A–E)
+            i porównaj je ze sobą. Kolor pokazuje liczbę adresów w zasięgu na jeden istniejący
+            punkt: im ciemniejszy, tym słabiej obsłużony popyt. Najmocniejszy kolor zaczyna się przy
+            95. percentylu heksów, które mają jakikolwiek punkt. Heks bez żadnego punktu w zasięgu
+            to osobna kategoria: jego kolor wynika z liczby adresów w zasięgu (tak, jakby stał tam
+            jeden punkt), a dymek mówi wprost, że punktu nie ma. Dokładne liczby zobaczysz po
+            wskazaniu miejsca na mapie.
           </p>
         </div>
         <div className="biznes-wybor">
@@ -239,12 +257,23 @@ export function EkranBiznes() {
         <div className="biznes-kolumna-mapy">
           <div className="biznes-sterowanie">
             <span>Stawiasz miejsce:</span>
-            <button type="button" aria-pressed={aktywny === 'a'} onClick={() => setAktywny('a')}>
-              A
-            </button>
-            <button type="button" aria-pressed={aktywny === 'b'} onClick={() => setAktywny('b')}>
-              B
-            </button>
+            {ID_MIEJSC.map((id, i) => (
+              <button
+                key={id}
+                type="button"
+                aria-pressed={aktywny === id}
+                aria-label={`Miejsce ${id.toUpperCase()}${miejsca[i] ? ' (postawione)' : ''}`}
+                data-postawione={miejsca[i] ? '' : undefined}
+                onClick={() => setAktywny(id)}
+              >
+                {id.toUpperCase()}
+              </button>
+            ))}
+            {wszystkieZajete && (
+              <span className="biznes-limit">
+                Wszystkie {ID_MIEJSC.length} miejsca zajęte – klik przesuwa {aktywny.toUpperCase()}.
+              </span>
+            )}
             <span role="status">{meta ? podpisPunktow(meta) : 'Wczytuję dane…'}</span>
           </div>
           <div className="biznes-mapa">
@@ -306,26 +335,28 @@ export function EkranBiznes() {
             <button type="submit">Oceń miejsce {aktywny.toUpperCase()}</button>
           </form>
           <div className="biznes-porownanie">
-            <Ocena
-              id="A"
-              punkt={punktA}
-              ocena={ocenaA}
-              branza={idBranzy}
-              konkurencja={konkurencja}
-              zFiltrow={zFiltrow}
-              zasiegM={zasiegM}
-              onUsun={() => ustawPunktBiznesu('a', null)}
-            />
-            <Ocena
-              id="B"
-              punkt={punktB}
-              ocena={ocenaB}
-              branza={idBranzy}
-              konkurencja={konkurencja}
-              zFiltrow={zFiltrow}
-              zasiegM={zasiegM}
-              onUsun={() => ustawPunktBiznesu('b', null)}
-            />
+            {ID_MIEJSC.map((id, i) => {
+              const punkt = miejsca[i] ?? null
+              // Puste karty pokazujemy tylko dla A, B i aktywnego miejsca – pięć pustych kart
+              // spychałoby oceny poza ekran.
+              if (!punkt && i > 1 && id !== aktywny) return null
+              return (
+                <Ocena
+                  key={id}
+                  id={id.toUpperCase()}
+                  punkt={punkt}
+                  ocena={oceny[id] ?? null}
+                  branza={idBranzy}
+                  konkurencja={konkurencja}
+                  zFiltrow={zFiltrow}
+                  zasiegM={zasiegM}
+                  onUsun={() => {
+                    ustawPunktBiznesu(id, null)
+                    setAktywny(id)
+                  }}
+                />
+              )
+            })}
           </div>
         </aside>
       </div>
