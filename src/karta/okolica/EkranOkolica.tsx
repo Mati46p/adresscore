@@ -1,9 +1,16 @@
-import { lazy, Suspense, useState } from 'react'
+import { Fragment, lazy, Suspense, useState } from 'react'
 import { PoleZapytajOAdres } from '@/ai/PoleZapytajOAdres'
 import { liczba, opisAdresu } from '@/karta/adres'
-import { KATEGORIE, type KategoriaId } from '@/kontrakty'
+import { KATEGORIE, type KategoriaId, type PlikOkolic } from '@/kontrakty'
 import { Sekcja3D } from '@/miasto3d/Sekcja3D'
 import { useDane } from '@/wynik/dane'
+import {
+  type MiejsceAdresu,
+  miejsceAdresu,
+  URL_PRAW_OSM,
+  zdaniePotocznych,
+  zrodlaOkolic,
+} from '@/wynik/miejsceAdresu'
 import { TRYBY } from '@/wynik/persony'
 import type { RozbicieWarstwy, WynikAdresu } from '@/wynik/silnik'
 import {
@@ -80,6 +87,8 @@ export function EkranOkolica() {
   )
   const { mocne, slabe } = mocneISlabe(wynik.warstwy, wynik.wynik)
   const atrapa = wynik.warstwy.some((w) => w.meta.atrapa)
+  // Okolica z okolice.json (jednostka SIM albo miejscowość); bez niej dzielnica Krakowa albo gmina.
+  const miejsce = miejsceAdresu(adres, stan.wybrany, dane.okolice)
 
   return (
     <main className="tresc okol">
@@ -87,12 +96,7 @@ export function EkranOkolica() {
         Wróć do mapy
       </a>
 
-      <Naglowek
-        wynik={wynik}
-        nazwa={opisAdresu(adres)}
-        miejsce={adres.dzielnica ? `Dzielnica ${adres.dzielnica}` : `Gmina ${adres.gmina}`}
-        atrapa={atrapa}
-      />
+      <Naglowek wynik={wynik} nazwa={opisAdresu(adres)} miejsce={miejsce} atrapa={atrapa} />
 
       <section className="karta okol-wybor-trybu" aria-labelledby="h-wybor-trybu">
         <h2 id="h-wybor-trybu" className="okol-h2">
@@ -169,6 +173,9 @@ export function EkranOkolica() {
         Źródło, licencję, rozdzielczość i datę danych podajemy przy każdej warstwie w tabeli.
         Kategoria bez danych jest szara i nigdy nie liczy się jako zero.
       </p>
+      {dane.okolice && miejsce.rodzaj !== 'zapas' && (
+        <ZrodlaOkolicy miejsce={miejsce} plik={dane.okolice} />
+      )}
     </main>
   )
 }
@@ -181,12 +188,13 @@ function Naglowek({
 }: {
   wynik: WynikAdresu
   nazwa: string
-  miejsce: string
+  miejsce: MiejsceAdresu
   atrapa: boolean
 }) {
   const stan = useStan((s) => s)
   const [komunikat, setKomunikat] = useState('')
   const litera = wynik.litera as LiteraEtykiety | null
+  const potoczne = zdaniePotocznych(miejsce.potoczne)
   const { zDanymi, razem } = liczbyWarstw(wynik.warstwy)
   const procent = wynik.wynik === null ? 0 : Math.round(wynik.wynik)
   const pewnosc = Math.round(wynik.pewnosc * 100)
@@ -234,7 +242,16 @@ function Naglowek({
               {nazwa}
             </h1>
             <p className="okol-miejsce">
-              {miejsce}
+              {miejsce.rodzaj === 'zapas' ? (
+                // Bez okolicy z pliku: dzielnica Krakowa albo gmina, jak przed #185.
+                miejsce.nazwa
+              ) : (
+                <>
+                  <span className="okol-miejsce-etykieta">Okolica</span>
+                  <strong className="okol-miejsce-nazwa">{miejsce.nazwa}</strong>
+                  {miejsce.podpis && <span>{miejsce.podpis}</span>}
+                </>
+              )}
               {atrapa && <span className="atrapa">dane przykładowe</span>}
             </p>
           </div>
@@ -252,6 +269,15 @@ function Naglowek({
           </span>
         </div>
       </div>
+
+      {(potoczne || miejsce.uwagi.length > 0) && (
+        <div className="okol-okolica-opis">
+          {potoczne && <p>{potoczne}</p>}
+          {miejsce.uwagi.map((uwaga) => (
+            <p key={uwaga}>{uwaga}</p>
+          ))}
+        </div>
+      )}
 
       <div className="okol-wynik">
         <Etykieta litera={litera} wynik={wynik.wynik} />
@@ -479,6 +505,38 @@ function NaCoDzien({
         ))}
       </dl>
     </section>
+  )
+}
+
+/**
+ * Skąd okolica adresu i dlaczego nazwy osiedli nie są przypisane do adresu (etl/okolice.md).
+ * Nazwy OSM wymagają atrybucji, więc stoi tu „© OpenStreetMap contributors” i licencja ODbL.
+ */
+function ZrodlaOkolicy({ miejsce, plik }: { miejsce: MiejsceAdresu; plik: PlikOkolic }) {
+  const zrodla = zrodlaOkolic(plik)
+  return (
+    <p className="okol-przypis">
+      Okolica adresu to{' '}
+      {miejsce.rodzaj === 'sim'
+        ? 'jednostka SIM, czyli część Krakowa z podziału Systemu Informacji Miejskiej, w której leży punkt adresowy.'
+        : 'miejscowość z rejestru adresów, bo poza Krakowem nie ma jednostek SIM.'}
+      {miejsce.potoczne.length > 0 &&
+        ' Nazwy osiedli to punkty z OpenStreetMap leżące w jednostce, a nie granice osiedli, więc nie podajemy, w którym z nich leży adres.'}{' '}
+      Źródła okolic:{' '}
+      {zrodla.map((z, k) => (
+        <Fragment key={z.nazwa}>
+          {k > 0 && ' · '}
+          <a href={z.osm ? URL_PRAW_OSM : z.url} target="_blank" rel="noreferrer">
+            {z.nazwa}
+          </a>{' '}
+          (stan {z.dataDanych})
+        </Fragment>
+      ))}
+      .
+      {miejsce.potoczne.length > 0 &&
+        zrodla.some((z) => z.osm) &&
+        ' Nazwy osiedli: © OpenStreetMap contributors, licencja ODbL.'}
+    </p>
   )
 }
 

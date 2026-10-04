@@ -29,11 +29,11 @@ describe('obiekty w URL', () => {
     const duzo = Array.from({ length: 30 }, () => obiekty[0] as Obiekt)
     assert.equal(obiektyZTekstu(obiektyDoTekstu(duzo)).length, MAKS_OBIEKTOW)
   })
-  it('ekran #/symulator z wariantami A i B przechodzi przez hash', () => {
+  it('ekran #/miasto (stary #/symulator) z wariantami A i B przechodzi przez hash', () => {
     const a = obiektyDoTekstu(obiekty.slice(0, 2))
     const b = obiektyDoTekstu(obiekty.slice(2))
     const s = czytajHash(`#/symulator?a=${a}&b=${b}`)
-    assert.equal(s.ekran, 'symulator')
+    assert.equal(s.ekran, 'miasto')
     assert.deepEqual(s.symulacja, { a, b })
     assert.deepEqual(czytajHash(zapiszHash(s)), s)
   })

@@ -36,6 +36,8 @@ import {
   WIDOK_POLSKI,
   zapamietajLotStartowy,
 } from '@/mapa/lot'
+import type { OkolicaNaMapie } from '@/mapa/okolica/granice'
+import { useObrysOkolicy } from '@/mapa/okolica/ObrysOkolicy'
 import {
   GRUPY_PODKLADU,
   type GrupaPodkladu,
@@ -100,6 +102,11 @@ export interface MapaKrakowaProps {
   wartoscRodzica?: (heksyR10: readonly string[]) => number | null
   /** Ramka do pokazania (np. okolica z rankingu, #91) – zmiana wartości = przelot kamery. */
   granice?: [[number, number], [number, number]] | null
+  /**
+   * Okolica wybrana w wyszukiwarce (#185): obrys jednostki SIM i przelot do jej granic. Każdy nowy
+   * obiekt to nowy przelot, także dla tej samej okolicy (`granice` reaguje tylko na zmianę liczb).
+   */
+  okolica?: OkolicaNaMapie | null
   /** „Lepszy sąsiad” (#95): okrąg i znaczniki kandydatów; brak = warstwa wyłączona. */
   sasiedzi?: SasiedziNaMapie
   /** Hipotetyczne obiekty symulatora (#97): przeciąganie, klawiatura, usuwanie. */
@@ -233,6 +240,7 @@ export function MapaKrakowa({
   opisHeksu,
   wartoscRodzica,
   granice,
+  okolica,
   sasiedzi,
   obiekty,
   wyroznione,
@@ -599,6 +607,9 @@ export function MapaKrakowa({
 
   useZnacznikiSasiadow(mapaRef, gotowa, sasiedzi)
   useZnacznikiObiektow(mapaRef, gotowa, obiekty)
+  useObrysOkolicy(mapaRef, gotowa, okolica, () => {
+    if (etapRef.current !== 'miasto') zakonczIntro()
+  })
 
   // Błysk heksów: r10 i ich rodzice r9/r8, żeby było go widać przy każdym zoomie.
   const blyskRef = useRef<{ res: 8 | 9 | 10; h: string }[]>([])

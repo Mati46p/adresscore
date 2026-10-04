@@ -147,6 +147,7 @@ const sasiedzi = usePropsSasiadowMapy()
 
 - `useStan((s) => s.pole)` czyta stan. Selektor zwraca pole stanu albo prymityw, nigdy nowy obiekt.
 - Pola: `ekran`, `tryb`, `persona` (`'wlasna'` po ręcznej zmianie wagi), `wagi`, `kierunki`, `wybrany` (indeks | null), `porownanie` (do 5 indeksów), `warstwa` (`'wynik'` albo id wskaźnika).
+- Pola trybów Miasto i Biznes (#92, #98, #108): `symulacja` (`{ a, b }`, obiekty wariantów), `warstwaLuk` (warstwa rankingu i mapy luk albo `null` = pierwsza z progiem), `branza`, `miejsca` (miejsca testowe A–E, zawsze 5 pozycji, `null` = puste), `filtryBiznesu`. Akcje: `ustawSymulacje`, `ustawWarstweLuk`, `ustawBranze` (miejsca zostają), `ustawPunktBiznesu('a'..'e', punkt | null)`, `dodajMiejsceBiznesu(punkt)`, `ustawFiltryBiznesu`.
 - Akcje: `wybierzPersone`, `ustawTryb`, `ustawWage(id, 0–4)`, `ustawKierunek(id, k | null)`, `wybierzAdres(i | null)`, `pokazOkolice(i)`, `przejdz(ekran)`, `dodajDoPorownania`, `usunZPorownania`, `przelaczPorownanie`, `wyczyscPorownanie`, `ustawWarstwe`.
 - Twarde filtry: pole `filtry` (`{ id, warunek: 'max' | 'min' | 'rowne-zero', prog }`, jeden na warstwę), akcje `ustawFiltr`, `usunFiltr`, `wyczyscFiltry`. W URL: `f=halas_ldwn:max:55,powodz_1proc:zero`.
 - `hrefDla(stan, latka)` daje hash do `<a href>`. Stan weź z `useStan((s) => s)`.
@@ -159,14 +160,59 @@ const sasiedzi = usePropsSasiadowMapy()
 | `#/` | 1 Szukaj |
 | `#/adres/<id adresu>` | 2 Okolica |
 | `#/porownanie` | 3 Porównanie |
+| `#/katalog`, `#/metoda` | katalog adresów, metoda i źródła |
+| `#/miasto?w=<warstwa>&a=<obiekty>&b=<obiekty>` | tryb Miasto, dwa widoki (niżej): luki w usługach (`w` = warstwa rankingu i mapy luk, link do konkretnej luki, #92) i symulator inwestycji (`a`, `b` = obiekty wariantów A i B, #96–#98). Stary adres `#/symulator` dalej działa (ten sam ekran), a link zapisuje się już jako `#/miasto` |
+| `#/biznes?b=<branża>&m=<lon,lat;lon,lat;…>&k=<filtry>` | tryb Biznes (E10): branża, miejsca A–E (`m`, puste pozycje między średnikami), filtry konkurencji (`k`). Stare linki z `a=` i `c=` (miejsca A i B) działają. Opis niżej |
 
 Uszkodzony hash (np. `#/adres/%`) daje ekran Szukaj.
 Parametry: `p` (persona), `t` (tryb), `cmp` (id adresów do porównania, po przecinku).
 Stan i hash synchronizują się w obie strony. Zmiana ekranu albo adresu dodaje krok w historii przeglądarki.
 
+### Tryb „Dla miasta”: luki w usługach i symulator – `karta/miasto`, `widokMiasta.ts` (#91, #92, #108)
+
+Jeden adres `#/miasto`, dwa widoki pod paskiem „Luki w usługach” / „Symulator inwestycji” (`EkranMiasto`):
+
+- **Luki w usługach** (`WidokLuk`): ranking okolic `PanelLuk` (#91) obok mapy luk `MapaLuk` (#90). Warstwę wybiera
+  pasek nad mapą (panel go nie powtarza, `bezWyboruWarstwy`) i trafia do stanu (`warstwaLuk`) oraz linku (`w=`);
+  klik w okolicę z rankingu przelatuje mapą do niej. Na telefonie pasek warstw to jeden przewijany rząd.
+- **Symulator inwestycji** (`EkranSymulatora`, #96–#98): ładowany dopiero po wejściu w ten widok; worker obliczeń
+  żyje tylko w nim (widok luk workera nie uruchamia).
+- **Który widok otwiera link**: `widokPoczatkowy` – obiekty symulatora w linku (`a=`, `b=`) otwierają symulator,
+  każdy inny link (gołe `#/miasto`, `#/miasto?w=…`) otwiera luki. Potem widok zmienia już tylko użytkownik
+  (pasek stoi nad widokiem, więc przełączenie nie gubi fokusu klawiatury).
+- `w=` jest poprawnym id warstwy (małe litery, cyfry, podkreślenia, do 64 znaków) albo odpada. Nieznane id panel
+  zamienia na pierwszą warstwę z progiem luki, więc stary link nie kończy się pustym ekranem.
+
+### Przełącznik trybów w nagłówku – `trybyAplikacji.ts` (#92, #108)
+
+Obok kroków mieszkańca (Szukaj, Katalog, Porównanie, Metoda) nagłówek ma osobny przełącznik „Dla miasta”
+(`#/miasto`) i „Dla biznesu” (`#/biznes`). `TRYBY_APLIKACJI` to tablica (ekran, napis), `trybEkranu(ekran)`
+daje wybrany tryb albo `null` na ekranach mieszkańca. Akcent ma w nagłówku jeden element naraz: krok
+na ekranach mieszkańca, tryb na #/miasto i #/biznes. Stan obu trybów (obiekty symulatora, warstwa luk, branża, miejsca
+i filtry Biznesu) zostaje po przejściu na inny ekran i po powrocie, bo link bez ich parametrów niczego nie kasuje.
+
+### Link jest źródłem prawdy od pierwszej klatki – `stanZLinku.ts` (#108)
+
+Adresy wczytują się 2–12 s. Wcześniej stan Biznesu dostawał branżę i miejsca z linku dopiero po tym czasie
+(ekran startował od domyślnej branży, a zmiana użytkownika w tym oknie była cofana). Teraz:
+
+- **Start** (`wczytajLinkStartowy`) i **zmiana hasha przed adresami** (`zastosujUrlPrzedDanymi`) od razu wpisują do
+  stanu wszystko, co nie potrzebuje słownika adresów: branżę, miejsca A–E, filtry Biznesu, obiekty symulatora.
+- `podlaczDane` (po adresach) bierze z linku tylko to, co potrzebuje słownika: id adresu i listę porównania.
+  Nie czyta już branży, miejsc, filtrów ani symulatora, więc nie cofa zmiany z okna ładowania.
+- Przed adresami `zapiszDoUrl` nie składa hasha od zera (zgubiłby `u=`, `cmp=`, `p=`), ale podmienia w bieżącym linku
+  parametry ekranu (`PARAMETRY_EKRANU`: Biznes `b m a c k`, Miasto `a b w`), bez nowego wpisu w historii. Zmiana
+  branży, miejsca albo filtra w pierwszych sekundach trafia więc do linku i przeżywa F5.
+- Link bez parametrów Biznesu (np. `#/porownanie`) nie kasuje wyboru Biznesu; gołe `#/biznes` jest linkiem do Biznesu
+  i przywraca domyślną branżę (`polaBiznesuZLinku`).
+
+Filtry konkurencji Biznesu to parametr `k` (`biznesFiltryUrl.ts`), tokeny po przecinku: `2z` (≥ 2 źródła), `barber`
+(„tylko” z flagą), `-fast_food` („bez” flagi), np. `k=2z,-fast_food`. Link niesie tylko filtry, które ekran pokazuje dla
+branży linku (`filtryFlagBranzy`); token spoza definicji odpada, brak parametru = wszystkie filtry wyłączone.
+
 ## Tryb „Biznes” – `biznes.ts`, `biznesUslugi.ts`, `biznesBranze.ts`, `biznesOpis.ts` (E10, #105–#107)
 
-Czyste funkcje. Worker `biznes.worker.ts` trzyma indeks, ekran `src/karta/biznes/EkranBiznes.tsx`
+Czyste funkcje. Wspólny worker obliczeń (`obliczenia.worker.ts`, sekcja niżej) trzyma indeks, ekran `src/karta/biznes/EkranBiznes.tsx`
 (z `FiltryKonkurencji.tsx`) tylko wyświetla. Dane: popyt z `public/dane/biznes/popyt.json`, punkty
 usług z katalogu `public/dane/uslugi` (#104 i #160: `katalog.json` i po jednym pliku na branżę, 26
 branż). Testy: `biznes.test.ts` (dane syntetyczne i wyrocznia `biznesOdniesienie.ts` liczona „na brute
@@ -195,9 +241,11 @@ Zasady:
 - `percentyl` to pozycja wśród ISTNIEJĄCYCH punktów branży, które mają popyt w zasięgu; `null` =
   nie ma z czym porównać (miejsce bez adresów w zasięgu albo brak punktów odniesienia). Karta
   podaje go słowami („więcej klientów w zasięgu niż 7 na 10 istniejących aptek”), bez znaku %.
-  Usługi obejmują cały obwarzanek, a popyt tylko część obszaru: punkty bez żadnego heksu popytu
-  w zasięgu nie wchodzą do rozkładu (test na wszystkich 26 plikach), ale liczą się jako konkurenci
-  miejsc, w których zasięgu leżą.
+  Popyt obejmuje Kraków i 13 gmin obwarzanka (14 gmin, `etl/biznes-popyt.md`), a katalog usług leży
+  w większym prostokącie z marginesem ok. 3 km. Punkty poza tymi 14 gminami (margines prostokąta
+  i sąsiednie gminy) nie mają heksu popytu w zasięgu, więc nie wchodzą do rozkładu (test na wszystkich
+  26 plikach), ale liczą się jako konkurenci miejsc, w których zasięgu leżą. To nie jest brak popytu
+  w obwarzanku: każda z 13 gmin ma heksy popytu.
 - Heks bez żadnego punktu w zasięgu to osobna kategoria: `adresyNaPunkt: null`, `bezPunktu(plama)`.
   Próg nasycenia skali liczy się tylko z heksów, które mają punkt (`progSkaliPlam`).
 - Zasięg to `zasiegPieszyM` z katalogu (500–2000 m zależnie od branży), nie stała w kodzie.
@@ -207,10 +255,10 @@ Zasady:
   najmniej 2 źródłach” (liczba bitów `zr`, każda branża), flagi z plików branż (dentysta
   „tylko z umową NFZ”, restauracja „bez fast foodów”, fryzjer „tylko barber”). Flaga `nfz` znaczy
   „gabinet jest w Informatorze o Terminach Leczenia”, a brak flagi nie dowodzi braku umowy, więc opis
-  filtra to mówi. Filtry nie wchodzą do linku (`url.ts` jest poza tym zadaniem), więc żyją w oknie.
+  filtra to mówi. Filtry żyją w stanie aplikacji i w linku jako parametr `k` (#108, patrz wyżej).
 - Karta opisuje konkurencję z filtrów, dla których policzono wynik (`meta.filtry`), a nie z przełączników:
   po kliknięciu zmieniają się wcześniej niż liczby.
-- Link: `#/biznes?b=<branża>&a=<lon,lat>&c=<lon,lat>`; `b` to id z katalogu usług (`sklep_spozywczy`,
+- Link: `#/biznes?b=<branża>&m=<lon,lat;lon,lat;…>&k=<filtry>` (do 5 miejsc A–E, stare `a=`/`c=` to A i B); `b` to id z katalogu usług (`sklep_spozywczy`,
   `poz`, `salon_kosmetyczny`...). Stare id (`sklep`, `przychodnia`, `kosmetyczka`, `mieso`, `zoologiczny`)
   działają przez `ALIASY_BRANZ` w `biznesBranze.ts`: `url.ts` czyta parametr bez zmian, a ekran
   zamienia id przy wyborze pliku. Id spoza katalogu pokazuje domyślną branżę z komunikatem.
@@ -228,6 +276,51 @@ trzeba dopisać w `biznesBranze.ts` grupę listy (`GRUPY_BRANZ`), nazwę w dope�
 grupy „Inne” i dostaje zdanie „punktów tej branży”, a testy na prawdziwym katalogu (`biznesBranze.test.ts`)
 nie przejdą. Usunięty został stary eksport `public/dane/biznes/<branza>.json` (7 branż, sam OSM);
 `etl/biznes-poi.py` zostaje w repo bez zmian i zapisywałby tam z powrotem, ale front go nie czyta.
+
+## Wspólny worker obliczeń – `obliczenia*.ts`, `menedzerObliczen.ts` (#96, #108)
+
+Tryb Miasto (symulator) i tryb Biznes liczą w JEDNYM workerze. Każda wiadomość niesie pole `tryb`
+(`'miasto'` albo `'biznes'`), router przekazuje ją do obsługi trybu, odpowiedź wraca z tym samym polem.
+
+| Plik | Rola |
+|---|---|
+| `obliczenia.worker.ts` | Jedyny skrypt workera: `fetch` i `postMessage`, reszta w routerze. |
+| `obliczenia.ts` | Protokół (`DoWorkera`, `ZWorkera`, `WiadomoscTrybu`) i router `utworzRouter`. Czysty, test na Node (`obliczenia.test.ts`). |
+| `obliczeniaMiasto.ts` | Tryb Miasto: `baza` → `licz` / `sugeruj` na `symulacja.ts`. |
+| `obliczeniaBiznes.ts` | Tryb Biznes: `start` / `init` / `ocen` na `biznes.ts`, popyt i pliki branż pobiera sam. |
+| `menedzerObliczen.ts` | Wątek główny: `menedzerObliczen.otworz(tryb)` daje uchwyt (`wyslij`, `nasluchuj`, `naBledzie`, `zwolnij`). Test: `menedzerObliczen.test.ts`. |
+
+Ekran bierze uchwyt na czas życia (`useSymulacja` w Mieście, `EkranBiznes` w Biznesie) i oddaje go przy wyjściu.
+
+Zasady menedżera:
+
+- **Jedna instancja** na oba tryby, tworzona przy pierwszym uchwycie. Nigdy dwie naraz (test: obroty Miasto ↔ Biznes).
+- **Nieużywany jest zwalniany.** Zwolnienie uchwytu jednego trybu, gdy worker żyje dla drugiego, wysyła `zwolnij`
+  (tryb oddaje swój stan, a `init` czekający na pobranie zostaje unieważniony). Zwolnienie ostatniego uchwytu zamyka
+  worker (`terminate`), więc po wyjściu z obu trybów nie zostaje po nim ani wątek, ani baza w pamięci.
+- **Błąd nie przechodzi między trybami.** Wyjątek w obsłudze trybu wraca jako `blad` z `tryb`, a nie zdarzenie `error`,
+  które zabiłoby worker obu trybów. Worker, który się nie załadował (albo padł poza obsługą), jest zamykany;
+  Miasto liczy wtedy synchronicznie (ta sama funkcja, ten sam wynik), Biznes pokazuje komunikat. Następny ekran
+  po zwolnieniu wszystkiego próbuje od nowa.
+
+Dlaczego jeden worker, ale z osobnymi stanami i zwalnianiem (decyzja #108, komentarz w `obliczenia.ts`):
+
+- Jedna instancja to jeden wątek, jedna sterta i jeden plik do pobrania (offline też: service worker cache'uje go
+  razem z aplikacją). Skrypt ma 18 kB, więc wspólny kod nie obciąża żadnego trybu.
+- Tryby mają jednak **różne dane i różny cykl życia**: Miasto dostaje od wątku głównego bazę (kopia danych 176 tys.
+  adresów, po zmianie wag), Biznes sam pobiera popyt i pliki branż. Połączenie „na zawsze” trzymałoby bazę Miasta
+  po wyjściu na Szukaj, a oddzielne stałe workery dwa razy tyle. Dlatego stany są rozłączne i zwalniane osobno.
+- Cena zwalniania: powrót do Miasta wysyła bazę do nowego workera. Pomiar (Chrome 154, dane produkcyjne):
+  `postMessage(baza)` to 50–100 ms w wątku głównym, a samo przeliczenie jednego obiektu 8–95 ms w workerze.
+  Dziś ta cena nie jest nowa: stary układ (stały worker Miasta) też wysyłał bazę przy każdym powrocie, bo każda
+  zmiana hasha (`zastosujZmianeUrl`) składa nowe wagi, więc `bazaDla` buduje nową bazę. Czas od kliknięcia
+  „Dla miasta” na Szukaj do wyniku: mediana ok. 0,9 s w obu układach (6 powrotów każdy), bo wyznacza go
+  montaż mapy, a nie worker.
+- W trybie dev (React StrictMode) efekty montują się dwa razy, więc worker powstaje, jest zamykany i powstaje
+  ponownie; na buildzie produkcyjnym konstruktor woła się raz na wejście w tryb.
+
+Nowy tryb w tym samym workerze: obsługa `utworzObsluge<Tryb>` (stan + `obsluz` + `zwolnij`) w osobnym pliku,
+wpis w `TrybObliczen`, w unii wiadomości i w `utworzRouter`.
 
 ## Sloty i kto je wypełnia
 
@@ -293,3 +386,78 @@ Czyste funkcje dla `src/karta/luki/PanelLuk.tsx`. Dane z `policzLuki`, tu tylko 
   Ten sam opis ma tabela bilansu w symulatorze (`BilansOkolicy.liczbaAdresow`).
 - `procentUdzialu` nie zaokrągla do kłamstwa: „<1%” zamiast „0%”, „>99%” zamiast „100%”.
 - `rozdzielczoscWarstwy(meta)`, `zrodlaWarstwy(meta)` – podpis pod rankingiem.
+- Pod rankingiem stoi zdanie o źródle okolic (`opisZrodelOkolic`), a bez pliku okolic panel ostrzega, że okolicą
+  jest dzielnica albo gmina.
+
+## Okolica adresu na karcie i w porównaniu – `miejsceAdresu.ts` (#185)
+
+Czyste funkcje dla `src/karta/okolica/EkranOkolica.tsx` i tabeli w `src/karta/porownanie/EkranPorownanie.tsx`.
+Okolica adresu to jednostka SIM (Kraków) albo miejscowość (poza Krakowem) z `okolice.json`, z zapasem na dzielnicę
+i gminę (`useDane().okolice`; `null` = plik się nie wczytał albo jest z innej wersji adresów).
+
+| Funkcja | Co robi |
+|---|---|
+| `miejsceAdresu(adres, i, okolice)` | Daje `MiejsceAdresu`: `rodzaj` (`sim`, `miejscowosc`, `zapas`), `id` jak w rankingach luk, `nazwa`, `podpis` („jednostka SIM I.2, dzielnica I Stare Miasto”), `opis` (podpis i liczba adresów), `potoczne`, `uwagi`. |
+| `miejsceOkolicy(okolice, id)` | To samo co `miejsceAdresu`, ale dla okolicy o danym id, bez adresu (wyszukiwarka, #185). `null`, gdy pliku nie ma albo id jest nieznane (id zapasu „dzielnica:…” też). `miejsceAdresu` korzysta z niej, więc karta, porównanie i wyszukiwarka mówią to samo. |
+| `zdaniePotocznych(potoczne, limit?)` | „W tej jednostce leżą też osiedla i części miasta z OpenStreetMap: …”; do `MAKS_POTOCZNYCH` (6) nazw, reszta liczbą („i jeszcze 12 nazw”). Brak nazw = `null`. |
+| `zrodlaOkolic(plik)`, `krotkaNazwaZrodla(nazwa)` | Źródła z pliku z krótką nazwą, datą i znacznikiem OSM (atrybucja ODbL, `URL_PRAW_OSM`). |
+| `opisZrodelOkolic(plik)` | Zdanie pod rankingiem luk: źródła okolic bez OSM (ranking nie pokazuje nazw potocznych). |
+
+Zasady:
+
+- Zapas dostaje adres bez pliku okolic, z `null` w kolumnie i poza kolumną: „Dzielnica I Stare Miasto” albo „Gmina Liszki”,
+  bez podpisu i bez liczby adresów. Brak okolicy nie jest zerem ani pustym polem.
+- Nazwy potoczne to punkty OSM leżące w jednostce, nie granice osiedli (`etl/okolice.md`). Karta mówi, co leży w jednostce,
+  i nie twierdzi, że adres leży w konkretnym osiedlu.
+- `uwagi` to `rozjazdy[].opis` o tej jednostce: nazwa jak dzielnica, nazwa z innej dzielnicy, nazwa OSM leżąca w innej
+  jednostce. Rozjazdy o wyszukiwaniu i o braku miejsc OSM nie mówią nic o adresie, więc na kartę nie idą. Jednostka ma ich
+  najwyżej dwie (pilnuje test na prawdziwym pliku).
+- Test `miejsceAdresu.test.ts` jedzie też na `public/dane` (każdy z 176 684 adresów ma okolicę z pliku; podpis niesie
+  dzielnicę adresu; liczba adresów zgadza się z kolumną) i jest pomijany, gdy plików nie ma.
+
+## Szukanie okolic na ekranie Szukaj – `karta/wyszukiwarka`, `mapa/okolica` (#185)
+
+Pole „Nazwa okolicy” na Szukaj podpowiada okolicę po nazwie („Ruczaj”, „Rakowice”, „kurdwanow”, „na Ruczaju”), wybór leci
+na mapie do granic jednostki SIM i rysuje jej obrys, a pod polem stoi pasek z nazwą, rodzajem i liczbą adresów. Logika jest
+czysta (bez DOM), testy jadą na gołym `node --test`, część na prawdziwych plikach z `public/dane`:
+
+```
+node --test 'src/karta/**/*.test.ts' 'src/mapa/**/*.test.ts'
+```
+
+| Moduł | Co robi |
+|---|---|
+| `wyszukiwarka/szukajOkolic.ts` | `szukajOkolic(indeksOkolicDla(plik), zapytanie, limit?)` daje `WynikOkolicy[]` (`id`, `rodzaj`, `nazwa`, `tytul`, `nazwaOsm`, `opis`). Szuka po nazwie jednostki SIM, miejscowości i nazwach OSM z jednostek (`potoczne`). `spojnyOpis` wiąże separator i liczbę adresów twardą spacją, żeby wiersz nie zaczynał się od kropki. |
+| `wyszukiwarka/podpowiedzi.ts` | `podpowiedzi(zapytanie, { adresy, okolice }, limit?)`: adresy i okolice w jednej liście. Źródło `null` = pole go nie szuka i nie buduje jego indeksu. |
+| `wyszukiwarka/indeks.ts` | `maNumerDomu(zapytanie)` (wpis z numerem to adres), `jedenBlad` użyty też do literówek w nazwach okolic. |
+| `wyszukiwarka/Wyszukiwarka.tsx` | Combobox: `adresy` + `onWybierz` szukają adresów (Porównanie, bez zmian), `okolice` + `onWybierzOkolice` okolic; oba naraz też działają. Ekran Szukaj podaje same okolice. |
+| `mapa/okolica/granice.ts` | `okolicaNaMapie(id, granice, adresy, okolice)` daje `OkolicaNaMapie`: ramka do przelotu i obrys jednostki z `okolice-granice.geojson`. Miejscowość i jednostka bez wpisu w pliku granic dostają ramkę adresów okolicy (`graniceOkolicy` z mapy luk) i nie mają obrysu. |
+| `mapa/okolica/wczytajGranice.ts` | Plik granic (1,1 MB) ładuje się przy pierwszym fokusie w polu albo wyborze, raz na aplikację; po błędzie następny wybór próbuje od nowa. |
+| `mapa/okolica/ObrysOkolicy.ts` | Hak wołany z `MapaKrakowa` (prop `okolica`): ciemny obrys z białą poświatą i przelot kamery. Nowy obiekt `okolica` = nowy przelot, także dla tej samej okolicy (prop `granice` reaguje tylko na zmianę liczb). |
+| `karta/okolicaWybrana.ts`, `karta/PasekOkolicy.tsx` | Pasek pod polem: teksty o nazwie z OSM i o braku obrysu są czystymi funkcjami z testem. |
+| `rankingUlic(…, okolice, ile)` | Ranking ulic na Szukaj: `okolica` ulicy zamiast dzielnicy (patrz niżej). |
+
+Zasady:
+
+- **Szukaj nie szuka adresów.** Decyzja właściciela z 2026-10-03 (commit 80c7aad, #56): na Szukaj oglądamy mapę, kartę otwiera
+  klik w mapę albo ranking. Pole szuka więc okolic, a wpis wyglądający na adres („Grodzka 52”) dostaje wskazówkę zamiast
+  pustej listy. Włączenie adresów to `adresy` + `onWybierz` w `EkranSzukaj`; wpis z numerem domu zostaje wtedy adresem
+  i wyprzedza okolice.
+- Nazwa z OSM („Salwator”) to punkt leżący w jednostce, nie granice osiedla (`etl/okolice.md`). Podpowiedź mówi „nazwa z
+  OpenStreetMap · Zwierzyniec (jednostka SIM …)”, wybór pokazuje całą jednostkę, a pasek mówi o tym wprost i podaje
+  atrybucję ODbL. Jedna okolica to jedna podpowiedź; przy remisie wygrywa nazwa okolicy (nie OSM).
+- Dopasowanie słowa: pełne, początek (pisanie w toku), odmiana z końcówkami o łącznej długości do 2 liter („Ruczaju”,
+  „Krowodrzy”) albo jedna literówka od 5 liter. Odmiana jest ciasna celowo: „Mogilska” (ulica) to nie „Mogiła”, „Podgórze”
+  to nie „Podgórki”. „osiedle”, „dzielnica”, „na” wypadają z zapytania i z nazw; wieś „Ulica” znajduje się po nazwie.
+- Okolica z wyszukiwarki żyje w stanie ekranu (`useState` w `EkranSzukaj`), nie w linku: `url.ts` i `stan.ts` jej nie znają.
+  Powrót z karty do mapy czyści wybór.
+- Telefon: lista podpowiedzi leży nad przyklejoną mapą (`z-index` bloku pola), a po wyborze mapa przewija się tak, żeby była
+  cała widoczna (`scrollIntoView({ block: 'nearest' })`, bez animacji przy ograniczonym ruchu).
+- Ranking ulic: `okolicaUlicy` liczy okolice z adresów, które weszły do oceny ulicy (bez wykluczonych i bez wyniku). Ulica w
+  jednej jednostce dostaje jej nazwę, w kilku: dwie największe i „i jeszcze N okolic” (przy trzech wszystkie nazwy). Miejscowość
+  poza Krakowem, nazwana tak samo jak przy ulicy, nic nie dopisuje. Bez pliku okolic zapas z `miejsceAdresu`: „Dzielnica …”
+  albo „Gmina …”. Kolejność i liczby rankingu nie zależą od okolic (pilnuje test), czas ten sam (ok. 155 ms na 176 684 adresach).
+- Pasek wybranego adresu na Szukaj: „Okolica: Kazimierz, jednostka SIM I.8, dzielnica I Stare Miasto”, w zapasie sama dzielnica
+  albo gmina. Pod rankingiem ulic stoi zdanie o źródle okolic (`opisZrodelOkolic`).
+- Nie dodajemy średniej oceny okolicy: ranking i mapa pokazują ulice i heksy, a jedna liczba dla całej jednostki czytałaby się
+  jak tablica wstydu (docs/burza-decyzje.md, sekcja o etyce score).

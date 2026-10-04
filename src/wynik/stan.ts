@@ -5,6 +5,7 @@
 import { useSyncExternalStore } from 'react'
 import type { Adres, WskaznikMeta } from '@/kontrakty'
 import type { Budzet } from './budzet.ts'
+import { BEZ_FILTROW, type FiltryUslug } from './biznesUslugi.ts'
 import { type TwardyFiltr, zPodmienionymFiltrem } from './filtry.ts'
 import {
   PERSONA_DOMYSLNA,
@@ -24,6 +25,7 @@ import {
 } from './sesja.ts'
 import type { KierunekOceny, Kierunki } from './silnik.ts'
 import { hashAdresu, hashZeSluga, slugAdresu } from './slug.ts'
+import { PARAMETRY_EKRANU, polaBiznesuZLinku, zPodmienionymiParametrami } from './stanZLinku.ts'
 import {
   czytajHash,
   type Ekran,
@@ -64,8 +66,18 @@ export interface StanAplikacji {
   branza: string
   /** Miejsca testowe A–E trybu „Biznes”, zawsze `MAKS_MIEJSC` pozycji. */
   miejsca: readonly ({ lon: number; lat: number } | null)[]
+  /**
+   * Filtry konkurencji trybu „Biznes” (#108): trzymane tu, a nie w stanie ekranu, żeby żyły w linku
+   * (parametr `k`) i przetrwały wyjście z ekranu. Domyślnie wyłączone.
+   */
+  filtryBiznesu: FiltryUslug
   /** Obiekty symulatora (#98), warianty A i B jako tekst `symulacjaUrl.ts`. */
   symulacja: { a: string; b: string }
+  /**
+   * Warstwa rankingu i mapy luk trybu „Miasto” (#92, parametr `w` linku). `null` = pierwsza warstwa
+   * z progiem luki.
+   */
+  warstwaLuk: string | null
 }
 
 const PUSTE_MIEJSCA: readonly null[] = ID_MIEJSC.map(() => null)
@@ -86,7 +98,9 @@ let stan: StanAplikacji = {
   budzet: null,
   branza: 'sklep',
   miejsca: PUSTE_MIEJSCA,
+  filtryBiznesu: BEZ_FILTROW,
   symulacja: { a: '', b: '' },
+  warstwaLuk: null,
 }
 
 const sluchacze = new Set<() => void>()
@@ -304,7 +318,18 @@ export function dodajMiejsceBiznesu(punkt: { lon: number; lat: number }) {
   ustawPunktBiznesu(ID_MIEJSC[i < 0 ? ID_MIEJSC.length - 1 : i] ?? 'a', punkt)
 }
 
-/** Warianty symulatora (#98); zapis do URL tylko na ekranie symulatora. */
+/** Filtry konkurencji trybu „Biznes” (#108); trafiają do linku jako parametr `k`. */
+export function ustawFiltryBiznesu(filtry: FiltryUslug) {
+  zmien({ filtryBiznesu: filtry })
+}
+
+/** Warstwa rankingu i mapy luk (#92); trafia do linku jako `w=` na ekranie Miasto. */
+export function ustawWarstweLuk(warstwa: string | null) {
+  if (warstwa === stan.warstwaLuk) return
+  zmien({ warstwaLuk: warstwa })
+}
+
+/** Warianty symulatora (#98); zapis do URL tylko na ekranie Miasto. */
 export function ustawSymulacje(symulacja: { a: string; b: string }) {
   if (symulacja.a === stan.symulacja.a && symulacja.b === stan.symulacja.b) return
   zmien({ symulacja })
@@ -408,30 +433,64 @@ export function podlaczDane(
   const { wagi, kierunki } = url?.ustawienia
     ? sprawdzUstawienia(url.ustawienia, wskazniki, domyslne, tryb, url?.biznes ?? stan.biznes)
     : domyslne
+  // Z linku bierzemy tu TYLKO to, co potrzebuje słownika (id adresu, lista porównania). Branża, punkty
+  // i filtry Biznesu, obiekty symulatora i ekran stan dostał przy starcie albo od zmiany użytkownika
+  // w trakcie ładowania – ponowne czytanie linku cofnęłoby tę zmianę (#108), bo przed wczytaniem
+  // adresów `zapiszDoUrl` nie zdążył jej tam zapisać.
   zmien({
     persona,
     tryb,
     biznes: url?.biznes ?? stan.biznes,
     wagi,
     kierunki,
-    ...(url ? zUrl(url) : {}),
+    ...(url ? zUrlPoWczytaniuAdresow(url) : {}),
   })
 }
 
 // ── Synchronizacja z URL ─────────────────────────────────────────────────────────────────
 
-function zUrl(url: StanUrl): Partial<StanAplikacji> {
+/** Pola linku, które potrzebują słownika adresów (id → indeks). Bez słownika czekają w `oczekujacyUrl`. */
+function zUrlZeSlownikiem(url: StanUrl): Partial<StanAplikacji> {
   const wybrany = indeksAdresu(url.idAdresu)
   return {
     // Nieznany adres w linku → wracamy do wyszukiwania zamiast pustej karty.
     ekran: url.ekran === 'okolica' && wybrany === null ? 'szukaj' : url.ekran,
     wybrany: url.ekran === 'okolica' ? wybrany : stan.wybrany,
     porownanie: url.porownanie.map((id) => indeksPoId.get(id)).filter((i) => i !== undefined),
+  }
+}
+
+/**
+ * Pola linku niezależne od słownika adresów: stan dostaje je od razu (start, zmiana hasha przed
+ * wczytaniem adresów), nie czeka na dane. Biznes tylko z linku Biznesu (`polaBiznesuZLinku`),
+ * symulator i warstwa luk tylko z linku Miasta – inne ekrany nie kasują wyboru z tych trybów.
+ */
+function zUrlBezSlownika(url: StanUrl): Partial<StanAplikacji> {
+  return {
     filtry: [],
     biznes: url.biznes ?? stan.biznes,
     ...(url.symulacja ? { symulacja: url.symulacja } : {}),
-    branza: url.branza ?? 'sklep',
-    miejsca: url.miejsca ?? PUSTE_MIEJSCA,
+    ...(url.warstwaLuk !== undefined ? { warstwaLuk: url.warstwaLuk } : {}),
+    ...polaBiznesuZLinku(url),
+  }
+}
+
+/** Pełny odczyt linku po wczytaniu adresów (zmiana hasha, Wstecz/Dalej). */
+function zUrl(url: StanUrl): Partial<StanAplikacji> {
+  return { ...zUrlZeSlownikiem(url), ...zUrlBezSlownika(url) }
+}
+
+/**
+ * Odczyt linku w chwili, gdy adresy właśnie się wczytały: słownik-zależne pola z linku, a ekran zostaje
+ * taki, jak stan ma teraz (mógł się zmienić w trakcie ładowania). Poprawiamy tylko kartę adresu,
+ * którego nie ma w danych: wraca do wyszukiwania, zamiast pokazywać pustą kartę.
+ */
+function zUrlPoWczytaniuAdresow(url: StanUrl): Partial<StanAplikacji> {
+  const { ekran, ...reszta } = zUrlZeSlownikiem(url)
+  return {
+    ...reszta,
+    filtry: [],
+    ...(stan.ekran === 'okolica' && ekran === 'szukaj' ? { ekran } : {}),
   }
 }
 
@@ -469,9 +528,10 @@ function doUrl(s: StanAplikacji): StanUrl {
     ustawienia:
       s.persona === 'wlasna' ? { wagi: { ...s.wagi }, kierunki: { ...s.kierunki } } : null,
     filtry: [],
-    ...(s.ekran === 'symulator' ? { symulacja: s.symulacja } : {}),
+    ...(s.ekran === 'miasto' ? { symulacja: s.symulacja, warstwaLuk: s.warstwaLuk } : {}),
     branza: s.branza,
     miejsca: s.miejsca,
+    filtryBiznesu: s.filtryBiznesu,
   }
 }
 
@@ -517,9 +577,24 @@ export function hrefDla(s: StanAplikacji, latka: Partial<StanAplikacji>): string
   return sciezkaStanu({ ...s, ...latka })
 }
 
+/**
+ * Przed wczytaniem adresów nie składamy hasha od zera (zgubiłby `u=`, `cmp=`, `p=`, które stan
+ * dostaje dopiero po adresach), ale ekrany Biznes i Miasto mają własne parametry niezależne od
+ * słownika. Podmieniamy w bieżącym linku tylko je, bez nowego wpisu w historii: zmiana branży,
+ * punktu albo filtra w pierwszych sekundach przeżywa odświeżenie strony i trafia do skopiowanego linku.
+ */
+function zapiszParametryEkranuPrzedDanymi(poprzedni: StanAplikacji) {
+  const klucze = PARAMETRY_EKRANU[stan.ekran]
+  // Zmiana ekranu to hashchange (adres już się zmienił), a pozostałe ekrany nie mają własnych parametrów.
+  if (!klucze || poprzedni.ekran !== stan.ekran) return
+  const obecny = location.hash
+  const cel = zPodmienionymiParametrami(obecny, zapiszHash(doUrl(stan)), klucze)
+  if (cel !== obecny) history.replaceState(null, '', cel)
+}
+
 function zapiszDoUrl(poprzedni: StanAplikacji) {
-  // Przed wczytaniem adresów nie znamy id – zapis wyczyściłby link, z którym ktoś wszedł.
-  if (typeof window === 'undefined' || !idAdresow || odczytujemyHistorie) return
+  if (typeof window === 'undefined' || odczytujemyHistorie) return
+  if (!idAdresow) return zapiszParametryEkranuPrzedDanymi(poprzedni)
   // Strona konkretnej ulicy ma własną ścieżkę, chociaż w aplikacji używa ekranu katalogu.
   if (
     stan.ekran === 'katalog' &&
@@ -537,55 +612,66 @@ function zapiszDoUrl(poprzedni: StanAplikacji) {
   else history.replaceState(null, '', cel)
 }
 
-if (typeof window !== 'undefined') {
-  const startowy = czytajBiezacyUrl()
+/**
+ * Stan z linku, z którym użytkownik wchodzi do aplikacji (wołane raz, przy starcie w przeglądarce).
+ * Link jest źródłem prawdy od pierwszej klatki: ekran Biznes startuje od branży, punktów i filtrów
+ * z linku, a nie od domyślnej branży, którą po kilku sekundach przestawiałoby wczytanie adresów (#108).
+ * Wyeksportowane dla testu na gołym Node – w przeglądarce woła je tylko ten plik.
+ */
+export function wczytajLinkStartowy(startowy: StanUrl) {
   oczekujacyUrl = startowy
   stan = { ...stan, ekran: startowy.ekran }
   if (startowy.persona) stan = { ...stan, persona: startowy.persona }
   if (startowy.tryb) stan = { ...stan, tryb: startowy.tryb }
-  if (startowy.biznes) stan = { ...stan, biznes: startowy.biznes }
-  stan = { ...stan, filtry: [] }
-  if (startowy.symulacja) stan = { ...stan, symulacja: startowy.symulacja }
+  stan = { ...stan, ...zUrlBezSlownika(startowy) }
   if (startowy.ekran === 'biznes') stan = { ...stan, tryb: 'biznes' }
-  const odczytajZmianeUrl = () => {
-    const url = czytajBiezacyUrl()
-    if (!idAdresow) {
-      oczekujacyUrl = url
-      return zmien({
-        ekran: url.ekran,
-        filtry: [],
-        ...(url.symulacja ? { symulacja: url.symulacja } : {}),
-      })
-    }
-    const latka: Partial<StanAplikacji> = zUrl(url)
-    const persona = url.ustawienia ? 'wlasna' : (url.persona ?? PERSONA_DOMYSLNA)
-    const tryb = url.tryb ?? stan.tryb
-    const domyslne = ustawieniaPersony(
-      persona === 'wlasna' ? PERSONA_DOMYSLNA : persona,
-      tryb,
-      metaWskaznikow,
-      url.biznes ?? stan.biznes,
-    )
-    Object.assign(latka, {
-      persona,
-      tryb,
-      ...(url.ustawienia
-        ? sprawdzUstawienia(
-            url.ustawienia,
-            metaWskaznikow,
-            domyslne,
-            tryb,
-            url.biznes ?? stan.biznes,
-          )
-        : domyslne),
-    })
-    odczytujemyHistorie = true
-    try {
-      zmien(latka)
-    } finally {
-      odczytujemyHistorie = false
-    }
+}
+
+/**
+ * Zmiana hasha (wklejony link, Wstecz/Dalej) przed wczytaniem adresów. Pola bez słownika od razu
+ * do stanu; id adresu i porównanie czekają w `oczekujacyUrl` na `podlaczDane`. Adres w pasku już
+ * jest właściwy, więc niczego nie zapisujemy z powrotem do historii.
+ */
+export function zastosujUrlPrzedDanymi(url: StanUrl) {
+  oczekujacyUrl = url
+  odczytujemyHistorie = true
+  try {
+    zmien({ ekran: url.ekran, ...zUrlBezSlownika(url) })
+  } finally {
+    odczytujemyHistorie = false
   }
+}
+
+/** Zmiana hasha: przed adresami tylko pola bez słownika, po adresach pełny odczyt (ekran, wybór, tryb, ustawienia). */
+export function zastosujZmianeUrl(url: StanUrl) {
+  if (!idAdresow) return zastosujUrlPrzedDanymi(url)
+  const latka: Partial<StanAplikacji> = zUrl(url)
+  const persona = url.ustawienia ? 'wlasna' : (url.persona ?? PERSONA_DOMYSLNA)
+  const tryb = url.tryb ?? stan.tryb
+  const domyslne = ustawieniaPersony(
+    persona === 'wlasna' ? PERSONA_DOMYSLNA : persona,
+    tryb,
+    metaWskaznikow,
+    url.biznes ?? stan.biznes,
+  )
+  Object.assign(latka, {
+    persona,
+    tryb,
+    ...(url.ustawienia
+      ? sprawdzUstawienia(url.ustawienia, metaWskaznikow, domyslne, tryb, url.biznes ?? stan.biznes)
+      : domyslne),
+  })
+  odczytujemyHistorie = true
+  try {
+    zmien(latka)
+  } finally {
+    odczytujemyHistorie = false
+  }
+}
+
+if (typeof window !== 'undefined') {
+  wczytajLinkStartowy(czytajBiezacyUrl())
+  const odczytajZmianeUrl = () => zastosujZmianeUrl(czytajBiezacyUrl())
   window.addEventListener('hashchange', odczytajZmianeUrl)
   window.addEventListener('popstate', odczytajZmianeUrl)
 }

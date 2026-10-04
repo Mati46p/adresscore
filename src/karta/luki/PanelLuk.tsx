@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useDane } from '@/wynik/dane'
 import { policzLuki, progLuki } from '@/wynik/luki'
+import { opisZrodelOkolic } from '@/wynik/miejsceAdresu'
 import {
   liczbaPelna,
   rankingLuk,
@@ -22,6 +23,11 @@ export interface PanelLukProps {
   onWybierzOkolice: (id: string) => void
   /** Okolica pokazana teraz na mapie – wiersz dostaje `aria-current`. */
   wybranaOkolica?: string | null
+  /**
+   * Wybór warstwy stoi gdzie indziej (np. w pasku nad mapą luk w trybie Miasto), więc panel nie
+   * powtarza przycisków: ranking jest od razu widoczny, a nie dopiero pod listą kilkunastu usług.
+   */
+  bezWyboruWarstwy?: boolean
 }
 
 /**
@@ -33,6 +39,7 @@ export function PanelLuk({
   onZmienWarstwe,
   onWybierzOkolice,
   wybranaOkolica = null,
+  bezWyboruWarstwy = false,
 }: PanelLukProps) {
   const dane = useDane()
   const [sortowanie, setSortowanie] = useState<SortowanieLuk>('liczba')
@@ -67,7 +74,7 @@ export function PanelLuk({
         <h2 id="h-luki" className="etykieta-sekcji">
           Gdzie miasto ma luki
         </h2>
-        {dostepne.length > 1 && (
+        {dostepne.length > 1 && !bezWyboruWarstwy && (
           <fieldset className="luki-warstwy">
             <legend className="sr-only">Usługa</legend>
             {dostepne.map((w) => (
@@ -98,6 +105,11 @@ export function PanelLuk({
         {wynik.niedostepny && (
           <p className="luki-uwaga">
             Warstwa się nie wczytała, więc każdy adres liczy się jako brak danych.
+          </p>
+        )}
+        {dane.okolice === null && (
+          <p className="luki-uwaga">
+            Plik okolic się nie wczytał, więc okolicą jest dzielnica Krakowa albo cała gmina.
           </p>
         )}
       </div>
@@ -193,6 +205,7 @@ export function PanelLuk({
           Dane: {zrodlaWarstwy(meta)}. Rozdzielczość: {rozdzielczoscWarstwy(meta)}. Liczymy{' '}
           {wynik.jednostka}, nie mieszkańców.
         </p>
+        <p>{opisZrodelOkolic(dane.okolice)}</p>
       </div>
     </section>
   )

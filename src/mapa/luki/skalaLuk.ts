@@ -7,6 +7,8 @@
 //   Na mapie „więcej = gorzej obsłużone”, a pomarańcz w całej aplikacji znaczy „gorzej”.
 // - Heks bez żadnego adresu z danymi (`udzial: null`) to brak danych (szary), nigdy 0%.
 // - Rodzic r8/r9 sumuje adresy dzieci: udział = suma w luce / suma wszystkich, nie średnia udziałów.
+
+import type { PlikOkolic } from '../../kontrakty/okolice.ts'
 import { type LiczbyLuki, okolicaAdresu } from '../../wynik/luki.ts'
 import { STOPNIE_SKALI } from '../skala.ts'
 
@@ -94,19 +96,21 @@ export type Granice = [[number, number], [number, number]]
 const MIN_BOK = 0.003
 
 /**
- * Ramka adresów okolicy o id z `okolicaAdresu(...).id` (`dzielnica:<nazwa>` | `gmina:<nazwa>`).
+ * Ramka adresów okolicy o id z `okolicaAdresu(...).id` – jednostka SIM / miejscowość z `okolice.json`
+ * (`sim-…`, `m-…`), a bez tego pliku zapasowo `dzielnica:<nazwa>` | `gmina:<nazwa>`.
  * null, gdy okolica nie ma adresu ze współrzędnymi.
  */
 export function graniceOkolicy(
   adresy: readonly { dzielnica: string | null; gmina: string; lon: number; lat: number }[],
   id: string,
+  okolice: PlikOkolic | null = null,
 ): Granice | null {
   let minX = Number.POSITIVE_INFINITY
   let minY = Number.POSITIVE_INFINITY
   let maxX = Number.NEGATIVE_INFINITY
   let maxY = Number.NEGATIVE_INFINITY
-  for (const a of adresy) {
-    if (okolicaAdresu(a).id !== id) continue
+  for (const [i, a] of adresy.entries()) {
+    if (okolicaAdresu(a, i, okolice).id !== id) continue
     // Współrzędne 0 to w kontrakcie brak położenia, nie punkt w Zatoce Gwinejskiej.
     if (!Number.isFinite(a.lon) || !Number.isFinite(a.lat) || (a.lon === 0 && a.lat === 0)) continue
     if (a.lon < minX) minX = a.lon

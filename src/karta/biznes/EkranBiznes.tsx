@@ -3,7 +3,6 @@ import {
   type BialaPlama,
   czynnikiOceny,
   type OcenaMiejsca,
-  type PunktUslugi,
   progSkaliPlam,
   rozbicieZasiegu,
 } from '@/wynik/biznes'
@@ -23,12 +22,12 @@ import {
 import {
   BEZ_FILTROW,
   czytajKatalog,
-  type FiltryUslug,
   type KatalogUslug,
   type MetaBranzy,
 } from '@/wynik/biznesUslugi'
 import { nastepneWolne, ograniczDoGranic, postawionePunkty } from '@/wynik/biznesZnaczniki'
-import { useStan, ustawBranze, ustawPunktBiznesu } from '@/wynik/stan'
+import { menedzerObliczen, type Uchwyt } from '@/wynik/menedzerObliczen'
+import { useStan, ustawBranze, ustawFiltryBiznesu, ustawPunktBiznesu } from '@/wynik/stan'
 import { GRANICE_PUNKTU, ID_MIEJSC, type IdMiejsca, wGranicachPunktu } from '@/wynik/url'
 import { FiltryKonkurencji } from './FiltryKonkurencji'
 import './biznes.css'
@@ -43,10 +42,11 @@ const LICZBA = new Intl.NumberFormat('pl-PL', { maximumFractionDigits: 0 })
 export function EkranBiznes() {
   const branza = useStan((s) => s.branza)
   const miejsca = useStan((s) => s.miejsca)
+  // Filtry konkurencji żyją w stanie aplikacji i w linku (`k=`, #108): odświeżenie strony i skopiowany
+  // link zachowują wybór, a wyjście z ekranu go nie kasuje.
+  const filtry = useStan((s) => s.filtryBiznesu)
   const [katalog, setKatalog] = useState<KatalogUslug | null>(null)
   const [meta, setMeta] = useState<MetaBranzy | null>(null)
-  // Filtry nie wchodzą do linku (`url.ts` jest poza tym zadaniem), więc żyją tylko w tym oknie.
-  const [filtry, setFiltry] = useState<FiltryUslug>(BEZ_FILTROW)
   const [punkty, setPunkty] = useState<{ lon: number; lat: number; nazwa: string }[]>([])
   const [heksy, setHeksy] = useState<ReadonlyMap<string, number | null>>(PUSTE_HEKSY)
   const [opisy, setOpisy] = useState<Map<string, BialaPlama>>(new Map())
@@ -62,7 +62,8 @@ export function EkranBiznes() {
   // Wersja wczytanej branży (0 = nic nie wczytano). Oceny liczymy dopiero po jej ustawieniu,
   // więc punkty z linku i punkty postawione w trakcie ładowania są oceniane tą samą ścieżką.
   const [gotowa, setGotowa] = useState(0)
-  const worker = useRef<Worker | null>(null)
+  // Uchwyt do wspólnego workera obliczeń (Miasto i Biznes, #108); żyje tyle, ile ten ekran.
+  const worker = useRef<Uchwyt<'biznes'> | null>(null)
   const wersja = useRef(0)
   const wczytanaBranza = useRef<string | null>(null)
 
@@ -94,24 +95,23 @@ export function EkranBiznes() {
   }, [])
 
   useEffect(() => {
-    const w = new Worker(new URL('../../wynik/biznes.worker.ts', import.meta.url), {
-      type: 'module',
-    })
+    const w = menedzerObliczen.otworz('biznes')
     worker.current = w
-    // Popyt (największy plik) zaczyna się pobierać razem z katalogiem, przed wyborem branży.
-    w.postMessage({ typ: 'start' })
-    w.onmessage = (event: MessageEvent) => {
-      const d = event.data
+    if (!w) {
+      setBlad('Obliczenia w tle są niedostępne w tej przeglądarce, więc nie da się ocenić miejsca.')
+      return
+    }
+    const zdejmijOdpowiedzi = w.nasluchuj((d) => {
       if (d.typ === 'blad') {
         setBlad(d.blad)
         return
       }
       if (d.typ === 'gotowe') {
         wersja.current = d.wersja
-        setMeta(d.meta as MetaBranzy)
-        setPunkty((d.punkty as PunktUslugi[]).map(([lon, lat, nazwa]) => ({ lon, lat, nazwa })))
-        setZrodlaPopytu(d.zrodla as ZrodloDanych[])
-        const plamy = d.plamy as BialaPlama[]
+        setMeta(d.meta)
+        setPunkty(d.punkty.map(([lon, lat, nazwa]) => ({ lon, lat, nazwa })))
+        setZrodlaPopytu(d.zrodla)
+        const plamy: BialaPlama[] = d.plamy
         setHeksy(new Map(plamy.map((p) => [p.h3, p.skala])))
         setOpisy(new Map(plamy.map((p) => [p.h3, p])))
         const prog = progSkaliPlam(plamy)
@@ -122,10 +122,18 @@ export function EkranBiznes() {
         const id = d.id as IdMiejsca
         setOceny((o) => ({ ...o, [id]: d.ocena as OcenaMiejsca }))
       }
-    }
+    })
+    // Worker, który się nie załadował albo padł, nie wróci w tym oknie – mówimy to wprost.
+    const zdejmijBlad = w.naBledzie((blad) =>
+      setBlad(`Obliczenia w tle przestały działać: ${blad}`),
+    )
+    // Popyt (największy plik) zaczyna się pobierać razem z katalogiem, przed wyborem branży.
+    w.wyslij({ typ: 'start' })
     return () => {
+      zdejmijOdpowiedzi()
+      zdejmijBlad()
       worker.current = null
-      w.terminate()
+      w.zwolnij()
     }
   }, [])
 
@@ -133,7 +141,8 @@ export function EkranBiznes() {
   // (`rozwiazBranze`), zamiast kończyć się błędem 404. Zmiana branży czyści meta i oceny, a zmiana
   // samych filtrów zostawia je do czasu nowych (jak przesunięcie punktu), bez migania karty.
   useEffect(() => {
-    if (!katalog) return
+    // Bez workera komunikat o jego braku stoi od otwarcia uchwytu i nie ma kogo pytać o branżę.
+    if (!katalog || !worker.current) return
     if (wczytanaBranza.current !== idBranzy) {
       wczytanaBranza.current = idBranzy
       setMeta(null)
@@ -142,7 +151,7 @@ export function EkranBiznes() {
     wersja.current = 0
     setGotowa(0)
     setBlad('')
-    worker.current?.postMessage({ typ: 'init', branza: idBranzy, filtry })
+    worker.current?.wyslij({ typ: 'init', branza: idBranzy, filtry })
   }, [katalog, idBranzy, filtry])
 
   // Przesunięcie punktu zostawia poprzednią ocenę do czasu nowej (bez migania karty przy każdym
@@ -168,7 +177,7 @@ export function EkranBiznes() {
       const punkt = miejsca[i]
       if (!punkt) return
       if (poprzednie.wersja === gotowa && poprzednie.miejsca[i] === punkt) return
-      worker.current?.postMessage({ typ: 'ocen', id, punkt, wersja: gotowa })
+      worker.current?.wyslij({ typ: 'ocen', id, punkt, wersja: gotowa })
     })
     wyslane.current = { wersja: gotowa, miejsca }
   }, [miejsca, gotowa])
@@ -240,7 +249,12 @@ export function EkranBiznes() {
               )}
             </select>
           </label>
-          <FiltryKonkurencji idBranzy={idBranzy} filtry={filtry} meta={meta} onZmien={setFiltry} />
+          <FiltryKonkurencji
+            idBranzy={idBranzy}
+            filtry={filtry}
+            meta={meta}
+            onZmien={ustawFiltryBiznesu}
+          />
         </div>
       </div>
       {blad && (
