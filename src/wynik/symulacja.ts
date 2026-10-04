@@ -1,7 +1,7 @@
 // Symulator inwestycji, tryb „Miasto” (#96, #98): urzędnik stawia hipotetyczny obiekt
 // (przystanek, punkt zdrowia, szkoła, przedszkole, plac zabaw, AED…) i widzi, ile adresów awansuje o literę
-// i ile wychodzi z luki (progi z #89). Czyste funkcje bez DOM i Reacta – liczone w workerze
-// (`symulacja.worker.ts`), testy na gołym `node --test`. Z kontraktu tylko typy.
+// i ile wychodzi z luki (progi z #89). Czyste funkcje bez DOM i Reacta – liczone we wspólnym
+// workerze obliczeń (`obliczeniaMiasto.ts`, #108), testy na gołym `node --test`. Z kontraktu tylko typy.
 //
 // Zasady:
 // - Obiekt zmienia jedną warstwę odległościową: nowa = min(stara, odległość do obiektu).

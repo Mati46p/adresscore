@@ -147,6 +147,7 @@ const sasiedzi = usePropsSasiadowMapy()
 
 - `useStan((s) => s.pole)` czyta stan. Selektor zwraca pole stanu albo prymityw, nigdy nowy obiekt.
 - Pola: `ekran`, `tryb`, `persona` (`'wlasna'` po ręcznej zmianie wagi), `wagi`, `kierunki`, `wybrany` (indeks | null), `porownanie` (do 5 indeksów), `warstwa` (`'wynik'` albo id wskaźnika).
+- Pola trybów Miasto i Biznes (#98, #108): `symulacja` (`{ a, b }`, obiekty wariantów), `branza`, `miejsca` (miejsca testowe A–E, zawsze 5 pozycji, `null` = puste), `filtryBiznesu`. Akcje: `ustawSymulacje`, `ustawBranze` (miejsca zostają), `ustawPunktBiznesu('a'..'e', punkt | null)`, `dodajMiejsceBiznesu(punkt)`, `ustawFiltryBiznesu`.
 - Akcje: `wybierzPersone`, `ustawTryb`, `ustawWage(id, 0–4)`, `ustawKierunek(id, k | null)`, `wybierzAdres(i | null)`, `pokazOkolice(i)`, `przejdz(ekran)`, `dodajDoPorownania`, `usunZPorownania`, `przelaczPorownanie`, `wyczyscPorownanie`, `ustawWarstwe`.
 - Twarde filtry: pole `filtry` (`{ id, warunek: 'max' | 'min' | 'rowne-zero', prog }`, jeden na warstwę), akcje `ustawFiltr`, `usunFiltr`, `wyczyscFiltry`. W URL: `f=halas_ldwn:max:55,powodz_1proc:zero`.
 - `hrefDla(stan, latka)` daje hash do `<a href>`. Stan weź z `useStan((s) => s)`.
@@ -159,14 +160,44 @@ const sasiedzi = usePropsSasiadowMapy()
 | `#/` | 1 Szukaj |
 | `#/adres/<id adresu>` | 2 Okolica |
 | `#/porownanie` | 3 Porównanie |
+| `#/katalog`, `#/metoda` | katalog adresów, metoda i źródła |
+| `#/miasto?a=<obiekty>&b=<obiekty>` | tryb Miasto: symulator inwestycji (#96–#98), warianty A i B. Stary adres `#/symulator` dalej działa (ten sam ekran), a link zapisuje się już jako `#/miasto` |
+| `#/biznes?b=<branża>&m=<lon,lat;lon,lat;…>&k=<filtry>` | tryb Biznes (E10): branża, miejsca A–E (`m`, puste pozycje między średnikami), filtry konkurencji (`k`). Stare linki z `a=` i `c=` (miejsca A i B) działają. Opis niżej |
 
 Uszkodzony hash (np. `#/adres/%`) daje ekran Szukaj.
 Parametry: `p` (persona), `t` (tryb), `cmp` (id adresów do porównania, po przecinku).
 Stan i hash synchronizują się w obie strony. Zmiana ekranu albo adresu dodaje krok w historii przeglądarki.
 
+### Przełącznik trybów w nagłówku – `trybyAplikacji.ts` (#92, #108)
+
+Obok kroków mieszkańca (Szukaj, Katalog, Porównanie, Metoda) nagłówek ma osobny przełącznik „Dla miasta”
+(`#/miasto`) i „Dla biznesu” (`#/biznes`). `TRYBY_APLIKACJI` to tablica (ekran, napis), `trybEkranu(ekran)`
+daje wybrany tryb albo `null` na ekranach mieszkańca. Akcent ma w nagłówku jeden element naraz: krok
+na ekranach mieszkańca, tryb na #/miasto i #/biznes. Stan obu trybów (obiekty symulatora, branża, miejsca
+i filtry Biznesu) zostaje po przejściu na inny ekran i po powrocie, bo link bez ich parametrów niczego nie kasuje.
+
+### Link jest źródłem prawdy od pierwszej klatki – `stanZLinku.ts` (#108)
+
+Adresy wczytują się 2–12 s. Wcześniej stan Biznesu dostawał branżę i miejsca z linku dopiero po tym czasie
+(ekran startował od domyślnej branży, a zmiana użytkownika w tym oknie była cofana). Teraz:
+
+- **Start** (`wczytajLinkStartowy`) i **zmiana hasha przed adresami** (`zastosujUrlPrzedDanymi`) od razu wpisują do
+  stanu wszystko, co nie potrzebuje słownika adresów: branżę, miejsca A–E, filtry Biznesu, obiekty symulatora.
+- `podlaczDane` (po adresach) bierze z linku tylko to, co potrzebuje słownika: id adresu i listę porównania.
+  Nie czyta już branży, miejsc, filtrów ani symulatora, więc nie cofa zmiany z okna ładowania.
+- Przed adresami `zapiszDoUrl` nie składa hasha od zera (zgubiłby `u=`, `cmp=`, `p=`), ale podmienia w bieżącym linku
+  parametry ekranu (`PARAMETRY_EKRANU`: Biznes `b m a c k`, Miasto `a b`), bez nowego wpisu w historii. Zmiana
+  branży, miejsca albo filtra w pierwszych sekundach trafia więc do linku i przeżywa F5.
+- Link bez parametrów Biznesu (np. `#/porownanie`) nie kasuje wyboru Biznesu; gołe `#/biznes` jest linkiem do Biznesu
+  i przywraca domyślną branżę (`polaBiznesuZLinku`).
+
+Filtry konkurencji Biznesu to parametr `k` (`biznesFiltryUrl.ts`), tokeny po przecinku: `2z` (≥ 2 źródła), `barber`
+(„tylko” z flagą), `-fast_food` („bez” flagi), np. `k=2z,-fast_food`. Link niesie tylko filtry, które ekran pokazuje dla
+branży linku (`filtryFlagBranzy`); token spoza definicji odpada, brak parametru = wszystkie filtry wyłączone.
+
 ## Tryb „Biznes” – `biznes.ts`, `biznesUslugi.ts`, `biznesBranze.ts`, `biznesOpis.ts` (E10, #105–#107)
 
-Czyste funkcje. Worker `biznes.worker.ts` trzyma indeks, ekran `src/karta/biznes/EkranBiznes.tsx`
+Czyste funkcje. Wspólny worker obliczeń (`obliczenia.worker.ts`, sekcja niżej) trzyma indeks, ekran `src/karta/biznes/EkranBiznes.tsx`
 (z `FiltryKonkurencji.tsx`) tylko wyświetla. Dane: popyt z `public/dane/biznes/popyt.json`, punkty
 usług z katalogu `public/dane/uslugi` (#104 i #160: `katalog.json` i po jednym pliku na branżę, 26
 branż). Testy: `biznes.test.ts` (dane syntetyczne i wyrocznia `biznesOdniesienie.ts` liczona „na brute
@@ -207,10 +238,10 @@ Zasady:
   najmniej 2 źródłach” (liczba bitów `zr`, każda branża), flagi z plików branż (dentysta
   „tylko z umową NFZ”, restauracja „bez fast foodów”, fryzjer „tylko barber”). Flaga `nfz` znaczy
   „gabinet jest w Informatorze o Terminach Leczenia”, a brak flagi nie dowodzi braku umowy, więc opis
-  filtra to mówi. Filtry nie wchodzą do linku (`url.ts` jest poza tym zadaniem), więc żyją w oknie.
+  filtra to mówi. Filtry żyją w stanie aplikacji i w linku jako parametr `k` (#108, patrz wyżej).
 - Karta opisuje konkurencję z filtrów, dla których policzono wynik (`meta.filtry`), a nie z przełączników:
   po kliknięciu zmieniają się wcześniej niż liczby.
-- Link: `#/biznes?b=<branża>&a=<lon,lat>&c=<lon,lat>`; `b` to id z katalogu usług (`sklep_spozywczy`,
+- Link: `#/biznes?b=<branża>&m=<lon,lat;lon,lat;…>&k=<filtry>` (do 5 miejsc A–E, stare `a=`/`c=` to A i B); `b` to id z katalogu usług (`sklep_spozywczy`,
   `poz`, `salon_kosmetyczny`...). Stare id (`sklep`, `przychodnia`, `kosmetyczka`, `mieso`, `zoologiczny`)
   działają przez `ALIASY_BRANZ` w `biznesBranze.ts`: `url.ts` czyta parametr bez zmian, a ekran
   zamienia id przy wyborze pliku. Id spoza katalogu pokazuje domyślną branżę z komunikatem.
@@ -228,6 +259,48 @@ trzeba dopisać w `biznesBranze.ts` grupę listy (`GRUPY_BRANZ`), nazwę w dope�
 grupy „Inne” i dostaje zdanie „punktów tej branży”, a testy na prawdziwym katalogu (`biznesBranze.test.ts`)
 nie przejdą. Usunięty został stary eksport `public/dane/biznes/<branza>.json` (7 branż, sam OSM);
 `etl/biznes-poi.py` zostaje w repo bez zmian i zapisywałby tam z powrotem, ale front go nie czyta.
+
+## Wspólny worker obliczeń – `obliczenia*.ts`, `menedzerObliczen.ts` (#96, #108)
+
+Tryb Miasto (symulator) i tryb Biznes liczą w JEDNYM workerze. Każda wiadomość niesie pole `tryb`
+(`'miasto'` albo `'biznes'`), router przekazuje ją do obsługi trybu, odpowiedź wraca z tym samym polem.
+
+| Plik | Rola |
+|---|---|
+| `obliczenia.worker.ts` | Jedyny skrypt workera: `fetch` i `postMessage`, reszta w routerze. |
+| `obliczenia.ts` | Protokół (`DoWorkera`, `ZWorkera`, `WiadomoscTrybu`) i router `utworzRouter`. Czysty, test na Node (`obliczenia.test.ts`). |
+| `obliczeniaMiasto.ts` | Tryb Miasto: `baza` → `licz` / `sugeruj` na `symulacja.ts`. |
+| `obliczeniaBiznes.ts` | Tryb Biznes: `start` / `init` / `ocen` na `biznes.ts`, popyt i pliki branż pobiera sam. |
+| `menedzerObliczen.ts` | Wątek główny: `menedzerObliczen.otworz(tryb)` daje uchwyt (`wyslij`, `nasluchuj`, `naBledzie`, `zwolnij`). Test: `menedzerObliczen.test.ts`. |
+
+Ekran bierze uchwyt na czas życia (`useSymulacja` w Mieście, `EkranBiznes` w Biznesie) i oddaje go przy wyjściu.
+
+Zasady menedżera:
+
+- **Jedna instancja** na oba tryby, tworzona przy pierwszym uchwycie. Nigdy dwie naraz (test: obroty Miasto ↔ Biznes).
+- **Nieużywany jest zwalniany.** Zwolnienie uchwytu jednego trybu, gdy worker żyje dla drugiego, wysyła `zwolnij`
+  (tryb oddaje swój stan, a `init` czekający na pobranie zostaje unieważniony). Zwolnienie ostatniego uchwytu zamyka
+  worker (`terminate`), więc po wyjściu z obu trybów nie zostaje po nim ani wątek, ani baza w pamięci.
+- **Błąd nie przechodzi między trybami.** Wyjątek w obsłudze trybu wraca jako `blad` z `tryb`, a nie zdarzenie `error`,
+  które zabiłoby worker obu trybów. Worker, który się nie załadował (albo padł poza obsługą), jest zamykany;
+  Miasto liczy wtedy synchronicznie (ta sama funkcja, ten sam wynik), Biznes pokazuje komunikat. Następny ekran
+  po zwolnieniu wszystkiego próbuje od nowa.
+
+Dlaczego jeden worker, ale z osobnymi stanami i zwalnianiem (decyzja #108, komentarz w `obliczenia.ts`):
+
+- Jedna instancja to jeden wątek, jedna sterta i jeden plik do pobrania (offline też: service worker cache'uje go
+  razem z aplikacją). Skrypt ma 18 kB, więc wspólny kod nie obciąża żadnego trybu.
+- Tryby mają jednak **różne dane i różny cykl życia**: Miasto dostaje od wątku głównego bazę (kopia danych 176 tys.
+  adresów, po zmianie wag), Biznes sam pobiera popyt i pliki branż. Połączenie „na zawsze” trzymałoby bazę Miasta
+  po wyjściu na Szukaj, a oddzielne stałe workery dwa razy tyle. Dlatego stany są rozłączne i zwalniane osobno.
+- Cena zwalniania: powrót do Miasta wysyła bazę od nowa. Pomiar (Chrome 154, dane produkcyjne): `postMessage(baza)`
+  ok. 50 ms w wątku głównym (47–63 ms), a samo przeliczenie jednego obiektu 8–95 ms w workerze. Czasu do wyniku
+  po powrocie (ok. 0,7–1 s) nie wyznacza worker, tylko montaż mapy.
+- W trybie dev (React StrictMode) efekty montują się dwa razy, więc worker powstaje, jest zamykany i powstaje
+  ponownie; na buildzie produkcyjnym konstruktor woła się raz na wejście w tryb.
+
+Nowy tryb w tym samym workerze: obsługa `utworzObsluge<Tryb>` (stan + `obsluz` + `zwolnij`) w osobnym pliku,
+wpis w `TrybObliczen`, w unii wiadomości i w `utworzRouter`.
 
 ## Sloty i kto je wypełnia
 
