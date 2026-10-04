@@ -94,15 +94,30 @@ async function cachePotemSiec(zad) {
   return odp
 }
 
+// Odświeżanie w tle pyta serwer o ETag kopii: niezmieniony plik to 304 bez treści. Bez tego
+// każde wejście pobierało i zapisywało od nowa ~25 MB danych, a zajęty tym worker opóźniał
+// następne otwarcie strony o kilka sekund (pomiar 2026-10-04).
+const odswiezane = new Set()
+
 async function cacheIOdswiez(e, zad) {
   const cache = await caches.open(CACHE)
   const kopia = await cache.match(zad)
-  const swieza = fetch(zad).then(async (odp) => {
+  if (!kopia) {
+    const odp = await fetch(zad)
     if (odp.ok) await cache.put(zad, odp.clone())
     return odp
-  })
-  if (!kopia) return swieza
-  e.waitUntil(swieza.catch(() => {}))
+  }
+  const etag = kopia.headers.get('etag')
+  if (!odswiezane.has(zad.url)) {
+    odswiezane.add(zad.url)
+    const naglowki = etag ? { 'If-None-Match': etag } : {}
+    e.waitUntil(
+      fetch(zad.url, { headers: naglowki, cache: 'no-store' })
+        .then((odp) => (odp.status === 200 ? cache.put(zad, odp) : undefined))
+        .catch(() => {})
+        .finally(() => odswiezane.delete(zad.url)),
+    )
+  }
   return kopia
 }
 
