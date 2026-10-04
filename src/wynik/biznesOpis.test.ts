@@ -204,6 +204,8 @@ const branzaTestowa = (
   zrodlaWPliku,
   mapowanie: { rejestr, flagi },
   liczby: { potwierdzoneWielomaZrodlami: 1, zFlaga: {} },
+  atrybucja: '',
+  licencja: '',
 })
 
 /** Katalog z pięcioma źródłami i czterema branżami: sklep, apteka (rejestr), dentysta (RPWDL i NFZ), fryzjer. */
@@ -326,6 +328,9 @@ test('atrybucja z prawdziwego katalogu: każda z 26 branż ma OSM i Overture, a 
     }
     // OSM prowadzi do strony praw, jak wymaga ODbL.
     assert.equal(wpisy[0]?.url, URL_PRAW_OSM, b.id)
+    // Kontrola krzyżowa: wpisy na ekranie to dokładnie źródła, które katalog wymienia w zbiorczej
+    // atrybucji pliku branży (ta sama lista, ta sama kolejność), więc żadne nie wypada ani nie dochodzi.
+    assert.equal(wpisy.map((w) => w.nazwa).join('; '), bezPauzy(b.atrybucja), b.id)
   }
 })
 

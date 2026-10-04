@@ -66,6 +66,10 @@ export interface BranzaKatalogu {
     potwierdzoneWielomaZrodlami: number
     zFlaga: Readonly<Record<string, number>>
   }
+  /** Zbiorcza atrybucja źródeł pliku, np. „© OpenStreetMap contributors, ODbL; Overture Maps Foundation…”. */
+  atrybucja: string
+  /** Pełny opis licencji pliku (ODbL i share-alike dla punktów z OSM). */
+  licencja: string
 }
 
 /** `public/dane/uslugi/katalog.json`. */
