@@ -7,12 +7,8 @@
    wypełnienie paska, nigdy na pismo; akcent należy do stanu wybranego, więc link do adresu zaprasza
    kształtem (podkreślenie, strzałka), a nie kolorem; hover tylko pod @media (hover: hover). */
 
-/* Korzeń zakładki. Kontener przewijanej tabeli staje się punktem odniesienia dla elementów
-   absolutnych w komórkach (ukryte opisy .sr-only): bez tego trafiały za prawą krawędź tabeli,
-   której nie przycina overflow kontenera, i poszerzały całą stronę na telefonie. */
-.ztc-tab .panel-tabela {
-  position: relative;
-}
+/* Korzeń zakładki (`.ztc-tab`) nie ma tu własnych reguł: `position: relative` dla ukrytych opisów
+   .sr-only w komórkach tabel siedzi w `.panel-tabela` (panel.css), więc dotyczy wszystkich zakładek. */
 
 /* ── Wiersz filtrów nad sekcjami (okres obejmuje wszystkie sekcje zakładki) ─── */
 .ztc-filtry {

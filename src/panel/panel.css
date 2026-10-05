@@ -334,6 +334,10 @@
 
 /* ── Tabele ───────────────────────────────────────────────────────────────── */
 .panel-tabela {
+  /* Punkt odniesienia dla elementów absolutnych w komórkach (ukryte opisy .sr-only z
+     position: absolute): bez niego trafiały za prawą krawędź przewijanej tabeli, której nie
+     przycina overflow kontenera, i poszerzały całą stronę na telefonie. */
+  position: relative;
   overflow-x: auto;
   border: 1px solid var(--ramka);
   border-radius: 12px;

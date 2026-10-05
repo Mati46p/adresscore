@@ -514,7 +514,7 @@ describe('uwagaPierwszejDoby: jedna doba z danymi nie tworzy linii', () => {
     )
     assert.equal(
       uwagaPierwszejDoby(seria),
-      'Dane są dopiero z jednej doby, więc linie jeszcze się nie rysują: najedź lub dotknij prawego krańca wykresu, żeby zobaczyć wartości.',
+      'Dane są dopiero z jednej doby, więc wykres pokazuje pojedyncze punkty zamiast linii: najedź lub dotknij punkt, żeby zobaczyć wartości.',
     )
   })
 

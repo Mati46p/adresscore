@@ -11,11 +11,16 @@ import {
   formatMs,
   formatProcent,
   formatWitalu,
+  JEDNOSTKI,
   lejek,
+  liczbaZRzeczownikiem,
   METRYKI_WITALI,
+  NBSP,
   ocenaWitalu,
+  odmiana,
   PROGI_WITALI,
   procentOd,
+  punktyIzolowane,
   udzialy,
   zaokraglij,
   zmianaProcentowa,
@@ -37,6 +42,12 @@ const suma = (liczby: readonly (number | null)[]) =>
   liczby.reduce<number>((s, n) => s + (n ?? 0), 0)
 /** Spacja twarda z `Intl` (pl-PL) na zwykłą, żeby asercje nie zależały od wersji ICU. */
 const zwykleSpacje = (tekst: string) => tekst.replaceAll(/[  ]/g, ' ')
+
+/**
+ * Oczekiwany napis czasu zapisany ze zwykłymi spacjami: między LICZBĄ a JEDNOSTKĄ wstawia NBSP,
+ * a spacje między składnikami („3 min | 5 s”) zostawia.
+ */
+const czas = (tekst: string) => tekst.replaceAll(/(\d) (ms|s|min|h)\b/g, `$1${NBSP}$2`)
 
 interface Wiersz {
   nazwa: string
@@ -350,16 +361,53 @@ describe('formaty', () => {
   })
 
   it('formatCzasu: milisekundy, sekundy, minuty i godziny', () => {
-    assert.equal(formatCzasu(850), '850 ms')
-    assert.equal(formatCzasu(2400), '2,4 s')
-    assert.equal(formatCzasu(12_000), '12 s')
-    assert.equal(formatCzasu(185_000), '3 min 5 s')
-    assert.equal(formatCzasu(180_000), '3 min')
-    assert.equal(formatCzasu(3_900_000), '1 h 5 min')
-    assert.equal(formatCzasu(3_600_000), '1 h')
-    assert.equal(formatCzasu(0), '0 ms')
+    assert.equal(formatCzasu(850), czas('850 ms'))
+    assert.equal(formatCzasu(2400), czas('2,4 s'))
+    assert.equal(formatCzasu(12_000), czas('12 s'))
+    assert.equal(formatCzasu(185_000), czas('3 min 5 s'))
+    assert.equal(formatCzasu(180_000), czas('3 min'))
+    assert.equal(formatCzasu(3_900_000), czas('1 h 5 min'))
+    assert.equal(formatCzasu(3_600_000), czas('1 h'))
+    assert.equal(formatCzasu(0), czas('0 ms'))
     assert.equal(formatCzasu(null), BRAK_DANYCH)
     assert.equal(formatCzasu(-5), BRAK_DANYCH)
+  })
+
+  it('formatCzasu: liczba i jednostka są sklejone spacją nierozdzielającą we WSZYSTKICH gałęziach', () => {
+    const probki = [0, 850, 999, 2400, 12_000, 59_000, 121_000, 185_000, 3_599_000, 3_900_000]
+    for (const ms of probki) {
+      const wynik = formatCzasu(ms)
+      assert.doesNotMatch(
+        wynik,
+        /\d (ms|s|min|h)\b/,
+        `${ms} ms → „${wynik}”: zwykła spacja przed jednostką`,
+      )
+      assert.match(
+        wynik,
+        new RegExp(`\\d${NBSP}(ms|s|min|h)`),
+        `${ms} ms → „${wynik}” bez NBSP przed jednostką`,
+      )
+    }
+    // Przypadek z kafla Sesji: „1 s” i „2 min” nie rozpadają się, szczelina jest tylko między składnikami.
+    assert.equal(formatCzasu(121_000), `2${NBSP}min 1${NBSP}s`)
+    assert.equal(formatCzasu(3_900_000), `1${NBSP}h 5${NBSP}min`)
+    assert.equal(formatCzasu(12_000), `12${NBSP}s`)
+  })
+
+  it('formatCzasu: między składnikami zostaje zwykła spacja (miejsce dopuszczalnego złamania linii)', () => {
+    // Kafel ma overflow-wrap: anywhere; bez szczeliny „12 min 59 s” łamałby się w dowolnym znaku.
+    assert.equal(formatCzasu(779_000).split(' ').length, 2)
+    assert.deepEqual(formatCzasu(779_000).split(' '), [`12${NBSP}min`, `59${NBSP}s`])
+  })
+
+  it('formatCzasu: granice zaokrąglenia nie dają „60 s” ani „1 000 ms”', () => {
+    assert.equal(formatCzasu(59_949), czas('59,9 s'))
+    assert.equal(formatCzasu(59_950), czas('1 min')) // 59,95 s zaokrągla się do pełnej minuty
+    assert.equal(formatCzasu(59_999), czas('1 min'))
+    assert.equal(formatCzasu(60_000), czas('1 min'))
+    assert.equal(formatCzasu(999.4), czas('999 ms'))
+    assert.equal(formatCzasu(999.6), czas('1 s'))
+    assert.equal(formatCzasu(1000), czas('1 s'))
   })
 
   it('czyLiczba odrzuca null, tekst, NaN i nieskończoność', () => {
@@ -368,5 +416,107 @@ describe('formaty', () => {
     }
     assert.equal(czyLiczba(0), true)
     assert.equal(czyLiczba(-3.5), true)
+  })
+})
+
+describe('punktyIzolowane: punkt bez sąsiada z wartością nie ma odcinka linii', () => {
+  it('jedyny punkt serii jest izolowany', () => {
+    assert.deepEqual(punktyIzolowane([5]), [true])
+    assert.deepEqual(punktyIzolowane([null, null, 7]), [false, false, true]) // pierwsza doba pomiaru
+    assert.deepEqual(punktyIzolowane([7, null, null]), [true, false, false])
+  })
+
+  it('punkt między przerwami jest izolowany, punkty połączone linią nie', () => {
+    assert.deepEqual(punktyIzolowane([1, 2, null, 3, null, 4, 5]), [
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+    ])
+    assert.deepEqual(punktyIzolowane([5, null, null, 7]), [true, false, false, true])
+    assert.deepEqual(punktyIzolowane([1, 2, 3]), [false, false, false])
+  })
+
+  it('zero jest wartością (zmierzone zero), a null, undefined i NaN są przerwą', () => {
+    assert.deepEqual(punktyIzolowane([null, 0, null]), [false, true, false])
+    assert.deepEqual(punktyIzolowane([0, 0]), [false, false]) // dwa zera tworzą odcinek
+    assert.deepEqual(punktyIzolowane([undefined, 3, Number.NaN]), [false, true, false])
+    assert.deepEqual(punktyIzolowane([Number.POSITIVE_INFINITY, 3]), [false, true])
+  })
+
+  it('brak punktów albo same przerwy → brak izolowanych, wynik równoległy do wejścia', () => {
+    assert.deepEqual(punktyIzolowane([]), [])
+    assert.deepEqual(punktyIzolowane([null, null]), [false, false])
+    const wejscie = [null, 1, null, 2, 3, null]
+    assert.equal(punktyIzolowane(wejscie).length, wejscie.length)
+  })
+})
+
+describe('odmiana: rzeczownik po liczebniku', () => {
+  const odslona = JEDNOSTKI.odslony
+
+  it('1 → forma pojedyncza, 2–4 → mnoga, 5 i więcej → dopełniacz', () => {
+    assert.equal(odmiana(1, odslona), 'odsłona')
+    assert.equal(odmiana(2, odslona), 'odsłony')
+    assert.equal(odmiana(3, odslona), 'odsłony')
+    assert.equal(odmiana(4, odslona), 'odsłony')
+    assert.equal(odmiana(5, odslona), 'odsłon')
+    assert.equal(odmiana(0, odslona), 'odsłon')
+  })
+
+  it('nastki 12–14 to „odsłon”, a 22–24 znowu „odsłony”', () => {
+    for (const n of [11, 12, 13, 14, 15, 19, 20, 21, 25, 26, 100, 111, 112, 113, 114]) {
+      assert.equal(odmiana(n, odslona), 'odsłon', String(n))
+    }
+    for (const n of [22, 23, 24, 32, 33, 34, 102, 103, 104, 122, 1002]) {
+      assert.equal(odmiana(n, odslona), 'odsłony', String(n))
+    }
+  })
+
+  it('liczba kończąca się na 1 (poza samą 1) to „odsłon”: 21, 31, 101', () => {
+    for (const n of [21, 31, 101, 1001, 12_451])
+      assert.equal(odmiana(n, odslona), 'odsłon', String(n))
+  })
+
+  it('przypadek z zadania: 1 odsłona / 2 odsłony / 5 odsłon / 22 odsłony', () => {
+    assert.deepEqual(
+      [1, 2, 5, 22].map((n) => odmiana(n, odslona)),
+      ['odsłona', 'odsłony', 'odsłon', 'odsłony'],
+    )
+  })
+
+  it('ułamek, liczba ujemna i wartości nieskończone nie rzucają', () => {
+    assert.equal(odmiana(2.5, odslona), 'odsłony') // dopełniacz l. poj. brzmi jak „kilka”
+    assert.equal(odmiana(-1, odslona), 'odsłona')
+    assert.equal(odmiana(-22, odslona), 'odsłony')
+    assert.equal(odmiana(Number.NaN, odslona), 'odsłon')
+    assert.equal(odmiana(Number.POSITIVE_INFINITY, odslona), 'odsłon')
+  })
+
+  it('formy wizyt', () => {
+    const w = JEDNOSTKI.wizyty
+    assert.deepEqual(
+      [1, 2, 5, 22, 25].map((n) => odmiana(n, w)),
+      ['wizyta', 'wizyty', 'wizyt', 'wizyty', 'wizyt'],
+    )
+  })
+})
+
+describe('liczbaZRzeczownikiem', () => {
+  it('liczba pl-PL i rzeczownik połączone spacją nierozdzielającą', () => {
+    assert.equal(liczbaZRzeczownikiem(22, JEDNOSTKI.odslony), `22${NBSP}odsłony`)
+    assert.equal(liczbaZRzeczownikiem(1, JEDNOSTKI.wizyty), `1${NBSP}wizyta`)
+    assert.equal(liczbaZRzeczownikiem(0, JEDNOSTKI.odslony), `0${NBSP}odsłon`)
+    assert.equal(zwykleSpacje(liczbaZRzeczownikiem(12_450, JEDNOSTKI.odslony)), '12 450 odsłon')
+    assert.equal(zwykleSpacje(liczbaZRzeczownikiem(12_452, JEDNOSTKI.odslony)), '12 452 odsłony')
+  })
+
+  it('brak pomiaru to „brak danych” bez jednostki, nigdy „0 odsłon”', () => {
+    assert.equal(liczbaZRzeczownikiem(null, JEDNOSTKI.odslony), BRAK_DANYCH)
+    assert.equal(liczbaZRzeczownikiem(undefined, JEDNOSTKI.odslony), BRAK_DANYCH)
+    assert.equal(liczbaZRzeczownikiem(Number.NaN, JEDNOSTKI.odslony), BRAK_DANYCH)
   })
 })

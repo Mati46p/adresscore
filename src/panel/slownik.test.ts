@@ -165,6 +165,89 @@ describe('słownik liczb panelu', () => {
   })
 })
 
+/**
+ * Hasła, które wykonawcy zakładek obeszli lokalnymi podpisami, bo słownik ich nie miał. Teraz
+ * definicja żyje w słowniku, a zakładki tylko do niej odsyłają (`klucz=` albo `<Podpowiedz>`).
+ */
+const UZUPELNIAJACE = [
+  'akwizycja.odslonyGlebokosc',
+  'akwizycja.wewnetrzne',
+  'sesje.odsetekDokonczen',
+  'sesje.sygnalWyjscia',
+  'przeglad.pozostaleRoboty',
+] as const
+
+describe('hasła uzupełniające (definicje wyniesione z lokalnych podpisów zakładek)', () => {
+  it('istnieją, mają pułapkę wypisaną wprost i spełniają konwencję pól', () => {
+    for (const klucz of UZUPELNIAJACE) {
+      assert.ok(klucz in SLOWNIK_PANELU, `brak hasła ${klucz}`)
+      const h = haslo(klucz)
+      assert.ok((h.pulapka ?? '').length > 30, `${klucz}: brak pułapki`)
+      assert.ok(h.liczy.trim().length >= 25, `${klucz}: opis zbyt krótki`)
+    }
+  })
+
+  it('odsłony i głębokość wizyt: odsłona człowieka, wszystkie odsłony wizyt kanału, głębsze nie znaczy lepsze', () => {
+    const h = haslo('akwizycja.odslonyGlebokosc')
+    assert.match(h.liczy, /bez botów/)
+    assert.match(h.liczy, /WSZYSTKIE jej odsłony, nie tylko pierwsza/)
+    assert.match(h.liczy, /odsłony ÷ wizyty/)
+    assert.match(h.liczy, /Strony na sesję/) // ta sama głębokość w zakładce Sesje
+    // Kierunek skali wypisany: więcej odsłon na wizytę to głębiej, nie lepiej (FR-038).
+    assert.match(h.kierunek ?? '', /niekoniecznie lepsze/)
+  })
+
+  it('„wewnętrzne” nie jest wejściem: nazwa kanału zgadza się z nazwami w panelu, wizyta liczy się jako bezpośrednia', async () => {
+    const { NAZWA_KANALU } = await import('./nazwy.ts')
+    const h = haslo('akwizycja.wewnetrzne')
+    assert.ok(h.nazwa.includes(NAZWA_KANALU.wewnetrzne), 'nazwa hasła wymienia kanał tak jak panel')
+    assert.match(h.liczy, /nie jest kanałem wejścia/)
+    assert.match(h.liczy, /liczy się jako bezpośrednia/)
+    assert.match(h.liczy, /30 minut/)
+    assert.match(h.liczy, /nie dziedziczy referera ani znaczników UTM/)
+  })
+
+  it('odsetek dokończeń: tekst wymienia dokładnie te sposoby, które logika zakładki liczy jako dokończone', async () => {
+    const { SPOSOBY_DOKONCZONE } = await import('./zakladki/sesje-dane.ts')
+    const { NAZWA_SPOSOBU_UDOSTEPNIENIA } = await import('./nazwy.ts')
+    const h = haslo('sesje.odsetekDokonczen')
+    // Zdanie „Dokończone to A, B albo C;” (do średnika) jest listą sposobów dokończonych.
+    const lista = (/Dokończone to ([^;]+);/.exec(h.liczy)?.[1] ?? '').toLowerCase()
+    assert.ok(lista.length > 0, 'hasło ma zdanie „Dokończone to …;”')
+    for (const [sposob, nazwa] of Object.entries(NAZWA_SPOSOBU_UDOSTEPNIENIA)) {
+      const dokonczony = SPOSOBY_DOKONCZONE.includes(sposob)
+      assert.equal(
+        lista.includes(nazwa.toLowerCase()),
+        dokonczony,
+        `${sposob} („${nazwa}”): ${dokonczony ? 'brakuje na liście dokończonych' : 'jest na liście, a logika go nie liczy'}`,
+      )
+    }
+    assert.match(h.liczy, /WSZYSTKIE próby/)
+    assert.match(h.kierunek ?? '', /Więcej znaczy lepiej/)
+  })
+
+  it('sygnał wyjścia: wysyłany RAZ przy ukryciu karty albo opuszczeniu odsłony, czasy i sekcje to podłoga', () => {
+    const h = haslo('sesje.sygnalWyjscia')
+    assert.match(h.liczy, /RAZ/)
+    assert.match(h.liczy, /pierwszym ukryciu karty/)
+    assert.match(h.liczy, /opuszczeniu odsłony/)
+    assert.match(h.pulapka ?? '', /PODŁOG/)
+    assert.match(h.nazwa, /podłoga/)
+  })
+
+  it('pozostałe roboty: wymienia klasy robotów z nazw w panelu poza crawlerami AI', async () => {
+    const { NAZWA_KLASY_BOTA } = await import('./nazwy.ts')
+    const h = haslo('przeglad.pozostaleRoboty')
+    const liczy = h.liczy.toLowerCase()
+    for (const [klasa, nazwa] of Object.entries(NAZWA_KLASY_BOTA)) {
+      if (klasa === 'ai') continue // crawlery AI mają własną tabelę (przeglad.crawleryAi)
+      assert.ok(liczy.includes(nazwa.toLowerCase()), `klasa ${klasa} („${nazwa}”) poza hasłem`)
+    }
+    assert.match(h.pulapka ?? '', /WSZYSTKIE roboty/) // pasek „Ludzie i boty” liczy je razem
+    assert.equal(h.okno, '30 dni')
+  })
+})
+
 describe('zakładki panelu', () => {
   it('jest siedem zakładek w ustalonej kolejności, bez Gmin, Czytelników, Redakcji i Reklam', () => {
     assert.deepEqual(

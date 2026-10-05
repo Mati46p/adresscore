@@ -24,9 +24,12 @@ import {
 import {
   BRAK_DANYCH,
   czyLiczba,
+  type FormyLiczebnika,
   formatLiczby,
   formatProcent,
+  JEDNOSTKI,
   lejek,
+  liczbaZRzeczownikiem,
   type WynikKrokuLejka,
 } from '@/panel/arytmetyka'
 import { KOLOR_DANYCH } from '@/panel/kolory'
@@ -103,8 +106,8 @@ const MARGINES_OSI = 12
 interface WykresLejkaProps {
   /** Kroki w kolejności lejka; pierwszy to podstawa (100%). */
   kroki: readonly KrokWykresuLejka[]
-  /** Czego dotyczą liczby, w dopełniaczu: „sesji” (domyślnie). */
-  jednostka?: string
+  /** Czego dotyczą liczby: trzy formy rzeczownika (domyślnie sesja/sesje/sesji) albo gotowy tekst. */
+  jednostka?: string | FormyLiczebnika
   /** Nazwa wykresu; domyślnie „Lejek produktowy”. */
   tytul?: string
 }
@@ -112,7 +115,11 @@ interface WykresLejkaProps {
 // Domyślne wartości propsów są w ciele funkcji (patrz WykresDzienny).
 export function WykresLejka(props: WykresLejkaProps) {
   const { kroki } = props
-  const jednostka = props.jednostka ?? 'sesji'
+  // Trzy formy rzeczownika dają poprawną odmianę w zdaniu „100% = 22 sesje”; w pozostałych zdaniach
+  // wystarcza dopełniacz liczby mnogiej („nie było żadnych sesji”).
+  const formy = typeof props.jednostka === 'string' ? null : (props.jednostka ?? JEDNOSTKI.sesje)
+  const jednostka =
+    typeof props.jednostka === 'string' ? props.jednostka : (formy ?? JEDNOSTKI.sesje)[2]
   const tytul = props.tytul ?? 'Lejek produktowy'
   const idTytulu = useId()
   const wyniki: WynikKrokuLejka<KrokWykresuLejka>[] = lejek(kroki)
@@ -125,7 +132,7 @@ export function WykresLejka(props: WykresLejkaProps) {
   const nazwaPierwszego = pierwszy?.krok.etykieta ?? ''
   const podstawa =
     pierwszy && czyLiczba(pierwszy.wartosc) && pierwszy.wartosc > 0
-      ? `100% = ${formatLiczby(pierwszy.wartosc)} ${jednostka} w kroku „${nazwaPierwszego}”.`
+      ? `100% = ${formy ? liczbaZRzeczownikiem(pierwszy.wartosc, formy) : `${formatLiczby(pierwszy.wartosc)} ${jednostka}`} w kroku „${nazwaPierwszego}”.`
       : pierwszy && czyLiczba(pierwszy.wartosc)
         ? `W pierwszym kroku („${nazwaPierwszego}”) nie było żadnych ${jednostka}, więc procenty są puste: nie ma czego dzielić.`
         : `Pierwszy krok („${nazwaPierwszego}”) nie ma pomiaru, więc procenty są puste.`

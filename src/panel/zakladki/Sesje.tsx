@@ -13,8 +13,10 @@
 //    każdą z nich. Jedna lista z mieszanymi podstawami wyglądałaby na jedną skalę i nią nie byłaby;
 //  - brak sesji to szary „brak danych” (mediany nie istnieją bez sesji), nigdy 0;
 //  - czasy są PODŁOGĄ: czas biegnie od otwarcia odsłony do pierwszego ukrycia karty albo opuszczenia
-//    ekranu (wyjście wysyła się raz), a o północy odcisk rotuje i wizyta się kończy. Mówi o tym
-//    podpowiedź i podpis pod kaflami;
+//    ekranu (wyjście wysyła się raz), a o północy odcisk rotuje i wizyta się kończy. Definicja
+//    sygnału wyjścia żyje w słowniku (`sesje.sygnalWyjscia`), a pod kaflami stoi tylko skrót z
+//    odsyłaczem; tak samo odsetek dokończeń (`sesje.odsetekDokonczen`) i głębokość wizyt
+//    (`akwizycja.odslonyGlebokosc`);
 //  - tekst z bazy (etykieta elementu udostępnienia, nieznany ekran) jest niezaufany: tylko jako treść.
 //
 // React Compiler: bez useMemo/useCallback, bez domyślnych wartości w destrukturyzacji propsów.
@@ -22,6 +24,7 @@ import { useState } from 'react'
 import { formatCzasu, formatLiczby, formatProcent } from '@/panel/arytmetyka'
 import { useWidok } from '@/panel/dane'
 import { KartaStat } from '@/panel/skladniki/KartaStat'
+import { Podpowiedz } from '@/panel/skladniki/Podpowiedz'
 import { Segmenty } from '@/panel/skladniki/Segmenty'
 import { Sekcja } from '@/panel/skladniki/Sekcja'
 import { type KolumnaTabeli, Tabela } from '@/panel/skladniki/Tabela'
@@ -45,12 +48,6 @@ const LIMIT_PRZEJSC = 200
 const MAKS_EKRANOW = 8
 
 const procentLubNull = (p: number | null) => (p === null ? null : formatProcent(p))
-
-/** Spacja niełamliwa z kodu znaku (literał w źródle ginie przy formatowaniu i w edytorach). */
-const SPACJA_NIELAMLIWA = String.fromCharCode(0xa0)
-
-/** Czas ze spacjami niełamliwymi: „2 min 1 s” nie rozjeżdża się na dwie linie w wąskim kaflu. */
-const czas = (ms: number) => formatCzasu(ms).replaceAll(' ', SPACJA_NIELAMLIWA)
 
 const KOLUMNY_ELEMENTOW: KolumnaTabeli<WierszElementu>[] = [
   {
@@ -79,6 +76,7 @@ const KOLUMNY_ELEMENTOW: KolumnaTabeli<WierszElementu>[] = [
   {
     id: 'odsetek',
     naglowek: 'Odsetek dokończeń',
+    klucz: 'sesje.odsetekDokonczen',
     liczbowa: true,
     komorka: (w) => procentLubNull(w.odsetekDokonczen),
   },
@@ -91,7 +89,13 @@ function SekcjaWizyt({ okno }: { okno: OknoDni }) {
   return (
     <Sekcja
       tytul="Wizyty w skrócie"
-      opis="Sesja to ciąg odsłon jednego odcisku z przerwami do 30 minut. Roboty nie wchodzą do tych liczb. Odsetki idą od liczby sesji okresu."
+      opis={
+        <>
+          Sesja to ciąg odsłon
+          <Podpowiedz klucz="akwizycja.odslonyGlebokosc" /> jednego odcisku z przerwami do 30 minut.
+          Roboty nie wchodzą do tych liczb. Odsetki idą od liczby sesji okresu.
+        </>
+      }
       stan={przeglad}
       pusto={(p) => kafleSesji(p) === null}
       pusteInfo="W tym okresie nie było żadnej sesji, więc mediany i odsetki nie istnieją (to nie zera). Pomiar mógł dopiero ruszyć; stan pomiaru sprawdzisz w zakładce Jakość."
@@ -125,12 +129,12 @@ function SekcjaWizyt({ okno }: { okno: OknoDni }) {
               />
               <KartaStat
                 etykieta="Czas wizyty (mediana)"
-                wartosc={kafle.medianaCzasMs === null ? null : czas(kafle.medianaCzasMs)}
+                wartosc={kafle.medianaCzasMs === null ? null : formatCzasu(kafle.medianaCzasMs)}
                 klucz="sesje.czasWizyty"
                 podpis={
                   kafle.p75CzasMs === null
                     ? undefined
-                    : `75% sesji trwa do ${czas(kafle.p75CzasMs)}`
+                    : `75% sesji trwa do ${formatCzasu(kafle.p75CzasMs)}`
                 }
               />
               <KartaStat
@@ -155,10 +159,9 @@ function SekcjaWizyt({ okno }: { okno: OknoDni }) {
               />
             </div>
             <p className="ses-uwaga">
-              Czasy są podłogą. Czas liczymy od otwarcia odsłony do pierwszego ukrycia karty albo
-              opuszczenia ekranu, bo wyjście wysyłamy raz: to, co czytelnik robi po powrocie na
-              kartę, nie jest już raportowane. O północy odcisk się zmienia i wizyta się kończy,
-              więc prawdziwe wizyty trwają zwykle dłużej.
+              Czasy są podłogą: wyjście z odsłony wysyłamy raz
+              <Podpowiedz klucz="sesje.sygnalWyjscia" />, więc prawdziwe wizyty trwają zwykle
+              dłużej.
             </p>
           </div>
         )
@@ -245,9 +248,7 @@ function SekcjaUdostepnien({ okno }: { okno: OknoDni }) {
               kolumny={KOLUMNY_ELEMENTOW}
             />
             <p className="ses-uwaga">
-              Dokończone to link, kopiowanie albo menu systemowe; anulowania i błędy nie są
-              dokończeniem. Odsetek dokończeń = dokończone ÷ wszystkie próby tego elementu. Więcej
-              znaczy lepiej.
+              Odsetek dokończeń = dokończone ÷ wszystkie próby tego elementu; więcej znaczy lepiej.
             </p>
           </div>
         </div>

@@ -2,7 +2,10 @@
 // chunk panelu). Wrappery `WykresDzienny` i `WykresGodzinowy` różnią się tylko osią czasu.
 //
 // Zasady (skill dataviz + CLAUDE.md „Liczby na ekranie”):
-//  - Jedna oś wartości, zawsze od zera; linie 2 px bez znaczników, hairline siatki.
+//  - Jedna oś wartości, zawsze od zera; linie 2 px, hairline siatki. Znaczniki tylko tam, gdzie
+//    bez nich punkt zniknąłby: punkt IZOLOWANY (jedyny w serii albo między przerwami `null`, np.
+//    pierwsza doba pomiaru) nie ma żadnego odcinka linii, więc dostaje kropkę. Punkty połączone
+//    linią kropek nie mają, bo szum znaczników zasłaniałby kształt serii (30 do 168 punktów).
 //  - Kolor serii idzie za BYTEM serii (odsłony, unikalni, boty), nie za jej pozycją. Roboty to
 //    szare wygaszenie (kontekst), nie kolejna kategoria. Kolory są wypełnieniami: opis serii
 //    stoi w kolorach tekstu, a barwę niesie krótki odcinek-klucz obok nazwy.
@@ -15,6 +18,7 @@
 import { useId } from 'react'
 import {
   CartesianGrid,
+  type DotItemDotProps,
   Line,
   LineChart,
   ResponsiveContainer,
@@ -23,7 +27,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { czyLiczba, formatLiczby } from '@/panel/arytmetyka'
+import { czyLiczba, formatLiczby, punktyIzolowane } from '@/panel/arytmetyka'
 import { KOLOR_DANYCH, type KolorDanych } from '@/panel/kolory'
 import { BrakDanych } from './BrakDanych'
 import { type KolumnaTabeli, Tabela } from './Tabela'
@@ -55,6 +59,29 @@ export interface OsCzasu {
   /** Nagłówek dymku i pierwsza kolumna tabeli-bliźniaka. */
   naglowekDymku: (x: string) => string
   naglowekKolumnyTabeli: string
+}
+
+/**
+ * Kropka punktu izolowanego (patrz nagłówek pliku). Rysuje tylko dla punktów z listy `izolowane`,
+ * dla pozostałych zwraca `null`, więc linia wygląda jak dotąd. Wypełnienie w kolorze serii (znak,
+ * 3:1), pierścień w kolorze powierzchni oddziela kropki leżące blisko siebie (trzy serie w jednej
+ * dobie). Kropka jest ozdobą: wartość podają dymek i tabela-bliźniak, więc `aria-hidden`, a
+ * `pointer-events: none` pilnuje, żeby nie przechwytywała najechania przeznaczonego dla dymku.
+ */
+function kropkaIzolowana(izolowane: readonly boolean[], kolor: string) {
+  return (p: DotItemDotProps) =>
+    izolowane[p.index] && p.cx !== undefined && p.cy !== undefined ? (
+      <circle
+        cx={p.cx}
+        cy={p.cy}
+        r={4}
+        fill={kolor}
+        stroke="var(--powierzchnia)"
+        strokeWidth={1.5}
+        pointerEvents="none"
+        aria-hidden="true"
+      />
+    ) : null
 }
 
 function DymekSerii({
@@ -186,7 +213,10 @@ export function WykresSerii({
                   strokeWidth={2}
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  dot={false}
+                  dot={kropkaIzolowana(
+                    punktyIzolowane(dane.map((p) => p[k])),
+                    KOLOR_DANYCH[SERIE[k].kolor],
+                  )}
                   // Pierścień w kolorze powierzchni: aktywny punkt nie ginie na przecięciu linii.
                   activeDot={{
                     r: 4,

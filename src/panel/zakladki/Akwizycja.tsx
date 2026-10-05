@@ -16,7 +16,7 @@
 //
 // React Compiler: bez useMemo/useCallback, bez domyślnych wartości w destrukturyzacji propsów.
 import { useState } from 'react'
-import { formatLiczby, formatProcent } from '@/panel/arytmetyka'
+import { formatLiczby, formatProcent, JEDNOSTKI } from '@/panel/arytmetyka'
 import { polaczStany, useWidok } from '@/panel/dane'
 import { KOLOR_DANYCH, type KolorDanych } from '@/panel/kolory'
 import { PasekUdzialow } from '@/panel/skladniki/PasekUdzialow'
@@ -109,6 +109,7 @@ const KOLUMNY_ODSLON: KolumnaTabeli<WierszOdslonKanalu>[] = [
   {
     id: 'odslony',
     naglowek: 'Odsłony',
+    klucz: 'akwizycja.odslonyGlebokosc',
     liczbowa: true,
     komorka: (w) => liczbaLubNull(w.odslony),
   },
@@ -203,7 +204,7 @@ function SekcjaKanalow({ okno }: { okno: OknoDni }) {
         <div className="akw-blok">
           <PasekUdzialow
             segmenty={segmentyKanalow(wiersze)}
-            jednostka="wizyt"
+            jednostka={JEDNOSTKI.wizyty}
             opis={`Kanały wejścia, ostatnie ${okno} dni`}
           />
           <Tabela
@@ -213,11 +214,9 @@ function SekcjaKanalow({ okno }: { okno: OknoDni }) {
             kolumny={KOLUMNY_ODSLON}
           />
           <p className="akw-uwaga">
-            Odsłony to wszystkie odsłony wizyt danego kanału, nie tylko pierwsze. Odsłon na wizytę =
-            odsłony ÷ wizyty kanału (wizyty i ich udział są w legendzie paska); więcej znaczy
-            głębsze wizyty, a nie lepsze. „Wewnętrzne” nie jest wejściem: wizyta, której pierwsza
-            odsłona jest wewnętrzna (np. powrót do karty otwartej dłużej niż 30 minut), liczy się
-            jako bezpośrednia.
+            Odsłon na wizytę = odsłony ÷ wizyty kanału (wizyty i ich udział są w legendzie paska);
+            więcej znaczy głębsze wizyty, a nie lepsze. „Wewnętrzne” nie jest wejściem
+            <Podpowiedz klucz="akwizycja.wewnetrzne" />: taka wizyta liczy się jako bezpośrednia.
           </p>
         </div>
       )}
@@ -328,8 +327,7 @@ function SekcjaKrajow({ okno }: { okno: OknoDni }) {
             {czesc ? (
               <p className="akw-uwaga">
                 Pokazano {formatLiczby(czolowka.wiersze.length)} z {formatLiczby(czolowka.pozycji)}{' '}
-                pozycji. Pominięte pozycje mają razem {formatLiczby(czolowka.wizytyPominietych)}{' '}
-                wizyt.
+                pozycji. Wizyty z pominiętych pozycji: {formatLiczby(czolowka.wizytyPominietych)}.
               </p>
             ) : null}
           </div>

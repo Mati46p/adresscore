@@ -218,7 +218,7 @@ export function uwagaPierwszejDoby(seria: readonly PunktDniaRuchu[] | null): str
   if (seria === null) return null
   const zDanymi = seria.filter((p) => p.odslony !== null || p.unikalni !== null || p.boty !== null)
   return zDanymi.length === 1
-    ? 'Dane są dopiero z jednej doby, więc linie jeszcze się nie rysują: najedź lub dotknij prawego krańca wykresu, żeby zobaczyć wartości.'
+    ? 'Dane są dopiero z jednej doby, więc wykres pokazuje pojedyncze punkty zamiast linii: najedź lub dotknij punkt, żeby zobaczyć wartości.'
     : null
 }
 

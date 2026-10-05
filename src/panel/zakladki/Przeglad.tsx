@@ -16,17 +16,18 @@
 //    porównywane z „wczoraj” (hasło `przeglad.unikalniDzis` mówi to samo); kafel „wczoraj” podpisuje
 //    zmianę wobec przedwczoraj.
 //  - TA SAMA LICZBA DWA RAZY: odsłony ludzi z 24 h stoją na kaflu i jako część paska (wg kontraktu
-//    `ludzie_24h` jest tą samą liczbą co `odslony_24h`), więc pasek leży pod wykresami, poza kadrem
-//    kafli, a podpisy kafli i wykresów nie powtarzają żadnej liczby.
+//    `ludzie_24h` jest tą samą liczbą co `odslony_24h`). Legenda paska nie powtarza więc liczb
+//    bezwzględnych (`bezLiczb`: zostają nazwa i procent), a podstawę, czyli sumę ludzi i botów,
+//    podaje podpis pod paskiem. Podpisy kafli i wykresów też nie powtarzają żadnej liczby.
 //  - OSTATNI PUNKT WYKRESÓW JEST NIEPEŁNY (trwająca doba i godzina), co mówi opis sekcji, żeby
 //    końcowy spadek nie wyglądał na załamanie ruchu.
-//  - PIERWSZA DOBA POMIARU: jeden punkt nie tworzy linii (`WykresSerii` rysuje linie bez kropek), więc
-//    wykres dobowy wygląda na pusty mimo danych. Opis sekcji mówi wtedy wprost, że to nie awaria.
+//  - PIERWSZA DOBA POMIARU: jeden punkt nie tworzy linii, więc `WykresSerii` rysuje dla niego kropkę
+//    (punkt izolowany). Opis sekcji dodatkowo mówi wtedy wprost, że linie jeszcze się nie rysują.
 //  - W TABELI „CRAWLERY AI” są tylko roboty klasy `ai` (hasło `przeglad.crawleryAi` i FR-030);
-//    pozostałe roboty z `boty_ai` leżą pod rozwijanym „Pokaż pozostałe roboty”, bo pasek „ludzie i
-//    boty” liczy wszystkie.
+//    pozostałe roboty z `boty_ai` leżą pod rozwijanym „Pokaż pozostałe roboty” (hasło
+//    `przeglad.pozostaleRoboty` przy nagłówku „Klasa”), bo pasek „ludzie i boty” liczy wszystkie.
 //  - Rodzina robota pochodzi od dowolnego klienta (nagłówek przeglądarki): tylko jako treść React.
-import { formatLiczby } from '@/panel/arytmetyka'
+import { formatLiczby, JEDNOSTKI } from '@/panel/arytmetyka'
 import { dzisWarszawy } from '@/panel/czas'
 import { useWidok } from '@/panel/dane'
 import { BrakDanych } from '@/panel/skladniki/BrakDanych'
@@ -71,9 +72,12 @@ const KOLUMNA_RODZINY: KolumnaTabeli<WierszRobota> = {
     </span>
   ),
 }
+// Klasa występuje tylko w tabeli pozostałych robotów (w crawlerach AI klasa jest z góry znana), więc
+// tu stoi znaczek z definicją całej tabeli.
 const KOLUMNA_KLASY: KolumnaTabeli<WierszRobota> = {
   id: 'klasa',
   naglowek: 'Klasa',
+  klucz: 'przeglad.pozostaleRoboty',
   komorka: (w) => w.klasa,
 }
 const KOLUMNA_ODSLON: KolumnaTabeli<WierszRobota> = {
@@ -139,7 +143,7 @@ function TabeleRobotow({ wiersze }: { wiersze: readonly WierszBotaAi[] }) {
         <details className="panel-szczegoly">
           <summary>Pokaż pozostałe roboty ({inne.length})</summary>
           <Tabela
-            podpis={`Pozostałe roboty (wyszukiwarki, podglądy linków, narzędzia), ostatnie ${DNI_WYKRESU} dni`}
+            podpis={`Pozostałe roboty, ostatnie ${DNI_WYKRESU} dni`}
             kolumny={KOLUMNY_INNYCH}
             wiersze={inne}
             kluczWiersza={(w) => w.klucz}
@@ -240,8 +244,9 @@ export function Przeglad() {
           {(p) => (
             <PasekUdzialow
               segmenty={segmentyLudzieBoty(p)}
-              jednostka="odsłon"
+              jednostka={JEDNOSTKI.odslony}
               opis="Ludzie i boty, ostatnie 24 godziny"
+              bezLiczb
             />
           )}
         </Sekcja>

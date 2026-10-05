@@ -79,6 +79,66 @@ describe('podpisy dób i godzin', () => {
   })
 })
 
+describe('opisGodziny w dobach zmiany czasu', () => {
+  /** `ile` kolejnych godzin bezwzględnych od `start` (jak `generate_series` w bazie), ISO UTC. */
+  const godziny = (start: string, ile: number) =>
+    Array.from({ length: ile }, (_, i) => new Date(Date.parse(start) + i * 3_600_000).toISOString())
+
+  it('doba 25-godzinna (2026-10-25): dwie godziny 02:00–02:59 mają różne podpisy', () => {
+    // 22:00Z 24.10 = 00:00 CEST 25.10; doba kończy się o 23:00Z 25.10 (północ CET): 25 godzin.
+    const doba = godziny('2026-10-24T22:00:00Z', 25)
+    const podpisy = doba.map(opisGodziny)
+    assert.equal(podpisy.length, 25)
+    assert.equal(new Set(podpisy).size, 25, 'każda godzina doby ma inny podpis')
+    assert.equal(opisGodziny('2026-10-25T00:00:00Z'), 'niedz. 25.10, 02:00–02:59 CEST')
+    assert.equal(opisGodziny('2026-10-25T01:00:00Z'), 'niedz. 25.10, 02:00–02:59 CET')
+  })
+
+  it('doba 25-godzinna: dopisek strefy mają WYŁĄCZNIE dwie godziny, które by się powtórzyły', () => {
+    const doba = godziny('2026-10-24T22:00:00Z', 25).map(opisGodziny)
+    const zDopiskiem = doba.filter((p) => /\b(CEST|CET)$/.test(p))
+    assert.deepEqual(zDopiskiem, [
+      'niedz. 25.10, 02:00–02:59 CEST',
+      'niedz. 25.10, 02:00–02:59 CET',
+    ])
+    // Godziny sąsiednie i pozostałe są takie jak zawsze: zakres bez skrótu strefy.
+    assert.equal(opisGodziny('2026-10-24T22:00:00Z'), 'niedz. 25.10, 00:00–00:59')
+    assert.equal(opisGodziny('2026-10-24T23:00:00Z'), 'niedz. 25.10, 01:00–01:59')
+    assert.equal(opisGodziny('2026-10-25T02:00:00Z'), 'niedz. 25.10, 03:00–03:59')
+    assert.equal(opisGodziny('2026-10-25T22:00:00Z'), 'niedz. 25.10, 23:00–23:59')
+  })
+
+  it('doba 23-godzinna (2026-03-29): godziny nie mają powtórzeń, więc żadna nie dostaje dopisku', () => {
+    // 23:00Z 28.03 = 00:00 CET 29.03; doba kończy się o 22:00Z 29.03 (północ CEST): 23 godziny.
+    const doba = godziny('2026-03-28T23:00:00Z', 23)
+    const podpisy = doba.map(opisGodziny)
+    assert.equal(new Set(podpisy).size, 23)
+    assert.ok(
+      podpisy.every((p) => !/\b(CEST|CET)$/.test(p)),
+      'w dobie skróconej nie ma dopisków strefy',
+    )
+    // Godzina 02:00 nie istnieje: po 01:00–01:59 jest od razu 03:00–03:59.
+    assert.equal(opisGodziny('2026-03-29T00:00:00Z'), 'niedz. 29.03, 01:00–01:59')
+    assert.equal(opisGodziny('2026-03-29T01:00:00Z'), 'niedz. 29.03, 03:00–03:59')
+    assert.ok(podpisy.every((p) => !p.includes('02:00')))
+  })
+
+  it('zwykła doba: 24 różne podpisy, zero dopisków (także lato i zima)', () => {
+    for (const start of ['2026-07-14T22:00:00Z', '2026-01-14T23:00:00Z']) {
+      const podpisy = godziny(start, 24).map(opisGodziny)
+      assert.equal(new Set(podpisy).size, 24, start)
+      assert.ok(
+        podpisy.every((p) => !/\b(CEST|CET)$/.test(p)),
+        start,
+      )
+    }
+  })
+
+  it('niepoprawna data wraca bez zmian', () => {
+    assert.equal(opisGodziny('to nie data'), 'to nie data')
+  })
+})
+
 describe('ciągi dób', () => {
   it('przesunDzien przechodzi przez miesiąc, rok i luty przestępny', () => {
     assert.equal(przesunDzien('2026-10-01', -1), '2026-09-30')

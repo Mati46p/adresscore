@@ -117,6 +117,14 @@ export const SLOWNIK_PANELU = {
     pulapka:
       'Widać tylko roboty, które uruchomiły skrypty strony i wysłały zdarzenie. Większość crawlerów AI pobiera sam HTML bez skryptów, więc brak robota na tej liście nic nie znaczy.',
   },
+  'przeglad.pozostaleRoboty': {
+    nazwa: 'Pozostałe roboty',
+    liczy:
+      'Roboty inne niż crawlery AI, rozpoznane po nagłówku przeglądarki: wyszukiwarki, podglądy linków, narzędzia i skrypty, monitoring oraz inne. Przy każdym: rodzina, klasa, liczba odsłon i ostatnia wizyta.',
+    okno: '30 dni',
+    pulapka:
+      'To kontekst dla paska „Ludzie i boty”, który liczy WSZYSTKIE roboty razem, a nie ranking ważności. Widać tylko roboty, które uruchomiły skrypty strony i wysłały zdarzenie; robot, który skryptów nie uruchamia, nie ma go tu wcale. Podgląd linku powstaje, gdy ktoś wklei adres w komunikatorze, więc nie świadczy o człowieku na stronie.',
+  },
   'przeglad.wykresDzienny': {
     nazwa: 'Wykres dzienny',
     liczy: 'Odsłony, unikalni i odsłony botów na dobę, dziś liczone na żywo.',
@@ -147,6 +155,21 @@ export const SLOWNIK_PANELU = {
       'Skąd przyszła wizyta: bezpośrednie (brak referera), wyszukiwarka, social, odesłania z innych stron, kampania i asystenci AI. Kanał wylicza serwer z referera, znaczników UTM i nazwy identyfikatora kliknięcia.',
     pulapka:
       '„(bezpośrednie)” to także zakładki, aplikacje, komunikatory i linki z ukrytym refererem – kanał, którego nie da się rozbić, a nie brak danych. Udział kanału to jego wizyty podzielone przez wizyty WSZYSTKICH kanałów okna.',
+  },
+  'akwizycja.wewnetrzne': {
+    nazwa: '„Wewnętrzne” nie jest wejściem',
+    liczy:
+      'Odsłona z refererem z własnego serwisu (przejście między ekranami aplikacji) to ruch wewnątrz serwisu, nie przyjście z zewnątrz, więc „wewnętrzne” nie jest kanałem wejścia. Wizyta, która zaczyna się od takiej odsłony (np. powrót do karty otwartej dłużej niż 30 minut temu), liczy się jako bezpośrednia i nie dziedziczy referera ani znaczników UTM.',
+    pulapka:
+      'Wizyt „bezpośrednich” jest przez to trochę więcej niż osób, które wpisały adres: trafiają tu także powroty do starych kart. W zamian każda wizyta ma dokładnie jeden kanał, a suma wizyt po kanałach, krajach i urządzeniach równa się liczbie wizyt.',
+  },
+  'akwizycja.odslonyGlebokosc': {
+    nazwa: 'Odsłony i głębokość wizyt',
+    liczy:
+      'Odsłona to jedno otwarcie ekranu serwisu przez człowieka (bez botów); przejście między ekranami aplikacji liczy się jako nowa odsłona. Do wizyty należą WSZYSTKIE jej odsłony, nie tylko pierwsza. Głębokość wizyty to liczba odsłon na wizytę: w Akwizycji średnia kanału (odsłony ÷ wizyty), w Sesjach mediana i średnia w kaflu „Strony na sesję”.',
+    kierunek: 'Więcej znaczy głębsze wizyty, niekoniecznie lepsze.',
+    pulapka:
+      'Głębokość nie jest oceną: dużo odsłon na wizytę to zaangażowanie albo błądzenie po serwisie, a sama liczba tego nie rozstrzyga. Średnia kanału rośnie od kilku bardzo długich wizyt bez zmiany typowej wizyty, dlatego obok niej warto czytać medianę.',
   },
   'akwizycja.zrodla': {
     nazwa: 'Źródła',
@@ -197,6 +220,13 @@ export const SLOWNIK_PANELU = {
     pulapka:
       'To PODŁOGA. Czas biegnie tylko przy widocznej karcie (karta w tle go nie nabija), doba przecina wizytę, a sesja bez sygnału wyjścia (przeglądarka ubiła kartę) nie dostaje czasu ostatniej odsłony. Prawdziwa wizyta zwykle trwa dłużej.',
   },
+  'sesje.sygnalWyjscia': {
+    nazwa: 'Sygnał wyjścia: czasy i sekcje to podłoga',
+    liczy:
+      'Pomiar wysyła sygnał wyjścia z odsłony RAZ: przy pierwszym ukryciu karty (przełączenie na inną kartę lub aplikację) albo przy opuszczeniu odsłony (zmiana ekranu, zamknięcie strony). Dopiero on niesie czas widoczności, przewinięcie, widziane sekcje i wyświetlenia przycisków, więc te liczby obejmują okres od otwarcia odsłony do tej chwili.',
+    pulapka:
+      'Czasy i sekcje są PODŁOGĄ. To, co czytelnik robi po powrocie na kartę, nie jest już raportowane, a odsłona zakończona bez sygnału (przeglądarka ubiła kartę) nie ma pomiaru wcale. Prawdziwa wizyta trwa zwykle dłużej, a sekcje oglądane po powrocie nie są policzone.',
+  },
   'sesje.zaangazowane': {
     nazwa: 'Sesje zaangażowane',
     liczy:
@@ -224,6 +254,14 @@ export const SLOWNIK_PANELU = {
       'Zdarzenia udostępnienia według elementu i sposobu: link, kopiowanie, menu systemowe, anulowanie.',
     pulapka:
       'Mierzymy użycie przycisku, nie to, czy ktoś naprawdę wkleił link; „anulowano” to menu otwarte i zamknięte. Link skopiowany ręcznie z paska adresu nie jest tu widoczny.',
+  },
+  'sesje.odsetekDokonczen': {
+    nazwa: 'Odsetek dokończeń udostępnień',
+    liczy:
+      'Jaki udział prób udostępnienia danego elementu skończył się dokończeniem. Dokończone to link, kopiowanie albo menu systemowe; anulowanie i błąd nie są dokończeniem. Podstawą są WSZYSTKIE próby tego elementu, także anulowane i zakończone błędem.',
+    kierunek: 'Więcej znaczy lepiej.',
+    pulapka:
+      'Mierzymy użycie przycisku, nie to, czy ktoś wkleił link: menu systemowe potwierdza wybór celu, nie dostarczenie. Sposób, którego pomiar nie rozpoznaje, liczy się jako próba, nie jako dokończenie, więc odsetek jest podłogą. Przy kilku próbach skacze o dużą część; element, który tylko anulowano, ma 0,0% (zmierzone zero), a nie brak danych.',
   },
 
   // ── Zaangażowanie (FR-033) ──────────────────────────────────────────────────────────────

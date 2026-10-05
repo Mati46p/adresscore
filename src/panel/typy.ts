@@ -9,6 +9,32 @@
 //    policzyć wartości), więc zakładka pokazuje wtedy „brak danych”, a nie zero.
 //  - Odpowiedź z sieci nie jest zaufana bezkrytycznie (`widoki.ts#sprawdzKsztalt` sprawdza tylko
 //    kształt ogólny: tablica albo obiekt). Zakładka nie zakłada, że pole istnieje, i nie rzuca w render.
+//  - ZASTĘPNIKI TEKSTOWE ZAMIAST NULL. W części kolumn baza sama zamienia brak wartości na napis w
+//    nawiasie (`coalesce` w funkcjach `analityka_panel_*`), więc w odpowiedzi stoi tekst, nie NULL:
+//
+//      funkcja                kolumna                     zastępnik         brak wartości znaczy
+//      admin_zrodla           zrodlo                      (bezpośrednie)    wizyta bez źródła z zewnątrz
+//      admin_zrodla           sciezka                     (brak)            referer bez zapisanej ścieżki
+//      admin_kampanie         utm_source/medium/campaign  (brak)            brakujący człon trójki UTM
+//      admin_kraje            kraj                        (nieznany)        host bez nagłówka kraju
+//      admin_przejscia        dokad                       (wyjście)         koniec wizyty
+//      admin_sciezki          krok2, krok3                (wyjście)         wizyta skończyła się wcześniej
+//      admin_punkt_urwania    sekcja                      (brak pomiaru)    brak wyjścia albo sekcji
+//      admin_udostepnienia    element                     (bez znacznika)   odsłona bez etykiety elementu
+//      admin_udostepnienia    kanal                       (nieznany)        brak sposobu udostępnienia
+//      admin_cta_martwe       cel                         (brak)            przycisk bez nazwy celu
+//      admin_boty_ai          rodzina                     (nieznana)        robot bez rozpoznanej rodziny
+//
+//    Zastępnik jest PEŁNOPRAWNĄ pozycją, nie brakiem danych: wiersz z nim wchodzi do sum (wizyty po
+//    kanałach, krajach i urządzeniach dają razem liczbę wizyt) i zakładka pokazuje go jak każdą
+//    inną wartość. Typy pól zostają takie, jak w kontrakcie (`string | null` tam, gdzie dopuszcza
+//    NULL), bo klient obsługuje OBA przypadki: `null`, pusty tekst i sam zastępnik trafiają do tej
+//    samej etykiety (`tekstLubZastepczy` w akwizycja-dane.ts i sesje-dane.ts, `etykietaSciezki` i
+//    `etykietaSekcji` w zaangazowanie-dane.ts), więc wiersz nigdy nie znika ani nie zostaje pustą
+//    komórką. Wyjątki, w których klient polega na gwarancji bazy: `cel` martwego przycisku (CTA) i
+//    `rodzina` robota (Przegląd pomija wiersz bez rodziny). Kolumny, w których SQL zostawia NULL
+//    (np. `urzadzenie`), klient podpisuje „(brak)”. NULL w polu liczbowym albo w medianie to co
+//    innego: brak pomiaru, czyli szary „brak danych”.
 //
 // Plik zawiera wyłącznie typy (zero kodu w czasie wykonania).
 
@@ -107,6 +133,7 @@ export interface WierszSeriiGodzinowej {
 
 /** `admin_boty_ai(p_dni)`: wszystkie roboty (`czy_bot`), klasa `ai` najpierw. */
 export interface WierszBotaAi {
+  /** Robot bez rozpoznanej rodziny ma w bazie `(nieznana)` (zastępnik, patrz nagłówek pliku). */
   rodzina: string
   /** Wartość z `KlasaBota`; pole jest tekstem, bo baza może dołożyć nową klasę. */
   klasa: string
@@ -128,13 +155,17 @@ export interface WierszKanalu {
 export interface WierszZrodla {
   /** Wartość z `KanalRuchu`. */
   kanal: string
+  /** Baza daje `(bezpośrednie)` zamiast NULL, gdy wizyta nie ma źródła z zewnątrz (zastępnik). */
   zrodlo: string | null
-  /** Ścieżka referera, tylko dla hostów publicznych. */
+  /** Ścieżka referera, tylko dla hostów publicznych; baza daje `(brak)` zamiast NULL (zastępnik). */
   sciezka: string | null
   wizyty: number
 }
 
-/** `admin_kampanie(p_dni)`: znaczniki UTM wizyt (każdy może być pusty). */
+/**
+ * `admin_kampanie(p_dni)`: znaczniki UTM wizyt (każdy może być pusty). Brakujący człon trójki baza
+ * zastępuje napisem `(brak)` zamiast NULL, bo link z samym `utm_source` jest nadal kampanią.
+ */
 export interface WierszKampanii {
   utm_source: string | null
   utm_medium: string | null
@@ -142,7 +173,10 @@ export interface WierszKampanii {
   wizyty: number
 }
 
-/** `admin_kraje(p_dni)`: kraj `(nieznany)` jest osobną pozycją, nie brakiem danych. */
+/**
+ * `admin_kraje(p_dni)`: kraj `(nieznany)` (host bez nagłówka kraju; baza daje ten napis zamiast NULL)
+ * jest osobną pozycją, nie brakiem danych.
+ */
 export interface WierszKraju {
   kraj: string
   wizyty: number
@@ -180,7 +214,11 @@ export interface WierszPrzejscia {
   ile: number
 }
 
-/** `admin_udostepnienia(p_dni)`: element i sposób udostępnienia (`link`, `kopia`, `natywne`, `anulowano`, `blad`). */
+/**
+ * `admin_udostepnienia(p_dni)`: element i sposób udostępnienia (`link`, `kopia`, `natywne`,
+ * `anulowano`, `blad`). Baza daje `(bez znacznika)` zamiast NULL w `element` i `(nieznany)` w
+ * `kanal` (zastępniki, patrz nagłówek pliku).
+ */
 export interface WierszUdostepnienia {
   element: string | null
   kanal: string | null
@@ -231,6 +269,7 @@ export interface WierszCtaSekcji {
 export interface WierszCtaMartwego {
   ekran: string
   sekcja: string
+  /** Przycisk bez nazwy celu ma w bazie `(brak)` (zastępnik); kolumna nigdy nie jest NULL. */
   cel: string
   wyswietlenia: number
 }

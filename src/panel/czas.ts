@@ -80,15 +80,58 @@ export function pelnaDataDnia(dzien: string): string {
   return `${dzienTygodnia(dzien)} ${m[3]}.${m[2]}.${m[1]}`
 }
 
+const MS_GODZINY = 3_600_000
+
+/** Godzina ścienna z datą (`2026-10-25T02`): to, co pokazuje zegar, bez rozróżnienia CEST i CET. */
+function kluczScienny(ms: number): string | null {
+  const c = czesci(ms)
+  return c ? `${c.rok}-${c.miesiac}-${c.dzien}T${c.godzina}` : null
+}
+
+/**
+ * Skrót strefy warszawskiej w chwili `ms`: CEST (UTC+2, czas letni) albo CET (UTC+1, czas zimowy).
+ * Różnicę liczymy z zegara ściennego i chwili bezwzględnej, a nie z nazwy strefy z `Intl`: nazwy
+ * zależą od wersji ICU i locale, a przesunięcie jest jednoznaczne.
+ */
+function skrotStrefy(ms: number): string | null {
+  const c = czesci(ms)
+  if (!c) return null
+  const scienna = Date.UTC(
+    Number(c.rok),
+    Number(c.miesiac) - 1,
+    Number(c.dzien),
+    Number(c.godzina),
+    Number(c.minuta),
+  )
+  // Sekundy chwili obcinamy do minuty, bo zegar ścienny ich tu nie niesie.
+  const przesuniecieMin = Math.round((scienna - Math.floor(ms / 60_000) * 60_000) / 60_000)
+  if (przesuniecieMin === 120) return 'CEST'
+  if (przesuniecieMin === 60) return 'CET'
+  return `UTC${przesuniecieMin < 0 ? '-' : '+'}${Math.abs(przesuniecieMin) / 60}`
+}
+
 /**
  * Podpis godziny jako ZAKRES, żeby nie sugerować punktu w czasie: `pon. 05.10, 14:00–14:59`.
  * Przyjmuje początek godziny (ISO z bazy).
+ *
+ * W dobie cofnięcia zegara (ostatnia niedziela października, 25 godzin) godzina 02:00–02:59 zdarza
+ * się dwa razy: najpierw w czasie letnim, potem w zimowym. Dwa wiersze o identycznym podpisie
+ * wyglądałyby jak błąd danych, więc TYLKO godzina, której zegarowy odpowiednik ma sąsiada w tej samej
+ * dobie, dostaje skrót strefy: `nd. 25.10, 02:00–02:59 CEST` i `… CET`. Doba skracana (marzec, 23
+ * godziny) nie ma powtórzeń, więc wszystkie jej podpisy zostają takie jak zawsze.
  */
 export function opisGodziny(poczatekGodziny: string): string {
   const c = czesci(poczatekGodziny)
   if (!c) return poczatekGodziny
   const dzien = `${c.rok}-${c.miesiac}-${c.dzien}`
-  return `${dzienTygodnia(dzien)} ${c.dzien}.${c.miesiac}, ${c.godzina}:00–${c.godzina}:59`
+  const zakres = `${dzienTygodnia(dzien)} ${c.dzien}.${c.miesiac}, ${c.godzina}:00–${c.godzina}:59`
+  const ms = Date.parse(poczatekGodziny)
+  const klucz = kluczScienny(ms)
+  const powtorzona =
+    klucz !== null &&
+    (kluczScienny(ms - MS_GODZINY) === klucz || kluczScienny(ms + MS_GODZINY) === klucz)
+  const strefa = powtorzona ? skrotStrefy(ms) : null
+  return strefa === null ? zakres : `${zakres} ${strefa}`
 }
 
 /** Dzień o `delta` dni od `dzien` (`YYYY-MM-DD`), liczony na datach kalendarzowych (bez DST). */
