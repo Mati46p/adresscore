@@ -181,9 +181,9 @@ dwie migracje naraz (inaczej po fazie 6).
 
 **Cel**: US5. Zależy od fazy 5.
 
-- [ ] T058 [P] [US5] `src/panel/zakladki/Zaangazowanie.tsx`: top ścieżki 3-krokowe, sekcje ekranu (wybór ekranu; zasięg sekcji = `odslony_z_sekcja / odslony_ekranu` przez `procentOd`, mediana czasu), punkt urwania (ekran, sekcja, sesje, udział od sumy urwań)
-- [ ] T059 [P] [US5] `src/panel/zakladki/Cta.tsx`: klikalność sekcji = kliknięcia / wyświetlenia (`procentOd`, podpis kierunku „więcej = lepiej”), lista martwych przycisków, sygnały UX na 1000 odsłon ekranu
-- [ ] T060 [P] [US5] `src/panel/zakladki/Tresc.tsx`: top ekrany, top adresy (link do `#/okolica/<id>`), wyszukiwania bez wyniku (fraza, liczba, ostatnio), `WykresLejka` z `lejek()` (procent od kroku „wyszukanie” i od poprzedniego, podpisane)
+- [X] T058 [P] [US5] `src/panel/zakladki/Zaangazowanie.tsx`: top ścieżki 3-krokowe, sekcje ekranu (wybór ekranu; zasięg sekcji = `odslony_z_sekcja / odslony_ekranu` przez `procentOd`, mediana czasu), punkt urwania (ekran, sekcja, sesje, udział od sumy urwań)
+- [X] T059 [P] [US5] `src/panel/zakladki/Cta.tsx`: klikalność sekcji = kliknięcia / wyświetlenia (`procentOd`, podpis kierunku „więcej = lepiej”), lista martwych przycisków, sygnały UX na 1000 odsłon ekranu
+- [X] T060 [P] [US5] `src/panel/zakladki/Tresc.tsx`: top ekrany, top adresy (link do `#/okolica/<id>`), wyszukiwania bez wyniku (fraza, liczba, ostatnio), `WykresLejka` z `lejek()` (procent od kroku „wyszukanie” i od poprzedniego, podpisane)
 
 ---
 
