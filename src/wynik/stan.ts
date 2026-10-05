@@ -600,6 +600,10 @@ function czytajBiezacyUrl(): StanUrl {
   if (sciezka === '/katalog' || sciezka.startsWith('/katalog/')) {
     return { ...url, ekran: 'katalog', idAdresu: null }
   }
+  // Strona metody ma indeksowalną ścieżkę (/metoda, HTML z api/seo.js); w aplikacji to ekran #/metoda.
+  // Kotwice spisu treści (#met-jak) zostają na metodzie, a link do innego ekranu (#/…) wygrywa.
+  const innyEkran = location.hash.startsWith('#/') && !location.hash.startsWith('#/metoda')
+  if (sciezka === '/metoda' && !innyEkran) return { ...url, ekran: 'metoda', idAdresu: null }
   if (sciezka.startsWith('/adres/')) {
     const slug = sciezka.slice('/adres/'.length)
     const hash = hashZeSluga(slug)
@@ -661,6 +665,9 @@ function zapiszDoUrl(poprzedni: StanAplikacji) {
     poprzedni.ekran === 'katalog' &&
     location.pathname.startsWith('/katalog/')
   )
+    return
+  // Wejście z wyszukiwarki na /metoda: zostawiamy indeksowalną ścieżkę, dopóki ekran się nie zmieni.
+  if (stan.ekran === 'metoda' && poprzedni.ekran === 'metoda' && location.pathname === '/metoda')
     return
   const cel = sciezkaStanu(stan)
   const obecny = `${location.pathname}${location.hash}`

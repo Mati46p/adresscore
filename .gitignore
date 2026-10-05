@@ -2,6 +2,7 @@
 node_modules
 dist
 public/sitemap*.xml
+public/llms.txt
 *.tsbuildinfo
 coverage
 
