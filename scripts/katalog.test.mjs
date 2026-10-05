@@ -51,7 +51,7 @@ test('serwer zwraca unikalny HTML i kanoniczny URL bez ustawień', () => {
   for (const a of [indeks.adresy[0], indeks.adresy[50000], indeks.adresy.at(-1)]) {
     const res = odpowiedz(`/api/seo?view=adres&slug=${a[1]}`)
     assert.equal(res.statusCode, 200)
-    assert.ok(res.body.includes(`<title>${a[3]} – adresscore</title>`))
+    assert.ok(res.body.includes(`<title>${a[3]}: okolica w liczbach – adresscore</title>`))
     assert.ok(res.body.includes(`rel="canonical" href="https://adresscore.pl/adres/${a[1]}"`))
     assert.ok(res.body.includes('<h1>'))
     assert.ok(!res.body.includes('u=%7B'))
@@ -61,9 +61,73 @@ test('serwer zwraca unikalny HTML i kanoniczny URL bez ustawień', () => {
   assert.ok(brak.body.includes('noindex'))
   const brakUlicy = odpowiedz('/api/seo?view=ulica&slug=nieznana')
   assert.equal(brakUlicy.statusCode, 404)
-  const katalog = odpowiedz('/api/seo?view=katalog')
-  assert.equal(katalog.statusCode, 200)
-  assert.ok(katalog.body.includes('rel="canonical" href="https://adresscore.pl/katalog"'))
+})
+
+/** Wszystkie bloki JSON-LD strony, sparsowane – błąd składni wywraca test. */
+function danePlaskie(body) {
+  const bloki = [...body.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)]
+  return bloki.flatMap((m) => {
+    const json = JSON.parse(m[1])
+    return json['@graph'] ?? [json]
+  })
+}
+
+test('strona adresu: dane strukturalne Place i okruszki, pomiary z rejestrów, brak danych to nie zero', () => {
+  const a = indeks.adresy[0]
+  const res = odpowiedz(`/api/seo?view=adres&slug=${a[1]}`)
+  const typy = danePlaskie(res.body).map((x) => x['@type'])
+  for (const t of ['Organization', 'WebPage', 'Place', 'BreadcrumbList'])
+    assert.ok(typy.includes(t), t)
+  const miejsce = danePlaskie(res.body).find((x) => x['@type'] === 'Place')
+  assert.equal(miejsce.address.addressCountry, 'PL')
+  assert.equal(miejsce.geo.latitude, a[11])
+  assert.ok(res.body.includes('property="og:image"'))
+  // Tyle wierszy tabeli, ile faktów w indeksie; każdy z wartością albo „brak danych".
+  assert.equal((res.body.match(/<tr><th scope="row">/g) ?? []).length, indeks.fakty.length)
+  const bezDanych = indeks.adresy.find((x) => x.slice(13).some((v) => v === null))
+  if (bezDanych) {
+    const r = odpowiedz(`/api/seo?view=adres&slug=${bezDanych[1]}`)
+    assert.ok(r.body.includes('brak danych'))
+  }
+  // `<` z danych idzie jako <, więc tekst adresu nie zamknie bloku JSON-LD przedwcześnie.
+  const blok = /<script type="application\/ld\+json">([\s\S]*?)<\/script>/.exec(res.body)[1]
+  assert.ok(!blok.includes('<'))
+})
+
+test('/metoda: Dataset i FAQPage zgodne z treścią strony, wszystkie warstwy w tabeli źródeł', () => {
+  const res = odpowiedz('/api/seo?view=metoda')
+  assert.equal(res.statusCode, 200)
+  assert.ok(res.body.includes('rel="canonical" href="https://adresscore.pl/metoda"'))
+  const dane = danePlaskie(res.body)
+  const zbior = dane.find((x) => x['@type'] === 'Dataset')
+  assert.equal(zbior.variableMeasured.length, indeks.wskazniki.length)
+  const faq = dane.find((x) => x['@type'] === 'FAQPage')
+  // Google wymaga, żeby pytania z FAQPage były widoczne na stronie.
+  for (const q of faq.mainEntity)
+    assert.ok(res.body.includes(q.name.replaceAll("'", '&#39;')), q.name)
+  // Wiersze: progi liter (A–F i G) plus jedna na każdą warstwę w tabelach źródeł.
+  const wiersze = (res.body.match(/<tr><th scope="row">/g) ?? []).length
+  assert.equal(wiersze, indeks.progiLiter.length + 1 + indeks.wskazniki.length)
+  assert.ok(res.body.includes('src="/seo-boot.js"'))
+})
+
+test('nieznana ścieżka to prawdziwe 404 z noindex, bez podnoszenia aplikacji', () => {
+  const res = odpowiedz('/api/seo?view=404')
+  assert.equal(res.statusCode, 404)
+  assert.equal(res.headers['X-Robots-Tag'], 'noindex')
+  assert.ok(!res.body.includes('seo-boot.js'))
+  const ulice = odpowiedz('/api/seo?view=katalog')
+  assert.equal(ulice.statusCode, 200)
+  assert.ok(ulice.body.includes('rel="canonical" href="https://adresscore.pl/katalog/ulice"'))
+})
+
+test('mapa witryny i llms.txt obejmują stronę metody i listę ulic', () => {
+  const xml = readFileSync(new URL('../public/sitemap-katalog.xml', import.meta.url), 'utf8')
+  for (const s of ['/metoda', '/katalog/ulice'])
+    assert.ok(xml.includes(`https://adresscore.pl${s}</loc>`), s)
+  const llms = readFileSync(new URL('../public/llms.txt', import.meta.url), 'utf8')
+  assert.match(llms, /^# adresscore/)
+  assert.ok(llms.includes(indeks.adresy.length.toLocaleString('pl-PL')))
 })
 
 test('stary link hash nadal rozpoznaje adres i ustawienia', () => {

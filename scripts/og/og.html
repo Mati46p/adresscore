@@ -1,0 +1,115 @@
+<!doctype html>
+<!--
+  Źródło obrazu podglądu linku (public/og.png, 1200×630). Zrzut przeglądarką bez okna, np.:
+  msedge --headless --hide-scrollbars --window-size=1200,630 --screenshot=public/og.png scripts/og/og.html
+  Logo (public/logo-512.png, public/apple-touch-icon.png): scripts/og/logo.html z rozmiarem okna 512 i 180.
+-->
+<html lang="pl">
+  <head>
+    <meta charset="utf-8" />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@500;700&display=block"
+    />
+    <style>
+      html,
+      body {
+        margin: 0;
+        width: 1200px;
+        height: 630px;
+        overflow: hidden;
+        background: #f5f6f3;
+        font-family: "IBM Plex Sans", system-ui, sans-serif;
+        color: #18202b;
+      }
+      .ramka {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        grid-template-columns: 1fr 430px;
+      }
+      .tekst {
+        padding: 64px 0 56px 72px;
+        display: flex;
+        flex-direction: column;
+      }
+      .logo {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        font-weight: 700;
+        font-size: 40px;
+        color: #1f5c46;
+      }
+      h1 {
+        font-size: 64px;
+        line-height: 1.08;
+        margin: 56px 0 24px;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+      }
+      p {
+        font-size: 28px;
+        line-height: 1.4;
+        margin: 0;
+        color: #3d4652;
+      }
+      .dol {
+        margin-top: auto;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 24px;
+        color: #1f5c46;
+      }
+      .mapa {
+        background: #1f5c46;
+        position: relative;
+        overflow: hidden;
+      }
+      .mapa svg {
+        position: absolute;
+        inset: -20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="ramka">
+      <div class="tekst">
+        <div class="logo">
+          <svg width="52" height="56" viewBox="0 0 26 28" fill="none" stroke="#1F5C46" stroke-width="2.2">
+            <path d="M13 2 L24 8 L24 20 L13 26 L2 20 L2 8 Z" />
+            <path d="M13 9 L18 12 L18 17 L13 20 L8 17 L8 12 Z" fill="#1F5C46" />
+          </svg>
+          adresscore
+        </div>
+        <h1>Jakość życia pod każdym adresem</h1>
+        <p>Wynik 0–100 i litera A–G z rejestrów publicznych. Kraków i 13 sąsiednich gmin.</p>
+        <div class="dol">adresscore.pl</div>
+      </div>
+      <div class="mapa"><svg id="heksy" width="470" height="670"></svg></div>
+    </div>
+    <script>
+      // Siatka heksów w palecie wyniku (src/wynik/silnik.ts, PALETA_WYNIKU) – ozdoba, nie dane.
+      const paleta = ['#E9F2EC', '#BFDCCB', '#8BC0A3', '#4E9A78', '#163f31']
+      const svg = document.getElementById('heksy')
+      const r = 34
+      const w = Math.sqrt(3) * r
+      let ziarno = 7
+      const los = () => ((ziarno = (ziarno * 16807) % 2147483647) / 2147483647)
+      for (let rzad = 0; rzad < 14; rzad++) {
+        for (let kol = 0; kol < 9; kol++) {
+          const cx = kol * w + (rzad % 2 ? w / 2 : 0)
+          const cy = rzad * r * 1.5
+          const pkt = []
+          for (let i = 0; i < 6; i++) {
+            const a = (Math.PI / 180) * (60 * i - 30)
+            pkt.push(`${cx + (r - 2) * Math.cos(a)},${cy + (r - 2) * Math.sin(a)}`)
+          }
+          const p = document.createElementNS('http://www.w3.org/2000/svg', 'polygon')
+          p.setAttribute('points', pkt.join(' '))
+          p.setAttribute('fill', paleta[Math.floor(los() * paleta.length)])
+          svg.append(p)
+        }
+      }
+    </script>
+  </body>
+</html>

@@ -87,6 +87,8 @@ function filtruj() {
 }
 
 document.querySelector('#filtry').addEventListener('submit', (event) => event.preventDefault())
+// Link z zapytaniem (/katalog?q=…) – cel SearchAction w danych strukturalnych strony głównej.
+input.value = new URLSearchParams(location.search).get('q') ?? ''
 input.addEventListener('input', () => {
   clearTimeout(timer)
   timer = setTimeout(filtruj, 150)

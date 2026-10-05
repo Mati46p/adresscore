@@ -3,7 +3,34 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Katalog adresów w Krakowie i okolicznych gminach." />
+    <meta
+      name="description"
+      content="Wyszukaj jeden z ponad 176 tys. adresów w Krakowie i 13 sąsiednich gminach i otwórz kartę okolicy: dojazd, usługi, hałas, powietrze, zieleń – z rejestrów publicznych."
+    />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <link rel="canonical" href="https://adresscore.pl/katalog" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="adresscore" />
+    <meta property="og:locale" content="pl_PL" />
+    <meta property="og:url" content="https://adresscore.pl/katalog" />
+    <meta property="og:title" content="Katalog adresów Krakowa i okolic" />
+    <meta property="og:description" content="Ponad 176 tys. adresów w Krakowie i 13 sąsiednich gminach – każdy z kartą okolicy z rejestrów publicznych." />
+    <meta property="og:image" content="https://adresscore.pl/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "adresscore", "item": "https://adresscore.pl/" },
+          { "@type": "ListItem", "position": 2, "name": "Katalog adresów", "item": "https://adresscore.pl/katalog" }
+        ]
+      }
+    </script>
     <meta name="theme-color" content="#1F5C46" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -12,7 +39,7 @@
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
     />
     <link rel="stylesheet" href="/katalog/katalog.css" />
-    <title>Katalog adresów – adresscore</title>
+    <title>Katalog adresów Krakowa i okolic – adresscore</title>
   </head>
   <body>
     <header class="naglowek">
@@ -31,10 +58,11 @@
         <p class="etykieta">Katalog adresów</p>
         <h1>Znajdź adres</h1>
         <p>Wyszukaj ulicę, miejscowość lub numer. Otwórz kartę adresu, aby zobaczyć dane o okolicy.</p>
+        <p><a href="/katalog/ulice">Lista wszystkich ulic i miejscowości</a> · <a href="/metoda">Metoda i źródła danych</a></p>
       </div>
-      <form id="filtry" role="search">
+      <form id="filtry" role="search" action="/katalog">
         <label for="szukaj">Adres</label>
-        <input id="szukaj" type="search" placeholder="Np. Długa 12, Kraków" autocomplete="off" />
+        <input id="szukaj" name="q" type="search" placeholder="Np. Długa 12, Kraków" autocomplete="off" />
         <label for="gmina">Gmina</label>
         <select id="gmina"><option value="">Wszystkie gminy</option></select>
       </form>

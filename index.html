@@ -3,8 +3,36 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Jakość życia pod każdym adresem w Krakowie – z rejestrów publicznych." />
+    <title>Jakość życia pod każdym adresem w Krakowie i okolicach – adresscore</title>
+    <meta
+      name="description"
+      content="Wynik 0–100 i litera A–G dla ponad 176 tys. adresów w Krakowie i 13 sąsiednich gminach: dojazd, usługi, hałas, powietrze, zieleń. Z rejestrów publicznych, ze źródłem każdej liczby."
+    />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <link rel="canonical" href="https://adresscore.pl/" />
     <meta name="theme-color" content="#1F5C46" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="adresscore" />
+    <meta property="og:locale" content="pl_PL" />
+    <meta property="og:url" content="https://adresscore.pl/" />
+    <meta property="og:title" content="adresscore – jakość życia pod każdym adresem" />
+    <meta
+      property="og:description"
+      content="Jeden wynik okolicy dla każdego adresu w Krakowie i okolicach – z rejestrów publicznych, ze źródłem każdej liczby."
+    />
+    <meta property="og:image" content="https://adresscore.pl/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="adresscore – jakość życia pod każdym adresem" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="adresscore – jakość życia pod każdym adresem" />
+    <meta
+      name="twitter:description"
+      content="Jeden wynik okolicy dla każdego adresu w Krakowie i okolicach – z rejestrów publicznych, ze źródłem każdej liczby."
+    />
+    <meta name="twitter:image" content="https://adresscore.pl/og.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -16,14 +44,91 @@
     <noscript>
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" />
     </noscript>
-    <link
-      rel="icon"
-      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 28' fill='none' stroke='%231F5C46' stroke-width='2.2'%3E%3Cpath d='M13 2 L24 8 L24 20 L13 26 L2 20 L2 8 Z'/%3E%3Cpath d='M13 9 L18 12 L18 17 L13 20 L8 17 L8 12 Z' fill='%231F5C46'/%3E%3C/svg%3E"
-    />
-    <title>adresscore</title>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://adresscore.pl/#organizacja",
+            "name": "adresscore",
+            "url": "https://adresscore.pl/",
+            "logo": "https://adresscore.pl/logo-512.png",
+            "sameAs": ["https://github.com/Mati46p/adresscore"]
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://adresscore.pl/#witryna",
+            "name": "adresscore",
+            "url": "https://adresscore.pl/",
+            "inLanguage": "pl-PL",
+            "publisher": { "@id": "https://adresscore.pl/#organizacja" },
+            "potentialAction": {
+              "@type": "SearchAction",
+              "target": {
+                "@type": "EntryPoint",
+                "urlTemplate": "https://adresscore.pl/katalog?q={search_term_string}"
+              },
+              "query-input": "required name=search_term_string"
+            }
+          },
+          {
+            "@type": "WebApplication",
+            "@id": "https://adresscore.pl/#aplikacja",
+            "name": "adresscore",
+            "url": "https://adresscore.pl/",
+            "applicationCategory": "ReferenceApplication",
+            "operatingSystem": "Przeglądarka internetowa",
+            "inLanguage": "pl-PL",
+            "isAccessibleForFree": true,
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "PLN" },
+            "description": "Mapa i karta okolicy dla każdego adresu w Krakowie i 13 sąsiednich gminach: wynik 0–100 i litera A–G z warstw danych z rejestrów publicznych, z wagami według profilu.",
+            "publisher": { "@id": "https://adresscore.pl/#organizacja" }
+          }
+        ]
+      }
+    </script>
+    <style>
+      /* Treść startowa dla wyszukiwarek i modeli AI, które nie wykonują JS. React zastępuje ją
+         przy pierwszym renderze (createRoot czyści #root), więc użytkownik widzi ją ułamek sekundy. */
+      .start {
+        max-width: 760px;
+        margin: 0 auto;
+        padding: 32px 16px;
+        font: 16px/1.55 "IBM Plex Sans", system-ui, sans-serif;
+        color: #18202b;
+      }
+      .start h1 {
+        font-size: 1.75rem;
+        line-height: 1.2;
+        margin: 0.4em 0;
+      }
+      .start a {
+        color: #1f5c46;
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <main class="start">
+        <p><strong>adresscore</strong></p>
+        <h1>Jakość życia pod każdym adresem w Krakowie i okolicach</h1>
+        <p>
+          adresscore łączy rejestry publiczne w jedną ocenę od 0 do 100 i literę od A do G dla
+          ponad 176 tys. punktów adresowych w Krakowie i 13 sąsiednich gminach. Wynik składa się z
+          kategorii: codzienność pieszo, transport, spokój i zdrowie, społeczność i koszty,
+          bezpieczeństwo i ryzyko. Wagi ustawiasz sam albo wybierasz gotowy profil.
+        </p>
+        <ul>
+          <li>Ponad 120 warstw danych: odległość do przystanku, sklepu i szkoły, kursy w porannym szczycie, hałas, pyły PM2,5 i PM10, zieleń, ryzyko powodzi, finanse gminy.</li>
+          <li>Przy każdej liczbie źródło, licencja i data stanu danych. Brak danych to szara kategoria, nigdy zero.</li>
+          <li>Na mapie wynik okolicy w heksach H3 o boku około 65 m.</li>
+        </ul>
+        <p>
+          <a href="/katalog">Katalog adresów</a> · <a href="/katalog/ulice">Wszystkie ulice</a> · <a href="/metoda">Metoda i źródła danych</a>
+        </p>
+      </main>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -42,20 +42,22 @@ function Powloka() {
   const adres = dane.stan === 'gotowe' && wybrany !== null ? dane.adresy[wybrany] : undefined
   const nazwaAdresu = adres ? opisAdresu(adres) : 'Karta okolicy'
 
+  // Tytuły ekranów z własnym adresem (/, /adres/…, /metoda) są te same co w HTML z serwera
+  // (index.html, api/seo.js): Google indeksuje tytuł po wykonaniu JS, więc rozjazd podmieniłby go.
   const tytul =
     ekran === 'okolica'
-      ? nazwaAdresu
+      ? `${nazwaAdresu}: okolica w liczbach`
       : ekran === 'porownanie'
         ? 'Porównanie'
         : ekran === 'metoda'
-          ? 'Metoda i źródła'
+          ? 'Metoda i źródła danych – jak liczymy wynik adresu'
           : ekran === 'biznes'
             ? 'Miejsce na biznes'
             : ekran === 'katalog'
               ? 'Katalog adresów Krakowa'
               : ekran === 'miasto'
                 ? 'Dla miasta: luki w usługach i symulator inwestycji'
-                : 'Szukaj okolicy'
+                : 'Jakość życia pod każdym adresem w Krakowie i okolicach'
 
   // Przejście = inny ekran albo, na karcie, inny adres. Klik w mapę na Szukaj niczego nie resetuje.
   const klucz = ekran === 'okolica' ? `okolica:${wybrany}` : ekran
@@ -77,7 +79,9 @@ function Powloka() {
           ? location.pathname.startsWith('/katalog/')
             ? location.pathname
             : '/katalog'
-          : '/'
+          : ekran === 'metoda'
+            ? '/metoda'
+            : '/'
     let link = document.querySelector<HTMLLinkElement>('link[rel="canonical"]')
     if (!link) {
       link = document.createElement('link')
