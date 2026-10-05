@@ -1,8 +1,16 @@
-import { Fragment } from 'react'
+import { Fragment, useId, useSyncExternalStore } from 'react'
 import { KATEGORIE, type WskaznikMeta } from '@/kontrakty'
+import {
+  pomiarWylaczony,
+  produktowe,
+  subskrybujZgode,
+  ustawPomiar,
+  wylaczonyPrzezGpc,
+} from '@/pomiar/pomiar.ts'
 import { useDane } from '@/wynik/dane'
 import { PROGI_LITER, WAGA_MAX, type WskaznikPrzygotowany } from '@/wynik/silnik'
 import './metoda.css'
+import { przelaczPomiar } from './przelacznikPomiaru.ts'
 
 const ATRYBUCJA_MSIP = 'Gmina Miejska Kraków, Portal MSIP Obserwatorium'
 const ATRYBUCJA_OSM = '© OpenStreetMap contributors'
@@ -247,6 +255,52 @@ function Ograniczenia() {
   )
 }
 
+/** Migawka serwerowa: bez przeglądarki pomiar uznajemy za włączony (domyślny stan). */
+const POMIAR_NIE_WYLACZONY = () => false
+
+/**
+ * Przełącznik sprzeciwu wobec pomiaru ruchu (T064). Wybór żyje w `zgoda.ts` (localStorage i zdarzenie
+ * `storage` z innych kart), więc czytamy go jako magazyn zewnętrzny: migawka to stabilny prymityw,
+ * a zmiana w tej albo w innej karcie przerysowuje przełącznik. Co i w jakiej kolejności dzieje się
+ * po kliknięciu – `przelaczPomiar` (z testem).
+ *
+ * Dostępność: `role="switch"` na przycisku (Spacja i Enter działają jak na każdym przycisku), nazwa
+ * z widocznej etykiety, stan w `aria-checked` i zdaniem pod spodem (`aria-describedby`), cel dotyku
+ * 44 px, fokus z globalnego `:focus-visible`. Przy sygnale GPC przełącznik jest `aria-disabled`, ale
+ * zostaje w kolejności tabulacji: czytnik ekranu ma dojść do wyjaśnienia, dlaczego nie działa.
+ */
+function PrzelacznikPomiaru() {
+  const wylaczony = useSyncExternalStore(subskrybujZgode, pomiarWylaczony, POMIAR_NIE_WYLACZONY)
+  const przezGpc = useSyncExternalStore(subskrybujZgode, wylaczonyPrzezGpc, POMIAR_NIE_WYLACZONY)
+  const idOpisu = useId()
+  const opis = przezGpc
+    ? 'Pomiar jest wyłączony, bo Twoja przeglądarka wysyła sygnał Global Privacy Control. Ten sygnał ma pierwszeństwo, więc przełącznik niczego tu nie zmienia.'
+    : wylaczony
+      ? 'Pomiar jest wyłączony. Ten wybór zapamiętuje przeglądarka na tym urządzeniu.'
+      : 'Pomiar jest włączony. Możesz go wyłączyć w każdej chwili.'
+  return (
+    <div className="met-pomiar-wybor">
+      <button
+        type="button"
+        role="switch"
+        aria-checked={!wylaczony}
+        aria-disabled={przezGpc || undefined}
+        aria-describedby={idOpisu}
+        className="met-przelacznik"
+        onClick={() => przelaczPomiar(wylaczony, przezGpc, { produktowe, ustawPomiar })}
+      >
+        <span className="met-przelacznik__tor" aria-hidden="true">
+          <span className="met-przelacznik__galka" />
+        </span>
+        Pomiar ruchu
+      </button>
+      <p id={idOpisu} className="met-pomiar-opis">
+        {opis}
+      </p>
+    </div>
+  )
+}
+
 export function Metoda() {
   return (
     <main className="met">
@@ -261,6 +315,7 @@ export function Metoda() {
           <a href="#met-jak">Jak liczymy</a>
           <a href="#met-zrodla">Źródła</a>
           <a href="#met-etyka">Etyka</a>
+          <a href="#met-pomiar">Pomiar ruchu</a>
           <a href="#met-ograniczenia">Ograniczenia</a>
         </nav>
       </header>
@@ -430,21 +485,110 @@ export function Metoda() {
             Nie ma jednej „prawdziwej" jakości życia. Rodzina z dzieckiem i senior ważą hałas,
             zieleń i transport inaczej. Dlatego wagi ustawiasz sam, a literę liczymy z Twoich wag.
           </dd>
-          <dt>Dane statyczne i brak śledzenia</dt>
+          {/* DO AKCEPTACJI WŁAŚCICIELA razem z sekcją „Pomiar ruchu”: dawne zdanie „Nie mamy kont,
+              ciasteczek ani analityki i nie zapisujemy wyszukiwań” przestaje być prawdą, a adres
+              karty trafia do pomiaru jako ścieżka odsłony (spec.md, Historia 1). */}
+          <dt>Dane statyczne i prywatność</dt>
           <dd>
             <p className="met-komorka-akapit">
-              Dane to pliki liczone raz, bez zapytań o Twój adres do naszego serwera. Wynik liczy
-              Twoja przeglądarka. Nie mamy kont, ciasteczek ani analityki i nie zapisujemy
-              wyszukiwań. Wagi i wybrany adres są tylko w linku po znaku #, który przeglądarka nie
-              wysyła na serwer.
+              Dane to pliki liczone raz, a wynik liczy Twoja przeglądarka – serwer nie potrzebuje
+              Twojego adresu, żeby go ocenić. Nie mamy kont ani ciasteczek. Wagi i ustawienia są
+              tylko w części linku po znaku #, której przeglądarka nie wysyła na serwer. Osobno
+              mierzymy ruch w serwisie, także to, które karty adresów są otwierane. Opis i
+              przełącznik znajdziesz w sekcji „Pomiar ruchu”.
             </p>
             <p className="met-komorka-akapit">
-              Jedno zastrzeżenie: przeglądarka pobiera kafelki mapy z serwerów OpenStreetMap i
-              czcionki z Google Fonts. Te usługi widzą Twój adres IP i przybliżony obszar mapy, jak
-              przy każdej stronie z takim podkładem.
+              Jeszcze jedno zastrzeżenie: przeglądarka pobiera kafelki mapy z serwerów OpenStreetMap
+              i czcionki z Google Fonts. Te usługi widzą Twój adres IP i przybliżony obszar mapy,
+              jak przy każdej stronie z takim podkładem.
             </p>
           </dd>
         </dl>
+      </section>
+
+      {/* DO AKCEPTACJI WŁAŚCICIELA przed wdrożeniem (spec.md, Założenia): treść publiczna, szkic.
+          Opisuje wyłącznie to, co wynika ze specyfikacji; bez nazwy administratora i kontaktu. */}
+      <section id="met-pomiar" aria-labelledby="met-pomiar-h" className="met-sekcja">
+        <h2 id="met-pomiar-h">Pomiar ruchu</h2>
+        <p className="met-lead">
+          Liczymy, jak ludzie korzystają z serwisu, żeby wiedzieć, co działa, a co trzeba poprawić.
+          Pomiar nie używa ciasteczek i nie zostawia na Twoim urządzeniu żadnego identyfikatora.
+        </p>
+
+        <h3 className="met-h3">Co mierzymy</h3>
+        <ul className="met-punkty">
+          <li>
+            Który ekran i którą kartę adresu otwierasz (bez wag i ustawień z linku), jak długo karta
+            przeglądarki jest widoczna, jak głęboko przewijasz stronę i ile czasu spędzasz w jej
+            sekcjach.
+          </li>
+          <li>
+            Które oznaczone przyciski i linki klikasz (zapisujemy samą nazwę przycisku) oraz czy
+            udostępniasz stronę.
+          </li>
+          <li>
+            Kliknięcia, które mogą oznaczać kłopot: kilka szybkich kliknięć w to samo miejsce albo
+            kliknięcie w element, który nie reaguje (zapisujemy nazwę przycisku albo rodzaj
+            elementu).
+          </li>
+          <li>
+            Kroki w serwisie: wyszukanie, karta adresu, dodanie do porównania, zmiana warstwy mapy,
+            wejście w tryb Biznes albo Miasto.
+          </li>
+          <li>
+            Wyszukiwania bez wyniku: samą frazę, o ile nie wygląda na adres e-mail ani numer
+            telefonu. To nasza lista braków w danych.
+          </li>
+          <li>Szybkość działania strony i błędy aplikacji.</li>
+          <li>
+            Skąd trafiasz do serwisu: domenę strony odsyłającej (w kilku publicznych serwisach, na
+            przykład społecznościowych, także adres wpisu z linkiem) i znaczniki kampanii z linku:
+            utm_source, utm_medium, utm_campaign. Jeśli link ma identyfikator kliknięcia z reklamy,
+            zapisujemy sam ten fakt, bez jego wartości. Pozostałe parametry linku zostają w
+            przeglądarce.
+          </li>
+          <li>
+            Przy każdym zdarzeniu: klasę urządzenia (telefon, tablet, komputer), kraj (jeśli podaje
+            go hosting) oraz to, czy ruch pochodzi od robota i od jakiego.
+          </li>
+        </ul>
+
+        <h3 className="met-h3">Czego nie robimy</h3>
+        <ul className="met-punkty">
+          <li>
+            Nie zapisujemy adresu IP ani nazwy przeglądarki. Nie trafiają do bazy ani do logów
+            aplikacji; służą tylko do policzenia skrótu dobowego.
+          </li>
+          <li>
+            Nie ustawiamy ciasteczek ani identyfikatora na Twoim urządzeniu. Jedyny zapis w
+            przeglądarce to Twój wybór „pomiar wyłączony”.
+          </li>
+          <li>
+            Nie łączymy wizyt z różnych dni. Wizyty z jednej doby odróżnia skrót dobowy, który
+            codziennie liczymy od nowa, więc następnego dnia ta sama osoba jest dla nas nowym
+            odwiedzającym.
+          </li>
+          <li>Nie zapisujemy tego, co wpisujesz w pola, poza frazami wyszukiwań bez wyniku.</li>
+        </ul>
+
+        <h3 className="met-h3">Podstawa i czas przechowywania</h3>
+        <ul className="met-punkty">
+          <li>Podstawą jest nasz prawnie uzasadniony interes: własne statystyki serwisu.</li>
+          <li>
+            Surowe zdarzenia usuwamy po 90 dniach. Zostają dzienne zestawienia, czyli same liczby
+            bez pojedynczych wizyt.
+          </li>
+          <li>Statystyki widzi tylko administrator serwisu.</li>
+        </ul>
+
+        <h3 className="met-h3">Twój wybór</h3>
+        <p className="met-lead">
+          Masz prawo sprzeciwu (art. 21 RODO). Po wyłączeniu pomiaru ta przeglądarka niczego nie
+          wysyła. W chwili wyłączenia wysyłamy jedno zdarzenie „pomiar wyłączony”, żebyśmy
+          wiedzieli, jak często ludzie rezygnują z pomiaru. Pomiar wyłącza też sygnał Global Privacy
+          Control, jeśli Twoja przeglądarka go wysyła.
+        </p>
+        <PrzelacznikPomiaru />
       </section>
 
       <section id="met-ograniczenia" aria-labelledby="met-ograniczenia-h" className="met-sekcja">

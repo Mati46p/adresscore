@@ -1,0 +1,140 @@
+/* Zakładki Zaangażowanie, CTA i Treść (T058–T060): tylko to, czego panel.css nie ma. Klasy mają
+   prefiks `ztc-`, żeby nie zderzyć się z klasami innych zakładek. Tokeny (--tekst, --tekst-3,
+   --ramka-pola, --akcent-obrys, --panel-siatka…) pochodzą z styles.css i panel.css, a plik jest
+   ładowany razem z zakładką, więc ekranów poza panelem nie dotyczy.
+
+   Zasady panelu, których to pilnuje: kolor palety danych (--panel-kat-*) trafia wyłącznie na
+   wypełnienie paska, nigdy na pismo; akcent należy do stanu wybranego, więc link do adresu zaprasza
+   kształtem (podkreślenie, strzałka), a nie kolorem; hover tylko pod @media (hover: hover). */
+
+/* Korzeń zakładki (`.ztc-tab`) nie ma tu własnych reguł: `position: relative` dla ukrytych opisów
+   .sr-only w komórkach tabel siedzi w `.panel-tabela` (panel.css), więc dotyczy wszystkich zakładek. */
+
+/* ── Wiersz filtrów nad sekcjami (okres obejmuje wszystkie sekcje zakładki) ─── */
+.ztc-filtry {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+.ztc-filtry-nazwa {
+  font-size: 14px;
+  color: var(--tekst-2);
+}
+.ztc-filtry-opis {
+  font-size: 13px;
+  color: var(--tekst-3);
+}
+
+/* ── Treść sekcji złożona z kilku bloków (tabela, uwagi) ────────────────────── */
+.ztc-blok {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+/* ── Komórki tabel ────────────────────────────────────────────────────────── */
+/* Etykieta, której nie wolno obciąć wielokropkiem (nazwa sekcji, ścieżka z ekranów, fraza): łamie
+   się w wierszach, a bardzo długi token (klucz sekcji bez nazwy) łamie się gdziekolwiek zamiast
+   rozpychać tabelę. Obcięta etykieta na telefonie nie ma jak pokazać pełnego tekstu (title to
+   dymek myszy), a tu etykiety są krótkie i znane. */
+.ztc-etykieta {
+  display: block;
+  overflow-wrap: anywhere;
+}
+.ztc-bez-zawijania {
+  white-space: nowrap;
+}
+/* Wiersz zbiorczy „pozostałe” i wiersz fraz odrzuconych: to nie są zwykłe pozycje rankingu. */
+.ztc-zbiorczy {
+  color: var(--tekst-3);
+  font-style: italic;
+}
+/* Na telefonie numer pozycji (pierwsza kolumna tabeli rankingowej) ustępuje miejsca etykiecie i
+   liczbom, żeby tabela mieściła się bez przewijania w bok. Kolejność widać z samego układu: lista
+   jest posortowana, a kierunek stoi w podpisie tabeli. */
+@media (max-width: 520px) {
+  .ztc-bez-lp .panel-tabela :is(th, td):first-child {
+    display: none;
+  }
+}
+/* Wiersz „Razem”: pogrubienie zamiast koloru (kolor to znak, nie pismo). */
+.ztc-razem {
+  font-weight: 600;
+}
+/* Druga linia w komórce liczbowej (np. liczba zdarzeń pod wskaźnikiem na 1000 odsłon). */
+.ztc-podpis-komorki {
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.35;
+  color: var(--tekst-3);
+}
+.ztc-mala-proba {
+  margin-left: 6px;
+  font-size: 12px;
+  color: var(--tekst-3);
+  white-space: nowrap;
+}
+
+/* Zasięg sekcji: pasek (wypełnienie w kolorze danych) i liczba obok, bo sam kolor niczego nie
+   mówi. Pełna długość toru to 100% odsłon ekranu, czyli prawdziwa całość. */
+.ztc-zasieg {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.ztc-zasieg-tor {
+  flex: none;
+  width: 88px;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--panel-siatka);
+  overflow: hidden;
+}
+.ztc-zasieg-wypelnienie {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+}
+@media (max-width: 520px) {
+  .ztc-zasieg-tor {
+    width: 48px;
+  }
+}
+
+/* Link do adresu: kolor pisma (nie akcentu), podkreślenie i strzałka mówią „to się klika”. */
+.ztc-link,
+.ztc-link:hover {
+  color: var(--tekst);
+}
+.ztc-link {
+  /* Kontener dla ukrytego opisu (.sr-only jest absolutne): bez tego trafiałby za koniec długiej,
+     obciętej ścieżki i wypychał stronę w bok, bo overflow: hidden nie przycina elementów
+     pozycjonowanych względem przodka spoza linku. */
+  position: relative;
+  text-decoration: underline;
+  text-decoration-color: var(--ramka-pola);
+  text-underline-offset: 3px;
+}
+@media (hover: hover) {
+  .ztc-link:hover {
+    text-decoration-color: var(--akcent);
+  }
+}
+
+/* ── Uwagi pod wykresem (reguła czytania lejka) ───────────────────────────── */
+.ztc-uwagi {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0 0 0 12px;
+  list-style: none;
+  border-left: 2px solid var(--akcent-obrys);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--tekst-2);
+}

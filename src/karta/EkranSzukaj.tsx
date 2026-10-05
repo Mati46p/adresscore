@@ -128,7 +128,7 @@ export function EkranSzukaj() {
   return (
     <main className="szukaj">
       <div className="szukaj-lewa">
-        <div className="szukaj-wyszukaj">
+        <div className="szukaj-wyszukaj" data-sekcja="wyszukiwarka">
           <div className="panel-wstep">
             <h1 tabIndex={-1}>
               {tryb === 'biznes'
@@ -150,6 +150,7 @@ export function EkranSzukaj() {
               onFokus={() => void wczytajGraniceOkolic()}
               etykieta="Nazwa okolicy"
               placeholder="np. Ruczaj, Rakowice, Kurdwanów"
+              mierz
             />
           ) : dane.stan === 'ladowanie' ? (
             <p className="etykieta-sekcji">Wczytuję okolice…</p>
@@ -161,7 +162,7 @@ export function EkranSzukaj() {
             {ogloszenieOkolicy}
           </span>
         </div>
-        <aside aria-label="Filtry" className="szukaj-filtry">
+        <aside aria-label="Filtry" className="szukaj-filtry" data-sekcja="szukaj-filtry">
           <PoleOpiszSiebie />
           <PanelFiltrow />
           <PanelBudzetu />
@@ -173,13 +174,17 @@ export function EkranSzukaj() {
         <section
           aria-label="Mapa Krakowa"
           className="szukaj-mapa"
+          data-sekcja="szukaj-mapa"
           data-zwinieta={mapaZwinieta || undefined}
           ref={sekcjaMapy}
         >
           <div role="group" aria-label="Co pokazuje mapa" className="pasek-warstw">
+            {/* Wszystkie przyciski warstw mają jeden cel pomiaru: to jedna czynność (zmiana warstwy),
+                a nazwa warstwy jest zmienna, więc nie może trafić do klucza. */}
             <button
               type="button"
               className="seg"
+              data-cel="zmien-warstwe"
               aria-pressed={warstwa === 'wynik'}
               onClick={() => ustawWarstwe('wynik')}
             >
@@ -192,6 +197,7 @@ export function EkranSzukaj() {
                   key={w.meta.id}
                   type="button"
                   className="seg"
+                  data-cel="zmien-warstwe"
                   aria-pressed={warstwa === w.meta.id}
                   onClick={() => ustawWarstwe(w.meta.id)}
                 >
@@ -202,6 +208,7 @@ export function EkranSzukaj() {
               <button
                 type="button"
                 className="seg pasek-warstw__wiecej"
+                data-cel="rozwin-warstwy"
                 aria-expanded={warstwyRozwiniete}
                 onClick={() => setWarstwyRozwiniete(!warstwyRozwiniete)}
               >
@@ -263,6 +270,7 @@ export function EkranSzukaj() {
                 <button
                   type="button"
                   className="heksy-pasek__akcja"
+                  data-cel="przejdz-do-porownania"
                   onClick={() => przejdz('porownanie')}
                 >
                   Porównaj ({wybraneAdresy.length})
@@ -277,6 +285,7 @@ export function EkranSzukaj() {
                       <span title={`${opisAdresu(a)} · heks ${a.h3}`}>{opisAdresu(a)}</span>
                       <button
                         type="button"
+                        data-cel="usun-z-porownania"
                         aria-label={`Usuń heks ${opisAdresu(a)} z porównania`}
                         onClick={() => usunZPorownania(a.i)}
                       >
@@ -320,7 +329,12 @@ export function EkranSzukaj() {
                   </small>
                 )}
               </span>
-              <button type="button" className="seg wlaczony" onClick={() => pokazOkolice(adres.i)}>
+              <button
+                type="button"
+                className="seg wlaczony"
+                data-cel="otworz-karte"
+                onClick={() => pokazOkolice(adres.i)}
+              >
                 Otwórz kartę
               </button>
             </div>
@@ -328,6 +342,7 @@ export function EkranSzukaj() {
           <button
             type="button"
             className="szukaj-mapa__zwin"
+            data-cel="zwin-mape"
             aria-expanded={!mapaZwinieta}
             aria-controls="slot-mapy"
             onClick={() => setMapaZwinieta(!mapaZwinieta)}

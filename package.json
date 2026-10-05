@@ -27,7 +27,8 @@
     "maplibre-gl": "^6.11.2",
     "pmtiles": "4.5.0",
     "react": "^19.3.0",
-    "react-dom": "^19.3.0"
+    "react-dom": "^19.3.0",
+    "recharts": "^3.10.1"
   },
   "devDependencies": {
     "@babel/core": "^8.0.6",

@@ -238,13 +238,14 @@ export function EkranBiznes() {
         </p>
       )}
       <div className="biznes-uklad">
-        <div className="biznes-kolumna-mapy">
+        <div className="biznes-kolumna-mapy" data-sekcja="biznes-mapa">
           <div className="biznes-sterowanie">
             <span>Stawiasz miejsce:</span>
             {ID_MIEJSC.map((id, i) => (
               <button
                 key={id}
                 type="button"
+                data-cel="wybierz-miejsce"
                 aria-pressed={aktywny === id}
                 aria-label={`Miejsce ${id.toUpperCase()}${miejsca[i] ? ' (postawione)' : ''}`}
                 data-postawione={miejsca[i] ? '' : undefined}
@@ -286,7 +287,7 @@ export function EkranBiznes() {
             </Suspense>
           </div>
         </div>
-        <aside className="biznes-panel">
+        <aside className="biznes-panel" data-sekcja="biznes-formularz">
           <div className="biznes-wybor">
             <label className="biznes-branza">
               Branża
@@ -346,11 +347,13 @@ export function EkranBiznes() {
                 onChange={(e) => setLatTekst(e.target.value)}
               />
             </label>
-            <button type="submit">Oceń miejsce {aktywny.toUpperCase()}</button>
+            <button type="submit" data-cel="ocen-miejsce">
+              Oceń miejsce {aktywny.toUpperCase()}
+            </button>
           </form>
         </aside>
       </div>
-      <div className="biznes-porownanie">
+      <div className="biznes-porownanie" data-sekcja="biznes-oceny">
         {ID_MIEJSC.map((id, i) => {
           const punkt = miejsca[i] ?? null
           // Puste karty pokazujemy tylko dla A, B i aktywnego miejsca – pięć pustych kart
@@ -374,13 +377,13 @@ export function EkranBiznes() {
           )
         })}
       </div>
-      <footer className="biznes-zrodla">
+      <footer className="biznes-zrodla" data-sekcja="biznes-zrodla">
         <h2>Źródła danych</h2>
         <ul>
           {zrodla.map((z) => (
             <li key={z.nazwa}>
               {z.url ? (
-                <a href={z.url} target="_blank" rel="noopener noreferrer">
+                <a href={z.url} target="_blank" rel="noopener noreferrer" data-cel="otworz-zrodlo">
                   {z.nazwa}
                 </a>
               ) : (
@@ -444,7 +447,12 @@ function Ocena({
     <section className="biznes-ocena">
       <div className="biznes-ocena-top">
         <h2>Miejsce {id}</h2>
-        <button type="button" onClick={onUsun} aria-label={`Usuń miejsce ${id}`}>
+        <button
+          type="button"
+          data-cel="usun-miejsce"
+          onClick={onUsun}
+          aria-label={`Usuń miejsce ${id}`}
+        >
           Usuń
         </button>
       </div>

@@ -69,7 +69,11 @@ export function CoByToZmienilo({ warstwy }: CoByToZmieniloProps) {
   }
 
   return (
-    <section className="dzialanie" aria-labelledby="dzialanie-tytul">
+    <section
+      className="dzialanie"
+      aria-labelledby="dzialanie-tytul"
+      data-sekcja="co-by-to-zmienilo"
+    >
       <div className="dzialanie-naglowek">
         <span className="dzialanie-kicker">CO BY TO ZMIENIŁO?</span>
         <h2 id="dzialanie-tytul">Bliżej na co dzień</h2>
@@ -138,7 +142,7 @@ export function CoByToZmienilo({ warstwy }: CoByToZmieniloProps) {
                   <>
                     {' '}
                     ·{' '}
-                    <a href={zrodlo.url} target="_blank" rel="noreferrer">
+                    <a href={zrodlo.url} target="_blank" rel="noreferrer" data-cel="otworz-zrodlo">
                       Otwórz źródło
                     </a>
                   </>
@@ -172,6 +176,7 @@ export function CoByToZmienilo({ warstwy }: CoByToZmieniloProps) {
         <button
           type="button"
           className="dzialanie-wzor-przycisk"
+          data-cel="jak-to-liczymy"
           onClick={() => setPokazWzor((obecny) => !obecny)}
           aria-expanded={pokazWzor}
         >

@@ -3,7 +3,9 @@ import { PoleZapytajOAdres } from '@/ai/PoleZapytajOAdres'
 import { liczba, opisAdresu } from '@/karta/adres'
 import { KATEGORIE, type KategoriaId, type PlikOkolic } from '@/kontrakty'
 import { Sekcja3D } from '@/miasto3d/Sekcja3D'
+import { udostepnienie } from '@/pomiar/pomiar.ts'
 import { useDane } from '@/wynik/dane'
+import { trybLekki } from '@/wynik/lekki'
 import {
   type MiejsceAdresu,
   miejsceAdresu,
@@ -99,15 +101,22 @@ export function EkranOkolica() {
 
       <Naglowek wynik={wynik} nazwa={opisAdresu(adres)} miejsce={miejsce} atrapa={atrapa} />
 
-      <section className="karta okol-wybor-trybu" aria-labelledby="h-wybor-trybu">
+      <section
+        className="karta okol-wybor-trybu"
+        aria-labelledby="h-wybor-trybu"
+        data-sekcja="wybor-trybu"
+      >
         <h2 id="h-wybor-trybu" className="okol-h2">
           Pod jakim kątem oceniasz ten adres?
         </h2>
         <div className="okol-wybor-trybu__opcje">
           {TRYBY.map((t) => (
+            // Cel pomiaru to stały id trybu z kodu (kupuje, wynajmuje, biznes): każdy tryb jest
+            // osobnym celem, bo to różne decyzje, a nie warianty jednej czynności.
             <button
               key={t.id}
               type="button"
+              data-cel={`tryb-${t.id}`}
               aria-pressed={stan.tryb === t.id}
               onClick={() => {
                 ustawTryb(t.id)
@@ -126,7 +135,7 @@ export function EkranOkolica() {
 
       <PoleZapytajOAdres indeks={stan.wybrany} />
 
-      <section aria-labelledby="h-kategorie" className="karta">
+      <section aria-labelledby="h-kategorie" className="karta" data-sekcja="kategorie">
         <h2 id="h-kategorie" className="okol-h2">
           Oceny kategorii
         </h2>
@@ -145,7 +154,9 @@ export function EkranOkolica() {
         <h2 id="h-dlaczego" className="okol-h2">
           Dlaczego taki wynik
         </h2>
-        <div className="okol-dwie">
+        {/* Znacznik na parze kart, nie na całej sekcji: „Co by to zmieniło” poniżej ma własny klucz,
+            a zagnieżdżone sekcje zlewałyby czas czytania obu bloków w jeden. */}
+        <div className="okol-dwie" data-sekcja="dlaczego">
           <Strony tytul="Najmocniejsze strony" pozycje={mocne} wariant="plus" />
           <Strony tytul="Co obniża wynik" pozycje={slabe} wariant="minus" />
         </div>
@@ -162,7 +173,7 @@ export function EkranOkolica() {
 
       <LepszySasiad adres={stan.wybrany} />
 
-      <Sekcja3D />
+      <SekcjaMapy />
 
       <Rozbicie warstwy={warstwyWyniku} wynik={wynik.wynik} />
 
@@ -178,6 +189,22 @@ export function EkranOkolica() {
         <ZrodlaOkolicy miejsce={miejsce} plik={dane.okolice} />
       )}
     </main>
+  )
+}
+
+/**
+ * Sekcja „mapa” karty to „Okolica w 3D”. Należy do toru mapy (src/miasto3d), więc znacznik daje
+ * opakowanie, a nie sam komponent. Div bez własnych stylów jest elementem flexa `.tresc` zamiast
+ * sekcji – układ i odstępy zostają te same. Na telefonie i przy oszczędzaniu danych `Sekcja3D`
+ * nie renderuje nic; wtedy nie ma też opakowania, bo pusty element dodałby do kolumny 24 px
+ * odstępu. Oba warunki liczy ta sama funkcja przy montowaniu, więc nie rozjadą się.
+ */
+function SekcjaMapy() {
+  if (trybLekki()) return null
+  return (
+    <div data-sekcja="mapa">
+      <Sekcja3D />
+    </div>
   )
 }
 
@@ -201,19 +228,27 @@ function Naglowek({
   const pewnosc = Math.round(wynik.pewnosc * 100)
   const wPorownaniu = stan.porownanie.includes(wynik.i)
 
+  // Pomiar udostępnień (panel: Sesje → udostępnienia według kanału). Element to stały id z kodu,
+  // nie adres karty; kanał mówi, jak poszło: menu systemowe, schowek, rezygnacja albo błąd.
   async function udostepnij() {
     const url = location.href
     try {
       if (navigator.share) {
         await navigator.share({ title: `adresscore: ${nazwa}`, url })
+        udostepnienie('karta-adresu', 'natywne')
         return
       }
       await navigator.clipboard.writeText(url)
       setKomunikat('Skopiowano link.')
+      udostepnienie('karta-adresu', 'kopia')
     } catch (e) {
       // Zamknięcie okna udostępniania to nie błąd.
-      if (e instanceof DOMException && e.name === 'AbortError') return
+      if (e instanceof DOMException && e.name === 'AbortError') {
+        udostepnienie('karta-adresu', 'anulowano')
+        return
+      }
       setKomunikat('Nie udało się skopiować. Skopiuj adres z paska przeglądarki.')
+      udostepnienie('karta-adresu', 'blad')
     }
   }
 
@@ -223,7 +258,7 @@ function Naglowek({
   }
 
   return (
-    <section className="karta okol-naglowek" aria-labelledby="h-adres">
+    <section className="karta okol-naglowek" aria-labelledby="h-adres" data-sekcja="etykieta">
       <div className="okol-glowa">
         <div className="okol-tytul">
           <div
@@ -259,10 +294,22 @@ function Naglowek({
         </div>
 
         <div className="okol-przyciski">
-          <button type="button" className="przycisk-glowny okol-przycisk" onClick={porownaj}>
+          {/* Jeden cel pomiaru dla obu podpisów: kliknięcie zawsze prowadzi do porównania (dodaje
+              adres, jeśli go tam jeszcze nie ma). */}
+          <button
+            type="button"
+            className="przycisk-glowny okol-przycisk"
+            data-cel="dodaj-do-porownania"
+            onClick={porownaj}
+          >
             {wPorownaniu ? 'Przejdź do porównania' : 'Porównaj'}
           </button>
-          <button type="button" className="seg okol-przycisk" onClick={udostepnij}>
+          <button
+            type="button"
+            className="seg okol-przycisk"
+            data-cel="udostepnij"
+            onClick={udostepnij}
+          >
             Udostępnij
           </button>
           <span role="status" className="okol-status">
@@ -372,7 +419,7 @@ function Zrodla({ w }: { w: RozbicieWarstwy }) {
         return (
           <span className="okol-zrodlo-pozycja" key={z.url}>
             źródło:{' '}
-            <a href={z.url} target="_blank" rel="noreferrer">
+            <a href={z.url} target="_blank" rel="noreferrer" data-cel="otworz-zrodlo">
               {z.nazwa}
             </a>
             ; stan danych: {z.dataDanych}; pobrano: {z.pobrano}
@@ -380,7 +427,7 @@ function Zrodla({ w }: { w: RozbicieWarstwy }) {
             {warunkiUrl && (
               <>
                 {' '}
-                <a href={warunkiUrl} target="_blank" rel="noreferrer">
+                <a href={warunkiUrl} target="_blank" rel="noreferrer" data-cel="otworz-warunki">
                   pełne warunki ponownego wykorzystania
                 </a>
               </>
@@ -397,7 +444,7 @@ function Zrodla({ w }: { w: RozbicieWarstwy }) {
 
 function Rozbicie({ warstwy, wynik }: { warstwy: RozbicieWarstwy[]; wynik: number | null }) {
   return (
-    <section aria-labelledby="h-rozbicie" className="karta">
+    <section aria-labelledby="h-rozbicie" className="karta" data-sekcja="zrodla">
       <div className="okol-rozbicie-glowa">
         <h2 id="h-rozbicie" className="okol-h2">
           Rozbicie na warstwy
@@ -482,7 +529,11 @@ function NaCoDzien({
   wersja: string
 }) {
   return (
-    <section aria-labelledby="h-codzien" className="karta okol-codzien">
+    <section
+      aria-labelledby="h-codzien"
+      className="karta okol-codzien"
+      data-sekcja="dodatkowe-dane"
+    >
       <h2 id="h-codzien" className="okol-h2">
         Dodatkowe dane o okolicy
       </h2>

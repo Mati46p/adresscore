@@ -1,0 +1,65 @@
+/* Zakładka Akwizycja: tylko to, czego nie ma w panel.css. Klasy z prefiksem akw- (pozostałe zakładki
+   powstają równolegle i mają własne prefiksy, więc nazwy nie mogą się zderzyć). Tokeny jak w całym
+   panelu (--tekst-2, --tekst-3); kolor kanału trafia na KROPKĘ przy nazwie, nigdy na samo pismo. */
+
+/* Rząd filtra okresu: jeden nad wszystkimi sekcjami zakładki, obejmuje je wszystkie. */
+.akw-filtr {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+}
+.akw-filtr-nazwa {
+  font-size: 14px;
+  color: var(--tekst-2);
+}
+.akw-filtr-opis {
+  font-size: 13px;
+  color: var(--tekst-3);
+}
+
+/* Zawartość sekcji: pasek, tabela i podpis w równych odstępach (panel-stos ma 28 px, za dużo). */
+.akw-blok {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+/* Kropka koloru kanału + nazwa. .panel-kropka (panel.css) ma rozmiar i kształt wypełnienia. */
+.akw-kanal {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Tekst z bazy (nazwa kampanii, medium) w komórce: długa treść skraca się wielokropkiem, a pełny
+   tekst jest w dymku `title`. Bez tego jedna kampania o długiej nazwie rozpychałaby całą tabelę. */
+.akw-tekst {
+  display: inline-block;
+  max-width: 34ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+@media (max-width: 520px) {
+  .akw-tekst {
+    max-width: 18ch;
+  }
+}
+
+/* Ścieżka referera za nazwą źródła: przygaszona (--tekst-3, 6:1), bo to szczegół, nie nazwa. */
+.akw-sciezka {
+  margin-left: 6px;
+  color: var(--tekst-3);
+}
+
+/* Objaśnienie pod tabelą albo paskiem: skąd podstawa udziału, co zawiera lista. */
+.akw-uwaga {
+  margin: 0;
+  max-width: 78ch;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--tekst-3);
+}

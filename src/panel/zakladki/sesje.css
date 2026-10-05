@@ -1,0 +1,43 @@
+/* Zakładka Sesje: tylko to, czego nie ma w panel.css. Klasy z prefiksem ses- (pozostałe zakładki
+   powstają równolegle i mają własne prefiksy, więc nazwy nie mogą się zderzyć). */
+
+/* Rząd filtra okresu: jeden nad wszystkimi sekcjami zakładki, obejmuje je wszystkie. */
+.ses-filtr {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+}
+.ses-filtr-nazwa {
+  font-size: 14px;
+  color: var(--tekst-2);
+}
+.ses-filtr-opis {
+  font-size: 13px;
+  color: var(--tekst-3);
+}
+
+/* Zawartość sekcji: kafle, tabele i podpisy w równych odstępach (panel-stos ma 28 px, za dużo). */
+.ses-blok {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+/* Podtytuł grupy w obrębie sekcji (np. „Według sposobu”): niższy stopień niż tytuł sekcji. */
+.ses-grupa {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* Objaśnienie pod kaflami albo tabelą: definicja, podstawa udziału, pułapka. */
+.ses-uwaga {
+  margin: 0;
+  max-width: 78ch;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--tekst-3);
+}

@@ -11,6 +11,7 @@ import {
   ladujMetode,
   ladujMiasto,
   ladujOkolice,
+  ladujPanel,
   ladujPorownanie,
   przygotujEkran,
 } from './ladowanieEkranow'
@@ -25,12 +26,33 @@ const EkranBiznes = lazy(async () => ({
 const EkranMiasto = lazy(async () => ({
   default: (await ladujMiasto()).EkranMiasto,
 }))
+const EkranPanel = lazy(async () => ({ default: (await ladujPanel()).EkranPanel }))
 
 /** Powłoka: nagłówek z krokami i ekran wybrany przez hash (#/, #/adres/<id>, #/porownanie). */
 export function Aplikacja() {
   // Link do prezentacji: pełny ekran 3D zamiast powłoki (#130).
   const pokaz = parametrPokazu()
+  const ekran = useStan((s) => s.ekran)
   if (pokaz !== null) return <Pokaz3D id={pokaz} />
+  // Panel admina (#/panel) żyje poza powłoką, jak prezentacja 3D: bez nagłówka mapy, bez tytułu i
+  // canonicala serwisu (panel ma własny tytuł i noindex) i bez `useDane()`, które pobrałoby ~70 tys.
+  // adresów dla kogoś, kto chce tylko zobaczyć statystyki. Rozgałęzienie jest tutaj, a nie w
+  // `Powloka`, żeby nie dotykać kolejności jej hooków; `Powloka` montuje się od zera po wyjściu z panelu.
+  if (ekran === 'panel') {
+    return (
+      <Suspense
+        fallback={
+          <main className="tresc">
+            <p className="komunikat" role="status">
+              Wczytuję panel…
+            </p>
+          </main>
+        }
+      >
+        <EkranPanel />
+      </Suspense>
+    )
+  }
   return <Powloka />
 }
 
