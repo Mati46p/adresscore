@@ -94,3 +94,36 @@
 Harmonogram: `select cron.schedule('analityka-dzienna', '20 1 * * *', 'select public.analityka_cron()')`
 (wymaga rozszerzenia `pg_cron` – `create extension if not exists pg_cron with schema pg_catalog`).
 `statement_timeout = '120s'` na funkcjach zestawienia.
+
+## Uzupełnienia wykonawcze (2026-10-05)
+
+Doprecyzowania wspólne dla bazy (fazy 2, 6, 7) i klienta (`src/panel/dane.ts`, zakładki), żeby tory
+równoległe nie rozjechały się na kształcie odpowiedzi. Mają pierwszeństwo przy rozbieżności z tabelami wyżej.
+
+- **Typy po drucie (PostgREST → JSON)**: `bigint` i `numeric` → liczba JSON; `date` → `"YYYY-MM-DD"`;
+  `timestamptz` → tekst ISO 8601; `jsonb` → obiekt; NULL → `null`. Funkcje zwracające tabelę dają tablicę
+  obiektów o kluczach równych nazwom kolumn z tabel wyżej; funkcje `jsonb` – jeden obiekt.
+- **Błąd bramki**: `42501` (`brak dostępu`) przy braku uprawnień; ten sam kod daje odmowa EXECUTE dla roli
+  `anon`. Klient rozróżnia go po `error.code`.
+- **`admin_przeglad()`**: `unikalni_*` liczą `count(distinct odcisk)` ludzi (bez botów, `odcisk is not null`) w dobie
+  Europe/Warsaw; `unikalni_7d` to SUMA dobowych liczb unikalnych z 7 ostatnich dób (dziś + 6 poprzednich),
+  `unikalni_srednia_7d` = `unikalni_7d / 7` (liczba ułamkowa). `szczyt_godzina` = `{ "godzina": <ISO, początek
+  godziny>, "odslony": n }`, `szczyt_dzien` = `{ "dzien": "YYYY-MM-DD", "odslony": n }`; oba `null`, gdy brak ruchu
+  w oknie 30 dni. Pozostałe pola to liczby całkowite (0 = faktycznie zero zdarzeń w oknie).
+- **`admin_seria_dzienna`**: zwraca tylko dni, dla których istnieje wiersz (zestawienie albo dziś na żywo);
+  dni bez wiersza uzupełnia klient (przed pierwszym dniem danych = brak danych, nie zero). `unikalni` ludzi
+  w dobie, `odslony` ludzi, `odslony_boty` osobno.
+- **`admin_seria_godzinowa`**: każda godzina z `generate_series` jest obecna; godzina bez ruchu ma 0.
+- **`admin_diagnostyka()`**: `{ "ostatnie_zdarzenie": ISO|null, "zdarzenia_24h": { "odslona": n, "wyjscie": n,
+  "klik": n, "udostepnienie": n, "produktowe": n, "wital": n, "blad": n }` (zawsze wszystkie siedem typów,
+  0 = cisza danego typu – to właśnie ma wykryć diagnostyka)`, "bez_odcisku_24h": n, "ostatni_bieg": { "rodzaj":
+  "zestaw"|"sprzatanie", "koniec": ISO|null, "blad": tekst|null } | null, "dni_w_zestawieniu": n,
+  "najstarsze_zdarzenie": ISO|null }`.
+- **`admin_sesje_przeglad`**: `mediana_stron`, `srednia_stron`, `mediana_czas_s`, `p75_czas_s` są `null`, gdy
+  `sesje = 0`; `zaangazowane` i `jednostronicowe` to liczby sesji (udział liczy klient przez `procentOd`).
+- **`admin_witale`**: `p75` w ms, a dla `cls` jako ułamek; `probki` to liczba pomiarów (nie unikalnych osób).
+- **`admin_top_adresy`**: `sciezka` to ścieżka serwisu zapisana przez pomiar (np. `/adres/<slug>`), bez hosta.
+- **Ekrany** (`ekran`): wartości typu `Ekran` z `src/wynik/url.ts` (`szukaj`, `okolica`, `porownanie`, `metoda`,
+  `katalog`, `miasto`, `biznes`); ekran `panel` NIE jest mierzony (ruch admina nie wchodzi do statystyk).
+- **Ścieżka odsłony** (`sciezka`): jeśli `location.pathname` ≠ `/` → pathname (np. `/adres/<slug>`, `/katalog`),
+  inaczej część hasha przed `?` (np. `/porownanie`); puste → `/`. Nigdy query ani fragment z parametrami.
