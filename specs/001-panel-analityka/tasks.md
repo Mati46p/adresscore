@@ -172,8 +172,8 @@ dwie migracje naraz (inaczej po fazie 6).
 
 **Cel**: US4. Zależy od fazy 5.
 
-- [ ] T056 [P] [US4] `src/panel/zakladki/Akwizycja.tsx`: przełącznik okna 7/30 dni; kanały (`PasekUdzialow` + `TabelaTop`), źródła (kanał, źródło, ścieżka, wizyty), kampanie UTM, kraje (`(nieznany)` osobno), urządzenia; wstęp z `WSTEPY.akwizycja`
-- [ ] T057 [P] [US4] `src/panel/zakladki/Sesje.tsx`: kafle z `admin_sesje_przeglad` (sesje, mediana/średnia stron, mediana i p75 czasu, odsetek zaangażowanych i jednostronicowych przez `procentOd` od liczby sesji), top przejścia `skad → dokad` (z `(wyjście)`), udostępnienia wg kanału
+- [X] T056 [P] [US4] `src/panel/zakladki/Akwizycja.tsx`: przełącznik okna 7/30 dni; kanały (`PasekUdzialow` + `TabelaTop`), źródła (kanał, źródło, ścieżka, wizyty), kampanie UTM, kraje (`(nieznany)` osobno), urządzenia; wstęp z `WSTEPY.akwizycja`
+- [X] T057 [P] [US4] `src/panel/zakladki/Sesje.tsx`: kafle z `admin_sesje_przeglad` (sesje, mediana/średnia stron, mediana i p75 czasu, odsetek zaangażowanych i jednostronicowych przez `procentOd` od liczby sesji), top przejścia `skad → dokad` (z `(wyjście)`), udostępnienia wg kanału
 
 ---
 
