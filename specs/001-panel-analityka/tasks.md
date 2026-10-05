@@ -200,9 +200,9 @@ dwie migracje naraz (inaczej po fazie 6).
 **Cel**: oznaczenia sekcji/CTA, zdarzenia wyszukiwarki, przełącznik „Pomiar ruchu” (US1, US5).
 Zależy od fazy 4. Dotyka plików toru karta/strony – wyłącznie atrybuty i jednolinijkowe wywołania.
 
-- [ ] T062 [P] [US5] `src/karta/wyszukiwarka/Wyszukiwarka.tsx`: po zatwierdzeniu wyszukiwania (nie przy każdym znaku – debounce 1 s albo wybór/enter) `produktowe('wyszukanie', { wynikow, rodzaj })`; przy zerze wyników `produktowe('wyszukanie_bez_wyniku', normalizujFraze(tekst))`
-- [ ] T063 [P] [US5] Atrybuty `data-sekcja` (klucze z contracts/pomiar-klient.md) i `data-cel` na głównych przyciskach w plikach ekranu karty adresu (`src/karta/okolica/*.tsx`), `src/karta/porownanie/EkranPorownanie.tsx`, `src/karta/biznes/EkranBiznes.tsx`, `src/karta/EkranSzukaj.tsx` – bez zmian zachowania i stylów
-- [ ] T064 [P] [US1] `src/strony/Metoda.tsx` (+ `src/strony/metoda.css` w razie potrzeby): sekcja „Pomiar ruchu” – co mierzymy, czego nie (IP, ciasteczka), przełącznik `ustawPomiar` z odczytem `pomiarWylaczony()`; przy wyłączeniu jedno zdarzenie `pomiar_wylaczony` PRZED zapisem wyboru; **treść publiczna – oznacz w raporcie fazy do akceptacji właściciela przed wdrożeniem**
+- [X] T062 [P] [US5] `src/karta/wyszukiwarka/Wyszukiwarka.tsx`: po zatwierdzeniu wyszukiwania (nie przy każdym znaku – debounce 1 s albo wybór/enter) `produktowe('wyszukanie', { wynikow, rodzaj })`; przy zerze wyników `produktowe('wyszukanie_bez_wyniku', normalizujFraze(tekst))`
+- [X] T063 [P] [US5] Atrybuty `data-sekcja` (klucze z contracts/pomiar-klient.md) i `data-cel` na głównych przyciskach w plikach ekranu karty adresu (`src/karta/okolica/*.tsx`), `src/karta/porownanie/EkranPorownanie.tsx`, `src/karta/biznes/EkranBiznes.tsx`, `src/karta/EkranSzukaj.tsx` – bez zmian zachowania i stylów
+- [X] T064 [P] [US1] `src/strony/Metoda.tsx` (+ `src/strony/metoda.css` w razie potrzeby): sekcja „Pomiar ruchu” – co mierzymy, czego nie (IP, ciasteczka), przełącznik `ustawPomiar` z odczytem `pomiarWylaczony()`; przy wyłączeniu jedno zdarzenie `pomiar_wylaczony` PRZED zapisem wyboru; **treść publiczna – oznacz w raporcie fazy do akceptacji właściciela przed wdrożeniem**
 - [ ] T065 [US1] `pnpm verify` + `node --test src/pomiar/ src/karta/` – istniejące testy ekranów bez regresji
 
 ---

@@ -216,6 +216,77 @@
 .met-zastrzezenia {
   font-size: 14px;
 }
+
+/* Pomiar ruchu: przełącznik sprzeciwu (role="switch"). Tor ma ≥ 3:1 z tłem sekcji w obu stanach
+   (--ramka-pola i --akcent na bieli), a stan nie opiera się na kolorze: gałka zmienia stronę,
+   a zdanie pod przyciskiem mówi, czy pomiar jest włączony. */
+.met-pomiar-wybor {
+  margin-top: 4px;
+}
+.met-przelacznik {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  min-height: var(--cel-dotyku);
+  padding: 6px 20px 6px 10px;
+  border: 1px solid var(--ramka-pola);
+  border-radius: 999px;
+  background: var(--powierzchnia);
+  color: var(--tekst);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.met-przelacznik__tor {
+  position: relative;
+  flex: none;
+  width: 44px;
+  height: 26px;
+  border-radius: 999px;
+  background: var(--ramka-pola);
+  transition: background-color 0.15s;
+}
+.met-przelacznik__galka {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.15s;
+}
+.met-przelacznik[aria-checked="true"] .met-przelacznik__tor {
+  background: var(--akcent);
+}
+.met-przelacznik[aria-checked="true"] .met-przelacznik__galka {
+  transform: translateX(18px);
+}
+/* Sygnał GPC wyłącza pomiar niezależnie od wyboru: przełącznik zostaje w tabulacji (czytnik ma
+   dojść do wyjaśnienia), ale wygląda na nieaktywny. */
+.met-przelacznik[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+.met-przelacznik[aria-disabled="true"] .met-przelacznik__tor {
+  opacity: 0.55;
+}
+@media (hover: hover) {
+  .met-przelacznik:not([aria-disabled="true"]):hover {
+    border-color: var(--akcent-obrys);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .met-przelacznik__tor,
+  .met-przelacznik__galka {
+    transition: none;
+  }
+}
+.met-pomiar-opis {
+  max-width: 68ch;
+  margin: 10px 0 0;
+  color: var(--tekst-2);
+}
 .met-stopka {
   margin-top: 32px;
 }

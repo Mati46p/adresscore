@@ -27,7 +27,7 @@ export function LepszySasiad({ adres }: { adres: number }) {
   }
 
   return (
-    <section aria-labelledby="h-sasiad" className="karta sas">
+    <section aria-labelledby="h-sasiad" className="karta sas" data-sekcja="lepszy-sasiad">
       <div className="sas-glowa">
         <div className="sas-wstep">
           <h2 id="h-sasiad" className="okol-h2">
@@ -41,6 +41,7 @@ export function LepszySasiad({ adres }: { adres: number }) {
         <button
           type="button"
           className="seg sas-przelacz"
+          data-cel="pokaz-lepszych-sasiadow"
           aria-expanded={otwarta}
           aria-controls="sas-tresc"
           onClick={przelacz}
@@ -158,10 +159,13 @@ function Wiersz({
           <p className="sas-pewnosc">Mniej danych niż dla Twojego adresu – wynik mniej pewny.</p>
         )}
       </div>
+      {/* Etykiety przycisków niosą adres kandydata, więc cel pomiaru jest jawny: bez `data-cel`
+          nazwa wyprowadzałaby się z aria-label i wpuszczała adresy do kluczy CTA. */}
       <div className="sas-akcje">
         <button
           type="button"
           className="przycisk-glowny sas-przycisk"
+          data-cel="otworz-karte-sasiada"
           aria-label={`Otwórz kartę: ${nazwa}`}
           onClick={() => otworzKarteSasiada(k.i)}
         >
@@ -170,6 +174,7 @@ function Wiersz({
         <button
           type="button"
           className="seg sas-przycisk"
+          data-cel="porownaj-z-sasiadem"
           aria-label={`Porównaj ${nazwa} z Twoim adresem`}
           onClick={porownaj}
         >

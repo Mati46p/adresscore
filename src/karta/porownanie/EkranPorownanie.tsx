@@ -4,6 +4,7 @@ import { PanelFiltrow } from '@/karta/panel/PanelFiltrow'
 import { etykietaKierunku } from '@/karta/panel/preferencje'
 import { Wyszukiwarka } from '@/karta/wyszukiwarka/Wyszukiwarka'
 import { KATEGORIE } from '@/kontrakty'
+import { udostepnienie } from '@/pomiar/pomiar.ts'
 import { useDane } from '@/wynik/dane'
 import { ocenFiltr, opisFiltru, type TwardyFiltr } from '@/wynik/filtry'
 import { miejsceAdresu } from '@/wynik/miejsceAdresu'
@@ -45,7 +46,11 @@ function TabelaAtrybutow({
 }) {
   const grupy = warstwyPorownania(okolice[0]!.wynik)
   return (
-    <section className="porownanie-tabela" aria-labelledby="porownanie-tabela-h">
+    <section
+      className="porownanie-tabela"
+      aria-labelledby="porownanie-tabela-h"
+      data-sekcja="porownanie-tabela"
+    >
       <h2 id="porownanie-tabela-h">Pełna tabela atrybutów</h2>
       <p>
         Wszystkie dostępne warstwy dla porównywanych adresów. Waga 0 i warstwy informacyjne nie
@@ -194,7 +199,7 @@ function Radar({ okolice }: { okolice: readonly OkolicaPorownania[] }) {
   const wagi = priorytety(okolice)
   const opisId = useId()
   return (
-    <div className="porownanie-wykres">
+    <div className="porownanie-wykres" data-sekcja="porownanie-wykres">
       <div
         className="porownanie-wykres__przewijanie"
         role="region"
@@ -353,14 +358,17 @@ export function EkranPorownanie() {
   const wykluczonych = okolice.length - aktywneOkolice.length
   const atrapa =
     dane.stan === 'gotowe' && (dane.plikAdresow.atrapa || dane.wskazniki.some((w) => w.meta.atrapa))
+  // Pomiar udostępnień: element to stały id z kodu, kanał – schowek albo błąd (menu systemowego tu nie ma).
   async function kopiuj() {
     try {
       await navigator.clipboard.writeText(
         new URL(hrefDla(stan, { ekran: 'porownanie' }), location.href).href,
       )
       ustawStatus('Skopiowano link do porównania z aktualnymi wagami.')
+      udostepnienie('porownanie', 'kopia')
     } catch {
       ustawStatus('Nie udało się skopiować. Skopiuj adres strony z przeglądarki.')
+      udostepnienie('porownanie', 'blad')
     }
   }
   return (
@@ -383,7 +391,7 @@ export function EkranPorownanie() {
         </details>
       </aside>
       <div className="tresc porownanie">
-        <div className="porownanie-gora">
+        <div className="porownanie-gora" data-sekcja="porownanie-naglowek">
           <div>
             <h1>Porównaj okolice pod siebie</h1>
             <p>
@@ -392,7 +400,12 @@ export function EkranPorownanie() {
             </p>
           </div>
           {okolice.length > 0 && (
-            <button className="seg" type="button" onClick={kopiuj}>
+            <button
+              className="seg"
+              type="button"
+              data-cel="kopiuj-link-porownania"
+              onClick={kopiuj}
+            >
               Kopiuj link
             </button>
           )}
@@ -403,10 +416,15 @@ export function EkranPorownanie() {
         )}
         {dane.stan === 'ladowanie' && <p className="komunikat">Wczytywanie danych porównania…</p>}
         {dane.stan === 'gotowe' && stan.porownanie.length < MAKS_POROWNANIE && (
-          <section className="porownanie-dodaj" aria-label="Dodaj adres do porównania">
+          <section
+            className="porownanie-dodaj"
+            aria-label="Dodaj adres do porównania"
+            data-sekcja="porownanie-dodaj"
+          >
             <h2>Dodaj adres do porównania</h2>
             <Wyszukiwarka
               adresy={adresyDoDodania}
+              mierz
               wyczyscPoWyborze
               onWybierz={(i) => {
                 if (stan.porownanie.includes(i)) {
@@ -427,11 +445,19 @@ export function EkranPorownanie() {
         )}
         {okolice.length > 0 && (
           <>
-            <div className="porownanie-lista" aria-label="Wybrane adresy">
+            {/* Linki i przyciski listy niosą adresy (tekst i aria-label), więc mają jawne cele pomiaru:
+                bez nich nazwa celu wyprowadzałaby się z tekstu i wpuszczała adresy do kluczy CTA. */}
+            <div
+              className="porownanie-lista"
+              aria-label="Wybrane adresy"
+              data-sekcja="porownanie-lista"
+            >
               {okolice.map((o, i) => (
                 <div className="porownanie-adres" key={o.id}>
                   <span className="porownanie-kropka" style={{ background: o.kolor }} />
-                  <a href={o.href}>{o.nazwa}</a>
+                  <a href={o.href} data-cel="otworz-karte">
+                    {o.nazwa}
+                  </a>
                   {wynikiMapy?.wykluczenia.wykluczony[o.i] ? (
                     <span className="porownanie-adres__status">Wykluczony filtrem</span>
                   ) : wynikiMapy?.wykluczenia.niewiadomy[o.i] ? (
@@ -439,6 +465,7 @@ export function EkranPorownanie() {
                   ) : null}
                   <button
                     type="button"
+                    data-cel="usun-z-porownania"
                     onClick={() => usunZPorownania(stan.porownanie[i] as number)}
                     aria-label={`Usuń ${o.nazwa} z porównania`}
                   >
@@ -469,7 +496,11 @@ export function EkranPorownanie() {
             />
             {aktywneOkolice.length > 0 && (
               <>
-                <section className="porownanie-ranking" aria-label="Ranking dopasowania">
+                <section
+                  className="porownanie-ranking"
+                  aria-label="Ranking dopasowania"
+                  data-sekcja="porownanie-ranking"
+                >
                   <h2>Dopasowanie do Ciebie</h2>
                   <ol>
                     {ranking(aktywneOkolice).map((o) => {
@@ -478,7 +509,9 @@ export function EkranPorownanie() {
                         .sort((a, b) => (b.ocena ?? 0) - (a.ocena ?? 0))[0]
                       return (
                         <li key={o.id}>
-                          <a href={o.href}>{o.nazwa}</a>
+                          <a href={o.href} data-cel="otworz-karte">
+                            {o.nazwa}
+                          </a>
                           <strong>
                             {liczba(o.wynik.wynik)}
                             {o.wynik.litera ? ` / ${o.wynik.litera}` : ''}
@@ -494,7 +527,7 @@ export function EkranPorownanie() {
                     })}
                   </ol>
                 </section>
-                <section className="porownanie-werdykt">
+                <section className="porownanie-werdykt" data-sekcja="porownanie-werdykt">
                   <h2>Werdykt</h2>
                   <p>{werdykt(aktywneOkolice)}</p>
                   <small>
