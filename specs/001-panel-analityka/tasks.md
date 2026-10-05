@@ -130,13 +130,13 @@ w `dist/assets/index-*.js` nie ma `recharts`.
 **Cel**: wszystkie `admin_*` z contracts/rpc.md (US3–US6). Zależy od fazy 2.
 **Test niezależny**: `supabase test db` – liczby zgodne z ręcznym przeliczeniem na zestawie testowym.
 
-- [ ] T042 [US3] Utwórz plik migracji: `powershell -File ~/.claude/bin/wt.ps1 migracja analityka_panel` → `supabase/migrations/<ts>_analityka_panel.sql`; nagłówek z regułami wspólnymi z contracts/rpc.md
-- [ ] T043 [US3] Przegląd: `admin_przeglad`, `admin_seria_dzienna` (historia z `analityka_dzienna`, dziś na żywo), `admin_seria_godzinowa` (`generate_series` – godziny bez ruchu jako 0), `admin_boty_ai`; wzór z-dykty `0080`, `0085`, `0089`, `20260809121425_boty_ai_pomiar.sql`
-- [ ] T044 [US4] Akwizycja i Sesje: `admin_kanaly`, `admin_zrodla`, `admin_kampanie`, `admin_kraje`, `admin_urzadzenia` (wizyta = sesja z `analityka_sesje`, źródło z pierwszej odsłony), `admin_sesje_przeglad`, `admin_przejscia`, `admin_udostepnienia`; wzór z-dykty `20260809102207_zrodla_ruchu.sql`, `20260731162138_analityka_sesje.sql`
-- [ ] T045 [US5] Zaangażowanie, CTA, Treść: `admin_sciezki`, `admin_sekcje`, `admin_punkt_urwania`, `admin_cta_sekcje`, `admin_cta_martwe`, `admin_ux_sygnaly`, `admin_top_ekrany`, `admin_top_adresy`, `admin_bez_wyniku`, `admin_lejek`; wzór z-dykty `20260801093000_analityka_sekcje.sql`, `20260805184650_*`, `20260812152339_cta_auto_i_sygnaly_ux.sql`
-- [ ] T046 [US6] Jakość: `admin_diagnostyka`, `admin_witale` (`percentile_cont(0.75)`), `admin_bledy`; wzór z-dykty `20260804220656_zdarzenia_produktowe_i_wital.sql`
-- [ ] T047 [P] [US3] Test pgTAP `supabase/tests/analityka_panel.test.sql`: zestaw zdarzeń z trzech dni (w tym granica doby warszawskiej i dzień zmiany czasu 2026-10-25) → oczekiwane wyniki każdej funkcji Przeglądu, Akwizycji (UTM → kampania/social, brak referera → bezposrednie), Sesji, lejka (10 → 6 → 2), martwych CTA (≥ 50 wyświetleń, 0 kliknięć), p75 witali
-- [ ] T048 [US3] `pnpm exec supabase test db` – w tym `analityka_bramka` (T008) liczy teraz wszystkie nowe `admin_*`; napraw do zielonego
+- [X] T042 [US3] Utwórz plik migracji: `powershell -File ~/.claude/bin/wt.ps1 migracja analityka_panel` → `supabase/migrations/<ts>_analityka_panel.sql`; nagłówek z regułami wspólnymi z contracts/rpc.md
+- [X] T043 [US3] Przegląd: `admin_przeglad`, `admin_seria_dzienna` (historia z `analityka_dzienna`, dziś na żywo), `admin_seria_godzinowa` (`generate_series` – godziny bez ruchu jako 0), `admin_boty_ai`; wzór z-dykty `0080`, `0085`, `0089`, `20260809121425_boty_ai_pomiar.sql`
+- [X] T044 [US4] Akwizycja i Sesje: `admin_kanaly`, `admin_zrodla`, `admin_kampanie`, `admin_kraje`, `admin_urzadzenia` (wizyta = sesja z `analityka_sesje`, źródło z pierwszej odsłony), `admin_sesje_przeglad`, `admin_przejscia`, `admin_udostepnienia`; wzór z-dykty `20260809102207_zrodla_ruchu.sql`, `20260731162138_analityka_sesje.sql`
+- [X] T045 [US5] Zaangażowanie, CTA, Treść: `admin_sciezki`, `admin_sekcje`, `admin_punkt_urwania`, `admin_cta_sekcje`, `admin_cta_martwe`, `admin_ux_sygnaly`, `admin_top_ekrany`, `admin_top_adresy`, `admin_bez_wyniku`, `admin_lejek`; wzór z-dykty `20260801093000_analityka_sekcje.sql`, `20260805184650_*`, `20260812152339_cta_auto_i_sygnaly_ux.sql`
+- [X] T046 [US6] Jakość: `admin_diagnostyka`, `admin_witale` (`percentile_cont(0.75)`), `admin_bledy`; wzór z-dykty `20260804220656_zdarzenia_produktowe_i_wital.sql`
+- [X] T047 [P] [US3] Test pgTAP `supabase/tests/analityka_panel.test.sql`: zestaw zdarzeń z trzech dni (w tym granica doby warszawskiej i dzień zmiany czasu 2026-10-25) → oczekiwane wyniki każdej funkcji Przeglądu, Akwizycji (UTM → kampania/social, brak referera → bezposrednie), Sesji, lejka (10 → 6 → 2), martwych CTA (≥ 50 wyświetleń, 0 kliknięć), p75 witali
+- [X] T048 [US3] `pnpm exec supabase test db` – w tym `analityka_bramka` (T008) liczy teraz wszystkie nowe `admin_*`; napraw do zielonego
 
 **Punkt kontrolny**: wszystkie RPC kontraktu istnieją, mają bramkę i dają liczby z testu.
 
