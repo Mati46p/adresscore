@@ -331,6 +331,11 @@ create trigger zdarzenia_przed_insert
 alter table public.zdarzenia enable row level security;
 revoke all on table public.zdarzenia from anon, authenticated;
 grant select on table public.zdarzenia to authenticated;
+-- Sekwencja kolumny identity ma OSOBNE prawa: domyślne uprawnienia Supabase dają anon
+-- i authenticated USAGE, SELECT i UPDATE (czyli nextval/setval), a REVOKE na tabeli ich nie
+-- rusza. Klient nie wstawia wierszy, więc te prawa są zbędne – setval do maksimum sekwencji
+-- zablokowałby każdy następny zapis zdarzeń. (Bramka pgTAP: analityka_bramka, sekcja B.)
+revoke all on sequence public.zdarzenia_id_seq from anon, authenticated;
 
 -- (select …) zamiast gołego wywołania: planista liczy bramkę raz na zapytanie (InitPlan),
 -- a nie raz na wiersz. Dla admina czytającego tabelę wprost to różnica między 1 a N wywołaniami.
@@ -456,6 +461,8 @@ comment on table public.analityka_biegi is
 alter table public.analityka_biegi enable row level security;
 revoke all on table public.analityka_biegi from anon, authenticated;
 grant select on table public.analityka_biegi to authenticated;
+-- Jak przy zdarzeniach: prawa do sekwencji identity odbieramy osobno.
+revoke all on sequence public.analityka_biegi_id_seq from anon, authenticated;
 
 create policy analityka_biegi_select_admin on public.analityka_biegi
   for select to authenticated

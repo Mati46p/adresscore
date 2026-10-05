@@ -19,7 +19,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(64);
+select plan(65);
 
 
 -- ===================================================================
@@ -445,6 +445,27 @@ select results_eq(
 select is((select powod from pg_temp.naruszenia_bramki('admin\_probna\_zla')),
           'brak wywołania jest_adminem(); anon ma EXECUTE',
           'detektor podaje powód: brak bramki w treści i EXECUTE dla anon');
+
+-- Sekwencje identity mają prawa niezależne od tabel (domyślne uprawnienia Supabase dają
+-- anon i authenticated USAGE/SELECT/UPDATE, czyli nextval i setval).
+select results_eq(
+  $q$
+    select r.rola, s.sekwencja,
+           coalesce((select string_agg(p, ',' order by p)
+                       from unnest(array['usage', 'select', 'update']) as p
+                      where has_sequence_privilege(r.rola, format('public.%I', s.sekwencja), p)), '') as prawa
+      from (values ('anon'), ('authenticated')) as r(rola)
+     cross join (values ('analityka_biegi_id_seq'), ('zdarzenia_id_seq')) as s(sekwencja)
+     order by 1, 2
+  $q$,
+  $q$
+    values ('anon', 'analityka_biegi_id_seq', ''),
+           ('anon', 'zdarzenia_id_seq', ''),
+           ('authenticated', 'analityka_biegi_id_seq', ''),
+           ('authenticated', 'zdarzenia_id_seq', '')
+  $q$,
+  'prawa do sekwencji identity: anon i authenticated nie mają nic (ani nextval, ani setval)'
+);
 
 select * from finish();
 
