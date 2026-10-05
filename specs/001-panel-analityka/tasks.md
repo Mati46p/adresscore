@@ -37,7 +37,7 @@ prezentacji; bramka bazy i sesje mają testy pgTAP. Uruchamianie: `node --test <
 
 **Cel**: zależność wykresów, bez której faza panelu nie przejdzie `tsc`.
 
-- [ ] T001 Dodaj `recharts` (najnowsza stabilna) do `dependencies` w `package.json` przez `pnpm add recharts` (aktualizuje `pnpm-lock.yaml`); w treści commita napisz „wyjątek od toru integracji – zależność potrzebna fazie 5, przegląd w fazie 13” (research.md R12)
+- [X] T001 Dodaj `recharts` (najnowsza stabilna) do `dependencies` w `package.json` przez `pnpm add recharts` (aktualizuje `pnpm-lock.yaml`); w treści commita napisz „wyjątek od toru integracji – zależność potrzebna fazie 5, przegląd w fazie 13” (research.md R12)
 
 **Punkt kontrolny**: `pnpm verify` zielone; recharts nie jest jeszcze nigdzie importowany.
 
