@@ -163,8 +163,8 @@ dwie migracje naraz (inaczej po fazie 6).
 **Cel**: US3 – pierwszy ekran z danymi. Zależy od fazy 5 (do testu ręcznego z danymi – od fazy 6).
 **Test niezależny**: dane z T047 w lokalnej bazie → kafle i wykresy zgodne z testem SQL.
 
-- [ ] T054 [US3] `src/panel/zakladki/Przeglad.tsx`: kafle `KartaStat` (unikalni dziś/wczoraj/7 dni/średnia, odsłony 24 h/7 dni/30 dni, szczyt godzinowy i dzienny z datą, teraz na stronie), `WykresDzienny` (30 dni, `admin_seria_dzienna`), `WykresGodzinowy` (48 h), `PasekUdzialow` ludzie vs boty (podstawa = suma obu), tabela crawlerów AI (`TabelaTop`, `admin_boty_ai`); brak danych → `BrakDanych`, nigdy 0
-- [ ] T055 [US3] Wyprowadzanie wierszy wykresów i kafli z odpowiedzi RPC jako czyste funkcje w `src/panel/zakladki/przeglad-dane.ts` + `src/panel/zakladki/przeglad-dane.test.ts` (dni bez ruchu w serii, średnia 7 dni, zmiana wobec wczoraj przez `zmianaProcentowa`)
+- [X] T054 [US3] `src/panel/zakladki/Przeglad.tsx`: kafle `KartaStat` (unikalni dziś/wczoraj/7 dni/średnia, odsłony 24 h/7 dni/30 dni, szczyt godzinowy i dzienny z datą, teraz na stronie), `WykresDzienny` (30 dni, `admin_seria_dzienna`), `WykresGodzinowy` (48 h), `PasekUdzialow` ludzie vs boty (podstawa = suma obu), tabela crawlerów AI (`TabelaTop`, `admin_boty_ai`); brak danych → `BrakDanych`, nigdy 0
+- [X] T055 [US3] Wyprowadzanie wierszy wykresów i kafli z odpowiedzi RPC jako czyste funkcje w `src/panel/zakladki/przeglad-dane.ts` + `src/panel/zakladki/przeglad-dane.test.ts` (dni bez ruchu w serii, średnia 7 dni, zmiana wobec wczoraj przez `zmianaProcentowa`)
 
 ---
 
