@@ -212,8 +212,8 @@ Zależy od fazy 4. Dotyka plików toru karta/strony – wyłącznie atrybuty i j
 **Cel**: zamontowanie pomiaru i dev-endpointu; jedyne zmiany plików toru integracji.
 Zależy od faz 3, 4, 5, 12.
 
-- [ ] T066 `src/App.tsx`: `<Pomiar />` (z `@/pomiar/Pomiar`) obok `<Aplikacja />` – pomiar rusza na wszystkich ekranach
-- [ ] T067 `vite.config.ts`: plugin dev (`configureServer`) pod `/api/zdarzenie` wołający `handler` z `api/zdarzenie.js` z `env` z `loadEnv(mode, cwd, '')` – tylko `pnpm dev`, nic w buildzie
+- [X] T066 `src/App.tsx`: `<Pomiar />` (z `@/pomiar/Pomiar`) obok `<Aplikacja />` – pomiar rusza na wszystkich ekranach
+- [X] T067 `vite.config.ts`: plugin dev (`configureServer`) pod `/api/zdarzenie` wołający `handler` z `api/zdarzenie.js` z `env` z `loadEnv(mode, cwd, '')` – tylko `pnpm dev`, nic w buildzie
 - [ ] T068 Przegląd `package.json` / `pnpm-lock.yaml` (recharts z T001) i `vercel.json`: potwierdź, że rewrite `/((?!…api/…).*)` przepuszcza `/api/zdarzenie` i nie trzeba wpisu w `functions`; `src/kontrakty/**` bez zmian – zapisz wynik przeglądu w komentarzu issue fazy
 - [ ] T069 Zdejmij ewentualny `skip` z `api/_zdarzenie-kontrakt.test.js` (T017/T029); `node --test api/ src/pomiar/ src/panel/ src/wynik/` i `pnpm verify` zielone
 
