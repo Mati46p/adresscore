@@ -119,7 +119,7 @@ w `dist/assets/index-*.js` nie ma `recharts`.
 - [X] T038 [P] [US2] Zaślepki zakładek `src/panel/zakladki/Przeglad.tsx`, `Akwizycja.tsx`, `Sesje.tsx`, `Zaangazowanie.tsx`, `Cta.tsx`, `Tresc.tsx`, `Jakosc.tsx` – każda eksportuje komponent nazwany jak plik, renderujący `BrakDanych` („w budowie”); późniejsze fazy podmieniają WYŁĄCZNIE treść swojego pliku
 - [X] T039 [US2] `src/wynik/url.ts`: `Ekran` + `'panel'`; `#/panel` ↔ `ekran: 'panel'`; obecność `panel` w `location.search` → `'panel'` niezależnie od hasha (bezpiecznik R9); testy w istniejącym stylu (`src/wynik/urlPanel.test.ts`)
 - [X] T040 [US2] `src/karta/ladowanieEkranow.ts`: `ladujPanel = () => import('@/panel/EkranPanel')`, wpis w `przygotujEkran`; `src/karta/Aplikacja.tsx`: `lazy` `EkranPanel`, render przy `ekran === 'panel'` bez mapy i nagłówka aplikacji (sprawdź, czy `src/wynik/stan.ts` nie wymaga gałęzi dla `panel` – jeśli tak, dopisz minimalnie)
-- [ ] T041 [US2] Weryfikacja: `pnpm verify`; `grep -l recharts dist/assets/index-*.js` → brak; ręcznie `pnpm dev` → `#/panel` pokazuje logowanie; zapisz w komentarzu issue fazy wynik sprawdzenia kształtu adresu powrotu OAuth (R9), jeśli lokalny Supabase ma skonfigurowanego Google
+- [X] T041 [US2] Weryfikacja: `pnpm verify`; `grep -l recharts dist/assets/index-*.js` → brak; ręcznie `pnpm dev` → `#/panel` pokazuje logowanie; zapisz w komentarzu issue fazy wynik sprawdzenia kształtu adresu powrotu OAuth (R9), jeśli lokalny Supabase ma skonfigurowanego Google
 
 **Punkt kontrolny**: panel otwiera się, loguje i odmawia; zakładki to zaślepki.
 
@@ -203,7 +203,7 @@ Zależy od fazy 4. Dotyka plików toru karta/strony – wyłącznie atrybuty i j
 - [X] T062 [P] [US5] `src/karta/wyszukiwarka/Wyszukiwarka.tsx`: po zatwierdzeniu wyszukiwania (nie przy każdym znaku – debounce 1 s albo wybór/enter) `produktowe('wyszukanie', { wynikow, rodzaj })`; przy zerze wyników `produktowe('wyszukanie_bez_wyniku', normalizujFraze(tekst))`
 - [X] T063 [P] [US5] Atrybuty `data-sekcja` (klucze z contracts/pomiar-klient.md) i `data-cel` na głównych przyciskach w plikach ekranu karty adresu (`src/karta/okolica/*.tsx`), `src/karta/porownanie/EkranPorownanie.tsx`, `src/karta/biznes/EkranBiznes.tsx`, `src/karta/EkranSzukaj.tsx` – bez zmian zachowania i stylów
 - [X] T064 [P] [US1] `src/strony/Metoda.tsx` (+ `src/strony/metoda.css` w razie potrzeby): sekcja „Pomiar ruchu” – co mierzymy, czego nie (IP, ciasteczka), przełącznik `ustawPomiar` z odczytem `pomiarWylaczony()`; przy wyłączeniu jedno zdarzenie `pomiar_wylaczony` PRZED zapisem wyboru; **treść publiczna – oznacz w raporcie fazy do akceptacji właściciela przed wdrożeniem**
-- [ ] T065 [US1] `pnpm verify` + `node --test src/pomiar/ src/karta/` – istniejące testy ekranów bez regresji
+- [X] T065 [US1] `pnpm verify` + `node --test src/pomiar/ src/karta/` – istniejące testy ekranów bez regresji
 
 ---
 
@@ -214,8 +214,8 @@ Zależy od faz 3, 4, 5, 12.
 
 - [X] T066 `src/App.tsx`: `<Pomiar />` (z `@/pomiar/Pomiar`) obok `<Aplikacja />` – pomiar rusza na wszystkich ekranach
 - [X] T067 `vite.config.ts`: plugin dev (`configureServer`) pod `/api/zdarzenie` wołający `handler` z `api/zdarzenie.js` z `env` z `loadEnv(mode, cwd, '')` – tylko `pnpm dev`, nic w buildzie
-- [ ] T068 Przegląd `package.json` / `pnpm-lock.yaml` (recharts z T001) i `vercel.json`: potwierdź, że rewrite `/((?!…api/…).*)` przepuszcza `/api/zdarzenie` i nie trzeba wpisu w `functions`; `src/kontrakty/**` bez zmian – zapisz wynik przeglądu w komentarzu issue fazy
-- [ ] T069 Zdejmij ewentualny `skip` z `api/_zdarzenie-kontrakt.test.js` (T017/T029); `node --test api/ src/pomiar/ src/panel/ src/wynik/` i `pnpm verify` zielone
+- [X] T068 Przegląd `package.json` / `pnpm-lock.yaml` (recharts z T001) i `vercel.json`: potwierdź, że rewrite `/((?!…api/…).*)` przepuszcza `/api/zdarzenie` i nie trzeba wpisu w `functions`; `src/kontrakty/**` bez zmian – zapisz wynik przeglądu w komentarzu issue fazy
+- [X] T069 Zdejmij ewentualny `skip` z `api/_zdarzenie-kontrakt.test.js` (T017/T029); `node --test api/ src/pomiar/ src/panel/ src/wynik/` i `pnpm verify` zielone
 
 ---
 
@@ -223,10 +223,10 @@ Zależy od faz 3, 4, 5, 12.
 
 **Cel**: kryteria sukcesu SC-001–SC-008, dokumentacja.
 
-- [ ] T070 [P] Waga paczki (SC-002): `pnpm build` przed (z `main`) i po; gzip chunku wejściowego +≤ 6 KB; `recharts` tylko w chunku panelu – wynik w komentarzu issue
-- [ ] T071 [P] Przejście quickstart.md kroki 1–5 na lokalnym Supabase; rozbieżności → poprawki w odpowiednich plikach faz albo w quickstart.md
-- [ ] T072 [P] `docs/panel-admina.md`: architektura panelu adresscore (warstwy, bramka, pomiar, zestawienie, jak dołożyć widok: RPC z bramką → wpis w `src/panel/dane.ts` → hasło w `slownik.ts` → komponent), wzór z-dykty `docs/panel-admina.md` w skrócie
-- [ ] T073 Przegląd prywatności: `grep` po `api/` i `src/pomiar/` – brak `console.*` z IP/UA, brak zapisu do storage poza `pomiar-wylaczony`, brak `useMemo`/`useCallback` w `src/panel/` i `src/pomiar/`; półpauzy zamiast pauz w nowych tekstach
+- [X] T070 [P] Waga paczki (SC-002): `pnpm build` przed (z `main`) i po; gzip chunku wejściowego +≤ 6 KB; `recharts` tylko w chunku panelu – wynik w komentarzu issue
+- [X] T071 [P] Przejście quickstart.md kroki 1–5 na lokalnym Supabase; rozbieżności → poprawki w odpowiednich plikach faz albo w quickstart.md
+- [X] T072 [P] `docs/panel-admina.md`: architektura panelu adresscore (warstwy, bramka, pomiar, zestawienie, jak dołożyć widok: RPC z bramką → wpis w `src/panel/dane.ts` → hasło w `slownik.ts` → komponent), wzór z-dykty `docs/panel-admina.md` w skrócie
+- [X] T073 Przegląd prywatności: `grep` po `api/` i `src/pomiar/` – brak `console.*` z IP/UA, brak zapisu do storage poza `pomiar-wylaczony`, brak `useMemo`/`useCallback` w `src/panel/` i `src/pomiar/`; półpauzy zamiast pauz w nowych tekstach
 
 ---
 
