@@ -1,0 +1,148 @@
+/* Zakładka „Jakość” (T061): tylko to, czego nie ma w panel.css. Układ (stos, sekcje, tabele, kafle,
+   kapsułki stanu) pochodzi z klas panelu; tu są dodatki zakładki, wszystkie z prefiksem `jakosc-`.
+   Kolory: tylko tokeny tekstu i stanów z panelu. Stan niesie zawsze słowo i znak w kapsułce
+   (`Znacznik`), a kolor je tylko wzmacnia; pismo nigdy nie dostaje koloru palety danych. */
+
+/* ── Diagnostyka ─────────────────────────────────────────────────────────── */
+.jakosc-diagnoza {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+.jakosc-kafle {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+.jakosc-podtytul {
+  margin: 4px 0 0;
+  font-size: 15px;
+  line-height: 1.3;
+  font-weight: 600;
+}
+
+/* Podpis kafla składa się z kilku zdań i kapsułek: układamy je w kolumnie z odstępem, zamiast
+   sklejać w jeden akapit. */
+.jakosc-kafle .panel-stat-podpis {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  overflow-wrap: anywhere;
+}
+
+/* Opakowanie kafla z podświetlaną obwódką stanu (ostrzeżenie). Samo opakowanie jest komórką siatki,
+   a kafel w środku wypełnia je w całości. */
+.jakosc-kafel {
+  display: flex;
+  min-width: 0;
+}
+.jakosc-kafel > .panel-stat {
+  flex: 1 1 auto;
+}
+.jakosc-kafel[data-ton="uwaga"] > .panel-stat {
+  border-color: var(--ostrzezenie);
+}
+.jakosc-kafel[data-ton="zla"] > .panel-stat {
+  border-color: var(--panel-zla-tekst);
+}
+
+/* Kafel ostatniego biegu: wartością jest kapsułka stanu, większa niż w tabelach. Obwódka kafla
+   wzmacnia stan (czerwona przy opóźnieniu i błędzie, bursztynowa przy ostrzeżeniu); samą obwódką
+   nic nie jest przekazane, bo słowo i znak stoją w kapsułce. */
+.jakosc-bieg .panel-stat-wartosc {
+  display: flex;
+  align-items: center;
+  min-height: 1.15em;
+}
+.jakosc-bieg .panel-znacznik {
+  padding: 4px 14px;
+  font-size: 16px;
+}
+.jakosc-bieg[data-ton="zla"] {
+  border-color: var(--panel-zla-tekst);
+}
+.jakosc-bieg[data-ton="uwaga"] {
+  border-color: var(--ostrzezenie);
+}
+
+/* ── Okres ───────────────────────────────────────────────────────────────── */
+.jakosc-okres {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+}
+.jakosc-okres-etykieta {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--tekst);
+}
+.jakosc-okres-opis {
+  flex: 1 1 100%;
+  margin: 0;
+  font-size: 13px;
+  color: var(--tekst-3);
+}
+
+/* ── Web Vitals ──────────────────────────────────────────────────────────── */
+/* Komórka macierzy: wartość i liczba próbek w jednej linii, pod nimi kapsułka z oceną. */
+.jakosc-witalu {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+/* Bez zawijania: wartość i próbki zawsze stoją obok siebie w każdej komórce (tabela się poszerza,
+   a opakowanie tabeli przewija się poziomo), zamiast zawijać jedne komórki, a inne nie. */
+.jakosc-witalu-glowa {
+  display: flex;
+  align-items: baseline;
+  gap: 0 8px;
+  white-space: nowrap;
+}
+.jakosc-witalu-wartosc {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.jakosc-witalu-probki {
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: var(--tekst-3);
+  white-space: nowrap;
+}
+/* „Mało próbek”: słowa i pogrubienie, nie sam kolor (tekst ostrzeżenia ma ≥ 4,5:1 na białym). */
+.jakosc-witalu-probki[data-malo] {
+  font-weight: 600;
+  color: var(--panel-uwaga-tekst);
+}
+
+/* ── Błędy klienta ───────────────────────────────────────────────────────── */
+/* Komunikat pochodzi od dowolnego klienta: zawija się (także w środku „słowa”), zamiast rozpychać
+   tabelę albo znikać pod wielokropkiem, którego na dotyku nie da się rozwinąć. */
+.jakosc-komunikat {
+  display: block;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+/* Ekran i czas ostatniego wystąpienia są krótkie: nie zawijamy ich, żeby wiersz błędu nie rósł o
+   linie po obu stronach komunikatu. */
+.jakosc-krotkie {
+  white-space: nowrap;
+}
+.jakosc-bez-bledow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--ramka);
+  border-radius: 12px;
+  background: var(--powierzchnia);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--tekst-2);
+}

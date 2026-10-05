@@ -191,7 +191,7 @@ dwie migracje naraz (inaczej po fazie 6).
 
 **Cel**: US6. Zależy od fazy 5.
 
-- [ ] T061 [US6] `src/panel/zakladki/Jakosc.tsx`: diagnostyka pomiaru (ostatnie zdarzenie, zdarzenia na typ 24 h, bez odcisku, ostatni bieg – czerwony gdy starszy niż 26 h lub z `blad`), Web Vitals p75 per ekran (ms, liczba próbek obok, ocena z `ocenaWitalu`; CLS jako ułamek), błędy klienta (komunikat, ekran, liczba, ostatnio)
+- [X] T061 [US6] `src/panel/zakladki/Jakosc.tsx`: diagnostyka pomiaru (ostatnie zdarzenie, zdarzenia na typ 24 h, bez odcisku, ostatni bieg – czerwony gdy starszy niż 26 h lub z `blad`), Web Vitals p75 per ekran (ms, liczba próbek obok, ocena z `ocenaWitalu`; CLS jako ułamek), błędy klienta (komunikat, ekran, liczba, ostatnio)
 
 ---
 
