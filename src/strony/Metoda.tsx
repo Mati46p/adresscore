@@ -1,4 +1,4 @@
-import { Fragment, useId, useSyncExternalStore } from 'react'
+import { Fragment, type MouseEvent, useId, useSyncExternalStore } from 'react'
 import { KATEGORIE, type WskaznikMeta } from '@/kontrakty'
 import {
   pomiarWylaczony,
@@ -302,6 +302,14 @@ function PrzelacznikPomiaru() {
 }
 
 export function Metoda() {
+  function przewinDoSekcji(zdarzenie: MouseEvent<HTMLAnchorElement>) {
+    const cel = zdarzenie.currentTarget.hash.slice(1)
+    const sekcja = document.getElementById(cel)
+    if (!sekcja) return
+    zdarzenie.preventDefault()
+    sekcja.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
   return (
     <main className="met">
       <header className="met-wstep">
@@ -312,11 +320,21 @@ export function Metoda() {
           strona pokazuje, jak liczymy, skąd mamy dane i czego jeszcze nie wiemy.
         </p>
         <nav aria-label="Spis treści" className="met-spis">
-          <a href="#met-jak">Jak liczymy</a>
-          <a href="#met-zrodla">Źródła</a>
-          <a href="#met-etyka">Etyka</a>
-          <a href="#met-pomiar">Pomiar ruchu</a>
-          <a href="#met-ograniczenia">Ograniczenia</a>
+          <a href="#met-jak" onClick={przewinDoSekcji}>
+            Jak liczymy
+          </a>
+          <a href="#met-zrodla" onClick={przewinDoSekcji}>
+            Źródła
+          </a>
+          <a href="#met-etyka" onClick={przewinDoSekcji}>
+            Etyka
+          </a>
+          <a href="#met-pomiar" onClick={przewinDoSekcji}>
+            Pomiar ruchu
+          </a>
+          <a href="#met-ograniczenia" onClick={przewinDoSekcji}>
+            Ograniczenia
+          </a>
         </nav>
       </header>
 
