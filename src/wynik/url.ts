@@ -19,6 +19,13 @@ export type Ekran =
    */
   | 'miasto'
   | 'biznes'
+  /**
+   * Panel admina z analityką (`#/panel`), ładowany leniwie i dostępny tylko po zalogowaniu kontem
+   * Google z listy adminów. Nie jest ekranem zwiedzającego: nie wchodzi do pomiaru ruchu i nie ma
+   * własnych parametrów w linku. Powrót z logowania OAuth niesie `?panel` w query (patrz
+   * `czytajHash`), więc ten ekran wygrywa także wtedy, gdy dostawca obetnie fragment `#/panel`.
+   */
+  | 'panel'
 
 export interface StanUrl {
   ekran: Ekran
@@ -154,7 +161,22 @@ function czytajPunkt(tekst: string | null): { lon: number; lat: number } | null 
   return wGranicachPunktu(lon, lat) ? { lon, lat } : null
 }
 
-export function czytajHash(hash: string): StanUrl {
+/**
+ * Czy query (`location.search`) niesie znacznik panelu. `has`, a nie `get`: serwer autoryzacji
+ * dopisuje `code` do adresu powrotu `/?panel#/panel` i przy tym przepisuje query, więc `panel`
+ * wraca jako `?code=…&panel=` (pusta wartość), a nie `?panel`.
+ */
+export function maZnacznikPanelu(search: string): boolean {
+  return search !== '' && new URLSearchParams(search).has('panel')
+}
+
+/**
+ * `search` (opcjonalny, `location.search`) to bezpiecznik logowania do panelu: dostawca OAuth może
+ * uciąć fragment adresu powrotu, a wtedy po powrocie zostaje samo `/?code=…&panel=`. Obecność
+ * parametru `panel` otwiera ekran panelu niezależnie od hasha. Bez drugiego argumentu funkcja
+ * zachowuje się jak dotąd – zapisy preferencji i testy czytają sam hash.
+ */
+export function czytajHash(hash: string, search = ''): StanUrl {
   const bez = hash.replace(/^#/, '')
   const [sciezka = '', zapytanie = ''] = bez.split('?')
   const czesci = sciezka.split('/').filter(Boolean)
@@ -178,6 +200,13 @@ export function czytajHash(hash: string): StanUrl {
     // Jeden ekran, dwa adresy: `#/miasto` jest właściwym (tryb Miasto obok Biznesu), `#/symulator` to
     // adres sprzed #108 i linki z obiektami (`a=`, `b=`) wysłane wcześniej muszą dalej działać.
     ekran = 'miasto'
+  } else if (czesci[0] === 'panel') {
+    ekran = 'panel'
+  }
+  // Znacznik w query przeważa nad hashem; adres karty z hasha nie ma wtedy sensu.
+  if (maZnacznikPanelu(search)) {
+    ekran = 'panel'
+    idAdresu = null
   }
 
   const p = parametry.get('p')
@@ -214,6 +243,8 @@ export function czytajHash(hash: string): StanUrl {
 }
 
 export function zapiszHash(s: StanUrl): string {
+  // Panel nie ma parametrów w linku (persona, tryb, filtry należą do ekranów zwiedzającego).
+  if (s.ekran === 'panel') return '#/panel'
   let sciezka = '/'
   if (s.ekran === 'okolica' && s.idAdresu) sciezka = `/adres/${encodeURIComponent(s.idAdresu)}`
   else if (s.ekran === 'porownanie') sciezka = '/porownanie'

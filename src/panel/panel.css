@@ -1,0 +1,758 @@
+/* Panel admina z analityką (#/panel). Tokeny z src/styles.css (--tlo, --powierzchnia, --akcent,
+   --ramka, --tekst…); tu tylko to, czego tamte nie mają: paleta danych i układ panelu. Panel jest
+   tylko jasny, jak cała aplikacja (color-scheme: light w :root).
+
+   Układ dla zakładek (klasy gotowe do użycia, żeby każda zakładka nie pisała własnych):
+     .panel-stos      pionowy stos sekcji (odstęp 28 px)
+     .panel-siatka    kafle statystyk: auto-fill od 190 px
+     .panel-kolumny   dwie kolumny od 900 px, jedna na telefonie
+     .panel-karta     biała karta z ramką
+   Zasada akcentu: --akcent należy WYŁĄCZNIE do stanu wybranego (aktywna zakładka, wciśnięty
+   przełącznik). Kolory danych (--panel-kat-*) to inna rzecz: wypełnienia, nigdy pismo. */
+
+.panel {
+  /* Paleta danych: walidowana skryptem palety na tle --powierzchnia (#fff): osiem slotów
+     spełnia sprawdzenia par sąsiednich (CVD ΔE ≥ 8,4; normalne widzenie ≥ 19,3) i kontrast ≥ 3:1;
+     trzy pierwsze także w trybie „wszystkie pary”. Lustro wartości: kolory.ts. */
+  --panel-kat-1: #2a78d6;
+  --panel-kat-2: #eb6834;
+  --panel-kat-3: #199e70;
+  --panel-kat-4: #c98500;
+  --panel-kat-5: #d55181;
+  --panel-kat-6: #008300;
+  --panel-kat-7: #4a3aa7;
+  --panel-kat-8: #e34948;
+  --panel-szary: #898781; /* wygaszenie: roboty, „inne”, kontekst (3,6:1 na białym) */
+  --panel-siatka: #e6e8ea; /* linie siatki wykresów: cienkie, ledwie widoczne */
+  --panel-os: #c3c8cc;
+  /* Stany (ocena Web Vitals, bieg zestawienia): tekst ≥ 6,6:1 na swoim tle, a znaczenie niesie
+     zawsze słowo i znak, nie sam kolor. */
+  --panel-dobra-tekst: #006300;
+  --panel-dobra-tlo: #e6f4e6;
+  --panel-uwaga-tekst: var(--ostrzezenie-tekst);
+  --panel-uwaga-tlo: var(--ostrzezenie-tlo);
+  --panel-zla-tekst: #9b1c1c;
+  --panel-zla-tlo: #fbe9e7;
+
+  box-sizing: border-box;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 20px 16px 56px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  color: var(--tekst);
+}
+@media (min-width: 861px) {
+  .panel {
+    padding: 28px 32px 64px;
+  }
+}
+.panel *,
+.panel *::before,
+.panel *::after {
+  box-sizing: border-box;
+}
+
+/* ── Pasek górny ──────────────────────────────────────────────────────────── */
+.panel-pasek {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 16px;
+}
+.panel-tytul {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.2;
+  font-weight: 700;
+}
+.panel-narzedzia {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+.panel-wiek {
+  font-size: 13px;
+  color: var(--tekst-3);
+}
+.panel-konto {
+  font-size: 13px;
+  color: var(--tekst-3);
+  max-width: 28ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Przycisk drugorzędny (też jako link): pigułka z ramką, jak .seg, ale bez stanu „wciśnięty”. */
+.panel-przycisk {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--cel-dotyku);
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid var(--ramka-pola);
+  background: var(--powierzchnia);
+  color: var(--tekst-2);
+  font: inherit;
+  font-size: 14px;
+  text-decoration: none;
+  cursor: pointer;
+}
+.panel-przycisk:disabled {
+  color: var(--tekst-3);
+  cursor: progress;
+}
+@media (hover: hover) {
+  .panel-przycisk:not(:disabled):hover {
+    border-color: var(--akcent-obrys);
+    color: var(--tekst);
+  }
+}
+
+/* ── Zakładki ─────────────────────────────────────────────────────────────── */
+.panel-zakladki {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--ramka);
+  scrollbar-width: thin;
+}
+@media (max-width: 860px) {
+  .panel-zakladki {
+    /* Przycięcie przy prawej krawędzi zapowiada, że pasek się przewija. */
+    mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+    padding-right: 28px;
+    scrollbar-width: none;
+  }
+  .panel-zakladki::-webkit-scrollbar {
+    display: none;
+  }
+}
+.panel-zakladka {
+  flex: none;
+  min-height: var(--cel-dotyku);
+  padding: 0 16px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: var(--tekst-2);
+  font: inherit;
+  font-size: 15px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.panel-zakladka[aria-selected="true"] {
+  border-bottom-color: var(--akcent);
+  color: var(--akcent);
+  font-weight: 600;
+}
+.panel-zakladka:focus-visible {
+  outline-offset: -4px;
+}
+@media (hover: hover) {
+  .panel-zakladka[aria-selected="false"]:hover {
+    background: var(--powierzchnia-2);
+    color: var(--tekst);
+  }
+}
+.panel-wstep {
+  margin: 0;
+  max-width: 78ch;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--tekst-2);
+}
+.panel-widok {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  min-width: 0;
+}
+
+/* ── Układ dla zakładek ───────────────────────────────────────────────────── */
+.panel-stos {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  min-width: 0;
+}
+.panel-siatka {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+}
+.panel-kolumny {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
+}
+@media (min-width: 900px) {
+  .panel-kolumny {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.panel-karta {
+  background: var(--powierzchnia);
+  border: 1px solid var(--ramka);
+  border-radius: 16px;
+  padding: 16px;
+  min-width: 0;
+}
+
+/* ── Sekcja (nagłówek + stany) ────────────────────────────────────────────── */
+.panel-sekcja {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+.panel-sekcja-glowa {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+.panel-sekcja-tytul {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.3;
+  font-weight: 600;
+}
+.panel-sekcja-opis {
+  margin: 0;
+  max-width: 78ch;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--tekst-3);
+}
+/* Odświeżanie: poprzedni obraz zostaje bez zmian (bez skoku układu i bez przygaszania, bo
+   przygaszony tekst nie spełnia kontrastu 4,5:1); stan sygnalizuje napis przy tytule. */
+.panel-sekcja-tresc {
+  min-width: 0;
+}
+.panel-odswiezanie {
+  font-size: 13px;
+  color: var(--tekst-3);
+}
+.panel-szkielet {
+  min-height: 120px;
+  border-radius: 12px;
+  background: linear-gradient(90deg, var(--powierzchnia-2), var(--linia), var(--powierzchnia-2));
+  background-size: 200% 100%;
+  animation: panel-szkielet 1.4s ease-in-out infinite;
+}
+@keyframes panel-szkielet {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .panel-szkielet {
+    animation: none;
+  }
+}
+.panel-blad {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--ostrzezenie);
+  border-radius: 12px;
+  background: var(--ostrzezenie-tlo);
+  color: var(--ostrzezenie-tekst);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* ── Brak danych (szary stan, nigdy zero) ─────────────────────────────────── */
+.panel-brak {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--tekst-3);
+  font-size: 14px;
+}
+.panel-brak-kropka {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--panel-szary);
+}
+.panel-brak-opis {
+  color: var(--tekst-3);
+}
+.panel-brak[data-blok] {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 16px;
+  border: 1px dashed var(--ramka-pola);
+  border-radius: 12px;
+  background: var(--powierzchnia-2);
+}
+
+/* ── Kafel statystyki ─────────────────────────────────────────────────────── */
+.panel-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding: 14px 16px;
+  background: var(--powierzchnia);
+  border: 1px solid var(--ramka);
+  border-radius: 14px;
+}
+.panel-stat-etykieta {
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--tekst-3);
+}
+.panel-stat-wartosc {
+  font-size: 26px;
+  line-height: 1.15;
+  font-weight: 600;
+  color: var(--tekst);
+  overflow-wrap: anywhere;
+}
+.panel-stat-wartosc[data-brak] {
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.7;
+}
+.panel-stat-podpis {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--tekst-3);
+}
+
+/* ── Tabele ───────────────────────────────────────────────────────────────── */
+.panel-tabela {
+  overflow-x: auto;
+  border: 1px solid var(--ramka);
+  border-radius: 12px;
+  background: var(--powierzchnia);
+}
+.panel-tabela[data-przewijana] {
+  max-height: 340px;
+  overflow-y: auto;
+}
+.panel-tabela table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.panel-tabela caption {
+  padding: 10px 12px 4px;
+  text-align: left;
+  font-size: 13px;
+  color: var(--tekst-3);
+}
+.panel-tabela th,
+.panel-tabela td {
+  padding: 8px 12px;
+  text-align: left;
+  vertical-align: baseline;
+}
+.panel-tabela thead th {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--tekst-3);
+  border-bottom: 1px solid var(--ramka);
+}
+.panel-tabela thead th[data-liczba] {
+  white-space: nowrap;
+}
+@media (max-width: 520px) {
+  .panel-tabela th,
+  .panel-tabela td {
+    padding: 8px 6px;
+  }
+  .panel-tabela th[data-etykieta] {
+    min-width: 96px;
+  }
+  .panel-tabela thead th[data-liczba] {
+    white-space: normal;
+  }
+}
+.panel-tabela tbody tr + tr td,
+.panel-tabela tbody tr + tr th {
+  border-top: 1px solid var(--linia);
+}
+.panel-tabela tbody th {
+  font-weight: 400;
+}
+.panel-tabela [data-liczba] {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.panel-tabela [data-brak-komorki] {
+  color: var(--tekst-3);
+  white-space: normal; /* „brak danych” może się zawinąć, zamiast rozpychać wąską kolumnę liczb */
+}
+.panel-tabela [data-lp] {
+  width: 1%;
+  color: var(--tekst-3);
+  font-variant-numeric: tabular-nums;
+}
+/* Kolumna etykiety (nagłówek wiersza) bierze całą wolną szerokość; długą treść skraca wielokropek,
+   pełny tekst jest w dymku `title`. Sztuczka width:100% + max-width:0 pozwala komórce się skurczyć. */
+.panel-tabela th[data-etykieta] {
+  width: 100%;
+  max-width: 0;
+  min-width: 140px;
+}
+.panel-tabela-etykieta {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.panel-sortowanie {
+  margin-left: 4px;
+  font-size: 11px;
+}
+.panel-tabela-uwaga {
+  margin: 6px 2px 0;
+  font-size: 13px;
+  color: var(--tekst-3);
+}
+
+/* ── Pasek udziałów i legenda ─────────────────────────────────────────────── */
+.panel-udzialy {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+.panel-udzialy-tor {
+  display: flex;
+  gap: 2px; /* odstęp w kolorze powierzchni oddziela segmenty; bez obwódek wokół wypełnień */
+  height: 16px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--powierzchnia-2);
+}
+.panel-udzialy-segment {
+  min-width: 2px;
+}
+.panel-udzialy-podstawa {
+  margin: 0;
+  font-size: 13px;
+  color: var(--tekst-3);
+}
+.panel-legenda {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 6px 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+}
+.panel-legenda li {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+.panel-kropka {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  align-self: center;
+}
+.panel-legenda-nazwa {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--tekst);
+}
+.panel-legenda-liczba {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+  color: var(--tekst);
+}
+.panel-legenda-procent {
+  flex: none;
+  min-width: 6ch;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--tekst-3);
+}
+.panel-legenda--linie li {
+  align-items: center;
+}
+.panel-klucz-linii {
+  flex: none;
+  width: 18px;
+  height: 2px;
+  border-radius: 1px;
+}
+
+/* ── Wykresy ──────────────────────────────────────────────────────────────── */
+.panel-wykres {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  min-width: 0;
+}
+.panel-wykres-podpis {
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--tekst-2);
+}
+.panel-wykres-pole {
+  position: relative;
+  width: 100%;
+  height: 280px; /* z pasmem osi X: wysokość kontenera obejmuje etykiety osi */
+  padding: 8px 4px 0 0;
+  background: var(--powierzchnia);
+  border: 1px solid var(--ramka);
+  border-radius: 12px;
+}
+.panel-wykres-pole[data-lejek] {
+  height: auto;
+}
+.panel-wykres-pole svg {
+  overflow: visible;
+}
+.panel-wykres-pusty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.panel-wykres-pusty .panel-brak {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--powierzchnia);
+}
+.panel-wykres-uwaga {
+  margin: 0;
+  font-size: 13px;
+  color: var(--tekst-3);
+}
+.panel-dymek {
+  min-width: 170px;
+  max-width: 280px;
+  padding: 8px 10px;
+  background: var(--powierzchnia);
+  border: 1px solid var(--ramka-pola);
+  border-radius: 10px;
+  box-shadow: 0 6px 18px rgb(20 41 31 / 14%);
+  font-size: 13px;
+}
+.panel-dymek-naglowek {
+  margin: 0 0 6px;
+  color: var(--tekst-3);
+}
+.panel-dymek-wiersz {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 0;
+}
+.panel-dymek-wartosc {
+  margin-left: auto;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--tekst);
+}
+.panel-dymek-nazwa {
+  color: var(--tekst-2);
+}
+.panel-dymek-dopisek {
+  margin: 4px 0 0;
+  color: var(--tekst-3);
+}
+.panel-szczegoly {
+  font-size: 14px;
+}
+.panel-szczegoly summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--cel-dotyku);
+  padding: 0 4px;
+  color: var(--akcent);
+  cursor: pointer;
+}
+.panel-szczegoly[open] summary {
+  margin-bottom: 8px;
+}
+@media (hover: hover) {
+  .panel-szczegoly summary:hover {
+    color: var(--akcent-hover);
+    text-decoration: underline;
+  }
+}
+
+/* ── Podpowiedź przy liczbie ──────────────────────────────────────────────── */
+.panel-podpowiedz {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-left: 6px;
+  padding: 0;
+  vertical-align: middle;
+  border: 1px solid var(--ramka-pola);
+  border-radius: 50%;
+  background: var(--powierzchnia);
+  color: var(--tekst-3);
+  font: inherit;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+}
+/* Pole dotyku powiększa pseudoelement (44 × 44), nie sam znaczek: minimum na samym znaczku
+   rozpychałoby wiersz etykiety. Znaczek osadzony w zdaniu jest zwolniony z progu WCAG 2.5.8. */
+.panel-podpowiedz::before {
+  content: "";
+  position: absolute;
+  inset: -13px;
+}
+.panel-podpowiedz[aria-expanded="true"] {
+  border-color: var(--akcent);
+  color: var(--akcent);
+}
+@media (hover: hover) {
+  .panel-podpowiedz:hover {
+    border-color: var(--akcent-obrys);
+    color: var(--tekst);
+  }
+}
+.panel-podpowiedz-dymek {
+  /* Dymek idzie do warstwy górnej (atrybut popover), więc nie przytnie go żaden overflow tabeli.
+     Pozycję liczy skrypt przy otwarciu; do pierwszego pomiaru jest przezroczysty. */
+  inset: auto;
+  margin: 0;
+  width: min(22rem, calc(100vw - 1rem));
+  padding: 12px;
+  border: 1px solid var(--ramka-pola);
+  border-radius: 12px;
+  background: var(--powierzchnia);
+  color: var(--tekst);
+  box-shadow: 0 10px 28px rgb(20 41 31 / 18%);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.5;
+  text-align: left;
+  text-transform: none;
+  letter-spacing: normal;
+  opacity: 0;
+}
+.panel-podpowiedz-dymek[data-gotowy] {
+  opacity: 1;
+}
+.panel-podpowiedz-dymek:popover-open {
+  display: block;
+}
+/* Elementy dymka to span-y (podpowiedź może stać w nagłówku), układane blokowo. */
+.panel-podpowiedz-dymek > span {
+  display: block;
+}
+.panel-podpowiedz-dymek > span + span {
+  margin-top: 8px;
+}
+.panel-podpowiedz-nazwa {
+  font-size: 14px;
+  font-weight: 600;
+}
+.panel-podpowiedz-pulapka {
+  padding-left: 8px;
+  border-left: 2px solid var(--akcent-obrys);
+  color: var(--tekst-2);
+}
+.panel-podpowiedz-meta {
+  color: var(--tekst-3);
+}
+
+/* ── Przełącznik okresu i znacznik oceny ──────────────────────────────────── */
+.panel-segmenty {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.panel-znacznik {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+.panel-znacznik[data-ton="dobra"] {
+  background: var(--panel-dobra-tlo);
+  color: var(--panel-dobra-tekst);
+}
+.panel-znacznik[data-ton="uwaga"] {
+  background: var(--panel-uwaga-tlo);
+  color: var(--panel-uwaga-tekst);
+}
+.panel-znacznik[data-ton="zla"] {
+  background: var(--panel-zla-tlo);
+  color: var(--panel-zla-tekst);
+}
+.panel-znacznik[data-ton="neutralna"] {
+  background: var(--powierzchnia-2);
+  color: var(--tekst-2);
+  box-shadow: inset 0 0 0 1px var(--ramka);
+}
+
+.panel .przycisk-glowny:disabled {
+  background: var(--tekst-3);
+  cursor: progress;
+}
+
+/* ── Logowanie i stany bramki ─────────────────────────────────────────────── */
+.panel-stan {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  max-width: 560px;
+  margin: 8vh auto 0;
+  padding: 24px;
+  width: 100%;
+  background: var(--powierzchnia);
+  border: 1px solid var(--ramka);
+  border-radius: 16px;
+}
+.panel-stan h1 {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.25;
+}
+.panel-stan p {
+  margin: 0;
+  color: var(--tekst-2);
+  line-height: 1.5;
+}
+.panel-stan-akcje {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}

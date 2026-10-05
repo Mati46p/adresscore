@@ -595,7 +595,8 @@ function czytajBiezacyUrl(): StanUrl {
   const zapis = trybLinku
     ? odczytajPreferencjeTrybu(trybLinku === 'biznes' ? 'biznes' : 'mieszkanie')
     : odczytajPreferencje()
-  const url = polaczPreferencje(czytajHash(location.hash), location.hash, zapis)
+  // `location.search` tylko dla bezpiecznika panelu (`?panel` po powrocie z logowania Google).
+  const url = polaczPreferencje(czytajHash(location.hash, location.search), location.hash, zapis)
   const sciezka = location.pathname
   if (sciezka === '/katalog' || sciezka.startsWith('/katalog/')) {
     return { ...url, ekran: 'katalog', idAdresu: null }
@@ -658,6 +659,12 @@ function zapiszParametryEkranuPrzedDanymi(poprzedni: StanAplikacji) {
 
 function zapiszDoUrl(poprzedni: StanAplikacji) {
   if (typeof window === 'undefined' || odczytujemyHistorie) return
+  // Adresu panelu nie dotyka synchronizacja stanu: zmienia go wyłącznie sam panel
+  // (`wyczyscAdresPoLogowaniu`). Po powrocie z logowania Google pasek niesie `?code=…` (PKCE), a klient
+  // Supabase wymienia ten kod dopiero, gdy załaduje się chunk panelu. Zapis stanu zrobiłby
+  // `replaceState` na `/#/panel` (bez query), skasował kod przed wymianą i logowanie kończyłoby się
+  // cichą porażką, szczególnie gdy dostawca obetnie fragment adresu powrotu.
+  if (stan.ekran === 'panel') return
   if (!idAdresow) return zapiszParametryEkranuPrzedDanymi(poprzedni)
   // Strona konkretnej ulicy ma własną ścieżkę, chociaż w aplikacji używa ekranu katalogu.
   if (
