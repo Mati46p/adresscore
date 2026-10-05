@@ -1,0 +1,21 @@
+{
+  "nazwa": "Modele budynków GUGiK LoD1 2024, powiat Bydgoszcz (TERYT 0461)",
+  "url": "https://opendata.geoportal.gov.pl/InneDane/Budynki3D/LOD1/2024/04/0461.zip",
+  "dokumentacja": "https://www.geoportal.gov.pl/pl/dane/inne-dane/modele-3d-budynkow/",
+  "licencja": "Bez opłat, do dowolnego wykorzystania według dokumentacji GUGiK",
+  "rocznikModelu": 2024,
+  "rocznikiALS": {
+    "2024": 43312
+  },
+  "pobrano": "2026-10-04",
+  "zipSha256": "dfc30ac1bb74f7f82684f600982570688daa2328a0658196364f5a0a51698e39",
+  "liczbaBudynkow": 43312,
+  "zakresWysokosciM": [
+    2,
+    57.55
+  ],
+  "crs": "EPSG:4326",
+  "jednostkaWysokosci": "m",
+  "metoda": "Najniższy poziomy wielokąt z lod1Solid stanowi przyziemie budynku BDOT10k BUBD_A; height_m to przybliżona bldg:measuredHeight GUGiK z mediany punktów ALS względem NMT 1 m. To nie są obrysy EGiB.",
+  "dokladnoscWspolrzednych": "6 miejsc po przecinku (~0,1 m)"
+}

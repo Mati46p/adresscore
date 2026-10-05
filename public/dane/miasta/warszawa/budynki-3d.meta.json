@@ -1,0 +1,22 @@
+{
+  "nazwa": "Modele budynków GUGiK LoD1 2024, powiat Warszawa (TERYT 1465)",
+  "url": "https://opendata.geoportal.gov.pl/InneDane/Budynki3D/LOD1/2024/14/1465.zip",
+  "dokumentacja": "https://www.geoportal.gov.pl/pl/dane/inne-dane/modele-3d-budynkow/",
+  "licencja": "Bez opłat, do dowolnego wykorzystania według dokumentacji GUGiK",
+  "rocznikModelu": 2024,
+  "rocznikiALS": {
+    "2018": 2194,
+    "2023": 150915
+  },
+  "pobrano": "2026-10-04",
+  "zipSha256": "20c23eab9b270f846a81d2e80474339f8ecb654397c67cbcd61e9c0a5a5af284",
+  "liczbaBudynkow": 153109,
+  "zakresWysokosciM": [
+    2.01,
+    206.14
+  ],
+  "crs": "EPSG:4326",
+  "jednostkaWysokosci": "m",
+  "metoda": "Najniższy poziomy wielokąt z lod1Solid stanowi przyziemie budynku BDOT10k BUBD_A; height_m to przybliżona bldg:measuredHeight GUGiK z mediany punktów ALS względem NMT 1 m. To nie są obrysy EGiB.",
+  "dokladnoscWspolrzednych": "6 miejsc po przecinku (~0,1 m)"
+}

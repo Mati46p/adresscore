@@ -1,0 +1,21 @@
+{
+  "nazwa": "Modele budynków GUGiK LoD1 2024, powiat Szczecin (TERYT 3262)",
+  "url": "https://opendata.geoportal.gov.pl/InneDane/Budynki3D/LOD1/2024/32/3262.zip",
+  "dokumentacja": "https://www.geoportal.gov.pl/pl/dane/inne-dane/modele-3d-budynkow/",
+  "licencja": "Bez opłat, do dowolnego wykorzystania według dokumentacji GUGiK",
+  "rocznikModelu": 2024,
+  "rocznikiALS": {
+    "2024": 44155
+  },
+  "pobrano": "2026-10-04",
+  "zipSha256": "829bc51b45ba8fff99d0cb1f5f26c4b0f4bcf253220b38c261410996a2a63b16",
+  "liczbaBudynkow": 44155,
+  "zakresWysokosciM": [
+    2.01,
+    83.07
+  ],
+  "crs": "EPSG:4326",
+  "jednostkaWysokosci": "m",
+  "metoda": "Najniższy poziomy wielokąt z lod1Solid stanowi przyziemie budynku BDOT10k BUBD_A; height_m to przybliżona bldg:measuredHeight GUGiK z mediany punktów ALS względem NMT 1 m. To nie są obrysy EGiB.",
+  "dokladnoscWspolrzednych": "6 miejsc po przecinku (~0,1 m)"
+}

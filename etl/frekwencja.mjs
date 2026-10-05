@@ -25,6 +25,7 @@ import {
   CACHE,
   dzis,
   KORZEN,
+  MIASTO,
   pobierzDoCache,
   wczytajAdresy,
   zapiszWskaznik,
@@ -124,6 +125,14 @@ function kluczeZdykty() {
 
 async function wczytajZdykty() {
   if (existsSync(PLIK_ZDYKTY)) return JSON.parse(readFileSync(PLIK_ZDYKTY, 'utf8'))
+  // Miasta na prawach powiatu (ADRESCORE_MIASTO) pokrywa w całości KBW – bez klucza z-dykty pomijamy.
+  if (MIASTO) {
+    try {
+      kluczeZdykty()
+    } catch {
+      return { elekcja: ELEKCJA, pobrano: dzis(), wiersze: [] }
+    }
+  }
   const { baza, klucz } = kluczeZdykty()
   const wiersze = await pobierzZdykty({ baza, klucz })
   const zapis = { elekcja: ELEKCJA, pobrano: dzis(), wiersze }
@@ -159,11 +168,14 @@ export function sumujProtokoly(wiersze, potrzebne) {
   const iWazne = kolumna('Liczba kart ważnych')
   const wynik = new Map()
   for (const w of dane) {
-    const teryt = (w[iTeryt] ?? '').trim().padStart(6, '0')
+    let teryt = (w[iTeryt] ?? '').trim().padStart(6, '0')
+    // Warszawa: KBW podaje 18 dzielnic (146502…146519) jako osobne „gminy” – sumujemy do 146501.
+    const warszawa = /^1465(0[2-9]|1\d)$/.test(teryt) && potrzebne.has('146501')
+    if (warszawa) teryt = '146501'
     if (!potrzebne.has(teryt)) continue
     const a = wynik.get(teryt) ?? {
       teryt,
-      nazwa: nazwaGminyKbw(w[iGmina]),
+      nazwa: warszawa ? 'Warszawa' : nazwaGminyKbw(w[iGmina]),
       uprawnieni: 0,
       wazne: 0,
       obwodow: 0,

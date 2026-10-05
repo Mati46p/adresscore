@@ -1,0 +1,1659 @@
+{
+  "wersja": 1,
+  "wygenerowano": "2026-10-04",
+  "obszar": {
+    "opis": "Kraków i 13 gmin obwarzanka; prostokąt z marginesem ok. 3 km, żeby punkty tuż za granicą gminy były widoczne",
+    "bbox": {
+      "minLat": 50.944286,
+      "maxLat": 51.301092000000004,
+      "minLon": 16.664537,
+      "maxLon": 17.329713
+    },
+    "gminy": [
+      {
+        "nazwa": "Kraków",
+        "terc": "1261011"
+      },
+      {
+        "nazwa": "Wieliczka",
+        "terc": "1219053"
+      },
+      {
+        "nazwa": "Niepołomice",
+        "terc": "1219043"
+      },
+      {
+        "nazwa": "Zabierzów",
+        "terc": "1206162"
+      },
+      {
+        "nazwa": "Skawina",
+        "terc": "1206113"
+      },
+      {
+        "nazwa": "Zielonki",
+        "terc": "1206172"
+      },
+      {
+        "nazwa": "Liszki",
+        "terc": "1206072"
+      },
+      {
+        "nazwa": "Kocmyrzów-Luborzyca",
+        "terc": "1206052"
+      },
+      {
+        "nazwa": "Wielka Wieś",
+        "terc": "1206152"
+      },
+      {
+        "nazwa": "Mogilany",
+        "terc": "1206092"
+      },
+      {
+        "nazwa": "Michałowice",
+        "terc": "1206082"
+      },
+      {
+        "nazwa": "Świątniki Górne",
+        "terc": "1206143"
+      },
+      {
+        "nazwa": "Koniusza",
+        "terc": "1214012"
+      },
+      {
+        "nazwa": "Igołomia-Wawrzeńczyce",
+        "terc": "1206022"
+      }
+    ]
+  },
+  "format": {
+    "opis": "Pliki kolumnowe <branza>.json: kolumny lon, lat (WGS84, 5 miejsc), zr (maska bitowa źródeł), flagi (maska flag branży, tylko gdy branża je ma) i nazwa (null, gdy brak albo mogłaby być daną osoby fizycznej). Same punkty, bez wskaźników na adres.",
+    "bityZrodel": {
+      "osm": 1,
+      "overture": 2,
+      "rejestr": 4,
+      "ceidg": 8
+    },
+    "uwagaRejestr": "Bit rejestr znaczy rejestr właściwy dla branży: apteka – Rejestr Aptek; poz, dentysta, fizjoterapia i laboratorium – RPWDL (patrz mapowanie.rejestr)."
+  },
+  "progiDedupu": {
+    "metryZNazwa": 30,
+    "metryBezNazwy": 15
+  },
+  "zrodla": {
+    "osm": {
+      "nazwa": "OpenStreetMap, ekstrakt Geofabrik – małopolskie",
+      "url": "https://download.geofabrik.de/europe/poland/malopolskie.html",
+      "licencja": "Open Database License (ODbL) 1.0",
+      "licencjaUrl": "https://opendatacommons.org/licenses/odbl/1-0/",
+      "atrybucja": "© OpenStreetMap contributors, ODbL",
+      "uwagi": "Punkty z OSM tworzą bazę pochodną na warunkach ODbL: zachowaj atrybucję i udostępniaj ją dalej na tej samej licencji.",
+      "dataDanych": "2026-10-03",
+      "pobrano": "2026-10-04"
+    },
+    "overture": {
+      "nazwa": "Overture Maps Foundation – Places",
+      "url": "https://docs.overturemaps.org/guides/places/",
+      "licencja": "CDLA-Permissive-2.0",
+      "licencjaUrl": "https://cdla.dev/permissive-2-0/",
+      "atrybucja": "Overture Maps Foundation, Places (CDLA-Permissive-2.0)",
+      "uwagi": "Tylko miejsca z pewnością (confidence) co najmniej 0,7 i bez statusu zamknięcia.",
+      "dataDanych": "2026-09-23",
+      "pobrano": "2026-10-04",
+      "wydanie": "2026-09-23.1",
+      "miejscWObszarze": 38505
+    },
+    "rejestr_aptek": {
+      "nazwa": "Rejestr Aptek Ogólnodostępnych i Punktów Aptecznych (Centrum e-Zdrowia)",
+      "url": "https://rejestry.ezdrowie.gov.pl/ra/search/public",
+      "licencja": "Dane publiczne rejestru, jawne z mocy ustawy – Prawo farmaceutyczne",
+      "atrybucja": "Centrum e-Zdrowia, Rejestr Aptek",
+      "uwagi": "Adresy geokodowane usługą GUGiK UUG; prawda dla branży „apteka\".",
+      "dataDanych": "2026-10-04",
+      "pobrano": "2026-10-04",
+      "aktywnychWMalopolsce": 225,
+      "adresZnaleziony": 194,
+      "wObszarze": 194
+    },
+    "rpwdl": {
+      "nazwa": "Rejestr Podmiotów Wykonujących Działalność Leczniczą – komórki organizacyjne podmiotów leczniczych (Centrum e-Zdrowia)",
+      "url": "https://dane.gov.pl/pl/dataset/728,rejestr-podmiotow-wykonujacych-dzialalnosc-lecznicza",
+      "licencja": "CC BY 4.0",
+      "licencjaUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "atrybucja": "Centrum e-Zdrowia, RPWDL (CC BY 4.0)",
+      "uwagi": "Adresy geokodowane usługą GUGiK UUG.",
+      "dataDanych": "2026-10-03",
+      "pobrano": "2026-10-04",
+      "komorekWMalopolsce": 132,
+      "adresZnaleziony": 116,
+      "wObszarze": 116,
+      "wgBranz": {
+        "dentysta": {
+          "komorek": 872,
+          "trafione": 808,
+          "wObszarze": 808
+        },
+        "fizjoterapia": {
+          "komorek": 406,
+          "trafione": 359,
+          "wObszarze": 359
+        },
+        "laboratorium": {
+          "komorek": 346,
+          "trafione": 314,
+          "wObszarze": 314
+        }
+      }
+    },
+    "nfz": {
+      "nazwa": "Narodowy Fundusz Zdrowia – Informator o Terminach Leczenia (API Terminy Leczenia)",
+      "url": "https://api.nfz.gov.pl/",
+      "licencja": "CC BY 4.0 (metadane zbioru API Terminy Leczenia na dane.gov.pl); regulamin API wymaga wskazania źródła https://api.nfz.gov.pl/ i zakazuje modyfikowania danych",
+      "licencjaUrl": "https://dane.gov.pl/pl/dataset/1455,informator-o-terminach-leczenia",
+      "atrybucja": "Narodowy Fundusz Zdrowia, Informator o Terminach Leczenia (https://api.nfz.gov.pl/)",
+      "uwagi": "Tylko do flagi `nfz` dentysty: miejsce udzielania świadczeń stomatologicznych jest w Informatorze, więc ma umowę z NFZ. Brak flagi nie dowodzi braku umowy. W plikach jest sam bit, bez nazw, adresów, współrzędnych i terminów z NFZ.",
+      "dataDanych": "2026-10-04",
+      "pobrano": "2026-10-04",
+      "okresSprawozdawczy": {
+        "od": "2026-08",
+        "do": "2026-09"
+      },
+      "swiadczenia": [
+        "stomatolog",
+        "ortodon"
+      ],
+      "miejscWMalopolsce": 424,
+      "miejscWObszarze": 94,
+      "promienDopasowaniaM": 50,
+      "miejsc": 94,
+      "zPolozeniem": 94,
+      "dopasowanych": 77,
+      "wybranychZRejestru": 69,
+      "bezPunktuWPoblizu": 17,
+      "kontrolaPolozenia": {
+        "zObiemaPozycjami": 65,
+        "zgodnychWPromieniu": 65,
+        "medianaM": 5
+      }
+    },
+    "ceidg": {
+      "nazwa": "CEIDG – Centralna Ewidencja i Informacja o Działalności Gospodarczej (API v3)",
+      "url": "https://dane.biznes.gov.pl/",
+      "licencja": "Dane jawne CEIDG (ustawa o CEIDG); API dane.biznes.gov.pl",
+      "atrybucja": "Ministerstwo Rozwoju i Technologii, CEIDG",
+      "uwagi": "Wyłącznie uzupełnienie: adres działalności firmy jednoosobowej z danym PKD, nie potwierdzony lokal. Do plików trafia tylko punkt, branża i źródło – bez nazwy firmy, nazwiska, NIP i REGON.",
+      "pominiete": "wyłączone flagą"
+    }
+  },
+  "branze": [
+    {
+      "id": "sklep_spozywczy",
+      "nazwa": "Sklep spożywczy",
+      "zasiegPieszyM": 500,
+      "mapowanie": {
+        "osm": [
+          "shop=supermarket",
+          "shop=convenience",
+          "shop=greengrocer"
+        ],
+        "osmWyklucz": [],
+        "overture": [
+          "convenience_store",
+          "grocery_store"
+        ],
+        "pkd": [
+          "47.11.Z"
+        ],
+        "flagi": {},
+        "rejestr": null,
+        "zrodloPrawdy": null
+      },
+      "uwagi": "Supermarkety, sklepy osiedlowe i warzywniaki (te mają też własną branżę `warzywniak`, a ten sam punkt jest w obu plikach). Bez sklepów mięsnych (`sklep_miesny`), delikatesów specjalistycznych, kiosków i drogerii (`drogeria`).",
+      "plik": "sklep_spozywczy.json",
+      "n": 1785,
+      "zrodlaWPliku": [
+        "osm",
+        "overture"
+      ],
+      "licencja": "Plik zawiera punkty z OpenStreetMap, więc jest bazą pochodną na licencji ODbL 1.0 (https://opendatacommons.org/licenses/odbl/1-0/): wymagana atrybucja „© OpenStreetMap contributors, ODbL\", a udostępniając go dalej, zachowaj tę licencję (share-alike). Overture Maps Foundation – Places: CDLA-Permissive-2.0.",
+      "atrybucja": "© OpenStreetMap contributors, ODbL; Overture Maps Foundation, Places (CDLA-Permissive-2.0)",
+      "liczby": {
+        "surowe": {
+          "osm": 1495,
+          "overture": 862
+        },
+        "poDeduplikacji": 1785,
+        "wPliku": 1785,
+        "wPlikuWgZrodel": {
+          "osm": 1479,
+          "overture": 857
+        },
+        "tylkoJednoZrodlo": {
+          "osm": 928,
+          "overture": 306
+        },
+        "potwierdzoneWielomaZrodlami": 551,
+        "zFlaga": {},
+        "bezSamegoCeidg": 1785
+      }
+    },
+    {
+      "id": "apteka",
+      "nazwa": "Apteka",
+      "zasiegPieszyM": 800,
+      "mapowanie": {
+        "osm": [
+          "amenity=pharmacy"
+        ],
+        "osmWyklucz": [
+          "dispensing=no"
+        ],
+        "overture": [
+          "pharmacy"
+        ],
+        "pkd": [],
+        "flagi": {},
+        "rejestr": "rejestr_aptek",
+        "zrodloPrawdy": "rejestr"
+      },
+      "uwagi": "Prawdą jest Rejestr Aptek (aktywne apteki ogólnodostępne i punkty apteczne). OSM i Overture służą do kontroli pokrycia i zaznaczają, że punkt widać także tam.",
+      "plik": "apteka.json",
+      "n": 194,
+      "zrodlaWPliku": [
+        "osm",
+        "overture",
+        "rejestr"
+      ],
+      "licencja": "Plik zawiera punkty z OpenStreetMap, więc jest bazą pochodną na licencji ODbL 1.0 (https://opendatacommons.org/licenses/odbl/1-0/): wymagana atrybucja „© OpenStreetMap contributors, ODbL\", a udostępniając go dalej, zachowaj tę licencję (share-alike). Overture Maps Foundation – Places: CDLA-Permissive-2.0. Rejestr Aptek Ogólnodostępnych i Punktów Aptecznych (Centrum e-Zdrowia): Dane publiczne rejestru, jawne z mocy ustawy – Prawo farmaceutyczne.",
+      "atrybucja": "© OpenStreetMap contributors, ODbL; Overture Maps Foundation, Places (CDLA-Permissive-2.0); Centrum e-Zdrowia, Rejestr Aptek",
+      "liczby": {
+        "surowe": {
+          "osm": 297,
+          "overture": 129,
+          "rejestr": 194
+        },
+        "poDeduplikacji": 377,
+        "wPliku": 194,
+        "wPlikuWgZrodel": {
+          "osm": 146,
+          "rejestr": 194,
+          "overture": 50
+        },
+        "tylkoJednoZrodlo": {
+          "rejestr": 41
+        },
+        "potwierdzoneWielomaZrodlami": 153,
+        "zFlaga": {},
+        "bezSamegoCeidg": 194
+      },
+      "pokrycie": {
+        "metryLuzno": 100,
+        "rejestr": {
+          "rekordow": 194,
+          "punktow": 194,
+          "widocznychWZ_osmScisle": 146,
+          "widocznychWZ_osmScislePct": 75.3,
+          "widocznychWZ_osmLuzno": 186,
+          "widocznychWZ_osmLuznoPct": 95.9,
+          "widocznychWZ_overtureScisle": 50,
+          "widocznychWZ_overtureScislePct": 25.8,
+          "widocznychWZ_overtureLuzno": 75,
+          "widocznychWZ_overtureLuznoPct": 38.7
+        },
+        "osm": {
+          "rekordow": 297,
+          "punktow": 297,
+          "wRejestrzeScisle": 146,
+          "wRejestrzeScislePct": 49.2,
+          "wRejestrzeLuzno": 191,
+          "wRejestrzeLuznoPct": 64.3,
+          "bezRejestru": 151
+        },
+        "overture": {
+          "rekordow": 129,
+          "punktow": 109,
+          "wRejestrzeScisle": 50,
+          "wRejestrzeScislePct": 45.9,
+          "wRejestrzeLuzno": 82,
+          "wRejestrzeLuznoPct": 63.6,
+          "bezRejestru": 59
+        }
+      }
+    },
+    {
+      "id": "fryzjer",
+      "nazwa": "Fryzjer i barber",
+      "zasiegPieszyM": 800,
+      "mapowanie": {
+        "osm": [
+          "shop=hairdresser",
+          "shop=barber"
+        ],
+        "osmWyklucz": [],
+        "overture": [
+          "hair_salon",
+          "barber",
+          "hair_stylist"
+        ],
+        "pkd": [
+          "96.21.Z",
+          "96.02.Z"
+        ],
+        "flagi": {
+          "barber": {
+            "osm": [
+              "hairdresser=barber",
+              "shop=barber"
+            ],
+            "overture": [
+              "barber"
+            ]
+          }
+        },
+        "rejestr": null,
+        "zrodloPrawdy": null
+      },
+      "uwagi": "Flaga barber: salon męski (OSM hairdresser=barber, Overture barber). CEIDG: PKD 96.21.Z (od 2025) i dawne 96.02.Z.",
+      "plik": "fryzjer.json",
+      "n": 736,
+      "zrodlaWPliku": [
+        "osm",
+        "overture"
+      ],
+      "licencja": "Plik zawiera punkty z OpenStreetMap, więc jest bazą pochodną na licencji ODbL 1.0 (https://opendatacommons.org/licenses/odbl/1-0/): wymagana atrybucja „© OpenStreetMap contributors, ODbL\", a udostępniając go dalej, zachowaj tę licencję (share-alike). Overture Maps Foundation – Places: CDLA-Permissive-2.0.",
+      "atrybucja": "© OpenStreetMap contributors, ODbL; Overture Maps Foundation, Places (CDLA-Permissive-2.0)",
+      "liczby": {
+        "surowe": {
+          "osm": 453,
+          "overture": 375
+        },
+        "poDeduplikacji": 736,
+        "wPliku": 736,
+        "wPlikuWgZrodel": {
+          "osm": 451,
+          "overture": 374
+        },
+        "tylkoJednoZrodlo": {
+          "osm": 362,
+          "overture": 285
+        },
+        "potwierdzoneWielomaZrodlami": 89,
+        "zFlaga": {
+          "barber": 217
+        },
+        "bezSamegoCeidg": 736
+      }
+    },
+    {
+      "id": "piekarnia",
+      "nazwa": "Piekarnia",
+      "zasiegPieszyM": 500,
+      "mapowanie": {
+        "osm": [
+          "shop=bakery"
+        ],
+        "osmWyklucz": [],
+        "overture": [
+          "bakery?piekarnia"
+        ],
+        "pkd": [
+          "10.71.Z"
+        ],
+        "flagi": {},
+        "rejestr": null,
+        "zrodloPrawdy": null
+      },
+      "uwagi": "Piekarnie (OSM shop=bakery, Overture bakery bez nazw czysto cukierniczych, PKD 10.71.Z). Cukiernie i sklepy ze słodyczami mają własną branżę (`cukiernia`); lokale „Piekarnia i Cukiernia\" są w obu. PKD 10.71.Z nie rozdziela piekarni od cukierni.",
+      "plik": "piekarnia.json",
+      "n": 353,
+      "zrodlaWPliku": [
+        "osm",
+        "overture"
+      ],
+      "licencja": "Plik zawiera punkty z OpenStreetMap, więc jest bazą pochodną na licencji ODbL 1.0 (https://opendatacommons.org/licenses/odbl/1-0/): wymagana atrybucja „© OpenStreetMap contributors, ODbL\", a udostępniając go dalej, zachowaj tę licencję (share-alike). Overture Maps Foundation – Places: CDLA-Permissive-2.0.",
+      "atrybucja": "© OpenStreetMap contributors, ODbL; Overture Maps Foundation, Places (CDLA-Permissive-2.0)",
+      "liczby": {
+        "surowe": {
+          "osm": 298,
+          "overture": 99
+        },
+        "poDeduplikacji": 353,
+        "wPliku": 353,
+        "wPlikuWgZrodel": {
+          "osm": 296,
+          "overture": 99
+        },
+        "tylkoJednoZrodlo": {
+          "osm": 254,
+          "overture": 57
+        },
+        "potwierdzoneWielomaZrodlami": 42,
+        "zFlaga": {},
+        "bezSamegoCeidg": 353
+      }
+    },
+    {
+      "id": "kawiarnia",
+      "nazwa": "Kawiarnia",
+      "zasiegPieszyM": 500,
+      "mapowanie": {
+        "osm": [
+          "amenity=cafe"
+        ],
+        "osmWyklucz": [],
+        "overture": [
+          "coffee_shop",
+          "cafe"
+        ],
+        "pkd": [
+          "56.30.Z"
+        ],
+        "flagi": {},
+        "rejestr": null,
+        "zrodloPrawdy": null
+      },
+      "uwagi": "Kawiarnie i kawiarnie specjalistyczne. Bez barów, restauracji i kafejek internetowych.",
+      "plik": "kawiarnia.json",
+      "n": 529,
+      "zrodlaWPliku": [
+        "osm",
+        "overture"
+      ],
+      "licencja": "Plik zawiera punkty z OpenStreetMap, więc jest bazą pochodną na licencji ODbL 1.0 (https://opendatacommons.org/licenses/odbl/1-0/): wymagana atrybucja „© OpenStreetMap contributors, ODbL\", a udostępniając go dalej, zachowaj tę licencję (share-alike). Overture Maps Foundation – Places: CDLA-Permissive-2.0.",
+      "atrybucja": "© OpenStreetMap contributors, ODbL; Overture Maps Foundation, Places (CDLA-Permissive-2.0)",
+      "liczby": {
+        "surowe": {
+          "osm": 344,
+          "overture": 312
+        },
+        "poDeduplikacji": 529,
+        "wPliku": 529,
+        "wPlikuWgZrodel": {
+          "osm": 343,
+          "overture": 311
+        },
+        "tylkoJednoZrodlo": {
+          "osm": 218,
+          "overture": 186
+        },
+        "potwierdzoneWielomaZrodlami": 125,
+        "zFlaga": {},
+        "bezSamegoCeidg": 529
+      }
+    },
+    {
+      "id": "poz",
+      "nazwa": "Przychodnia POZ",
+      "zasiegPieszyM": 1200,
+      "mapowanie": {
+        "osm": [
+          "amenity=doctors?poz",
+          "amenity=clinic?poz"
+        ],
+        "osmWyklucz": [],
+        "overture": [
+          "family_practice",
+          "doctors_office?poz",
+          "health_care?poz"
+        ],
+        "pkd": [],
+        "flagi": {},
+        "rejestr": "rpwdl",
+        "zrodloPrawdy": null
+      },
+      "uwagi": "RPWDL (poradnie i gabinety lekarza POZ) plus punkty z OSM i Overture rozpoznane jako POZ: po specjalizacji (general, family, primary_care, paediatrics, internal) albo po nazwie (przychodnia, ośrodek zdrowia, NZOZ, lekarz rodzinny). Gabinety specjalistyczne, stomatologia i rehabilitacja odpadają.",
+      "plik": "poz.json",
+      "n": 183,
+      "zrodlaWPliku": [
+        "osm",
+        "overture",
+        "rejestr"
+      ],
+      "licencja": "Plik zawiera punkty z OpenStreetMap, więc jest bazą pochodną na licencji ODbL 1.0 (https://opendatacommons.org/licenses/odbl/1-0/): wymagana atrybucja „© OpenStreetMap contributors, ODbL\", a udostępniając go dalej, zachowaj tę licencję (share-alike). Overture Maps Foundation – Places: CDLA-Permissive-2.0. Rejestr Podmiotów Wykonujących Działalność Leczniczą – komórki organizacyjne podmiotów leczniczych (Centrum e-Zdrowia): CC BY 4.0.",
+      "atrybucja": "© OpenStreetMap contributors, ODbL; Overture Maps Foundation, Places (CDLA-Permissive-2.0); Centrum e-Zdrowia, RPWDL (CC BY 4.0)",
+      "liczby": {
+        "surowe": {
+          "osm": 88,
+          "overture": 17,
+          "rejestr": 116
+        },
+        "poDeduplikacji": 183,
+        "wPliku": 183,
+        "wPlikuWgZrodel": {
+          "osm": 88,
+          "overture": 17,
+          "rejestr": 108
+        },
+        "tylkoJednoZrodlo": {
+          "osm": 63,
+          "overture": 8,
+          "rejestr": 84
+        },
+        "potwierdzoneWielomaZrodlami": 28,
+        "zFlaga": {},
+        "bezSamegoCeidg": 183
+      }
+    },
+    {
+      "id": "dentysta",
+      "nazwa": "Dentysta",
+      "zasiegPieszyM": 1000,
+      "mapowanie": {
+        "osm": [
+          "amenity=dentist",
+          "healthcare=dentist"
+        ],
+        "osmWyklucz": [],
+        "overture": [
+          "dental_clinic",
+          "general_dentistry",
+          "pediatric_dentistry",
+          "orthodontics",
+          "cosmetic_dentistry"
+        ],
+        "pkd": [],
+        "flagi": {
+          "nfz": {
+            "osm": [],
+            "overture": [],
+            "zrodlo": "nfz"
+          }
+        },
+        "rejestr": "rpwdl",
+        "zrodloPrawdy": null,
+        "kodyRpwdl": [
+          "1800",
+          "1801",
+          "1820",
+          "1830",
+          "1840"
+        ]
+      },
+      "uwagi": "Gabinety stomatologiczne: RPWDL (poradnie stomatologiczne, także dla dzieci, ortodontyczne, protetyki i chirurgii stomatologicznej), OSM i Overture. Flaga nfz: miejsce jest w Informatorze o Terminach Leczenia NFZ (umowa z NFZ); brak flagi nie dowodzi braku umowy. Pracownie protetyki (technicy dentystyczni) odpadają.",
+      "plik": "dentysta.json",
+      "n": 574,
+      "zrodlaWPliku": [
+        "osm",
+        "overture",
+        "rejestr"
+      ],
+      "licencja": "Plik zawiera punkty z OpenStreetMap, więc jest bazą pochodną na licencji ODbL 1.0 (https://opendatacommons.org/licenses/odbl/1-0/): wymagana atrybucja „© OpenStreetMap contributors, ODbL\", a udostępniając go dalej, zachowaj tę licencję (share-alike). Overture Maps Foundation – Places: CDLA-Permissive-2.0. Rejestr Podmiotów Wykonujących Działalność Leczniczą – komórki organizacyjne podmiotów leczniczych (Centrum e-Zdrowia): CC BY 4.0. Flaga z innego źródła, Narodowy Fundusz Zdrowia – Informator o Terminach Leczenia (API Terminy Leczenia): CC BY 4.0 (metadane zbioru API Terminy Leczenia na dane.gov.pl); regulamin API wymaga wskazania źródła https://api.nfz.gov.pl/ i zakazuje modyfikowania danych.",
+      "atrybucja": "© OpenStreetMap contributors, ODbL; Overture Maps Foundation, Places (CDLA-Permissive-2.0); Centrum e-Zdrowia, RPWDL (CC BY 4.0); Narodowy Fundusz Zdrowia, Informator o Terminach Leczenia (https://api.nfz.gov.pl/)",
+      "liczby": {
+        "surowe": {
+          "osm": 189,
+          "overture": 210,
+          "rejestr": 808
+        },
+        "poDeduplikacji": 574,
+        "wPliku": 574,
+        "wPlikuWgZrodel": {
+          "osm": 188,
+          "overture": 210,
+          "rejestr": 354
+        },
+        "tylkoJednoZrodlo": {
+          "osm": 79,
+          "overture": 114,
+          "rejestr": 233
+        },
+        "potwierdzoneWielomaZrodlami": 148,
+        "zFlaga": {
+          "nfz": 71
+        },
+        "bezSamegoCeidg": 574
+      },
+      "pokrycie": {
+        "metryLuzno": 100,
+        "rejestr": {
+          "rekordow": 808,
+          "punktow": 354,
+          "widocznychWZ_osmScisle": 82,
+          "widocznychWZ_osmScislePct": 23.2,
+          "widocznychWZ_osmLuzno": 348,
+          "widocznychWZ_osmLuznoPct": 43.1,
+          "widocznychWZ_overtureScisle": 69,
+          "widocznychWZ_overtureScislePct": 19.5,
+          "widocznychWZ_overtureLuzno": 402,
+          "widocznychWZ_overtureLuznoPct": 49.8
+        },
+        "osm": {
+          "rekordow": 189,
+          "punktow": 188,
+          "wRejestrzeScisle": 82,
+          "wRejestrzeScislePct": 43.6,
+          "wRejestrzeLuzno": 124,
+          "wRejestrzeLuznoPct": 65.6,
+          "bezRejestru": 106
+        },
+        "overture": {
+          "rekordow": 210,
+          "punktow": 210,
+          "wRejestrzeScisle": 69,
+          "wRejestrzeScislePct": 32.9,
+          "wRejestrzeLuzno": 142,
+          "wRejestrzeLuznoPct": 67.6,
+          "bezRejestru": 141
+        }
+      }
+    },
+    {
+      "id": "fizjoterapia",
+      "nazwa": "Fizjoterapia",
+      "zasiegPieszyM": 1000,
+      "mapowanie": {
+        "osm": [
+          "healthcare=physiotherapist",
+          "healthcare=rehabilitation"
+        ],
+        "osmWyklucz": [],
+        "overture": [
+          "physical_therapy"
+        ],
+        "pkd": [],
+        "flagi": {},
+        "rejestr": "rpwdl",
+        "zrodloPrawdy": null,
+        "kodyRpwdl": [
+          "1300",
+          "1310",
+          "1320"
+        ]
+      },
+      "uwagi": "Gabinety fizjoterapii i rehabilitacji: RPWDL (poradnie rehabilitacyjne, działy i pracownie fizjoterapii, masażu leczniczego), OSM (physiotherapist, rehabilitation) i Overture (physical_therapy). Masaże kosmetyczne i spa odpadają.",
+      "plik": "fizjoterapia.json",
+      "n": 409,
+      "zrodlaWPliku": [
+        "osm",
+        "overture",
+        "rejestr"
+      ],
+      "licencja": "Plik zawiera punkty z OpenStreetMap, więc jest bazą pochodną na licencji ODbL 1.0 (https://opendatacommons.org/licenses/odbl/1-0/): wymagana atrybucja „© OpenStreetMap contributors, ODbL\", a udostępniając go dalej, zachowaj tę licencję (share-alike). Overture Maps Foundation – Places: CDLA-Permissive-2.0. Rejestr Podmiotów Wykonujących Działalność Leczniczą – komórki organizacyjne podmiotów leczniczych (Centrum e-Zdrowia): CC BY 4.0.",
+      "atrybucja": "© OpenStreetMap contributors, ODbL; Overture Maps Foundation, Places (CDLA-Permissive-2.0); Centrum e-Zdrowia, RPWDL (CC BY 4.0)",
+      "liczby": {
+        "surowe": {
+          "osm": 38,
+          "overture": 158,
+          "rejestr": 359
+        },
+        "poDeduplikacji": 409,
+        "wPliku": 409,
+        "wPlikuWgZrodel": {
+          "osm": 38,
+          "overture": 158,
+          "rejestr": 246
+        },
+        "tylkoJednoZrodlo": {
+          "osm": 24,
+          "overture": 129,
+          "rejestr": 225
+        },
+        "potwierdzoneWielomaZrodlami": 31,
+        "zFlaga": {},
+        "bezSamegoCeidg": 409
+      },
+      "pokrycie": {
+        "metryLuzno": 100,
+        "rejestr": {
+          "rekordow": 359,
+          "punktow": 246,
+          "widocznychWZ_osmScisle": 4,
+          "widocznychWZ_osmScislePct": 1.6,
+          "widocznychWZ_osmLuzno": 22,
+          "widocznychWZ_osmLuznoPct": 6.1,
+          "widocznychWZ_overtureScisle": 19,
+          "widocznychWZ_overtureScislePct": 7.7,
+          "widocznychWZ_overtureLuzno": 104,
+          "widocznychWZ_overtureLuznoPct": 29
+        },
+        "osm": {
+          "rekordow": 38,
+          "punktow": 38,
+          "wRejestrzeScisle": 4,
+          "wRejestrzeScislePct": 10.5,
+          "wRejestrzeLuzno": 13,
+          "wRejestrzeLuznoPct": 34.2,
+          "bezRejestru": 34
+        },
+        "overture": {
+          "rekordow": 158,
+          "punktow": 158,
+          "wRejestrzeScisle": 19,
+          "wRejestrzeScislePct": 12,
+          "wRejestrzeLuzno": 57,
+          "wRejestrzeLuznoPct": 36.1,
+          "bezRejestru": 139
+        }
+      }
+    },
+    {
+      "id": "laboratorium",
+      "nazwa": "Laboratorium i punkt pobrań",
+      "zasiegPieszyM": 1500,
+      "mapowanie": {
+        "osm": [
+          "healthcare=laboratory",
+          "healthcare=sample_collection"
+        ],
+        "osmWyklucz": [],
+        "overture": [
+          "b2b_clinical_lab?lab",
+          "laboratory_testing?lab"
+        ],
+        "pkd": [],
+        "flagi": {},
+        "rejestr": "rpwdl",
+        "zrodloPrawdy": null,
+        "kodyRpwdl": [
+          "7100",
+          "7110"
+        ]
+      },
+      "uwagi": "Medyczne laboratoria diagnostyczne i punkty pobrań materiałów do badań: RPWDL (7100 i 7110) plus OSM i Overture rozpoznane jako laboratorium medyczne po nazwie. Laboratoria badawcze i budowlane odpadają.",
+      "plik": "laboratorium.json",
+      "n": 294,
+      "zrodlaWPliku": [
+        "osm",
+        "overture",
+        "rejestr"
+      ],
+      "licencja": "Plik zawiera punkty z OpenStreetMap, więc jest bazą pochodną na licencji ODbL 1.0 (https://opendatacommons.org/licenses/odbl/1-0/): wymagana atrybucja „© OpenStreetMap contributors, ODbL\", a udostępniając go dalej, zachowaj tę licencję (share-alike). Overture Maps Foundation – Places: CDLA-Permissive-2.0. Rejestr Podmiotów Wykonujących Działalność Leczniczą – komórki organizacyjne podmiotów leczniczych (Centrum e-Zdrowia): CC BY 4.0.",
+      "atrybucja": "© OpenStreetMap contributors, ODbL; Overture Maps Foundation, Places (CDLA-Permissive-2.0); Centrum e-Zdrowia, RPWDL (CC BY 4.0)",
+      "liczby": {
+        "surowe": {
+          "osm": 52,
+          "overture": 64,
+          "rejestr": 314
+        },
+        "poDeduplikacji": 294,
+        "wPliku": 294,
+        "wPlikuWgZrodel": {
+          "osm": 52,
+          "rejestr": 246,
+          "overture": 64
+        },
+        "tylkoJednoZrodlo": {
+          "osm": 14,
+          "overture": 30,
+          "rejestr": 203
+        },
+        "potwierdzoneWielomaZrodlami": 47,
+        "zFlaga": {},
+        "bezSamegoCeidg": 294
+      },
+      "pokrycie": {
+        "metryLuzno": 100,
+        "rejestr": {
+          "rekordow": 314,
+          "punktow": 246,
+          "widocznychWZ_osmScisle": 34,
+          "widocznychWZ_osmScislePct": 13.8,
+          "widocznychWZ_osmLuzno": 78,
+          "widocznychWZ_osmLuznoPct": 24.8,
+          "widocznychWZ_overtureScisle": 30,
+          "widocznychWZ_overtureScislePct": 12.2,
+          "widocznychWZ_overtureLuzno": 77,
+          "widocznychWZ_overtureLuznoPct": 24.5
+        },
+        "osm": {
+          "rekordow": 52,
+          "punktow": 52,
+          "wRejestrzeScisle": 34,
+          "wRejestrzeScislePct": 65.4,
+          "wRejestrzeLuzno": 45,
+          "wRejestrzeLuznoPct": 86.5,
+          "bezRejestru": 18
+        },
+        "overture": {
+          "rekordow": 64,
+          "punktow": 64,
+          "wRejestrzeScisle": 30,
+          "wRejestrzeScislePct": 46.9,
+          "wRejestrzeLuzno": 48,
+          "wRejestrzeLuznoPct": 75,
+          "bezRejestru": 34
+        }
+      }
+    },
+    {
+      "id": "silownia",
+      "nazwa": "Siłownia i fitness",
+      "zasiegPieszyM": 1000,
+      "mapowanie": {
+        "osm": [
+          "leisure=fitness_centre"
+        ],
+        "osmWyklucz": [],
+        "overture": [
+          "gym"
+        ],
+        "pkd": [],
+        "flagi": {},
+        "rejestr": null,
+        "zrodloPrawdy": null
+      },
+      "uwagi": "Siłownie i kluby fitness (OSM fitness_centre, Overture gym). Siłownie plenerowe (fitness_station), trenerzy personalni, joga i sztuki walki są poza branżą.",
+      "plik": "silownia.json",
+      "n": 275,
+      "zrodlaWPliku": [
+        "osm",
+        "overture"
+      ],
+      "licencja": "Plik zawiera punkty z OpenStreetMap, więc jest bazą pochodną na licencji ODbL 1.0 (https://opendatacommons.org/licenses/odbl/1-0/): wymagana atrybucja „© OpenStreetMap contributors, ODbL\", a udostępniając go dalej, zachowaj tę licencję (share-alike). Overture Maps Foundation – Places: CDLA-Permissive-2.0.",
+      "atrybucja": "© OpenStreetMap contributors, ODbL; Overture Maps Foundation, Places (CDLA-Permissive-2.0)",
+      "liczby": {
+        "surowe": {
+          "osm": 101,
+          "overture": 197
+        },
+        "poDeduplikacji": 275,
+        "wPliku": 275,
+        "wPlikuWgZrodel": {
+          "osm": 101,
+          "overture": 197
+        },
+        "tylkoJednoZrodlo": {
+          "osm": 78,
+          "overture": 174
+        },
+        "potwierdzoneWielomaZrodlami": 23,
+        "zFlaga": {},
+        "bezSamegoCeidg": 275
+      }
+    },
+    {
+      "id": "weterynarz",
+      "nazwa": "Weterynarz",
+      "zasiegPieszyM": 1500,
+      "mapowanie": {
+        "osm": [
+          "amenity=veterinary"
+        ],
+        "osmWyklucz": [],
+        "overture": [
+          "veterinarian"
+        ],
+        "pkd": [],
+        "flagi": {},
+        "rejestr": null,
+        "zrodloPrawdy": null
+      },
+      "uwagi": "Gabinety i lecznice weterynaryjne (OSM veterinary, Overture veterinarian).",
+      "plik": "weterynarz.json",
+      "n": 168,
+      "zrodlaWPliku": [
+        "osm",
+        "overture"
+      ],
+      "licencja": "Plik zawiera punkty z OpenStreetMap, więc jest bazą pochodną na licencji ODbL 1.0 (https://opendatacommons.org/licenses/odbl/1-0/): wymagana atrybucja „© OpenStreetMap contributors, ODbL\", a udostępniając go dalej, zachowaj tę licencję (share-alike). Overture Maps Foundation – Places: CDLA-Permissive-2.0.",
+      "atrybucja": "© OpenStreetMap contributors, ODbL; Overture Maps Foundation, Places (CDLA-Permissive-2.0)",
+      "liczby": {
+        "surowe": {
+          "osm": 103,
+          "overture": 119
+        },
+        "poDeduplikacji": 168,
+        "wPliku": 168,
+        "wPlikuWgZrodel": {
+          "osm": 103,
+          "overture": 119
+        },
+        "tylkoJednoZrodlo": {
+          "osm": 49,
+          "overture": 65
+        },
+        "potwierdzoneWielomaZrodlami": 54,
+        "zFlaga": {},
+        "bezSamegoCeidg": 168
+      }
+    },
+    {
+      "id": "restauracja",
+      "nazwa": "Restauracja i fast food",
+      "zasiegPieszyM": 500,
+      "mapowanie": {
+        "osm": [
+          "amenity=restaurant",
+          "amenity=fast_food"
+        ],
+        "osmWyklucz": [],
+        "overture": [
+          "restaurant",
+          "*_restaurant",
+          "steakhouse",
+          "diner",
+          "bistro",
+          "sandwich_shop"
+        ],
+        "pkd": [],
+        "flagi": {
+          "fast_food": {
+            "osm": [
+              "amenity=fast_food"
+            ],
+            "overture": [
+              "fast_food_restaurant",
+              "burger_restaurant",
+              "doner_kebab_restaurant",
+              "hot_dog_restaurant",
+              "sandwich_shop"
+            ]
+          }
+        },
+        "rejestr": null,
+        "zrodloPrawdy": null
+      },
+      "uwagi": "Restauracje i lokale szybkiej obsługi (OSM restaurant i fast_food, Overture restaurant i kategorie kuchni). Flaga fast_food: OSM amenity=fast_food albo Overture fast_food_restaurant, burger, kebab, hot dog i kanapki; to przybliżenie, bo Overture nie rozdziela burgerowni od restauracji. Bary, puby, kawiarnie i cukiernie są poza branżą.",
+      "plik": "restauracja.json",
+      "n": 2017,
+      "zrodlaWPliku": [
+        "osm",
+        "overture"
+      ],
+      "licencja": "Plik zawiera punkty z OpenStreetMap, więc jest bazą pochodną na licencji ODbL 1.0 (https://opendatacommons.org/licenses/odbl/1-0/): wymagana atrybucja „© OpenStreetMap contributors, ODbL\", a udostępniając go dalej, zachowaj tę licencję (share-alike). Overture Maps Foundation – Places: CDLA-Permissive-2.0.",
+      "atrybucja": "© OpenStreetMap contributors, ODbL; Overture Maps Foundation, Places (CDLA-Permissive-2.0)",
+      "liczby": {
+        "surowe": {
+          "osm": 1467,
+          "overture": 1227
+        },
+        "poDeduplikacji": 2017,
+        "wPliku": 2017,
+        "wPlikuWgZrodel": {
+          "osm": 1458,
+          "overture": 1222
+        },
+        "tylkoJednoZrodlo": {
+          "osm": 795,
+          "overture": 559
+        },
+        "potwierdzoneWielomaZrodlami": 663,
+        "zFlaga": {
+          "fast_food": 980
+        },
+        "bezSamegoCeidg": 2017
+      }
+    },
+    {
+      "id": "warsztat",
+      "nazwa": "Warsztat samochodowy",
+      "zasiegPieszyM": 1500,
+      "mapowanie": {
+        "osm": [
+          "shop=car_repair"
+        ],
+        "osmWyklucz": [],
+        "overture": [
+          "automotive_repair",
+          "auto_body_shop"
+        ],
+        "pkd": [],
+        "flagi": {},
+        "rejestr": null,
+        "zrodloPrawdy": null
+      },
+      "uwagi": "Warsztaty i serwisy samochodowe (OSM car_repair, Overture automotive_repair i blacharsko-lakiernicze). Wulkanizacje (shop=tyres), warsztaty motocyklowe i detailing są poza branżą.",
+      "plik": "warsztat.json",
+      "n": 687,
+      "zrodlaWPliku": [
+        "osm",
+        "overture"
+      ],
+      "licencja": "Plik zawiera punkty z OpenStreetMap, więc jest bazą pochodną na licencji ODbL 1.0 (https://opendatacommons.org/licenses/odbl/1-0/): wymagana atrybucja „© OpenStreetMap contributors, ODbL\", a udostępniając go dalej, zachowaj tę licencję (share-alike). Overture Maps Foundation – Places: CDLA-Permissive-2.0.",
+      "atrybucja": "© OpenStreetMap contributors, ODbL; Overture Maps Foundation, Places (CDLA-Permissive-2.0)",
+      "liczby": {
+        "surowe": {
+          "osm": 340,
+          "overture": 413
+        },
+        "poDeduplikacji": 687,
+        "wPliku": 687,
+        "wPlikuWgZrodel": {
+          "osm": 332,
+          "overture": 409
+        },
+        "tylkoJednoZrodlo": {
+          "osm": 278,
+          "overture": 355
+        },
+        "potwierdzoneWielomaZrodlami": 54,
+        "zFlaga": {},
+        "bezSamegoCeidg": 687
+      }
+    },
+    {
+      "id": "myjnia",
+      "nazwa": "Myjnia samochodowa",
+      "zasiegPieszyM": 2000,
+      "mapowanie": {
+        "osm": [
+          "amenity=car_wash"
+        ],
+        "osmWyklucz": [],
+        "overture": [
+          "car_wash?myjnia"
+        ],
+        "pkd": [],
+        "flagi": {},
+        "rejestr": null,
+        "zrodloPrawdy": null
+      },
+      "uwagi": "Myjnie samochodowe (OSM car_wash, Overture car_wash bez paczkomatów i stacji paliw). Studia detailingu bez myjni są poza branżą.",
+      "plik": "myjnia.json",
+      "n": 214,
+      "zrodlaWPliku": [
+        "osm",
+        "overture"
+      ],
+      "licencja": "Plik zawiera punkty z OpenStreetMap, więc jest bazą pochodną na licencji ODbL 1.0 (https://opendatacommons.org/licenses/odbl/1-0/): wymagana atrybucja „© OpenStreetMap contributors, ODbL\", a udostępniając go dalej, zachowaj tę licencję (share-alike). Overture Maps Foundation – Places: CDLA-Permissive-2.0.",
+      "atrybucja": "© OpenStreetMap contributors, ODbL; Overture Maps Foundation, Places (CDLA-Permissive-2.0)",
+      "liczby": {
+        "surowe": {
+          "osm": 175,
+          "overture": 52
+        },
+        "poDeduplikacji": 214,
+        "wPliku": 214,
+        "wPlikuWgZrodel": {
+          "osm": 172,
+          "overture": 52
+        },
+        "tylkoJednoZrodlo": {
+          "osm": 162,
+          "overture": 42
+        },
+        "potwierdzoneWielomaZrodlami": 10,
+        "zFlaga": {},
+        "bezSamegoCeidg": 214
+      }
+    },
+    {
+      "id": "salon_kosmetyczny",
+      "nazwa": "Salon kosmetyczny",
+      "zasiegPieszyM": 800,
+      "mapowanie": {
+        "osm": [
+          "shop=beauty"
+        ],
+        "osmWyklucz": [],
+        "overture": [
+          "beauty_salon",
+          "nail_salon",
+          "skin_care_and_makeup"
+        ],
+        "pkd": [],
+        "flagi": {},
+        "rejestr": null,
+        "zrodloPrawdy": null
+      },
+      "uwagi": "Salony kosmetyczne, paznokci i kosmetologia (OSM shop=beauty, Overture beauty_salon, nail_salon, skin_care_and_makeup). Fryzjerzy mają własną branżę, a drogerie i sklepy z kosmetykami są poza nią.",
+      "plik": "salon_kosmetyczny.json",
+      "n": 899,
+      "zrodlaWPliku": [
+        "osm",
+        "overture"
+      ],
+      "licencja": "Plik zawiera punkty z OpenStreetMap, więc jest bazą pochodną na licencji ODbL 1.0 (https://opendatacommons.org/licenses/odbl/1-0/): wymagana atrybucja „© OpenStreetMap contributors, ODbL\", a udostępniając go dalej, zachowaj tę licencję (share-alike). Overture Maps Foundation – Places: CDLA-Permissive-2.0.",
+      "atrybucja": "© OpenStreetMap contributors, ODbL; Overture Maps Foundation, Places (CDLA-Permissive-2.0)",
+      "liczby": {
+        "surowe": {
+          "osm": 308,
+          "overture": 648
+        },
+        "poDeduplikacji": 899,
+        "wPliku": 899,
+        "wPlikuWgZrodel": {
+          "osm": 306,
+          "overture": 644
+        },
+        "tylkoJednoZrodlo": {
+          "osm": 255,
+          "overture": 593
+        },
+        "potwierdzoneWielomaZrodlami": 51,
+        "zFlaga": {},
+        "bezSamegoCeidg": 899
+      }
+    },
+    {
+      "id": "kwiaciarnia",
+      "nazwa": "Kwiaciarnia",
+      "zasiegPieszyM": 800,
+      "mapowanie": {
+        "osm": [
+          "shop=florist"
+        ],
+        "osmWyklucz": [],
+        "overture": [
+          "flowers_and_gifts_store",
+          "florist"
+        ],
+        "pkd": [],
+        "flagi": {},
+        "rejestr": null,
+        "zrodloPrawdy": null
+      },
+      "uwagi": "Kwiaciarnie (OSM florist, Overture flowers_and_gifts_store i florist). Kategoria Overture obejmuje także sklepy z upominkami, więc liczba może być lekko zawyżona.",
+      "plik": "kwiaciarnia.json",
+      "n": 264,
+      "zrodlaWPliku": [
+        "osm",
+        "overture"
+      ],
+      "licencja": "Plik zawiera punkty z OpenStreetMap, więc jest bazą pochodną na licencji ODbL 1.0 (https://opendatacommons.org/licenses/odbl/1-0/): wymagana atrybucja „© OpenStreetMap contributors, ODbL\", a udostępniając go dalej, zachowaj tę licencję (share-alike). Overture Maps Foundation – Places: CDLA-Permissive-2.0.",
+      "atrybucja": "© OpenStreetMap contributors, ODbL; Overture Maps Foundation, Places (CDLA-Permissive-2.0)",
+      "liczby": {
+        "surowe": {
+          "osm": 157,
+          "overture": 159
+        },
+        "poDeduplikacji": 264,
+        "wPliku": 264,
+        "wPlikuWgZrodel": {
+          "osm": 155,
+          "overture": 159
+        },
+        "tylkoJednoZrodlo": {
+          "osm": 105,
+          "overture": 109
+        },
+        "potwierdzoneWielomaZrodlami": 50,
+        "zFlaga": {},
+        "bezSamegoCeidg": 264
+      }
+    },
+    {
+      "id": "optyk",
+      "nazwa": "Optyk",
+      "zasiegPieszyM": 800,
+      "mapowanie": {
+        "osm": [
+          "shop=optician"
+        ],
+        "osmWyklucz": [],
+        "overture": [
+          "eyewear_store"
+        ],
+        "pkd": [],
+        "flagi": {},
+        "rejestr": null,
+        "zrodloPrawdy": null
+      },
+      "uwagi": "Salony optyczne (OSM optician, Overture eyewear_store). Gabinety okulistyczne i optometryczne są poza branżą.",
+      "plik": "optyk.json",
+      "n": 176,
+      "zrodlaWPliku": [
+        "osm",
+        "overture"
+      ],
+      "licencja": "Plik zawiera punkty z OpenStreetMap, więc jest bazą pochodną na licencji ODbL 1.0 (https://opendatacommons.org/licenses/odbl/1-0/): wymagana atrybucja „© OpenStreetMap contributors, ODbL\", a udostępniając go dalej, zachowaj tę licencję (share-alike). Overture Maps Foundation – Places: CDLA-Permissive-2.0.",
+      "atrybucja": "© OpenStreetMap contributors, ODbL; Overture Maps Foundation, Places (CDLA-Permissive-2.0)",
+      "liczby": {
+        "surowe": {
+          "osm": 119,
+          "overture": 92
+        },
+        "poDeduplikacji": 176,
+        "wPliku": 176,
+        "wPlikuWgZrodel": {
+          "osm": 119,
+          "overture": 91
+        },
+        "tylkoJednoZrodlo": {
+          "osm": 85,
+          "overture": 57
+        },
+        "potwierdzoneWielomaZrodlami": 34,
+        "zFlaga": {},
+        "bezSamegoCeidg": 176
+      }
+    },
+    {
+      "id": "drogeria",
+      "nazwa": "Drogeria",
+      "zasiegPieszyM": 800,
+      "mapowanie": {
+        "osm": [
+          "shop=chemist"
+        ],
+        "osmWyklucz": [],
+        "overture": [
+          "drugstore?drogeria",
+          "beauty_supply_store?drogeria",
+          "cosmetics_and_fragrance_store?drogeria",
+          "beauty_product_supplier?drogeria",
+          "hair_supply_store?drogeria",
+          "shopping?drogeria",
+          "pharmacy?drogeria"
+        ],
+        "pkd": [],
+        "flagi": {},
+        "rejestr": null,
+        "zrodloPrawdy": null
+      },
+      "uwagi": "Drogerie (OSM shop=chemist, Overture drugstore i sześć kategorii handlowych po filtrze nazwy: „drogeria\", Rossmann, Hebe, Super-Pharm). Apteki, perfumerie (Douglas, Sephora), sklepy z kosmetykami i sklepy z chemią niemiecką są poza branżą.",
+      "plik": "drogeria.json",
+      "n": 153,
+      "zrodlaWPliku": [
+        "osm",
+        "overture"
+      ],
+      "licencja": "Plik zawiera punkty z OpenStreetMap, więc jest bazą pochodną na licencji ODbL 1.0 (https://opendatacommons.org/licenses/odbl/1-0/): wymagana atrybucja „© OpenStreetMap contributors, ODbL\", a udostępniając go dalej, zachowaj tę licencję (share-alike). Overture Maps Foundation – Places: CDLA-Permissive-2.0.",
+      "atrybucja": "© OpenStreetMap contributors, ODbL; Overture Maps Foundation, Places (CDLA-Permissive-2.0)",
+      "liczby": {
+        "surowe": {
+          "osm": 119,
+          "overture": 82
+        },
+        "poDeduplikacji": 153,
+        "wPliku": 153,
+        "wPlikuWgZrodel": {
+          "osm": 119,
+          "overture": 81
+        },
+        "tylkoJednoZrodlo": {
+          "osm": 72,
+          "overture": 34
+        },
+        "potwierdzoneWielomaZrodlami": 47,
+        "zFlaga": {},
+        "bezSamegoCeidg": 153
+      }
+    },
+    {
+      "id": "cukiernia",
+      "nazwa": "Cukiernia",
+      "zasiegPieszyM": 800,
+      "mapowanie": {
+        "osm": [
+          "shop=pastry",
+          "shop=confectionery"
+        ],
+        "osmWyklucz": [],
+        "overture": [
+          "bakery?cukiernia",
+          "dessert_shop",
+          "patisserie_cake_shop",
+          "cupcake_shop",
+          "candy_store",
+          "chocolatier"
+        ],
+        "pkd": [],
+        "flagi": {},
+        "rejestr": null,
+        "zrodloPrawdy": null
+      },
+      "uwagi": "Cukiernie i sklepy ze słodyczami (OSM pastry i confectionery, Overture dessert_shop, patisserie_cake_shop, cupcake_shop, candy_store, chocolatier oraz bakery o nazwie cukierniczej). Piekarnie mają własną branżę; lokale „Piekarnia i Cukiernia\" są w obu.",
+      "plik": "cukiernia.json",
+      "n": 140,
+      "zrodlaWPliku": [
+        "osm",
+        "overture"
+      ],
+      "licencja": "Plik zawiera punkty z OpenStreetMap, więc jest bazą pochodną na licencji ODbL 1.0 (https://opendatacommons.org/licenses/odbl/1-0/): wymagana atrybucja „© OpenStreetMap contributors, ODbL\", a udostępniając go dalej, zachowaj tę licencję (share-alike). Overture Maps Foundation – Places: CDLA-Permissive-2.0.",
+      "atrybucja": "© OpenStreetMap contributors, ODbL; Overture Maps Foundation, Places (CDLA-Permissive-2.0)",
+      "liczby": {
+        "surowe": {
+          "osm": 94,
+          "overture": 65
+        },
+        "poDeduplikacji": 140,
+        "wPliku": 140,
+        "wPlikuWgZrodel": {
+          "osm": 93,
+          "overture": 65
+        },
+        "tylkoJednoZrodlo": {
+          "osm": 75,
+          "overture": 47
+        },
+        "potwierdzoneWielomaZrodlami": 18,
+        "zFlaga": {},
+        "bezSamegoCeidg": 140
+      }
+    },
+    {
+      "id": "sklep_miesny",
+      "nazwa": "Sklep mięsny",
+      "zasiegPieszyM": 800,
+      "mapowanie": {
+        "osm": [
+          "shop=butcher"
+        ],
+        "osmWyklucz": [],
+        "overture": [
+          "butcher_shop"
+        ],
+        "pkd": [],
+        "flagi": {},
+        "rejestr": null,
+        "zrodloPrawdy": null
+      },
+      "uwagi": "Sklepy mięsne i wędliniarskie (OSM butcher, Overture butcher_shop). Hurtownie mięsa (meat_wholesaler) i delikatesy są poza branżą.",
+      "plik": "sklep_miesny.json",
+      "n": 87,
+      "zrodlaWPliku": [
+        "osm",
+        "overture"
+      ],
+      "licencja": "Plik zawiera punkty z OpenStreetMap, więc jest bazą pochodną na licencji ODbL 1.0 (https://opendatacommons.org/licenses/odbl/1-0/): wymagana atrybucja „© OpenStreetMap contributors, ODbL\", a udostępniając go dalej, zachowaj tę licencję (share-alike). Overture Maps Foundation – Places: CDLA-Permissive-2.0.",
+      "atrybucja": "© OpenStreetMap contributors, ODbL; Overture Maps Foundation, Places (CDLA-Permissive-2.0)",
+      "liczby": {
+        "surowe": {
+          "osm": 76,
+          "overture": 15
+        },
+        "poDeduplikacji": 87,
+        "wPliku": 87,
+        "wPlikuWgZrodel": {
+          "osm": 76,
+          "overture": 15
+        },
+        "tylkoJednoZrodlo": {
+          "osm": 72,
+          "overture": 11
+        },
+        "potwierdzoneWielomaZrodlami": 4,
+        "zFlaga": {},
+        "bezSamegoCeidg": 87
+      }
+    },
+    {
+      "id": "warzywniak",
+      "nazwa": "Warzywniak",
+      "zasiegPieszyM": 500,
+      "mapowanie": {
+        "osm": [
+          "shop=greengrocer"
+        ],
+        "osmWyklucz": [],
+        "overture": [
+          "produce_store"
+        ],
+        "pkd": [],
+        "flagi": {},
+        "rejestr": null,
+        "zrodloPrawdy": null
+      },
+      "uwagi": "Warzywniaki i sklepy z owocami (OSM greengrocer, Overture produce_store). OSM greengrocer jest też w branży sklep_spozywczy: ten sam punkt trafia do obu plików. Hurtownie owoców i warzyw (produce_wholesaler) i sklepy ekologiczne są poza branżą.",
+      "plik": "warzywniak.json",
+      "n": 192,
+      "zrodlaWPliku": [
+        "osm",
+        "overture"
+      ],
+      "licencja": "Plik zawiera punkty z OpenStreetMap, więc jest bazą pochodną na licencji ODbL 1.0 (https://opendatacommons.org/licenses/odbl/1-0/): wymagana atrybucja „© OpenStreetMap contributors, ODbL\", a udostępniając go dalej, zachowaj tę licencję (share-alike). Overture Maps Foundation – Places: CDLA-Permissive-2.0.",
+      "atrybucja": "© OpenStreetMap contributors, ODbL; Overture Maps Foundation, Places (CDLA-Permissive-2.0)",
+      "liczby": {
+        "surowe": {
+          "osm": 184,
+          "overture": 13
+        },
+        "poDeduplikacji": 192,
+        "wPliku": 192,
+        "wPlikuWgZrodel": {
+          "osm": 181,
+          "overture": 13
+        },
+        "tylkoJednoZrodlo": {
+          "osm": 179,
+          "overture": 11
+        },
+        "potwierdzoneWielomaZrodlami": 2,
+        "zFlaga": {},
+        "bezSamegoCeidg": 192
+      }
+    },
+    {
+      "id": "pralnia",
+      "nazwa": "Pralnia",
+      "zasiegPieszyM": 1000,
+      "mapowanie": {
+        "osm": [
+          "shop=laundry",
+          "shop=dry_cleaning"
+        ],
+        "osmWyklucz": [],
+        "overture": [
+          "laundry_service",
+          "dry_cleaning",
+          "laundromat"
+        ],
+        "pkd": [],
+        "flagi": {},
+        "rejestr": null,
+        "zrodloPrawdy": null
+      },
+      "uwagi": "Pralnie, pralnie chemiczne i samoobsługowe (OSM laundry i dry_cleaning, Overture laundry_service, dry_cleaning, laundromat). Pranie dywanów (carpet_cleaning) i usługi sprzątające są poza branżą.",
+      "plik": "pralnia.json",
+      "n": 53,
+      "zrodlaWPliku": [
+        "osm",
+        "overture"
+      ],
+      "licencja": "Plik zawiera punkty z OpenStreetMap, więc jest bazą pochodną na licencji ODbL 1.0 (https://opendatacommons.org/licenses/odbl/1-0/): wymagana atrybucja „© OpenStreetMap contributors, ODbL\", a udostępniając go dalej, zachowaj tę licencję (share-alike). Overture Maps Foundation – Places: CDLA-Permissive-2.0.",
+      "atrybucja": "© OpenStreetMap contributors, ODbL; Overture Maps Foundation, Places (CDLA-Permissive-2.0)",
+      "liczby": {
+        "surowe": {
+          "osm": 33,
+          "overture": 28
+        },
+        "poDeduplikacji": 53,
+        "wPliku": 53,
+        "wPlikuWgZrodel": {
+          "osm": 33,
+          "overture": 28
+        },
+        "tylkoJednoZrodlo": {
+          "osm": 25,
+          "overture": 20
+        },
+        "potwierdzoneWielomaZrodlami": 8,
+        "zFlaga": {},
+        "bezSamegoCeidg": 53
+      }
+    },
+    {
+      "id": "sklep_zoologiczny",
+      "nazwa": "Sklep zoologiczny",
+      "zasiegPieszyM": 1000,
+      "mapowanie": {
+        "osm": [
+          "shop=pet"
+        ],
+        "osmWyklucz": [],
+        "overture": [
+          "pet_store",
+          "aquatic_pet_store"
+        ],
+        "pkd": [],
+        "flagi": {},
+        "rejestr": null,
+        "zrodloPrawdy": null
+      },
+      "uwagi": "Sklepy zoologiczne i akwarystyczne (OSM pet, Overture pet_store i aquatic_pet_store). Salony groomerskie (pet_groomer), hodowle, lecznice i hotele dla zwierząt są poza branżą.",
+      "plik": "sklep_zoologiczny.json",
+      "n": 124,
+      "zrodlaWPliku": [
+        "osm",
+        "overture"
+      ],
+      "licencja": "Plik zawiera punkty z OpenStreetMap, więc jest bazą pochodną na licencji ODbL 1.0 (https://opendatacommons.org/licenses/odbl/1-0/): wymagana atrybucja „© OpenStreetMap contributors, ODbL\", a udostępniając go dalej, zachowaj tę licencję (share-alike). Overture Maps Foundation – Places: CDLA-Permissive-2.0.",
+      "atrybucja": "© OpenStreetMap contributors, ODbL; Overture Maps Foundation, Places (CDLA-Permissive-2.0)",
+      "liczby": {
+        "surowe": {
+          "osm": 82,
+          "overture": 59
+        },
+        "poDeduplikacji": 124,
+        "wPliku": 124,
+        "wPlikuWgZrodel": {
+          "osm": 82,
+          "overture": 59
+        },
+        "tylkoJednoZrodlo": {
+          "osm": 65,
+          "overture": 42
+        },
+        "potwierdzoneWielomaZrodlami": 17,
+        "zFlaga": {},
+        "bezSamegoCeidg": 124
+      }
+    },
+    {
+      "id": "bar",
+      "nazwa": "Bar i pub",
+      "zasiegPieszyM": 800,
+      "mapowanie": {
+        "osm": [
+          "amenity=bar",
+          "amenity=pub"
+        ],
+        "osmWyklucz": [],
+        "overture": [
+          "bar",
+          "pub",
+          "cocktail_bar",
+          "wine_bar",
+          "beer_bar",
+          "sports_bar",
+          "irish_pub",
+          "gastropub",
+          "dive_bar",
+          "gay_bar",
+          "tapas_bar",
+          "hotel_bar",
+          "whiskey_bar"
+        ],
+        "pkd": [],
+        "flagi": {},
+        "rejestr": null,
+        "zrodloPrawdy": null
+      },
+      "uwagi": "Bary i puby (OSM amenity=bar i pub, Overture bar, pub i ich odmiany: bary koktajlowe, winiarnie, bary piwne, puby irlandzkie, gastropuby). Kawiarnie, restauracje, bary mleczne, sałatkowe i sokowe, lokale z shishą, ogródki piwne i browary są poza branżą.",
+      "plik": "bar.json",
+      "n": 341,
+      "zrodlaWPliku": [
+        "osm",
+        "overture"
+      ],
+      "licencja": "Plik zawiera punkty z OpenStreetMap, więc jest bazą pochodną na licencji ODbL 1.0 (https://opendatacommons.org/licenses/odbl/1-0/): wymagana atrybucja „© OpenStreetMap contributors, ODbL\", a udostępniając go dalej, zachowaj tę licencję (share-alike). Overture Maps Foundation – Places: CDLA-Permissive-2.0.",
+      "atrybucja": "© OpenStreetMap contributors, ODbL; Overture Maps Foundation, Places (CDLA-Permissive-2.0)",
+      "liczby": {
+        "surowe": {
+          "osm": 169,
+          "overture": 251
+        },
+        "poDeduplikacji": 341,
+        "wPliku": 341,
+        "wPlikuWgZrodel": {
+          "osm": 169,
+          "overture": 250
+        },
+        "tylkoJednoZrodlo": {
+          "osm": 91,
+          "overture": 172
+        },
+        "potwierdzoneWielomaZrodlami": 78,
+        "zFlaga": {},
+        "bezSamegoCeidg": 341
+      }
+    },
+    {
+      "id": "lodziarnia",
+      "nazwa": "Lodziarnia",
+      "zasiegPieszyM": 500,
+      "mapowanie": {
+        "osm": [
+          "amenity=ice_cream",
+          "shop=ice_cream"
+        ],
+        "osmWyklucz": [],
+        "overture": [
+          "ice_cream_shop",
+          "frozen_yogurt_shop"
+        ],
+        "pkd": [],
+        "flagi": {},
+        "rejestr": null,
+        "zrodloPrawdy": null
+      },
+      "uwagi": "Lodziarnie i punkty z lodami (OSM amenity=ice_cream i shop=ice_cream, Overture ice_cream_shop i frozen_yogurt_shop). Sprzedaż lodów w kawiarniach i cukierniach nie liczy się, jeśli lokal nie jest tak opisany w źródle.",
+      "plik": "lodziarnia.json",
+      "n": 143,
+      "zrodlaWPliku": [
+        "osm",
+        "overture"
+      ],
+      "licencja": "Plik zawiera punkty z OpenStreetMap, więc jest bazą pochodną na licencji ODbL 1.0 (https://opendatacommons.org/licenses/odbl/1-0/): wymagana atrybucja „© OpenStreetMap contributors, ODbL\", a udostępniając go dalej, zachowaj tę licencję (share-alike). Overture Maps Foundation – Places: CDLA-Permissive-2.0.",
+      "atrybucja": "© OpenStreetMap contributors, ODbL; Overture Maps Foundation, Places (CDLA-Permissive-2.0)",
+      "liczby": {
+        "surowe": {
+          "osm": 97,
+          "overture": 76
+        },
+        "poDeduplikacji": 143,
+        "wPliku": 143,
+        "wPlikuWgZrodel": {
+          "osm": 97,
+          "overture": 76
+        },
+        "tylkoJednoZrodlo": {
+          "osm": 67,
+          "overture": 46
+        },
+        "potwierdzoneWielomaZrodlami": 30,
+        "zFlaga": {},
+        "bezSamegoCeidg": 143
+      }
+    },
+    {
+      "id": "paczkomat",
+      "nazwa": "Automat paczkowy",
+      "zasiegPieszyM": 500,
+      "mapowanie": {
+        "osm": [
+          "amenity=parcel_locker"
+        ],
+        "osmWyklucz": [],
+        "overture": [
+          "package_locker"
+        ],
+        "pkd": [],
+        "flagi": {},
+        "rejestr": null,
+        "zrodloPrawdy": null
+      },
+      "uwagi": "Automaty paczkowe (OSM amenity=parcel_locker, Overture package_locker: InPost, DHL i inni operatorzy; w Overture także punkty odbioru, np. „ORLEN Paczka\"). Punkty z API InPost nie wchodzą do katalogu (brak licencji). Kilka automatów obok siebie (do 30 m, ta sama nazwa) to jeden punkt. Placówki pocztowe i kurierskie są poza branżą.",
+      "plik": "paczkomat.json",
+      "n": 1383,
+      "zrodlaWPliku": [
+        "osm",
+        "overture"
+      ],
+      "licencja": "Plik zawiera punkty z OpenStreetMap, więc jest bazą pochodną na licencji ODbL 1.0 (https://opendatacommons.org/licenses/odbl/1-0/): wymagana atrybucja „© OpenStreetMap contributors, ODbL\", a udostępniając go dalej, zachowaj tę licencję (share-alike). Overture Maps Foundation – Places: CDLA-Permissive-2.0.",
+      "atrybucja": "© OpenStreetMap contributors, ODbL; Overture Maps Foundation, Places (CDLA-Permissive-2.0)",
+      "liczby": {
+        "surowe": {
+          "osm": 1167,
+          "overture": 462
+        },
+        "poDeduplikacji": 1383,
+        "wPliku": 1383,
+        "wPlikuWgZrodel": {
+          "osm": 1143,
+          "overture": 462
+        },
+        "tylkoJednoZrodlo": {
+          "osm": 921,
+          "overture": 240
+        },
+        "potwierdzoneWielomaZrodlami": 222,
+        "zFlaga": {},
+        "bezSamegoCeidg": 1383
+      }
+    }
+  ]
+}

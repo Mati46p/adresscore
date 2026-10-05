@@ -14,6 +14,7 @@ import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { geokoduj } from './lib/codziennosc-geo.mjs'
 import { apteki, BBOX, przychodniePoz } from './lib/codziennosc-zrodla.mjs'
+import { MIASTO_INFO, wMiescieMiasta } from './lib/miasto.mjs'
 import {
   budzetZCache,
   paryCeidg,
@@ -164,11 +165,13 @@ export async function licz({ ceidg = false, budzetCeidg = LIMIT_CEIDG } = {}) {
     )
   // NFZ tylko do flagi `nfz` dentysty: miejsca świadczeń stomatologicznych z Informatora o Terminach Leczenia.
   const nfz = await miejscaNfz()
-  const miejscaPolozone = await ustalPolozenie(nfz.miejsca)
+  // Tryb miasta: geokodujemy miejsca NFZ tylko z miejscowości miasta (województwo to tysiące adresów).
+  const miejscaMiasta = nfz.miejsca.filter((m) => wMiescieMiasta(m.miejscowosc))
+  const miejscaPolozone = await ustalPolozenie(miejscaMiasta)
   const wObszarze = (m) => m.pozycje.some((p) => wBbox(p))
   const miejscaWObszarze = miejscaPolozone.filter(wObszarze)
   console.log(
-    `NFZ Terminy Leczenia (dane z ${nfz.meta.dataDanych}): ${nfz.miejsca.length} miejsc stomatologii w Małopolsce, ${miejscaWObszarze.length} w obszarze`,
+    `NFZ Terminy Leczenia (dane z ${nfz.meta.dataDanych}): ${nfz.miejsca.length} miejsc stomatologii w województwie, ${miejscaWObszarze.length} w obszarze`,
   )
   const sc = ceidg
     ? await punktyCeidg(budzetCeidg).catch((e) => {
@@ -209,8 +212,12 @@ export async function licz({ ceidg = false, budzetCeidg = LIMIT_CEIDG } = {}) {
           miejscWObszarze: ov.miejsca,
         },
         rejestr_aptek: {
-          dataDanych: dataPliku(join(CACHE, 'apteki-malopolskie.json')),
-          pobrano: dataPliku(join(CACHE, 'apteki-malopolskie.json')),
+          dataDanych: dataPliku(
+            join(CACHE, `apteki-${MIASTO_INFO ? MIASTO_INFO.pbf : 'malopolskie'}.json`),
+          ),
+          pobrano: dataPliku(
+            join(CACHE, `apteki-${MIASTO_INFO ? MIASTO_INFO.pbf : 'malopolskie'}.json`),
+          ),
           aktywnychWMalopolsce: apt.razem,
           adresZnaleziony: apt.trafione,
           wObszarze: apt.punkty.length,
@@ -240,8 +247,17 @@ export async function licz({ ceidg = false, budzetCeidg = LIMIT_CEIDG } = {}) {
     },
   })
 
-  const minima = Object.fromEntries(BRANZE.map((b) => [b.id, b.minPunktow]))
-  const bledy = sprawdzWyjscie({ pliki, bbox: BBOX, minima, katalog })
+  // Strażniki minPunktow/minZrodel/minFlag są skalibrowane na Kraków i obwarzanek. W trybie miasta
+  // zostaje strażnik 5% (źródło zwróciło coś sensownego), a strażniki źródeł i flag są pomijane.
+  const minima = Object.fromEntries(
+    BRANZE.map((b) => [b.id, MIASTO_INFO ? Math.floor(b.minPunktow * 0.05) : b.minPunktow]),
+  )
+  const bledy = sprawdzWyjscie({
+    pliki,
+    bbox: BBOX,
+    minima,
+    katalog: MIASTO_INFO ? null : katalog,
+  })
   if (bledy.length) throw new Error(`Warstwa usług nie przeszła kontroli:\n- ${bledy.join('\n- ')}`)
 
   mkdirSync(KATALOG_WYJSCIA, { recursive: true })

@@ -9,6 +9,13 @@ import { fileURLToPath } from 'node:url'
 import { strFromU8, unzipSync } from 'fflate'
 import KDBush from 'kdbush'
 import { csv, odlegloscMetry } from './gtfs-przystanki.mjs'
+import {
+  DATA_OBSLUGI_MIASTA,
+  dataDanychFeedu,
+  FEEDY_MIASTA,
+  wczytajFeedMiasta,
+} from './lib/gtfs-miasta.mjs'
+import { MIASTO_INFO } from './lib/miasto.mjs'
 import { CACHE, dzis, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
 
 export const GRUPY = ['A', 'M', 'T']
@@ -21,7 +28,9 @@ const MAX_PRZESIADKA = 350
 const PREDKOSC_PIESZO = 1.25 // m/s; przybliżenie po linii prostej
 const BUFOR_PRZESIADKI = 2 // min na zmianę pojazdu na tym samym stanowisku
 const BRAK = 65_535
-export const RYNEK_GLOWNY = { lon: 19.9373, lat: 50.0617 }
+export const RYNEK_GLOWNY = MIASTO_INFO
+  ? { lon: MIASTO_INFO.centrum.lon, lat: MIASTO_INFO.centrum.lat }
+  : { lon: 19.9373, lat: 50.0617 }
 
 function minuty(czas) {
   const [h, m, s] = czas.split(':').map(Number)
@@ -34,13 +43,16 @@ export function aktywneUslugi(pliki, data) {
   const dzien = DNI[new Date(`${data}T12:00:00Z`).getUTCDay()]
   if (!dzien || !/^\d{4}-\d{2}-\d{2}$/.test(data)) throw new Error('Niepoprawna data')
   const uslugi = new Set()
-  for (const w of csv(strFromU8(pliki['calendar.txt'])))
-    if (w.start_date <= d && w.end_date >= d && w[dzien] === '1') uslugi.add(w.service_id)
-  for (const w of csv(strFromU8(pliki['calendar_dates.txt']))) {
-    if (w.date !== d) continue
-    if (w.exception_type === '1') uslugi.add(w.service_id)
-    if (w.exception_type === '2') uslugi.delete(w.service_id)
-  }
+  // Feedy miast bywają bez calendar.txt albo bez calendar_dates.txt – wystarczy jeden z nich.
+  if (pliki['calendar.txt'])
+    for (const w of csv(strFromU8(pliki['calendar.txt'])))
+      if (w.start_date <= d && w.end_date >= d && w[dzien] === '1') uslugi.add(w.service_id)
+  if (pliki['calendar_dates.txt'])
+    for (const w of csv(strFromU8(pliki['calendar_dates.txt']))) {
+      if (w.date !== d) continue
+      if (w.exception_type === '1') uslugi.add(w.service_id)
+      if (w.exception_type === '2') uslugi.delete(w.service_id)
+    }
   if (!uslugi.size) throw new Error(`Brak usług GTFS na ${data}`)
   return uslugi
 }
@@ -58,21 +70,21 @@ function wierszeStopTimes(bajty, dodaj) {
         naglowek = linia
           .replace(/^\uFEFF/, '')
           .replace(/\r$/, '')
+          .replaceAll('"', '')
           .split(',')
+        // pickup_type i drop_off_type są opcjonalne (np. feed Bydgoszczy ich nie ma).
         for (const pole of [
           'trip_id',
           'arrival_time',
           'departure_time',
           'stop_id',
           'stop_sequence',
-          'pickup_type',
-          'drop_off_type',
         ])
           if (!naglowek.includes(pole)) throw new Error(`GTFS stop_times: brak ${pole}`)
-      } else if (linia) dodaj(linia.replace(/\r$/, '').split(','), naglowek)
+      } else if (linia) dodaj(linia.replace(/\r$/, '').replaceAll('"', '').split(','), naglowek)
     }
   }
-  if (reszta) dodaj(reszta.replace(/\r$/, '').split(','), naglowek)
+  if (reszta) dodaj(reszta.replace(/\r$/, '').replaceAll('"', '').split(','), naglowek)
 }
 
 export function odczytajFeed(bufor, grupa, data, startId = 0, okno = {}) {
@@ -87,7 +99,8 @@ export function odczytajFeed(bufor, grupa, data, startId = 0, okno = {}) {
     'feed_info.txt',
   ])
   const pliki = unzipSync(bufor, { filter: ({ name }) => potrzebne.has(name) })
-  for (const plik of potrzebne) if (!pliki[plik]) throw new Error(`GTFS ${grupa}: brak ${plik}`)
+  const wymagane = MIASTO_INFO ? ['stops.txt', 'trips.txt', 'stop_times.txt'] : [...potrzebne]
+  for (const plik of wymagane) if (!pliki[plik]) throw new Error(`GTFS ${grupa}: brak ${plik}`)
   const uslugi = aktywneUslugi(pliki, data)
   const kursy = new Set(
     csv(strFromU8(pliki['trips.txt']))
@@ -136,7 +149,7 @@ export function odczytajFeed(bufor, grupa, data, startId = 0, okno = {}) {
       dropoff: pole('drop_off_type') !== '1',
     })
   })
-  const info = csv(strFromU8(pliki['feed_info.txt']))[0]
+  const info = pliki['feed_info.txt'] ? (csv(strFromU8(pliki['feed_info.txt']))[0] ?? {}) : {}
   return { punkty, zdarzenia, info, odrzucone }
 }
 
@@ -301,6 +314,54 @@ export function pobierzGrupe(grupa) {
   return { url, bufor, meta }
 }
 
+/**
+ * Feedy do liczenia dojazdu: ZTP Kraków (A/M/T) albo – w trybie miasta – feedy z gtfs-miasta.mjs.
+ * Każdy element: { grupa, url, bufor, meta, zrodlo(info) } (zrodlo składa wpis do metadanych wskaźnika).
+ */
+export async function listaFeedow() {
+  if (FEEDY_MIASTA) {
+    const wynik = []
+    for (const f of FEEDY_MIASTA) {
+      const { bufor, meta } = await wczytajFeedMiasta(f)
+      wynik.push({
+        grupa: f.grupa,
+        url: f.url,
+        bufor,
+        meta,
+        zrodlo: (info) => ({
+          nazwa: `${f.nazwa} (${info.feed_publisher_name || 'wydawca nie podany'}; ${info.feed_version || 'bez wersji'})`,
+          url: f.url,
+          licencja: f.licencja,
+          dataDanych: dataDanychFeedu(info, meta.dataPobrania),
+          pobrano: meta.dataPobrania,
+        }),
+      })
+    }
+    return wynik
+  }
+  return GRUPY.map((grupa) => {
+    const { url, bufor, meta } = pobierzGrupe(grupa)
+    return {
+      grupa,
+      url,
+      bufor,
+      meta,
+      zrodlo: (info) => ({
+        nazwa: `ZTP Kraków GTFS ${grupa} (${info.feed_publisher_name}; ${info.feed_version || ''})`,
+        url,
+        licencja:
+          'Warunki ponownego wykorzystania informacji GMK: https://bip.krakow.pl/?dok_id=48482',
+        dataDanych: meta.lastModified
+          ? new Date(meta.lastModified).toISOString().slice(0, 10)
+          : /^\d{8}/.test(info.feed_version || '')
+            ? `${info.feed_version.slice(0, 4)}-${info.feed_version.slice(4, 6)}-${info.feed_version.slice(6, 8)}`
+            : null,
+        pobrano: dzis(),
+      }),
+    }
+  })
+}
+
 export async function generuj(data = dataRobocza(), cel = null, opcje = {}) {
   const rynek = opcje.rynek === true
   if (rynek && !cel) throw new Error('Rynek wymaga współrzędnych celu')
@@ -315,26 +376,14 @@ export async function generuj(data = dataRobocza(), cel = null, opcje = {}) {
   const punkty = []
   const zdarzenia = []
   const zrodla = []
-  for (const grupa of GRUPY) {
-    const { url, bufor, meta } = pobierzGrupe(grupa)
+  for (const { grupa, bufor, meta, zrodlo } of await listaFeedow()) {
     const feed = odczytajFeed(bufor, grupa, data, punkty.length)
     punkty.push(...feed.punkty)
-    zdarzenia.push(...feed.zdarzenia)
-    const wersja = feed.info.feed_version || ''
-    const dataDanych = meta.lastModified
-      ? new Date(meta.lastModified).toISOString().slice(0, 10)
-      : /^\d{8}/.test(wersja)
-        ? `${wersja.slice(0, 4)}-${wersja.slice(4, 6)}-${wersja.slice(6, 8)}`
-        : null
-    if (!dataDanych) throw new Error(`GTFS ${grupa}: brak wiarygodnej daty stanu danych`)
-    zrodla.push({
-      nazwa: `ZTP Kraków GTFS ${grupa} (${feed.info.feed_publisher_name}; ${wersja})`,
-      url,
-      licencja:
-        'Warunki ponownego wykorzystania informacji GMK: https://bip.krakow.pl/?dok_id=48482',
-      dataDanych,
-      pobrano: dzis(),
-    })
+    // push(...tablica) przy milionach zdarzeń (Warszawa) przepełnia stos wywołań.
+    for (const z of feed.zdarzenia) zdarzenia.push(z)
+    const wpis = zrodlo(feed.info)
+    if (!wpis.dataDanych) throw new Error(`GTFS ${grupa}: brak wiarygodnej daty stanu danych`)
+    zrodla.push(wpis)
     console.log(
       `${grupa}: ${feed.punkty.length} stanowisk, ${feed.zdarzenia.length} zdarzeń, ${feed.odrzucone} odrzuconych; SHA-256 ${meta.sha256}`,
     )
@@ -349,8 +398,14 @@ export async function generuj(data = dataRobocza(), cel = null, opcje = {}) {
         Math.ceil(p.metry / PREDKOSC_PIESZO / 60),
       ]),
     )
-    nazwaCelu = rynek ? 'Rynek Główny w Krakowie' : `punkt ${cel.lat}, ${cel.lon}`
+    nazwaCelu = rynek
+      ? (MIASTO_INFO?.centrum.nazwa ?? 'Rynek Główny w Krakowie')
+      : `punkt ${cel.lat}, ${cel.lon}`
   } else {
+    if (MIASTO_INFO)
+      throw new Error(
+        'Tryb miasta: warstwa lotniska tylko dla Krakowa (użyj --rynek albo współrzędnych)',
+      )
     const lotnisko = punkty.filter((p) => p.nazwa === 'Kraków Airport')
     if (!lotnisko.length) throw new Error('Brak stanowisk Kraków Airport w GTFS')
     dojscieDoCelu = new Map(lotnisko.map((p) => [p.i, 0]))
@@ -364,11 +419,13 @@ export async function generuj(data = dataRobocza(), cel = null, opcje = {}) {
     id: rynek ? 'rynek_czas_min' : cel ? 'dojazd_cel_test' : 'lotnisko_czas_min',
     kategoria: 'transport',
     nazwa: rynek
-      ? 'Czas podróży do Rynku Głównego'
+      ? MIASTO_INFO
+        ? `Czas podróży do centrum (${MIASTO_INFO.centrum.nazwa})`
+        : 'Czas podróży do Rynku Głównego'
       : cel
         ? 'Czas do wskazanego punktu'
         : 'Czas do lotniska Balice',
-    opis: `Planowy najwcześniejszy przyjazd do celu (${nazwaCelu}${rynek ? `; punkt ${cel.lat}, ${cel.lon}` : ''}) przy wyjściu z punktu adresowego o 07:00 w dniu ${data}, obliczony z GTFS ZTP. Obejmuje oczekiwanie, przejazd, przesiadki (min. 2 min) oraz dojścia do 1,2 km/przesiadki do 350 m, po prostej przy 1,25 m/s${rynek ? '; uwzględnia też dojście od przystanku do punktu na Rynku oraz bezpośredni marsz z adresu do 1,2 km' : ''}. To przybliżenie planowej podróży, nie pomiar rzeczywisty ani routing po chodnikach; nie obejmuje opóźnień ani dostępności pojazdu${cel ? '' : ', ani drogi od stanowiska lotniskowego do terminala'}. Brak możliwej trasy w modelu do 14:00 = brak danych.`,
+    opis: `Planowy najwcześniejszy przyjazd do celu (${nazwaCelu}${rynek ? `; punkt ${cel.lat}, ${cel.lon}` : ''}) przy wyjściu z punktu adresowego o 07:00 w dniu ${data}, obliczony z ${FEEDY_MIASTA ? `GTFS (${FEEDY_MIASTA.map((f) => f.nazwa).join('; ')})` : 'GTFS ZTP'}${DATA_OBSLUGI_MIASTA ? ' (uwaga: jedyny dostępny feed jest starszy, rozkład z tej daty może się różnić od obecnego)' : ''}. Obejmuje oczekiwanie, przejazd, przesiadki (min. 2 min) oraz dojścia do 1,2 km/przesiadki do 350 m, po prostej przy 1,25 m/s${rynek ? '; uwzględnia też dojście od przystanku do punktu na Rynku oraz bezpośredni marsz z adresu do 1,2 km' : ''}. To przybliżenie planowej podróży, nie pomiar rzeczywisty ani routing po chodnikach; nie obejmuje opóźnień ani dostępności pojazdu${cel ? '' : ', ani drogi od stanowiska lotniskowego do terminala'}. Brak możliwej trasy w modelu do 14:00 = brak danych.`,
     jednostka: 'min',
     kierunek: 'mniej-lepiej',
     rozdzielczosc: 'adres',
@@ -399,7 +456,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   const [data, lon, lat] = process.argv.slice(2)
   const rynek = lon === '--rynek'
   await generuj(
-    data || dataRobocza(),
+    data || DATA_OBSLUGI_MIASTA || dataRobocza(),
     rynek ? RYNEK_GLOWNY : lon === undefined ? null : { lon: Number(lon), lat: Number(lat) },
     { rynek },
   )

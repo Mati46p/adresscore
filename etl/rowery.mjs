@@ -45,6 +45,7 @@ import { fileURLToPath } from 'node:url'
 import { DuckDBInstance } from '@duckdb/node-api'
 import KDBush from 'kdbush'
 import proj4 from 'proj4'
+import { MIASTO_INFO, pbfRegionu, WOJEWODZTWO } from './lib/miasto.mjs'
 import { IndeksOdcinkow, odlegloscDoOdcinka } from './lib/odcinki.mjs'
 import { CACHE, dzis, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
 
@@ -73,7 +74,14 @@ proj4.defs(
   'EPSG:2178',
   '+proj=tmerc +lat_0=0 +lon_0=21 +k=0.999923 +x_0=7500000 +y_0=0 +ellps=GRS80 +units=m +no_defs',
 )
-const rzutuj = ([lon, lat]) => proj4('EPSG:4326', 'EPSG:2178', [lon, lat])
+// Tryb miasta: lokalny układ Gaussa-Krügera (południk środkowy w centrum miasta, skala 1), bo
+// EPSG:2178 (południk 21°) zniekształca odległości dla Szczecina czy Gdańska o ok. 0,2%.
+proj4.defs(
+  'ADRESCORE_LOKALNY',
+  `+proj=tmerc +lat_0=0 +lon_0=${MIASTO_INFO?.centrum.lon ?? 21} +k=1 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs`,
+)
+const UKLAD = MIASTO_INFO ? 'ADRESCORE_LOKALNY' : 'EPSG:2178'
+const rzutuj = ([lon, lat]) => proj4('EPSG:4326', UKLAD, [lon, lat])
 
 // ---------------------------------------------------------------------------------------------
 // Klasyfikacja: co jest „infrastrukturą rowerową” i „stojakiem”
@@ -522,6 +530,73 @@ const MIEJSCA_KONTROLNE = [
   ['Koniusza, centrum', 20.21, 50.18],
 ]
 
+/**
+ * Tryb miasta (ADRESCORE_MIASTO): wyłącznie rower_infrastruktura_odleglosc z OSM (ekstrakt województwa).
+ * Stojaki i Park and Ride to ewidencja ZTP Kraków, a MSIP jest tylko krakowski, więc tych dwóch
+ * warstw dla innych miast nie ma (brak źródła, nie zero).
+ */
+async function mainMiasto() {
+  const start = performance.now()
+  const { adresy } = wczytajAdresy()
+  const xy = adresy.map((a) => rzutuj([a.lon, a.lat]))
+  const { plik: pbf, stan: dataOsm } = await pbfRegionu()
+  console.log(`Adresy: ${adresy.length}; OSM: ${pbf} (stan ${dataOsm})`)
+  const xs = xy.map((p) => p[0])
+  const ys = xy.map((p) => p[1])
+  const ramka = [
+    xs.reduce((a, b) => Math.min(a, b)) - MAX_ODLEGLOSC,
+    ys.reduce((a, b) => Math.min(a, b)) - MAX_ODLEGLOSC,
+    xs.reduce((a, b) => Math.max(a, b)) + MAX_ODLEGLOSC,
+    ys.reduce((a, b) => Math.max(a, b)) + MAX_ODLEGLOSC,
+  ]
+  const { drogi, wezly } = await wczytajOsm(pbf)
+  const osm = zlozLinieOsm(drogi, wezly, ramka)
+  const poRodzaju = {}
+  for (const l of osm.linie) poRodzaju[l.rodzaj] = (poRodzaju[l.rodzaj] ?? 0) + 1
+  console.log(
+    `OSM: dróg z tagami ${drogi.length}; linii w ramce ${osm.linie.length} ${JSON.stringify(poRodzaju)}; odrzucone: ${JSON.stringify(osm.statystyka)}`,
+  )
+  if (osm.linie.length < 50) throw new Error('OSM: podejrzanie mało linii rowerowych w ramce')
+  const indeks = new IndeksOdcinkow()
+  for (const l of osm.linie) indeks.dodajLinie(l.punkty, l.rodzaj)
+  const infra = xy.map(([x, y]) => {
+    const t = indeks.najblizszy(x, y, MAX_ODLEGLOSC)
+    return t ? Math.round(t.metry) : null
+  })
+  // Kontrola indeksu przeszukaniem liniowym na próbce (jak w trybie Krakowa).
+  const krok = Math.max(1, Math.floor(adresy.length / 300))
+  for (let i = 0; i < adresy.length; i += krok) {
+    const wzorzec = najblizszaLiniaLiniowo(osm.linie, xy[i][0], xy[i][1])
+    const oczekiwana = wzorzec <= MAX_ODLEGLOSC ? Math.round(wzorzec) : null
+    if (oczekiwana !== infra[i]) throw new Error(`Indeks ≠ przeszukanie liniowe dla adresu ${i}`)
+  }
+  console.log(`rower_infrastruktura_odleglosc, ${MIASTO_INFO.nazwa}: ${percentyle(infra)}`)
+  zapiszWskaznik(
+    {
+      id: 'rower_infrastruktura_odleglosc',
+      kategoria: 'transport',
+      nazwa: 'Najbliższa infrastruktura rowerowa',
+      opis: `Odległość geodezyjna w linii prostej od adresu do najbliższej drogi dla rowerów, ciągu pieszo-rowerowego, pasa lub kontrapasa rowerowego z OpenStreetMap (highway=cycleway, ścieżki path/footway z bicycle=designated, pasy cycleway=lane/track), stan ${dataOsm}. OSM bywa niekompletny, więc wartość jest raczej górnym oszacowaniem. To nie jest długość dojazdu ani ocena bezpieczeństwa trasy. Dalej niż ${MAX_ODLEGLOSC / 1000} km: brak danych.`,
+      jednostka: 'm',
+      kierunek: 'mniej-lepiej',
+      rozdzielczosc: 'adres',
+      zakres: [0, 3000],
+      zadanie: ZADANIE,
+      zrodla: [
+        {
+          nazwa: `OpenStreetMap, ekstrakt województwa ${WOJEWODZTWO} (lustro download.openstreetmap.fr; linie rowerowe)`,
+          url: 'https://download.openstreetmap.fr/extracts/europe/poland/',
+          licencja: LICENCJA_OSM,
+          dataDanych: dataOsm,
+          pobrano: dzis(),
+        },
+      ],
+    },
+    infra,
+  )
+  console.log(`Czas: ${((performance.now() - start) / 1000).toFixed(1)} s`)
+}
+
 async function main() {
   const start = performance.now()
   const pobrano = dzis()
@@ -748,7 +823,7 @@ async function main() {
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === resolve(fileURLToPath(import.meta.url))) {
-  main().catch((blad) => {
+  ;(MIASTO_INFO ? mainMiasto() : main()).catch((blad) => {
     console.error(blad)
     process.exitCode = 1
   })

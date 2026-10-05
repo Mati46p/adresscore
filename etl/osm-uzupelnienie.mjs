@@ -25,6 +25,7 @@ import { pipeline } from 'node:stream/promises'
 import { pathToFileURL } from 'node:url'
 import { DuckDBInstance } from '@duckdb/node-api'
 import { odlegloscMetry } from './lib/codziennosc-geo.mjs'
+import { MIASTO_INFO, pbfRegionu, WOJEWODZTWO } from './lib/miasto.mjs'
 import {
   budujNajblizszy,
   liczbaPL,
@@ -92,6 +93,10 @@ const sq = (s) => s.replaceAll("'", "''")
  * usunięcie pliku z cache.
  */
 async function ustalPbf() {
+  if (MIASTO_INFO) {
+    const r = await pbfRegionu()
+    return { plik: r.plik, stan: r.stan }
+  }
   mkdirSync(CACHE, { recursive: true })
   const zData = readdirSync(CACHE)
     .map((n) => /^malopolskie-(\d{2})(\d{2})(\d{2})\.osm\.pbf$/.exec(n))
@@ -260,6 +265,8 @@ async function pobierzJson(url, proby = 4) {
 
 /** Ludność ogółem 31.12.2024 z BDL GUS dla 14 gmin obszaru. Map teryt → mieszkańcy. */
 async function ludnoscGmin(adresy) {
+  // Tryb miasta: licznik „na 1000 mieszkańców" porównuje Kraków z obwarzankiem, więc go pomijamy.
+  if (MIASTO_INFO) return null
   const cel = join(CACHE, `bdl-ludnosc-${BDL_ROK}.json`)
   let dane
   if (existsSync(cel)) dane = JSON.parse(readFileSync(cel, 'utf8'))
@@ -378,8 +385,10 @@ const WARSTWY = [
 ]
 
 const zrodloOsm = (tagi, stan) => ({
-  nazwa: `OpenStreetMap, ekstrakt Geofabrik – małopolskie (${tagi})`,
-  url: STRONA_GEOFABRIK,
+  nazwa: MIASTO_INFO
+    ? `OpenStreetMap, ekstrakt województwa ${WOJEWODZTWO} (lustro download.openstreetmap.fr; ${tagi})`
+    : `OpenStreetMap, ekstrakt Geofabrik – małopolskie (${tagi})`,
+  url: MIASTO_INFO ? 'https://download.openstreetmap.fr/extracts/europe/poland/' : STRONA_GEOFABRIK,
   licencja: LICENCJA_OSM,
   dataDanych: stan,
   pobrano: dzis(),
@@ -394,16 +403,20 @@ const zrodloBdl = {
 }
 
 const zdanieLicznika = (l, rzeczownik) =>
-  `${rzeczownik} na 1000 mieszkańców: ${liczbaPL(l.krakow.na1000)} w Krakowie, ${liczbaPL(l.obwarzanek.na1000)} w 13 gminach obwarzanka.`
+  !l
+    ? ''
+    : `${rzeczownik} na 1000 mieszkańców: ${liczbaPL(l.krakow.na1000)} w Krakowie, ${liczbaPL(l.obwarzanek.na1000)} w 13 gminach obwarzanka.`
 
 /**
  * Gdy Kraków ma na mieszkańca ponad 4 razy więcej wpisów niż gminy obwarzanka, różnica to raczej
  * dziura w mapie niż w mieście: tam brak obiektu w pobliżu częściej znaczy „nie wpisano".
  */
 const zdanieLuki = (l) =>
-  l.obwarzanek.na1000 === 0 || l.krakow.na1000 > 4 * l.obwarzanek.na1000
-    ? ' Poza Krakowem OSM zna wielokrotnie mniej takich miejsc na mieszkańca, więc tam brak obiektu w pobliżu częściej oznacza brak wpisu niż brak miejsca.'
-    : ''
+  !l
+    ? ''
+    : l.obwarzanek.na1000 === 0 || l.krakow.na1000 > 4 * l.obwarzanek.na1000
+      ? ' Poza Krakowem OSM zna wielokrotnie mniej takich miejsc na mieszkańca, więc tam brak obiektu w pobliżu częściej oznacza brak wpisu niż brak miejsca.'
+      : ''
 
 /** Percentyl z posortowanej tablicy. */
 const pct = (t, p) => (t.length ? t[Math.min(t.length - 1, Math.floor(p * (t.length - 1)))] : null)
@@ -411,7 +424,11 @@ const pct = (t, p) => (t.length ? t[Math.min(t.length - 1, Math.floor(p * (t.len
 function rozklad(adresy, wartosci) {
   const wg = (czyKrakow) =>
     wartosci
-      .filter((v, i) => v !== null && (adresy[i].teryt === TERYT_KRAKOWA) === czyKrakow)
+      .filter(
+        (v, i) =>
+          v !== null &&
+          (MIASTO_INFO ? czyKrakow : (adresy[i].teryt === TERYT_KRAKOWA) === czyKrakow),
+      )
       .sort((a, b) => a - b)
   return Object.fromEntries(
     [
@@ -494,24 +511,26 @@ function kontrolaLiczenia(adresy, punkty, wartosci, promien, nazwa) {
   }
 }
 
-const KONTROLA_MIEJSC = [
-  ['Kraków', 'Rynek Główny', '10', 'Kraków, Rynek Główny 10 (Stare Miasto)'],
-  [
-    'Kraków',
-    'Plac Wszystkich Świętych',
-    '3',
-    'Kraków, Plac Wszystkich Świętych 3 (przy Urzędzie Miasta)',
-  ],
-  ['Kraków', 'Rynek Kleparski', '10', 'Kraków, Rynek Kleparski 10 (Stary Kleparz)'],
-  ['Kraków', 'Plac Nowowiejski', '2', 'Kraków, Plac Nowowiejski 2 (targ)'],
-  ['Kraków', 'Plac Nowy', '3', 'Kraków, Plac Nowy 3 (Kazimierz, targowisko z relacji OSM)'],
-  ['Kraków', 'Powstańców Wielkopolskich', '1', 'Kraków, Powstańców Wielkopolskich 1 (Dębniki)'],
-  ['Zabierzów', 'Rynek', '1', 'Zabierzów, Rynek 1 (Urząd Gminy)'],
-  ['Wieliczka', 'Rynek Górny', '7', 'Wieliczka, Rynek Górny 7'],
-  ['Skawina', 'Rynek', '2', 'Skawina, Rynek 2'],
-  ['Niepołomice', 'Rynek', '19', 'Niepołomice, Rynek 19'],
-  ['Koniusza', '', '70', 'Koniusza 70 (wieś)'],
-]
+const KONTROLA_MIEJSC = MIASTO_INFO
+  ? []
+  : [
+      ['Kraków', 'Rynek Główny', '10', 'Kraków, Rynek Główny 10 (Stare Miasto)'],
+      [
+        'Kraków',
+        'Plac Wszystkich Świętych',
+        '3',
+        'Kraków, Plac Wszystkich Świętych 3 (przy Urzędzie Miasta)',
+      ],
+      ['Kraków', 'Rynek Kleparski', '10', 'Kraków, Rynek Kleparski 10 (Stary Kleparz)'],
+      ['Kraków', 'Plac Nowowiejski', '2', 'Kraków, Plac Nowowiejski 2 (targ)'],
+      ['Kraków', 'Plac Nowy', '3', 'Kraków, Plac Nowy 3 (Kazimierz, targowisko z relacji OSM)'],
+      ['Kraków', 'Powstańców Wielkopolskich', '1', 'Kraków, Powstańców Wielkopolskich 1 (Dębniki)'],
+      ['Zabierzów', 'Rynek', '1', 'Zabierzów, Rynek 1 (Urząd Gminy)'],
+      ['Wieliczka', 'Rynek Górny', '7', 'Wieliczka, Rynek Górny 7'],
+      ['Skawina', 'Rynek', '2', 'Skawina, Rynek 2'],
+      ['Niepołomice', 'Rynek', '19', 'Niepołomice, Rynek 19'],
+      ['Koniusza', '', '70', 'Koniusza 70 (wieś)'],
+    ]
 
 export async function licz() {
   const t0 = Date.now()
@@ -535,7 +554,7 @@ export async function licz() {
       odpadly.push(`${w.id}: ${wObszarze} miejsc w obszarze 14 gmin (próg ${MIN_OBIEKTOW})`)
       continue
     }
-    const licznik = licznikNa1000(wGminach, ludnosc, TERYT_KRAKOWA)
+    const licznik = ludnosc ? licznikNa1000(wGminach, ludnosc, TERYT_KRAKOWA) : null
 
     let wartosci
     let punkty
@@ -567,13 +586,13 @@ export async function licz() {
         id: w.id,
         kategoria: w.kategoria,
         nazwa: w.nazwa,
-        opis: `${w.opis} Kompletność mapy OSM jest nierówna. ${zdanieLicznika(licznik, w.rzeczownik)}${zdanieLuki(licznik)}`,
+        opis: `${MIASTO_INFO ? w.opis.replace('siedziby rady dzielnicy Krakowa', 'siedziby rady dzielnicy').replace('Urząd Miasta Krakowa ma wiele siedzib', 'Urząd miasta ma wiele siedzib') : w.opis} Kompletność mapy OSM jest nierówna. ${zdanieLicznika(licznik, w.rzeczownik)}${zdanieLuki(licznik)}`,
         jednostka: w.jednostka ?? 'm',
         kierunek: w.kierunek,
         rozdzielczosc: 'adres',
         zakres: w.zakres,
         zadanie: ZADANIE,
-        zrodla: [zrodloOsm(w.tagi, stan), zrodloBdl],
+        zrodla: [zrodloOsm(w.tagi, stan), ...(ludnosc ? [zrodloBdl] : [])],
       },
       wartosci,
     )
@@ -597,6 +616,12 @@ export async function licz() {
   )
   for (const r of raport) {
     const f = (x) => [x.p10, x.p50, x.p90, x.p99, x.max].join(' / ')
+    if (!r.licznik) {
+      console.log(
+        `${r.id.padEnd(30)} z tagiem ${String(r.surowe).padStart(4)}, wpisów ${String(r.wpisow).padStart(4)}, miejsc ${String(r.miejsc).padStart(4)}, w obszarze ${String(r.wObszarze).padStart(4)} | miasto ${f(r.rozklad.Kraków)}`,
+      )
+      continue
+    }
     console.log(
       `${r.id.padEnd(30)} z tagiem ${String(r.surowe).padStart(4)}, wpisów ${String(r.wpisow).padStart(4)}, miejsc ${String(r.miejsc).padStart(4)}, w 14 gminach ${String(r.wObszarze).padStart(4)} | Kraków ${f(r.rozklad.Kraków)} (${r.licznik.krakow.obiekty} miejsc, ${liczbaPL(r.licznik.krakow.na1000)}/1000) | obwarzanek ${f(r.rozklad.obwarzanek)} (${r.licznik.obwarzanek.obiekty} miejsc, ${liczbaPL(r.licznik.obwarzanek.na1000)}/1000)`,
     )

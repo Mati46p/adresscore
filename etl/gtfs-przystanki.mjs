@@ -9,6 +9,13 @@ import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
 import { strFromU8, unzipSync } from 'fflate'
 import KDBush from 'kdbush'
+import {
+  DATA_OBSLUGI_MIASTA,
+  dataDanychFeedu,
+  FEEDY_MIASTA,
+  wczytajFeedMiasta,
+} from './lib/gtfs-miasta.mjs'
+import { MIASTO_INFO } from './lib/miasto.mjs'
 import { CACHE, dzis, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
 
 const BAZA = 'https://gtfs.ztp.krakow.pl'
@@ -76,20 +83,25 @@ export function csv(tekst) {
 
 /** Wybiera przystanki i odjazdy w szczycie z kursów dostępnych danego dnia. */
 export function obslugaDnia(pliki, data) {
-  for (const nazwa of ['calendar.txt', 'calendar_dates.txt', 'trips.txt', 'stop_times.txt'])
+  // Feedy miast bywają bez calendar.txt (same daty w calendar_dates.txt) albo odwrotnie.
+  for (const nazwa of ['trips.txt', 'stop_times.txt'])
     if (!pliki[nazwa]) throw new Error(`GTFS: brak ${nazwa}`)
+  if (!pliki['calendar.txt'] && !pliki['calendar_dates.txt'])
+    throw new Error('GTFS: brak calendar.txt i calendar_dates.txt')
   const dzien = data.replaceAll('-', '')
   const dzienTygodnia = DNI[new Date(`${data}T12:00:00Z`).getUTCDay()]
   if (!dzienTygodnia) throw new Error(`Niepoprawna data: ${data}`)
   const uslugi = new Set()
-  for (const w of csv(strFromU8(pliki['calendar.txt'])))
-    if (w.start_date <= dzien && w.end_date >= dzien && w[dzienTygodnia] === '1')
-      uslugi.add(w.service_id)
-  for (const w of csv(strFromU8(pliki['calendar_dates.txt']))) {
-    if (w.date !== dzien) continue
-    if (w.exception_type === '1') uslugi.add(w.service_id)
-    if (w.exception_type === '2') uslugi.delete(w.service_id)
-  }
+  if (pliki['calendar.txt'])
+    for (const w of csv(strFromU8(pliki['calendar.txt'])))
+      if (w.start_date <= dzien && w.end_date >= dzien && w[dzienTygodnia] === '1')
+        uslugi.add(w.service_id)
+  if (pliki['calendar_dates.txt'])
+    for (const w of csv(strFromU8(pliki['calendar_dates.txt']))) {
+      if (w.date !== dzien) continue
+      if (w.exception_type === '1') uslugi.add(w.service_id)
+      if (w.exception_type === '2') uslugi.delete(w.service_id)
+    }
   if (!uslugi.size) throw new Error(`GTFS: brak aktywnych usług na ${data}`)
   const kursy = new Set(
     csv(strFromU8(pliki['trips.txt']))
@@ -107,6 +119,9 @@ export function obslugaDnia(pliki, data) {
   const odjazdySzczyt = new Map()
   let reszta = ''
   let pierwsza = true
+  // Tryb miasta: układ kolumn bywa inny (kolejność, brak pickup_type, cudzysłowy w nagłówku), więc
+  // czytamy według nagłówka. Ścieżka Krakowa (stały układ ZTP) zostaje szybka i bez zmian.
+  let uklad = null
   const przecinekPoPolu = (linia, od) => {
     let cytat = false
     for (let i = od; i < linia.length; i++) {
@@ -120,8 +135,30 @@ export function obslugaDnia(pliki, data) {
   const dodajLinie = (linia) => {
     if (pierwsza) {
       pierwsza = false
-      if (!linia.replace(/^\uFEFF/, '').startsWith('trip_id,arrival_time,departure_time,stop_id,'))
-        throw new Error('GTFS: nieoczekiwany układ stop_times.txt')
+      const naglowek = linia.replace(/^\uFEFF/, '')
+      const kolumny = naglowek.replace(/\r$/, '').replaceAll('"', '').split(',')
+      // Feedy miast bywają z cudzysłowami wokół pól (trip_id w Poznaniu), więc zawsze czytamy według nagłówka.
+      if (!MIASTO_INFO && naglowek.startsWith('trip_id,arrival_time,departure_time,stop_id,'))
+        return
+      if (!MIASTO_INFO) throw new Error('GTFS: nieoczekiwany układ stop_times.txt')
+      uklad = Object.fromEntries(
+        ['trip_id', 'departure_time', 'stop_id', 'pickup_type'].map((k) => [k, kolumny.indexOf(k)]),
+      )
+      if (uklad.trip_id < 0 || uklad.departure_time < 0 || uklad.stop_id < 0)
+        throw new Error('GTFS: stop_times.txt bez trip_id, departure_time lub stop_id')
+      return
+    }
+    if (uklad) {
+      // Pola stop_times (id, czasy, numery) nie zawierają przecinków, cudzysłowy tylko ozdabiają.
+      const p = linia.replace(/\r$/, '').replaceAll('"', '').split(',')
+      if (!kursy.has(p[uklad.trip_id])) return
+      if (uklad.pickup_type >= 0 && p[uklad.pickup_type] === '1') return
+      const id = p[uklad.stop_id]
+      przystanki.add(id)
+      const dep = p[uklad.departure_time]
+      const odjazd = dep.length === 7 ? `0${dep}` : dep
+      if (odjazd >= '07:00:00' && odjazd < '09:00:00')
+        odjazdySzczyt.set(id, (odjazdySzczyt.get(id) ?? 0) + 1)
       return
     }
     const a = przecinekPoPolu(linia, 0)
@@ -172,9 +209,9 @@ export function odczytajGtfs(bufor, grupa, dataObslugi) {
   } catch (blad) {
     throw new Error(`GTFS ${grupa}: niekompletny/uszkodzony ZIP: ${blad.message}`)
   }
-  if (!pliki['stops.txt'] || !pliki['feed_info.txt'])
+  if (!pliki['stops.txt'] || (!pliki['feed_info.txt'] && !MIASTO_INFO))
     throw new Error(`GTFS ${grupa}: brak stops.txt lub feed_info.txt`)
-  const informacje = csv(strFromU8(pliki['feed_info.txt']))[0]
+  const informacje = pliki['feed_info.txt'] ? csv(strFromU8(pliki['feed_info.txt']))[0] : {}
   const wiersze = csv(strFromU8(pliki['stops.txt']))
   if (!wiersze.length) throw new Error(`GTFS ${grupa}: puste stops.txt`)
   const obsluga = dataObslugi ? obslugaDnia(pliki, dataObslugi) : null
@@ -293,6 +330,20 @@ async function pobierzGrupe(grupa, dataObslugi, dataSzczyt) {
   throw new Error(`GTFS ${grupa}: nie udało się pobrać poprawnego archiwum: ${ostatniBlad.message}`)
 }
 
+/** Tryb miasta: feed z etl/.cache/gtfs-miasta (pobierany raz), ten sam kształt wyniku co pobierzGrupe. */
+async function pobierzGrupeMiasta(feed, dataObslugi, dataSzczyt) {
+  const { bufor, meta } = await wczytajFeedMiasta(feed)
+  const dane = odczytajDwieDaty(bufor, feed.grupa, dataObslugi, dataSzczyt)
+  return {
+    ...dane,
+    url: feed.url,
+    bajty: meta.bajty,
+    sha256: meta.sha256,
+    lastModified: null,
+    dataDanych: dataDanychFeedu(dane.informacje, meta.dataPobrania),
+  }
+}
+
 export function indeksPrzystankow(punkty) {
   const indeks = new KDBush(punkty.length)
   for (const p of punkty) indeks.add(p.lon, p.lat)
@@ -345,14 +396,20 @@ function najblizszaSroda(data) {
 }
 
 export async function generuj() {
-  const dataObslugi = dataLokalna()
+  const dataObslugi = DATA_OBSLUGI_MIASTA ?? dataLokalna()
   const dataSzczyt = najblizszaSroda(dataObslugi)
+  const grupy = FEEDY_MIASTA ? FEEDY_MIASTA.map((f) => f.grupa) : GRUPY
   // Kolejno, żeby nie trzymać w pamięci równocześnie trzech dużych stop_times.
   const feedy = []
-  for (const grupa of GRUPY) feedy.push(await pobierzGrupe(grupa, dataObslugi, dataSzczyt))
+  for (const [i, grupa] of grupy.entries())
+    feedy.push(
+      FEEDY_MIASTA
+        ? await pobierzGrupeMiasta(FEEDY_MIASTA[i], dataObslugi, dataSzczyt)
+        : await pobierzGrupe(grupa, dataObslugi, dataSzczyt),
+    )
   for (const [i, f] of feedy.entries())
     console.log(
-      `GTFS ${GRUPY[i]}: ${f.punkty.length} peronów, ${f.odrzucone} odrzuconych, SHA-256 ${f.sha256}`,
+      `GTFS ${grupy[i]}: ${f.punkty.length} peronów, ${f.odrzucone} odrzuconych, SHA-256 ${f.sha256}`,
     )
   const punkty = feedy.flatMap((f) => f.punkty)
   const indeks = indeksPrzystankow(punkty)
@@ -360,18 +417,25 @@ export async function generuj() {
   const wyniki = adresy.map((a) => najblizszyPrzystanek(a, punkty, indeks))
   const odjazdyPoKodzie = new Map()
   for (const p of feedy.flatMap((f) => f.szczyt.punkty)) {
-    const klucz = p.kod || p.id
+    // W feedach miast stop_code to często tylko numer słupka (nieunikalny), więc kluczem jest id.
+    const klucz = MIASTO_INFO ? p.id : p.kod || p.id
     odjazdyPoKodzie.set(klucz, (odjazdyPoKodzie.get(klucz) ?? 0) + p.odjazdySzczyt)
   }
   const kursy = wyniki.map((w) =>
-    w ? (odjazdyPoKodzie.get(w.punkt.kod || w.punkt.id) ?? 0) / 2 : null,
+    w ? (odjazdyPoKodzie.get(MIASTO_INFO ? w.punkt.id : w.punkt.kod || w.punkt.id) ?? 0) / 2 : null,
   )
-  const stanowisko = (w) => `${w.punkt.nazwa} (${w.punkt.kod || w.punkt.id})`
+  const stanowisko = (w) =>
+    MIASTO_INFO
+      ? `${w.punkt.nazwa}${w.punkt.kod ? ` (słupek ${w.punkt.kod})` : ''}`
+      : `${w.punkt.nazwa} (${w.punkt.kod || w.punkt.id})`
   const zrodla = feedy.map((f, i) => ({
-    nazwa: `ZTP Kraków GTFS ${GRUPY[i]} (wydawca w feed_info: ${f.informacje.feed_publisher_name || 'nie podano'}; wersja ${f.informacje.feed_version || 'bez numeru'})`,
+    nazwa: FEEDY_MIASTA
+      ? `${FEEDY_MIASTA[i].nazwa} (wydawca w feed_info: ${f.informacje.feed_publisher_name || 'nie podano'}; wersja ${f.informacje.feed_version || 'bez numeru'})`
+      : `ZTP Kraków GTFS ${GRUPY[i]} (wydawca w feed_info: ${f.informacje.feed_publisher_name || 'nie podano'}; wersja ${f.informacje.feed_version || 'bez numeru'})`,
     url: f.url,
-    licencja:
-      'Warunki ponownego wykorzystania informacji GMK: źródło, daty, przetworzenie i klauzula odpowiedzialności; prawa osób trzecich zastrzeżone. https://bip.krakow.pl/?dok_id=48482',
+    licencja: FEEDY_MIASTA
+      ? FEEDY_MIASTA[i].licencja
+      : 'Warunki ponownego wykorzystania informacji GMK: źródło, daty, przetworzenie i klauzula odpowiedzialności; prawa osób trzecich zastrzeżone. https://bip.krakow.pl/?dok_id=48482',
     dataDanych: f.dataDanych || dataZNaglowka(f.lastModified, f.informacje),
     pobrano: dzis(),
   }))
@@ -380,7 +444,7 @@ export async function generuj() {
       id: 'przystanek_odleglosc',
       kategoria: 'transport',
       nazwa: 'Najbliższy przystanek',
-      opis: `Odległość geodezyjna w linii prostej do najbliższego przystanku z kursami umożliwiającymi wsiadanie w dniu ${dataObslugi} (rozkład GTFS ZTP). To nie jest długość dojścia pieszo; warstwę należy przeliczać dla nowej daty. Poza zasięgiem 16 km: brak danych.`,
+      opis: `Odległość geodezyjna w linii prostej do najbliższego przystanku z kursami umożliwiającymi wsiadanie w dniu ${dataObslugi} (rozkład GTFS ${FEEDY_MIASTA ? FEEDY_MIASTA.map((f) => f.grupa).join('/') : 'ZTP'}${DATA_OBSLUGI_MIASTA ? '; uwaga: jedyny dostępny feed jest starszy, rozkład z tej daty może się różnić od obecnego' : ''}). To nie jest długość dojścia pieszo; warstwę należy przeliczać dla nowej daty. Poza zasięgiem 16 km: brak danych.`,
       jednostka: 'm',
       kierunek: 'mniej-lepiej',
       rozdzielczosc: 'adres',
@@ -396,7 +460,7 @@ export async function generuj() {
       id: 'kursy_szczyt_h',
       kategoria: 'transport',
       nazwa: 'Kursy w porannym szczycie',
-      opis: `Średnia liczba planowych odjazdów na godzinę z najbliższego stanowiska przystankowego (tego samego co dla odległości) między 07:00 a 09:00 w środę ${dataSzczyt}. Zsumowano kursy A/M/T o tym samym kodzie stanowiska, bez kursów bez wsiadania. Nie jest to częstotliwość całego zespołu przystankowego ani gwarancja rzeczywistego odjazdu.`,
+      opis: `Średnia liczba planowych odjazdów na godzinę z najbliższego stanowiska przystankowego (tego samego co dla odległości) między 07:00 a 09:00 w środę ${dataSzczyt}. ${FEEDY_MIASTA ? 'Liczone dla pojedynczego stanowiska (id z feedu), bez kursów bez wsiadania.' : 'Zsumowano kursy A/M/T o tym samym kodzie stanowiska, bez kursów bez wsiadania.'} Nie jest to częstotliwość całego zespołu przystankowego ani gwarancja rzeczywistego odjazdu.`,
       jednostka: 'kursy/h',
       kierunek: 'wiecej-lepiej',
       rozdzielczosc: 'adres',

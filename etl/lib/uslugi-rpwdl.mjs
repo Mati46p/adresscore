@@ -9,6 +9,7 @@ import { join } from 'node:path'
 import { DuckDBInstance } from '@duckdb/node-api'
 import { geokoduj } from './codziennosc-geo.mjs'
 import { BBOX } from './codziennosc-zrodla.mjs'
+import { TERYT_WOJ, wMiescieMiasta } from './miasto.mjs'
 import { BRANZE } from './uslugi-katalog.mjs'
 import { CACHE, dzis } from './wspolne.mjs'
 
@@ -46,7 +47,7 @@ export function zapytanieKomorek(kody, dzien, katalog = KATALOG) {
      from ${csv('komorki.csv')} k
      left join (select "ID ZOZ" as id, min(Nazwa) as Nazwa from ${csv('zaklady.csv')} group by "ID ZOZ") z on z.id = k."ID ZOZ"
      where k.kodResortVIII in (${kody.map((x) => `'${sq(x)}'`).join(',')})
-       and k.Teryt like '12%'
+       and k.Teryt like '${TERYT_WOJ}%'
        and k."Data zakończenia działalności komórki" is null
        and k."Budynek" is not null
        and (k."Data rozpoczęcia działalności komórki" is null or k."Data rozpoczęcia działalności komórki" <= '${dzien}')
@@ -81,7 +82,10 @@ export async function punktyRpwdlBranz({
   geokoduj: geo = geokoduj,
 } = {}) {
   const poKodzie = branzePoKodzieRpwdl()
-  const wiersze = await wierszeKomorek([...poKodzie.keys()], { dzien, katalog })
+  // Tryb miasta: geokodujemy tylko komórki z miejscowości miasta (UUG jest wolny).
+  const wiersze = (await wierszeKomorek([...poKodzie.keys()], { dzien, katalog })).filter((w) =>
+    wMiescieMiasta(w.miejscowosc),
+  )
   const wsp = await geo(
     wiersze.map((w) => ({ miejscowosc: w.miejscowosc, ulica: w.ulica, nr: w.nr, kod: w.kod })),
   )

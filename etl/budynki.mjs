@@ -3,16 +3,22 @@
 
 import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { readFileSync, statSync, writeFileSync } from 'node:fs'
+import { readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import proj4 from 'proj4'
-import { CACHE, DANE, dzis, pobierzDoCache } from './lib/wspolne.mjs'
+import { MIASTA } from './lib/miasta.mjs'
+import { CACHE, DANE, dzis, MIASTO, pobierzDoCache } from './lib/wspolne.mjs'
 
-const POBRANIE_URL = 'https://opendata.geoportal.gov.pl/InneDane/Budynki3D/LOD1/2024/12/1261.zip'
+// ADRESCORE_MIASTO: powiat miasta (URL: 2024/<kod województwa>/<TERYT powiatu>.zip, wg GetFeatureInfo WMS GUGiK).
+const M = MIASTO ? MIASTA[MIASTO] : null
+const POWIAT = M ? M.teryt4 : '1261'
+const POBRANIE_URL = `https://opendata.geoportal.gov.pl/InneDane/Budynki3D/LOD1/2024/${M ? M.woj : '12'}/${POWIAT}.zip`
 const DOKUMENTACJA = 'https://www.geoportal.gov.pl/pl/dane/inne-dane/modele-3d-budynkow/'
 const EPSG_2180 =
   '+proj=tmerc +lat_0=0 +lon_0=19 +k=0.9993 +x_0=500000 +y_0=-5300000 +ellps=GRS80 +units=m +no_defs'
 const OCZEKIWANE = 91257
+// Obwiednia sanity-check (lon, lat); dla miast: cała Polska.
+const OBW = M ? [14, 24.5, 49, 55] : [19.6, 20.4, 49.8, 50.3]
 
 function poleZeZnakiem(ring) {
   let suma = 0
@@ -44,7 +50,7 @@ export function zCityGmlRow(row) {
     }
     const wynik = ring.map(([x, y]) => {
       const [lon, lat] = proj4(EPSG_2180, 'EPSG:4326', [x, y])
-      if (lon < 19.6 || lon > 20.4 || lat < 49.8 || lat > 50.3) {
+      if (lon < OBW[0] || lon > OBW[1] || lat < OBW[2] || lat > OBW[3]) {
         throw new Error(`Budynek poza Krakowem: ${row.id}`)
       }
       return [Math.round(lon * 1e6) / 1e6, Math.round(lat * 1e6) / 1e6]
@@ -84,9 +90,9 @@ export function zloz(rows) {
 }
 
 async function main() {
-  const zipPath = await pobierzDoCache(POBRANIE_URL, '1261-lod1-2024.zip')
-  if (statSync(zipPath).size < 20_000_000) throw new Error('Niepełny ZIP LoD1')
-  const ndjsonPath = join(CACHE, '1261-lod1-2024.ndjson')
+  const zipPath = await pobierzDoCache(POBRANIE_URL, `${POWIAT}-lod1-2024.zip`)
+  if (statSync(zipPath).size < (M ? 5_000_000 : 20_000_000)) throw new Error('Niepełny ZIP LoD1')
+  const ndjsonPath = join(CACHE, `${POWIAT}-lod1-2024.ndjson`)
   execFileSync(
     'python3',
     [new URL('./budynki-gml.py', import.meta.url).pathname, zipPath, ndjsonPath],
@@ -99,14 +105,14 @@ async function main() {
     .split('\n')
     .map((line) => JSON.parse(line))
   const { features, lataALS, minHeight, maxHeight } = zloz(rows)
-  if (features.length !== OCZEKIWANE) {
-    throw new Error(`GUGiK powiat 1261: ${features.length} budynków, oczekiwano ${OCZEKIWANE}`)
+  if (!M && features.length !== OCZEKIWANE) {
+    throw new Error(`GUGiK powiat ${POWIAT}: ${features.length} budynków, oczekiwano ${OCZEKIWANE}`)
   }
   const zipSha256 = createHash('sha256').update(readFileSync(zipPath)).digest('hex')
   const geojson = { type: 'FeatureCollection', features }
   writeFileSync(join(DANE, 'budynki-3d.geojson'), JSON.stringify(geojson))
   const meta = {
-    nazwa: 'Modele budynków GUGiK LoD1 2024, powiat Kraków (TERYT 1261)',
+    nazwa: `Modele budynków GUGiK LoD1 2024, powiat ${M ? M.nazwa : 'Kraków'} (TERYT ${POWIAT})`,
     url: POBRANIE_URL,
     dokumentacja: DOKUMENTACJA,
     licencja: 'Bez opłat, do dowolnego wykorzystania według dokumentacji GUGiK',
@@ -126,6 +132,11 @@ async function main() {
   console.log(
     `Budynki: ${features.length}; ALS ${JSON.stringify(lataALS)}; wysokość ${minHeight}–${maxHeight} m`,
   )
+  if (M) {
+    // miejsce na dysku: paczka powiatowa i pośredni NDJSON są już niepotrzebne
+    rmSync(zipPath, { force: true })
+    rmSync(ndjsonPath, { force: true })
+  }
   console.log(`GeoJSON: ${statSync(join(DANE, 'budynki-3d.geojson')).size} bajtów`)
 }
 

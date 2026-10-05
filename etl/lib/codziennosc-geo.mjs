@@ -4,12 +4,14 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import proj4 from 'proj4'
+import { MIASTO_INFO } from './miasto.mjs'
 import { CACHE } from './wspolne.mjs'
 
 const RAD = Math.PI / 180
 const PROMIEN_ZIEMI = 6_371_000
 const M_NA_STOPIEN = (PROMIEN_ZIEMI * Math.PI) / 180
-const LAT0 = 50.06
+const LAT0 = MIASTO_INFO ? MIASTO_INFO.centrum.lat : 50.06
+const LON0 = MIASTO_INFO ? MIASTO_INFO.centrum.lon : 19.9
 const COS0 = Math.cos(LAT0 * RAD)
 
 /** Odległość w linii prostej (wzór haversine), w metrach. */
@@ -22,7 +24,7 @@ export function odlegloscMetry(aLat, aLon, bLat, bLon) {
 }
 
 // Płaskie metry wokół Krakowa wystarczają do wyboru kandydatów (błąd poniżej 0,1% na 30 km).
-const plaskiX = (lon) => (lon - 19.9) * COS0 * M_NA_STOPIEN
+const plaskiX = (lon) => (lon - LON0) * COS0 * M_NA_STOPIEN
 const plaskiY = (lat) => (lat - LAT0) * M_NA_STOPIEN
 
 /**
@@ -136,6 +138,11 @@ export function normalizujUlice(ulica) {
 export function normalizujMiejscowosc(miejscowosc) {
   const m = (miejscowosc ?? '').trim()
   if (/^Kraków\b/i.test(m)) return 'Kraków'
+  if (
+    MIASTO_INFO &&
+    m.split(/[-,]/)[0].trim().toLocaleLowerCase('pl') === MIASTO_INFO.nazwa.toLocaleLowerCase('pl')
+  )
+    return MIASTO_INFO.nazwa
   return m
 }
 
