@@ -148,11 +148,11 @@ w `dist/assets/index-*.js` nie ma `recharts`.
 dwie migracje naraz (inaczej po fazie 6).
 **Test niezależny**: `select analityka_zestaw_dzien(current_date - 1)` dwa razy daje te same wiersze.
 
-- [ ] T049 [P] Utwórz plik migracji: `powershell -File ~/.claude/bin/wt.ps1 migracja analityka_zestaw` → `supabase/migrations/<ts>_analityka_zestaw.sql`
-- [ ] T050 `analityka_zestaw_dzien(p_dzien date)` – idempotentne `delete` + `insert` wymiarów z data-model.md (`ruch`, `ekran`, `kanal`, `kraj`, `urzadzenie`, `bot_ai`, `produktowe`, `bez_wyniku`, `witale`), `statement_timeout = '120s'`, bez grantu dla klientów; wzór z-dykty `analityka_rollup_wlasne` (`0074`, `0089`)
-- [ ] T051 `analityka_sprzataj()` (zdarzenia > 90 dni, sól > 2 dni) i `analityka_cron()` (zestaw wczoraj i przedwczoraj + sprzątanie, wpis do `analityka_biegi`, wyjątek zapisany w `blad`)
-- [ ] T052 `create extension if not exists pg_cron with schema pg_catalog` + `cron.schedule('analityka-dzienna', '20 1 * * *', 'select public.analityka_cron()')` (idempotentnie: `cron.unschedule` gdy istnieje)
-- [ ] T053 [P] Test pgTAP `supabase/tests/analityka_zestaw.test.sql`: idempotencja, retencja (zdarzenie sprzed 91 dni znika, zestawienie zostaje), wpis w `analityka_biegi`; `pnpm exec supabase test db` zielone
+- [X] T049 [P] Utwórz plik migracji: `powershell -File ~/.claude/bin/wt.ps1 migracja analityka_zestaw` → `supabase/migrations/<ts>_analityka_zestaw.sql`
+- [X] T050 `analityka_zestaw_dzien(p_dzien date)` – idempotentne `delete` + `insert` wymiarów z data-model.md (`ruch`, `ekran`, `kanal`, `kraj`, `urzadzenie`, `bot_ai`, `produktowe`, `bez_wyniku`, `witale`), `statement_timeout = '120s'`, bez grantu dla klientów; wzór z-dykty `analityka_rollup_wlasne` (`0074`, `0089`)
+- [X] T051 `analityka_sprzataj()` (zdarzenia > 90 dni, sól > 2 dni) i `analityka_cron()` (zestaw wczoraj i przedwczoraj + sprzątanie, wpis do `analityka_biegi`, wyjątek zapisany w `blad`)
+- [X] T052 `create extension if not exists pg_cron with schema pg_catalog` + `cron.schedule('analityka-dzienna', '20 1 * * *', 'select public.analityka_cron()')` (idempotentnie: `cron.unschedule` gdy istnieje)
+- [X] T053 [P] Test pgTAP `supabase/tests/analityka_zestaw.test.sql`: idempotencja, retencja (zdarzenie sprzed 91 dni znika, zestawienie zostaje), wpis w `analityka_biegi`; `pnpm exec supabase test db` zielone
 
 **Punkt kontrolny**: zestawienie liczy się, sprząta i zostawia ślad.
 
