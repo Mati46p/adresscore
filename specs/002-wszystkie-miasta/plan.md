@@ -52,6 +52,9 @@ Po projekcie: bez naruszeń.
 | D11 | SEO, sitemap, `api/**` | bez zmian (FR-015) | strony SEO są generowane z danych Krakowa; rozszerzenie to osobny wpis `pomysl` |
 | D12 | Inne ekrany z mapą (luki, symulator, biznes) | bieżące miasto, bez przeglądu innych | cel dotyczy mapy głównej; mniej ryzyka regresji |
 | D13 | Kolejność ładowania przeglądu | bieżące miasto pierwsze, reszta po pierwszym kolorze, maks. 3 pobrania naraz | SC-003: Kraków nie może zwolnić |
+| D14 | Do czego limit 3 pobrań (F3) | tylko do TŁA; bieżące miasto pobiera bez limitu, a miasto, które się nim staje, przejmuje swoje oczekujące zadania | limit na bieżącym mieście wydłużyłby pierwsze kolory Krakowa ponad `main` (SC-003): jego 23 warstwy szły dotąd równolegle |
+| D15 | Kolory tła po zmianie profilu (F3) | stare kolory zostają, dopóki nie dojdą pliki nowych warstw; r10 bieżącego miasta liczymy tylko do czasu wczytania pełnych danych | kilkaset ms starego profilu to mniej szkody niż mrugnięcie całego tła; po wczytaniu pełnych danych r10 liczy `useWyniki`, a drugie liczenie 35 tys. heksów byłoby zbędne |
+| D16 | Podział F3 na pliki | `przegladLiczenie` (arytmetyka), `przegladMenedzer` (ładowanie, kolejka), `przegladSklad` (złożenie widoku, stabilne referencje), `przeglad` (klej: fetch, React) | tylko klej dotyka `import.meta.env` i Reacta, więc kolejność, limit, izolacja błędów i stabilność `tlo` mają testy na gołym `node --test`, także na prawdziwych kompaktach 10 miast |
 
 ## Ryzyka
 

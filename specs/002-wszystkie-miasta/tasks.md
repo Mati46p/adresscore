@@ -71,11 +71,11 @@ Pliki: `src/wynik/przeglad.ts` (nowy), `src/wynik/przegladLiczenie.ts` (nowy),
 `src/wynik/przegladLiczenie.test.ts` (nowy), `src/wynik/wstepnaMapa.ts` (usunięty albo
 cienka nakładka). Kontrakt: [contracts/przeglad.md](contracts/przeglad.md). Zależy od Fazy 2 (bieżące miasto).
 
-- [ ] T020 [P] [US1] `src/wynik/przegladLiczenie.ts`: `wynikiPrzegladu(podstawa, liczone, warstwa, res)` (opakowanie `wynikiHeksow`, NaN → `null`, `liczone = []` → same `null`), `zlaczTlo(per, biezace)`, `graniceZHeksow(r8)`, `miastoPunktu` po r8 (h3-js `latLngToCell(…, 8)` → mapa r8→slug); bez `import.meta.env`
-- [ ] T021 [P] [US1] Test `src/wynik/przegladLiczenie.test.ts`: warstwa nieobecna w mieście → wszystkie heksy `null` (SC-005); heks bez danych → `null`, nigdy 0; `zlaczTlo` pomija bieżące miasto; granice z r8 obejmują wszystkie heksy; punkt poza miastami → `null`
-- [ ] T022 [US1] `src/wynik/przeglad.ts`: menedżer per miasto (`indeks.json` + `manifest.json` z `bazaDanych(slug)` → `niezgodnoscKompaktu` → `heksy.bin` → `PodstawaHeksow`); warstwy heksów dociągane wg `liczoneWarstwy(metaMiasta, wagi, kierunki, warstwa)`; kolejka: bieżące miasto pierwsze, reszta po jego pierwszym kolorze, maks. 3 pobrania naraz (D13); błąd jednego miasta → `stan: 'brak'`, reszta działa (FR-013)
-- [ ] T023 [US1] `usePrzeglad()` w `src/wynik/przeglad.ts` zwraca `Przeglad` (tlo, biezaceR10, podpis, kadrWszystkich, miastoPunktu, miasta); przenieś rolę `useWstepnaMapa` (r10 bieżącego miasta przed pełnymi danymi) i usuń `src/wynik/wstepnaMapa.ts` albo zostaw re-eksport do F6
-- [ ] T024 Weryfikacja fazy: test T021, `pnpm verify`; log w konsoli dev: liczba heksów r8/r9 per miasto i bajty pobrane (do SC-002)
+- [x] T020 [P] [US1] `src/wynik/przegladLiczenie.ts`: `wynikiPrzegladu(podstawa, liczone, warstwa, res)` (opakowanie `wynikiHeksow`, NaN → `null`, `liczone = []` → same `null`), `zlaczTlo(per, biezace)`, `graniceZHeksow(r8)`, `miastoPunktu` po r8 (h3-js `latLngToCell(…, 8)` → mapa r8→slug); bez `import.meta.env`
+- [x] T021 [P] [US1] Test `src/wynik/przegladLiczenie.test.ts`: warstwa nieobecna w mieście → wszystkie heksy `null` (SC-005); heks bez danych → `null`, nigdy 0; `zlaczTlo` pomija bieżące miasto; granice z r8 obejmują wszystkie heksy; punkt poza miastami → `null`
+- [x] T022 [US1] `src/wynik/przeglad.ts`: menedżer per miasto (`indeks.json` + `manifest.json` z `bazaDanych(slug)` → `niezgodnoscKompaktu` → `heksy.bin` → `PodstawaHeksow`); warstwy heksów dociągane wg `liczoneWarstwy(metaMiasta, wagi, kierunki, warstwa)`; kolejka: bieżące miasto pierwsze, reszta po jego pierwszym kolorze, maks. 3 pobrania naraz (D13); błąd jednego miasta → `stan: 'brak'`, reszta działa (FR-013)
+- [x] T023 [US1] `usePrzeglad()` w `src/wynik/przeglad.ts` zwraca `Przeglad` (tlo, biezaceR10, podpis, kadrWszystkich, miastoPunktu, miasta); przenieś rolę `useWstepnaMapa` (r10 bieżącego miasta przed pełnymi danymi) i usuń `src/wynik/wstepnaMapa.ts` albo zostaw re-eksport do F6
+- [x] T024 Weryfikacja fazy: test T021, `pnpm verify`; log w konsoli dev: liczba heksów r8/r9 per miasto i bajty pobrane (do SC-002)
 
 ---
 
