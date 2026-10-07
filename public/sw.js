@@ -6,16 +6,22 @@
 //   więc online zawsze widać świeży deploy;
 // - /dane/: kopia z cache od razu, świeża wersja pobiera się w tle na następne otwarcie.
 //   Pliki danych ważą kilka MB (adresy.json ~5 MB po kompresji), a sieć-najpierw kazała je
-//   pobierać przy każdym wejściu. Wyjątek: kompakt/indeks.json wskazuje pliki z hashem,
-//   które po deployu znikają, więc idzie siecią. Niezgodność wersji kopii z manifestem jest bezpieczna:
-//   warstwa z inną wersją adresów wypada jako niedostępna (wynik/dane.ts), nie psuje wyniku;
+//   pobierać przy każdym wejściu. Wyjątek: indeks kompaktu (Krakowa i każdego miasta, #223)
+//   wskazuje pliki z hashem, które po deployu znikają, więc idzie siecią (a offline z kopii).
+//   Niezgodność wersji kopii z manifestem jest bezpieczna: warstwa z inną wersją adresów
+//   wypada jako niedostępna (wynik/dane.ts), nie psuje wyniku;
 // - /assets/ (pliki z hashem w nazwie): najpierw cache, bo treść pod daną nazwą się nie zmienia;
 // - *.pmtiles: Cache API nie przechowuje odpowiedzi 206, więc przy pierwszym żądaniu Range
 //   pobieramy całe archiwum w tle i potem kroimy zakresy z kopii, także offline;
 // - /api/ i inne domeny: bez ingerencji.
 
-const CACHE = 'adresscore-v1'
+// v2 (#223): przy aktywacji wypadają kopie z v1, w tym indeksy kompaktów zapisane, zanim worker
+// zaczął pobierać je zawsze z sieci. Test: src/kontrakty/miasta.test.ts.
+const CACHE = 'adresscore-v2'
 const SKORUPA = ['/', '/index.html']
+// Indeks kompaktu Krakowa (/dane/kompakt/) i miast (/dane/miasta/<slug>/kompakt/). Slug to małe
+// litery – pilnuje tego test rejestru miast.
+const INDEKS_KOMPAKTU = /^\/dane\/(miasta\/[a-z]+\/)?kompakt\/indeks\.json$/
 
 self.addEventListener('install', (e) => {
   e.waitUntil(
@@ -53,7 +59,7 @@ self.addEventListener('fetch', (e) => {
   if (
     swoj &&
     url.pathname.startsWith('/dane/') &&
-    url.pathname !== '/dane/kompakt/indeks.json' &&
+    !INDEKS_KOMPAKTU.test(url.pathname) &&
     !zad.headers.has('range')
   ) {
     e.respondWith(cacheIOdswiez(e, zad))

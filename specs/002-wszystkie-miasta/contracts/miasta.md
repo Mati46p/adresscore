@@ -18,7 +18,8 @@ export interface Miasto {
 
 export const MIASTA: readonly Miasto[]          // Kraków pierwszy
 export const MIASTO_DOMYSLNE: SlugMiasta        // 'krakow'
-export function miasto(slug: string): Miasto | null
+export function miasto(slug: SlugMiasta): Miasto       // slug z typu: zawsze jest (bez `null`)
+export function miasto(slug: string): Miasto | null    // napis z linku (`mst=`): może nie być
 export function czySlugMiasta(s: string): s is SlugMiasta
 export interface TloMapy { /* kształt: contracts/przeglad.md */ }
 ```
@@ -38,6 +39,6 @@ export function wczytajOkolice(wersjaAdresow: string, liczbaAdresow?: number, ba
 | Ścieżka | Kraków | Miasto |
 |---|---|---|
 | `<baza>/adresy.json`, `wskazniki/<id>.json`, `kompakt/**` | ✅ | ✅ |
-| `<baza>/manifest.json` | plugin (jest) | plugin (**nowe**, T003) |
+| `<baza>/manifest.json` | plugin (jest) | plugin (**nowe**, T004) |
 | `<baza>/dojazd/graf.json`, `uslugi/**`, `budynki/**` | ✅ | ✅ |
 | `<baza>/okolice.json`, `okolice-granice.geojson`, `biznes/**`, `mpzp_*`, `pozwolenia.geojson` | ✅ | ❌ → „Na razie tylko w Krakowie" |
