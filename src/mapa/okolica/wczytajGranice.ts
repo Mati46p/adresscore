@@ -3,6 +3,10 @@
 //
 // Plik ładuje się dopiero, gdy ktoś wybierze okolicę z wyszukiwarki (albo ustawi w niej fokus), a nie
 // z resztą danych: większość odwiedzających Szukaj nigdy z niego nie skorzysta.
+//
+// Jednostki SIM to podział Krakowa (MSIP), więc plik jest tylko krakowski (D8, #223): w innym mieście
+// nie pobieramy go i nie oddajemy nigdy krakowskich granic, także z pamięci po wizycie w Krakowie.
+import { tylkoKrakow } from '@/wynik/miastoDanych'
 import type { PlikGranic } from './granice.ts'
 
 const ADRES = `${import.meta.env.BASE_URL}dane/okolice-granice.geojson`
@@ -20,10 +24,12 @@ async function pobierz(): Promise<PlikGranic> {
 }
 
 /**
- * Granice jednostek SIM albo null, gdy plik się nie wczytał (mapa pokazuje wtedy ramkę adresów okolicy
- * bez obrysu). Jedno pobranie na aplikację; po błędzie następny wybór próbuje jeszcze raz.
+ * Granice jednostek SIM albo null, gdy plik się nie wczytał albo bieżące miasto nie jest Krakowem (mapa
+ * pokazuje wtedy ramkę adresów okolicy bez obrysu). Jedno pobranie na aplikację; po błędzie następny
+ * wybór próbuje jeszcze raz.
  */
 export function wczytajGraniceOkolic(): Promise<PlikGranic | null> {
+  if (tylkoKrakow()) return Promise.resolve(null)
   obietnica ??= pobierz().catch((e: unknown) => {
     console.warn(`Granice okolic (okolice-granice.geojson) bez danych: ${String(e)}`)
     obietnica = null

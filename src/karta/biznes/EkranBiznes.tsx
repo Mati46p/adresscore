@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
+import { bazaDanych } from '@/kontrakty'
 import {
   type BialaPlama,
   czynnikiOceny,
@@ -27,7 +28,15 @@ import {
 } from '@/wynik/biznesUslugi'
 import { nastepneWolne, ograniczDoGranic, postawionePunkty } from '@/wynik/biznesZnaczniki'
 import { menedzerObliczen, type Uchwyt } from '@/wynik/menedzerObliczen'
-import { useStan, ustawBranze, ustawFiltryBiznesu, ustawPunktBiznesu } from '@/wynik/stan'
+import { useMiasto, useTylkoKrakow } from '@/wynik/miastoDanych'
+import { sciezkaKataloguUslug } from '@/wynik/sciezkiDanych'
+import {
+  useStan,
+  ustawBranze,
+  ustawFiltryBiznesu,
+  ustawMiasto,
+  ustawPunktBiznesu,
+} from '@/wynik/stan'
 import { GRANICE_PUNKTU, ID_MIEJSC, type IdMiejsca, wGranicachPunktu } from '@/wynik/url'
 import { FiltryKonkurencji } from './FiltryKonkurencji'
 import './biznes.css'
@@ -39,7 +48,45 @@ type Punkt = { lon: number; lat: number }
 const PUSTE_HEKSY: ReadonlyMap<string, number | null> = new Map()
 const LICZBA = new Intl.NumberFormat('pl-PL', { maximumFractionDigits: 0 })
 
+/**
+ * Tryb Biznes ocenia miejsce popytem (szacowana ludność z NSP 2021 i kursy w szczycie), który policzono
+ * tylko dla Krakowa i okolicznych gmin (D8, #223). W innym mieście ekran mówi to wprost i pozwala wrócić,
+ * zamiast pytać worker o plik, którego nie ma, i pokazywać puste albo zerowe wyniki. Rozgałęzienie jest
+ * tu, a nie w środku ekranu, żeby nie ruszać kolejności jego hooków.
+ */
 export function EkranBiznes() {
+  return useTylkoKrakow() ? <BiznesTylkoKrakow /> : <BiznesZPopytem />
+}
+
+function BiznesTylkoKrakow() {
+  const miasto = useMiasto()
+  return (
+    <main className="biznes">
+      <div className="biznes-glowa">
+        <div>
+          <p className="biznes-etykieta">TRYB BIZNESOWY</p>
+          <h1 tabIndex={-1}>Tryb Biznes na razie tylko w Krakowie</h1>
+          <p>
+            Ocena miejsca opiera się na popycie: szacowanej ludności z siatki NSP 2021 i kursach w
+            porannym szczycie. Policzyliśmy go na razie tylko dla Krakowa i okolicznych gmin, więc{' '}
+            {miasto.wMiescie} tryb Biznes jeszcze nie działa. Nie pokazujemy tu pustych ani zerowych
+            wyników.
+          </p>
+          <p>
+            <button type="button" className="seg" onClick={() => ustawMiasto('krakow')}>
+              Pokaż Kraków
+            </button>
+          </p>
+        </div>
+      </div>
+    </main>
+  )
+}
+
+function BiznesZPopytem() {
+  // Katalog danych zbioru, z którego ekran bierze katalog branż, a worker popyt i pliki branż (worker nie
+  // zna bieżącego miasta, więc dostaje katalog w wiadomości). Ten ekran żyje tylko w mieście z popytem.
+  const baza = bazaDanych(useMiasto().slug)
   const branza = useStan((s) => s.branza)
   const miejsca = useStan((s) => s.miejsca)
   // Filtry konkurencji żyją w stanie aplikacji i w linku (`k=`, #108): odświeżenie strony i skopiowany
@@ -85,14 +132,14 @@ export function EkranBiznes() {
   }, [wybrany])
 
   useEffect(() => {
-    fetch('/dane/uslugi/katalog.json')
+    fetch(sciezkaKataloguUslug(baza))
       .then((r) => {
         if (!r.ok) throw new Error('HTTP ' + r.status)
         return r.json() as Promise<unknown>
       })
       .then((dane) => setKatalog(czytajKatalog(dane)))
       .catch((e) => setBlad('Brak katalogu branż: ' + (e instanceof Error ? e.message : String(e))))
-  }, [])
+  }, [baza])
 
   useEffect(() => {
     const w = menedzerObliczen.otworz('biznes')
@@ -128,14 +175,14 @@ export function EkranBiznes() {
       setBlad(`Obliczenia w tle przestały działać: ${blad}`),
     )
     // Popyt (największy plik) zaczyna się pobierać razem z katalogiem, przed wyborem branży.
-    w.wyslij({ typ: 'start' })
+    w.wyslij({ typ: 'start', baza })
     return () => {
       zdejmijOdpowiedzi()
       zdejmijBlad()
       worker.current = null
       w.zwolnij()
     }
-  }, [])
+  }, [baza])
 
   // Worker dostaje wybór dopiero po katalogu: id spoza katalogu wraca wtedy do domyślnej branży
   // (`rozwiazBranze`), zamiast kończyć się błędem 404. Zmiana branży czyści meta i oceny, a zmiana
@@ -151,8 +198,8 @@ export function EkranBiznes() {
     wersja.current = 0
     setGotowa(0)
     setBlad('')
-    worker.current?.wyslij({ typ: 'init', branza: idBranzy, filtry })
-  }, [katalog, idBranzy, filtry])
+    worker.current?.wyslij({ typ: 'init', baza, branza: idBranzy, filtry })
+  }, [katalog, idBranzy, filtry, baza])
 
   // Przesunięcie punktu zostawia poprzednią ocenę do czasu nowej (bez migania karty przy każdym
   // kroku strzałki); wyczyszczenie jej wymaga usunięcia punktu albo zmiany branży. Wysyłamy tylko

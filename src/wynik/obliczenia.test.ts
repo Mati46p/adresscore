@@ -4,9 +4,11 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 import type { Adres, WskaznikMeta } from '../kontrakty/index.ts'
+import { MIASTA } from '../kontrakty/miasta.ts'
 import type { KomorkaPopytu } from './biznes.ts'
 import type { PlikUslug } from './biznesUslugi.ts'
 import { type DoWorkera, utworzRouter, type ZWorkera } from './obliczenia.ts'
+import { BLAD_BEZ_POPYTU } from './obliczeniaBiznes.ts'
 import { grupujHeksy, przygotujWskaznik } from './silnik.ts'
 import { type BazaSymulacji, type Obiekt, przygotujBaze, symuluj } from './symulacja.ts'
 
@@ -110,9 +112,13 @@ function srodowisko(pobierz?: (sciezka: string) => Promise<unknown>) {
   return { router, wyslij, odpowiedzi, pobrane, typy }
 }
 
+/** Katalog danych Krakowa, jedynego zbioru z popytem (D8); worker dostaje go od wątku głównego. */
+const BAZA = '/dane'
+
 const INIT_APTEKI: DoWorkera = {
   tryb: 'biznes',
   typ: 'init',
+  baza: BAZA,
   branza: 'apteka',
   filtry: { min2Zrodla: false, flagi: {} },
 }
@@ -144,7 +150,7 @@ describe('oba tryby w jednym workerze', () => {
 
   it('Biznes: start pobiera popyt, init buduje indeks, ocen ocenia miejsce', async () => {
     const { wyslij, odpowiedzi, pobrane } = srodowisko()
-    await wyslij({ tryb: 'biznes', typ: 'start' })
+    await wyslij({ tryb: 'biznes', typ: 'start', baza: BAZA })
     assert.deepEqual(pobrane, ['/dane/biznes/popyt.json'])
     await wyslij(INIT_APTEKI)
     // Popyt pobrany raz (start), plik branży raz.
@@ -309,5 +315,76 @@ describe('błędy jednego trybu nie psują drugiego', () => {
     }
     await wyslij({ tryb: 'inny', typ: 'cokolwiek' } as unknown as DoWorkera)
     assert.equal(odpowiedzi.length, 1, 'żadna z tych wiadomości nie dała odpowiedzi')
+  })
+})
+
+describe('Biznes: katalog danych z wiadomości (#223)', () => {
+  const nowe = (baza: unknown) => ({ tryb: 'biznes', typ: 'init', branza: 'apteka', baza }) as const
+
+  it('każde miasto z rejestru to zbiór bez popytu: nic się nie pobiera, init odpowiada powodem', async () => {
+    const miasta = MIASTA.filter((m) => m.katalog !== '')
+    assert.ok(miasta.length > 0)
+    for (const m of miasta) {
+      const { wyslij, odpowiedzi, pobrane } = srodowisko()
+      const baza = `/dane/${m.katalog}`
+      await wyslij({ tryb: 'biznes', typ: 'start', baza })
+      await wyslij({ ...INIT_APTEKI, baza } as DoWorkera)
+      assert.deepEqual(pobrane, [], `${m.slug}: ani popyt, ani plik branży`)
+      const b = odpowiedzi[0]
+      assert.ok(b && b.tryb === 'biznes' && b.typ === 'blad', m.slug)
+      assert.equal(b.blad, BLAD_BEZ_POPYTU)
+    }
+  })
+
+  it('zły katalog (puste, względne, z „..”, z zapytaniem, nie tekst) to blad bez żadnego pobrania', async () => {
+    for (const zla of ['', '/', 'dane', '/dane/', '/dane/../x', '/dane?x=1', null, undefined, 42]) {
+      const { wyslij, odpowiedzi, pobrane } = srodowisko()
+      await wyslij({ tryb: 'biznes', typ: 'start', baza: zla } as unknown as DoWorkera)
+      await wyslij({ ...nowe(zla), filtry: { min2Zrodla: false, flagi: {} } } as DoWorkera)
+      assert.deepEqual(pobrane, [], JSON.stringify(zla))
+      const b = odpowiedzi.at(-1)
+      assert.ok(b && b.tryb === 'biznes' && b.typ === 'blad', JSON.stringify(zla))
+      assert.match(b.blad, /katalog/i)
+    }
+  })
+
+  it('popyt i pliki branż są pamiętane po pełnej ścieżce: inny katalog to inne pliki, nie cudze', async () => {
+    const pobrane: string[] = []
+    const { wyslij, odpowiedzi } = srodowisko(async (sciezka) => {
+      pobrane.push(sciezka)
+      if (sciezka.endsWith('/biznes/popyt.json')) return structuredClone(POPYT)
+      if (sciezka.endsWith('/uslugi/apteka.json')) {
+        // Nazwa lokalu zdradza, z którego pliku przyszły punkty.
+        const plik = structuredClone(PLIK_APTEKI)
+        plik.kolumny.nazwa = [sciezka, sciezka, sciezka]
+        return plik
+      }
+      throw new Error(`${sciezka}: HTTP 404`)
+    })
+    const punktyZ = (o: ZWorkera | undefined) => {
+      assert.ok(o && o.tryb === 'biznes' && o.typ === 'gotowe')
+      return o.punkty.map((p) => p[2])
+    }
+    await wyslij({ ...INIT_APTEKI, baza: '/dane' } as DoWorkera)
+    await wyslij({ ...INIT_APTEKI, baza: '/inna/dane' } as DoWorkera)
+    assert.deepEqual(pobrane, [
+      '/dane/biznes/popyt.json',
+      '/dane/uslugi/apteka.json',
+      '/inna/dane/biznes/popyt.json',
+      '/inna/dane/uslugi/apteka.json',
+    ])
+    assert.deepEqual(new Set(punktyZ(odpowiedzi[0])), new Set(['/dane/uslugi/apteka.json']))
+    assert.deepEqual(new Set(punktyZ(odpowiedzi[1])), new Set(['/inna/dane/uslugi/apteka.json']))
+    // Powrót do pierwszego katalogu: plik branży z pamięci, popyt (jeden naraz) od nowa.
+    await wyslij({ ...INIT_APTEKI, baza: '/dane' } as DoWorkera)
+    assert.deepEqual(pobrane.slice(4), ['/dane/biznes/popyt.json'])
+    assert.deepEqual(new Set(punktyZ(odpowiedzi[2])), new Set(['/dane/uslugi/apteka.json']))
+  })
+
+  it('start dla Krakowa pobiera popyt z góry, a init nie pobiera go drugi raz', async () => {
+    const { wyslij, pobrane } = srodowisko()
+    await wyslij({ tryb: 'biznes', typ: 'start', baza: BAZA })
+    await wyslij(INIT_APTEKI)
+    assert.equal(pobrane.filter((p) => p.endsWith('/biznes/popyt.json')).length, 1)
   })
 })

@@ -5,10 +5,12 @@
 // Kafle tnie etl/budynki-kafle.mjs z public/dane/budynki-3d.geojson (wynik #9).
 import { cellToLatLng, gridDisk, latLngToCell } from 'h3-js'
 import type { Zrodlo } from '@/kontrakty'
+import { bazaBiezaca } from '@/wynik/miastoDanych'
+import { sciezkaKafla } from '@/wynik/sciezkiDanych'
 
 export const ROZDZIELCZOSC_KAFLA = 7
 
-/** Plik public/dane/budynki/<h3r7>.json – kolumnowo, jak adresy.json. */
+/** Plik <katalog danych miasta>/budynki/<h3r7>.json – kolumnowo, jak adresy.json. */
 export interface KafelBudynkow {
   wersja: string
   zrodla: Zrodlo[]
@@ -69,13 +71,18 @@ export interface BudynkiOkolicy {
 /**
  * Brak kafla (404) to brak budynków w tym miejscu albo dane jeszcze nie gotowe, nie błąd.
  * Błąd sieci jednego kafla nie blokuje pozostałych.
+ *
+ * Kafle bierze z katalogu BIEŻĄCEGO miasta (#223): `budynki/` jest w każdym zbiorze, a punkt spoza
+ * miasta (np. środek widoku nad sąsiednim miastem) trafia po prostu w nieistniejący kafel, czyli w brak
+ * budynków. Moduł nie ma własnej pamięci kafli – pobranie kluczuje się pełnym adresem (z katalogiem
+ * miasta) w pamięci podręcznej przeglądarki i service workera, więc zmiana miasta nie poda kafla Krakowa.
  */
 export async function wczytajBudynkiWokol(lon: number, lat: number): Promise<BudynkiOkolicy> {
-  const baza = `${import.meta.env.BASE_URL}dane/budynki`
+  const baza = bazaBiezaca()
   const kafle = await Promise.all(
     kafleWokol(lon, lat).map(async (h3) => {
       try {
-        const r = await fetch(`${baza}/${h3}.json`)
+        const r = await fetch(sciezkaKafla(baza, h3))
         // Vite dev zwraca index.html zamiast 404 – sprawdzamy typ treści.
         if (!r.ok || !r.headers.get('content-type')?.includes('json')) return null
         return (await r.json()) as KafelBudynkow

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTylkoKrakow } from '@/wynik/miastoDanych'
 
 type Pozycja =
   | { typ: 'plan'; nazwa: string | null; www: string | null }
@@ -26,7 +27,8 @@ interface SasiedztwoMpzp {
 const LICENCJA = 'https://msip.krakow.pl/getPdf?dok_id=228972'
 const MAKS_SASIADOW = 12
 
-// Pliki (2,9 MB + 1,6 MB) są potrzebne tylko na karcie adresu w Krakowie.
+// Pliki (2,9 MB + 1,6 MB) są potrzebne tylko na karcie adresu w Krakowie: plany miejscowe z MSIP
+// obejmują wyłącznie Kraków (D8, #223), więc poza nim komponent niczego nie pobiera (patrz niżej).
 let pobieranie: Promise<[KatalogMpzp, SasiedztwoMpzp | null]> | null = null
 function wczytaj() {
   const json = <T,>(u: string) =>
@@ -59,8 +61,11 @@ export function SzczegolyMpzp({
   wersja: string
   wartosc: number | null
 }) {
+  const tylkoKrakow = useTylkoKrakow()
   const [dane, ustawDane] = useState<[KatalogMpzp, SasiedztwoMpzp | null] | null>(null)
   useEffect(() => {
+    // Poza Krakowem nie ma czego pobierać: pliki krakowskie nie pasują do adresów innego miasta.
+    if (tylkoKrakow) return
     let aktywny = true
     void wczytaj().then(
       (w) => {
@@ -71,8 +76,13 @@ export function SzczegolyMpzp({
     return () => {
       aktywny = false
     }
-  }, [])
+  }, [tylkoKrakow])
 
+  // Komunikat zamiast pustych wartości: brak planu miejscowego w mieście to brak danych o nim, a nie
+  // „brak obowiązującego planu” (to zdanie dotyczy tylko punktu, który Kraków ma w rejestrze).
+  if (tylkoKrakow) {
+    return <p className="okol-podpis">Szczegóły planu miejscowego: na razie tylko w Krakowie.</p>
+  }
   if (wartosc === null || !dane) return null
   const [katalog, sasiedztwo] = dane
   if (katalog.wersjaAdresow !== wersja) return null

@@ -310,7 +310,7 @@ Tryb Miasto (symulator) i tryb Biznes liczą w JEDNYM workerze. Każda wiadomoś
 | `obliczenia.worker.ts` | Jedyny skrypt workera: `fetch` i `postMessage`, reszta w routerze. |
 | `obliczenia.ts` | Protokół (`DoWorkera`, `ZWorkera`, `WiadomoscTrybu`) i router `utworzRouter`. Czysty, test na Node (`obliczenia.test.ts`). |
 | `obliczeniaMiasto.ts` | Tryb Miasto: `baza` → `licz` / `sugeruj` na `symulacja.ts`. |
-| `obliczeniaBiznes.ts` | Tryb Biznes: `start` / `init` / `ocen` na `biznes.ts`, popyt i pliki branż pobiera sam. |
+| `obliczeniaBiznes.ts` | Tryb Biznes: `start` / `init` / `ocen` na `biznes.ts`, popyt i pliki branż pobiera sam z katalogu danych z wiadomości (`baza`, patrz „Dane poboczne per miasto”). |
 | `menedzerObliczen.ts` | Wątek główny: `menedzerObliczen.otworz(tryb)` daje uchwyt (`wyslij`, `nasluchuj`, `naBledzie`, `zwolnij`). Test: `menedzerObliczen.test.ts`. |
 
 Ekran bierze uchwyt na czas życia (`useSymulacja` w Mieście, `EkranBiznes` w Biznesie) i oddaje go przy wyjściu.
@@ -344,6 +344,30 @@ Dlaczego jeden worker, ale z osobnymi stanami i zwalnianiem (decyzja #108, komen
 
 Nowy tryb w tym samym workerze: obsługa `utworzObsluge<Tryb>` (stan + `obsluz` + `zwolnij`) w osobnym pliku,
 wpis w `TrybObliczen`, w unii wiadomości i w `utworzRouter`.
+
+## Dane poboczne per miasto – `sciezkiDanych.ts`, `pamiecPlikow.ts` (#223)
+
+Pliki pobierane na żądanie (graf dojazdu, katalog i pliki branż, popyt Biznesu, szczegóły szkół, kafle budynków
+3D) leżą w katalogu danych miasta: `public/dane` dla Krakowa, `public/dane/miasta/<slug>` dla reszty. Katalog
+bieżącego miasta to `bazaBiezaca()` (`miastoDanych.ts`, poza Reactem) albo `bazaDanych(useMiasto().slug)`
+(komponent, odświeża się przy zmianie miasta).
+
+| Plik | Rola |
+|---|---|
+| `sciezkiDanych.ts` | Układ plików od katalogu danych: `sciezkaGrafu`, `sciezkaKataloguUslug`, `sciezkaBranzy`, `sciezkaPopytu`, `sciezkaSzkol`, `sciezkaKafla`; `czyKatalogDanych` i `czySciezkaGrafu` sprawdzają katalog z wiadomości do workera; `popytDostepny(baza)` mówi, czy zbiór ma popyt Biznesu. Czysty, test `sciezkiDanych.test.ts` porównuje to z plikami w `public/dane`. |
+| `pamiecPlikow.ts` | `utworzPamiecPlikow<T>(maks)`: jedno wczytanie na PEŁNĄ ścieżkę pliku, najdawniej użyta odpada, błąd pobrania nie zostaje w pamięci. Używają jej: worker dojazdu (graf, najwyżej `MAKS_MIAST_W_PAMIECI` miasta), `SzczegolySzkoly`, `obliczeniaBiznes.ts`. |
+
+- **Worker nie zna bieżącego miasta.** Ma własną kopię modułów stanu, więc `bazaBiezaca()` zwróci w nim zawsze
+  Kraków. Ścieżkę przysyła wątek główny: Dojazd – pole `graf` w wiadomości `licz` (`sciezkaGrafu(bazaBiezaca())`
+  w `PanelDojazdu`), Biznes – pole `baza` w `start` i `init`. Worker sprawdza ją, zanim trafi do `fetch`.
+- **Pamięć kluczuje pełna ścieżka**, bo pliki każdego miasta mają te same nazwy (`dojazd/graf.json`,
+  `szkoly_e8_szczegoly.json`): klucz z samą nazwą oddałby po zmianie miasta plik poprzedniego.
+- **Funkcje tylko krakowskie (D8)**: wyszukiwarka okolic (`okolice.json`, granice SIM), tryb Biznes (popyt), plan
+  miejscowy i pozwolenia na budowę. W innym mieście bramka `tylkoKrakow()` (`useTylkoKrakow()` w komponencie)
+  pokazuje „Na razie tylko w Krakowie” zamiast pustych albo zerowych wartości i niczego nie pobiera. Tryb Biznes:
+  `EkranBiznes` pokazuje komunikat z przyciskiem „Pokaż Kraków”, a worker odpowiada `blad` (`BLAD_BEZ_POPYTU`)
+  na `init` z katalogiem miasta. Test `sciezkiDanych.test.ts` sprawdza, że żadne miasto nie ma tych plików – gdy
+  ETL któreś doda, test jest czerwony i trzeba zdjąć bramkę tej funkcji.
 
 ## Sloty i kto je wypełnia
 

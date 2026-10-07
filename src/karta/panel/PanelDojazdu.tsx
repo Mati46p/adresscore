@@ -11,6 +11,8 @@ import {
   PREDKOSC_PIESZO_MS,
 } from '@/wynik/dojazdCel'
 import type { InfoDojazdu, OdpowiedzWorkera, WiadomoscDoWorkera } from '@/wynik/dojazdCel.worker'
+import { bazaBiezaca } from '@/wynik/miastoDanych'
+import { sciezkaGrafu } from '@/wynik/sciezkiDanych'
 import { useStan } from '@/wynik/stan'
 import { opisAdresu } from '../adres'
 import { Wyszukiwarka } from '../wyszukiwarka/Wyszukiwarka'
@@ -19,7 +21,7 @@ const DOMYSLNY_ODJAZD = 7 * 60
 let worker: Worker | null = null
 let licznik = 0
 
-function zapytaj(w: Omit<WiadomoscDoWorkera, 'id' | 'typ'>): Promise<OdpowiedzWorkera> {
+function zapytaj(w: Omit<WiadomoscDoWorkera, 'id' | 'typ' | 'graf'>): Promise<OdpowiedzWorkera> {
   worker ??= new Worker(new URL('../../wynik/dojazdCel.worker.ts', import.meta.url), {
     type: 'module',
   })
@@ -32,7 +34,9 @@ function zapytaj(w: Omit<WiadomoscDoWorkera, 'id' | 'typ'>): Promise<OdpowiedzWo
       ok(e.data)
     }
     cel.addEventListener('message', odbierz)
-    cel.postMessage({ typ: 'licz', id, ...w } satisfies WiadomoscDoWorkera)
+    // Worker ma własną kopię stanu (zawsze Kraków), więc graf bieżącego miasta wskazujemy mu stąd (#223).
+    const graf = sciezkaGrafu(bazaBiezaca())
+    cel.postMessage({ typ: 'licz', id, graf, ...w } satisfies WiadomoscDoWorkera)
   })
 }
 
