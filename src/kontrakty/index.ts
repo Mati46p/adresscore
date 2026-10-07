@@ -163,25 +163,31 @@ export function bazaDanych(slug: SlugMiasta = MIASTO_DOMYSLNE): string {
   return m.katalog ? `${BAZA}/${m.katalog}` : BAZA
 }
 
-async function pobierz<T>(sciezka: string, baza: string): Promise<T> {
-  const r = await fetch(`${baza}/${sciezka}`)
+async function pobierz<T>(sciezka: string, baza: string, signal?: AbortSignal): Promise<T> {
+  const r = await fetch(`${baza}/${sciezka}`, { signal })
   if (!r.ok) throw new Error(`Brak pliku danych ${baza}/${sciezka} (${r.status})`)
   return (await r.json()) as T
 }
 
 // Opcjonalny `baza` wybiera zbiór (domyślnie Kraków), więc wywołania sprzed #223 działają bez zmian.
+// Opcjonalny `signal` (zawsze ostatni parametr) przerywa pobieranie: pamięć danych (`wynik/dane.ts`)
+// przerywa tak ładowanie miasta, które wypadło z pamięci. Przerwane pobieranie odrzuca się
+// `AbortError`, czyli nie jest awarią pliku.
 // Uwaga: nie podawaj tych funkcji jako callbacku (`.then(wczytajAdresy)`) – wynik poprzedniego
 // kroku trafiłby w `baza`.
-export const wczytajAdresy = (baza: string = BAZA) => pobierz<PlikAdresow>('adresy.json', baza)
-export const wczytajManifest = (baza: string = BAZA) => pobierz<Manifest>('manifest.json', baza)
+export const wczytajAdresy = (baza: string = BAZA, signal?: AbortSignal) =>
+  pobierz<PlikAdresow>('adresy.json', baza, signal)
+export const wczytajManifest = (baza: string = BAZA, signal?: AbortSignal) =>
+  pobierz<Manifest>('manifest.json', baza, signal)
 
 /** Zwraca null, gdy wskaźnik policzono dla innej wersji adresów (nieaktualny plik). */
 export async function wczytajWskaznik(
   id: string,
   wersjaAdresow: string,
   baza: string = BAZA,
+  signal?: AbortSignal,
 ): Promise<PlikWskaznika | null> {
-  const p = await pobierz<PlikWskaznika>(`wskazniki/${id}.json`, baza)
+  const p = await pobierz<PlikWskaznika>(`wskazniki/${id}.json`, baza, signal)
   if (p.wersjaAdresow !== wersjaAdresow) {
     // Id warstw powtarzają się między miastami, więc komunikat mówi, o który zbiór chodzi.
     console.warn(
@@ -201,8 +207,9 @@ export async function wczytajOkolice(
   wersjaAdresow: string,
   liczbaAdresow?: number,
   baza: string = BAZA,
+  signal?: AbortSignal,
 ): Promise<PlikOkolic | null> {
-  const p = await pobierz<PlikOkolic>('okolice.json', baza)
+  const p = await pobierz<PlikOkolic>('okolice.json', baza, signal)
   const powod = niezgodnoscOkolic(p, wersjaAdresow, liczbaAdresow)
   if (powod !== null) {
     console.warn(`Okolice (${baza}/okolice.json) pominięte: ${powod}`)

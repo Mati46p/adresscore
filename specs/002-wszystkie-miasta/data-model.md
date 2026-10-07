@@ -30,7 +30,8 @@ Walidacja (test): zbiór slugów ≠ krakow = zbiór katalogów `public/dane/mia
 `Map<SlugMiasta, Promise<StanDanych>>` – każde miasto ładowane najwyżej raz na sesję.
 `useDane()` / `daneJesliGotowe()` zwracają stan **bieżącego** miasta. Kształt `Dane` bez zmian,
 plus `miasto: SlugMiasta` (konsumenci mogą sprawdzić, czy dane pasują do bieżącego miasta).
-Pamięć: trzymamy dane najwyżej 2 miast (bieżące + poprzednie), starsze zwalniamy.
+Pamięć: trzymamy dane najwyżej 2 miast (bieżące + poprzednie), starsze zwalniamy; zwalniane w trakcie
+ładowania jest przerywane (`AbortController` na wpis).
 
 ## Przegląd miasta (`src/wynik/przeglad.ts`)
 

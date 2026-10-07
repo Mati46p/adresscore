@@ -66,7 +66,9 @@ Kolory: `PALETA_WYNIKU` (5 stopni z makiety, od słabo do idealnie) i `KOLOR_BRA
 - `Dane`: `plikAdresow`, `adresy` (`Adres[]`), `manifest`, `wskazniki` (`WskaznikPrzygotowany[]`), `pominiete`, `grupyHeksow`.
 - Aplikacja ładuje dane raz **na miasto** (#223). `useDane()` zwraca dane BIEŻĄCEGO miasta (`Dane.miasto`), a jego
   zmiana w stanie (`ustawMiasto`) odświeża komponent i zaczyna ładowanie nowego zbioru; w pamięci zostają najwyżej dwa
-  miasta (`pamiecDanych.ts`, `MAKS_MIAST_W_PAMIECI`). Pozostałe miasta widać tylko jako przegląd na mapie (niżej).
+  miasta (`pamiecDanych.ts`, `MAKS_MIAST_W_PAMIECI`). Miasto wyparte w trakcie ładowania jest przerywane
+  (`AbortController` na wpis, `signal` idzie do `fetch` przez `wczytaj*`), a przerwanie nie jest błędem.
+  Pozostałe miasta widać tylko jako przegląd na mapie (niżej).
 - Każdy komponent może wołać `useDane()` bez kosztu.
 - `wskazniki` ma wszystkie warstwy manifestu. Warstwa z inną wersją adresów albo z błędem pobrania
   ma pole `niedostepny` i brak danych pod każdym adresem. Loader dopisuje ją też do `pominiete`

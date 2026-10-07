@@ -57,10 +57,20 @@ interface WpisMiasta {
   obietnica: Promise<StanDanych>
   /** Stan do odczytu bez czekania (`useDane`): `ladowanie` → `gotowe` albo `blad`. */
   stan: StanDanych
+  /**
+   * Jego sygnał dostaje `wczytaj`. Wpis, który wypada z pamięci w trakcie ładowania, przerywa pobieranie
+   * (`zwolnij`): bez tego wyparte miasto dociągałoby do końca kilka MB, których nikt nie użyje, a powrót
+   * do niego i tak zaczyna ładowanie od nowa.
+   */
+  kontroler: AbortController
 }
 
+/**
+ * `wczytaj` ładuje pełne dane miasta. Przerwanie `signal` ma odrzucić jego obietnicę (jak `fetch`),
+ * a pobieranie powinno stanąć, a nie dobiec do końca.
+ */
 export function utworzPamiecDanych(
-  wczytaj: (slug: SlugMiasta) => Promise<Dane>,
+  wczytaj: (slug: SlugMiasta, signal: AbortSignal) => Promise<Dane>,
   aplikacja: StanDlaPamieci,
 ) {
   const LADOWANIE: StanDanych = { stan: 'ladowanie' }
@@ -103,8 +113,19 @@ export function utworzPamiecDanych(
   }
 
   /**
+   * Wpis wypada z pamięci. Ładowanie, które jeszcze trwa, zostaje przerwane: jego wynik odrzuciłby
+   * `zakoncz`, a wczytane już miasto nie ma czego przerywać.
+   */
+  function zwolnij(slug: SlugMiasta, wpis: WpisMiasta) {
+    wpisy.delete(slug)
+    if (wpis.stan.stan === 'ladowanie') wpis.kontroler.abort()
+  }
+
+  /**
    * Startuje ładowanie danych miasta (raz na miasto, dopóki mieści się w pamięci) i zwraca obietnicę
-   * stanu końcowego. Bez argumentu: bieżące miasto.
+   * stanu końcowego. Bez argumentu: bieżące miasto. Miasto wyparte z pamięci w trakcie ładowania jest
+   * przerywane, a jego obietnica kończy się stanem `ladowanie` (bez wyniku i bez błędu); kto nadal
+   * potrzebuje danych, woła `zaladujDane` jeszcze raz.
    */
   function zaladujDane(slug: SlugMiasta = aplikacja.pobierzStan().miasto): Promise<StanDanych> {
     const istniejacy = wpisy.get(slug)
@@ -114,8 +135,9 @@ export function utworzPamiecDanych(
       wpisy.set(slug, istniejacy)
       return istniejacy.obietnica
     }
-    const wpis: WpisMiasta = { obietnica: Promise.resolve(LADOWANIE), stan: LADOWANIE }
-    wpis.obietnica = wczytaj(slug)
+    const kontroler = new AbortController()
+    const wpis: WpisMiasta = { obietnica: Promise.resolve(LADOWANIE), stan: LADOWANIE, kontroler }
+    wpis.obietnica = wczytaj(slug, kontroler.signal)
       .then((d): StanDanych => {
         // Słownik adresów w stanie przed ogłoszeniem danych: id z linku rozwiązują się, zanim
         // komponenty zobaczą `gotowe` (kolejność jak przed #223). Wpis wyparty z pamięci nie podpina.
@@ -124,15 +146,24 @@ export function utworzPamiecDanych(
       })
       .then(
         (s) => zakoncz(slug, wpis, s),
-        // Błąd ładowania i błąd podpięcia kończą się tak samo: komunikat zamiast wiecznego „ładowania”.
-        (e: unknown) =>
-          zakoncz(slug, wpis, { stan: 'blad', blad: e instanceof Error ? e.message : String(e) }),
+        (e: unknown) => {
+          // Przerwanie zlecił `zwolnij`, więc to nie awaria: wpisu już nie ma, nikt nie czeka na wynik,
+          // a komunikat o błędzie dostałoby miasto, które po powrocie i tak ładuje się od nowa.
+          // Rozstrzyga nasz sygnał, nie nazwa błędu: `AbortError` z innego źródła (np. przeglądarka
+          // przerywa żądanie) zostaje zwykłą awarią, żeby miasto nie wisiało w ładowaniu bez końca.
+          if (kontroler.signal.aborted) return LADOWANIE
+          // Błąd ładowania i błąd podpięcia kończą się tak samo: komunikat zamiast wiecznego „ładowania”.
+          return zakoncz(slug, wpis, {
+            stan: 'blad',
+            blad: e instanceof Error ? e.message : String(e),
+          })
+        },
       )
     wpisy.set(slug, wpis)
     while (wpisy.size > MAKS_MIAST_W_PAMIECI) {
-      const najdawniejsze = wpisy.keys().next().value
+      const najdawniejsze = wpisy.entries().next().value
       if (najdawniejsze === undefined) break
-      wpisy.delete(najdawniejsze)
+      zwolnij(...najdawniejsze)
     }
     return wpis.obietnica
   }

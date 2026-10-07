@@ -29,14 +29,38 @@ function daneTestowe(slug: SlugMiasta): Dane {
   } as unknown as Dane
 }
 
-/** Ładowanie, które kończy test: kolejka oczekujących wywołań na miasto. */
-function sterowaneLadowanie() {
+interface OpcjeLadowania {
+  /**
+   * Przerwanie sygnału odrzuca ładowanie jak prawdziwy `fetch` (`AbortError`) i zdejmuje je z kolejki
+   * oczekujących. Bez tego sygnał jest ignorowany: wynik zdążył przyjść, zanim ktoś go przerwał.
+   */
+  przerywalne?: boolean
+}
+
+/**
+ * Ładowanie, które kończy test: kolejka oczekujących wywołań na miasto. Sygnał każdego wywołania
+ * jest zapisany (`sygnal`), żeby test sprawdził, czy pamięć przerwała ładowanie.
+ */
+function sterowaneLadowanie({ przerywalne = false }: OpcjeLadowania = {}) {
   const wywolania: SlugMiasta[] = []
-  const oczekujace = new Map<SlugMiasta, { ok: (d: Dane) => void; blad: (e: Error) => void }[]>()
-  const wczytaj = (slug: SlugMiasta) => {
+  const sygnaly: { slug: SlugMiasta; signal: AbortSignal }[] = []
+  type Zadanie = { ok: (d: Dane) => void; blad: (e: Error) => void }
+  const oczekujace = new Map<SlugMiasta, Zadanie[]>()
+  const wczytaj = (slug: SlugMiasta, signal: AbortSignal) => {
     wywolania.push(slug)
+    sygnaly.push({ slug, signal })
     return new Promise<Dane>((ok, blad) => {
-      oczekujace.set(slug, [...(oczekujace.get(slug) ?? []), { ok, blad }])
+      const zadanie: Zadanie = { ok, blad }
+      oczekujace.set(slug, [...(oczekujace.get(slug) ?? []), zadanie])
+      if (przerywalne) {
+        signal.addEventListener('abort', () => {
+          oczekujace.set(
+            slug,
+            (oczekujace.get(slug) ?? []).filter((z) => z !== zadanie),
+          )
+          blad(signal.reason)
+        })
+      }
     })
   }
   const nastepne = (slug: SlugMiasta) => {
@@ -49,13 +73,20 @@ function sterowaneLadowanie() {
     wywolania,
     dokoncz: (slug: SlugMiasta) => nastepne(slug).ok(daneTestowe(slug)),
     zawal: (slug: SlugMiasta, powod: string) => nastepne(slug).blad(new Error(powod)),
+    zawalBledem: (slug: SlugMiasta, blad: Error) => nastepne(slug).blad(blad),
     razy: (slug: SlugMiasta) => wywolania.filter((s) => s === slug).length,
+    /** Sygnał n-tego (od 0) ładowania miasta, w kolejności wywołań. */
+    sygnal: (slug: SlugMiasta, n = 0) => {
+      const wpis = sygnaly.filter((s) => s.slug === slug)[n]
+      assert.ok(wpis, `ładowanie ${slug} nr ${n} nie było wołane`)
+      return wpis.signal
+    },
   }
 }
 
-async function start() {
+async function start(opcje?: OpcjeLadowania) {
   const s = await swiezyStan()
-  const ladowanie = sterowaneLadowanie()
+  const ladowanie = sterowaneLadowanie(opcje)
   const pamiec = utworzPamiecDanych(ladowanie.wczytaj, s)
   return { s, ladowanie, pamiec }
 }
@@ -64,8 +95,8 @@ async function start() {
  * Miasto wczytane i bieżące, jak po wejściu na stronę: komponent z `useDane()` subskrybuje (to
  * uruchamia ładowanie i obserwację zmiany miasta w stanie), potem dane przychodzą.
  */
-async function krakowGotowy() {
-  const t = await start()
+async function krakowGotowy(opcje?: OpcjeLadowania) {
+  const t = await start(opcje)
   t.pamiec.subskrybuj(() => {})
   t.ladowanie.dokoncz('krakow')
   await t.pamiec.zaladujDane()
@@ -199,6 +230,61 @@ describe('pamięć danych per miasto', { timeout: 5000 }, () => {
     await pamiec.zaladujDane('lodz')
     assert.equal(pamiec.daneJesliGotowe()?.miasto, 'lodz')
     assert.equal(s.indeksAdresu('lodz-1'), 1)
+  })
+
+  it('wyparcie miasta w trakcie ładowania przerywa jego pobieranie, a przerwanie nie jest błędem', async () => {
+    const { s, ladowanie, pamiec } = await krakowGotowy({ przerywalne: true })
+    let powiadomien = 0
+    pamiec.subskrybuj(() => {
+      powiadomien++
+    })
+    s.ustawMiasto('lodz')
+    const lodz = pamiec.zaladujDane('lodz')
+    const sygnalLodzi = ladowanie.sygnal('lodz')
+    s.ustawMiasto('krakow') // Łódź zostaje w pamięci i dociąga się w tle
+    assert.equal(sygnalLodzi.aborted, false, 'miasto, które mieści się w pamięci, ładuje się dalej')
+
+    s.ustawMiasto('gdansk') // w pamięci: Łódź (najdawniej użyta), Kraków, Gdańsk – Łódź wypada
+    assert.equal(sygnalLodzi.aborted, true, 'wyparte ładowanie jest przerwane')
+    const poWyparciu = powiadomien
+
+    const wynik = await lodz
+    assert.equal(wynik.stan, 'ladowanie', 'przerwane ładowanie nie ma wyniku i nie jest awarią')
+    assert.equal(pamiec.stanMiasta('lodz').stan, 'ladowanie', 'brak wpisu, więc brak komunikatu')
+    assert.equal(powiadomien, poWyparciu, 'przerwanie niczego nie ogłasza komponentom')
+  })
+
+  it('powrót do miasta wypartego w trakcie ładowania: nowe ładowanie z własnym sygnałem, dane poprawne', async () => {
+    const { s, ladowanie, pamiec } = await krakowGotowy({ przerywalne: true })
+    s.ustawMiasto('lodz')
+    s.ustawMiasto('krakow')
+    s.ustawMiasto('gdansk') // Łódź wypada w trakcie ładowania i zostaje przerwana
+    assert.equal(ladowanie.sygnal('lodz').aborted, true)
+
+    s.ustawMiasto('lodz') // powrót: wpisu nie ma, więc ładowanie od nowa (wypada Kraków)
+    assert.equal(ladowanie.razy('lodz'), 2, 'przerwane ładowanie nie wraca, zaczyna się nowe')
+    assert.equal(ladowanie.sygnal('lodz', 1).aborted, false, 'nowe ładowanie nie jest przerwane')
+    assert.equal(pamiec.stanBiezacego().stan, 'ladowanie')
+
+    ladowanie.dokoncz('lodz') // jedyne czekające ładowanie Łodzi: przerwane zeszło z kolejki
+    await pamiec.zaladujDane('lodz')
+    assert.equal(pamiec.daneJesliGotowe()?.miasto, 'lodz')
+    assert.equal(s.indeksAdresu('lodz-1'), 1, 'słownik Łodzi podpięty')
+    assert.equal(ladowanie.sygnal('lodz', 0).aborted, true, 'stare ładowanie zostaje przerwane')
+    // Kraków wypadł przy powrocie do Łodzi, ale był już wczytany: nie ma czego przerywać.
+    assert.equal(ladowanie.sygnal('krakow').aborted, false, 'wczytane miasto wypada bez przerwania')
+  })
+
+  it('AbortError, którego nie zleciło wyparcie, jest zwykłą awarią: komunikat, nie wieczne ładowanie', async () => {
+    const { s, ladowanie, pamiec } = await krakowGotowy({ przerywalne: true })
+    s.ustawMiasto('lodz')
+    const proba = pamiec.zaladujDane('lodz')
+    // Rozstrzyga nasz sygnał, a nie nazwa błędu: tak samo kończy się np. przerwanie przez przeglądarkę.
+    ladowanie.zawalBledem('lodz', new DOMException('Przerwano poza pamięcią', 'AbortError'))
+    await proba
+    const stan = pamiec.stanBiezacego()
+    assert.equal(stan.stan === 'blad' && stan.blad, 'Przerwano poza pamięcią')
+    assert.equal(ladowanie.sygnal('lodz').aborted, false)
   })
 
   it('błąd ładowania: komunikat dla tego miasta, a ponowny wybór miasta ładuje je od nowa', async () => {
