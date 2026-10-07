@@ -32,9 +32,20 @@ const warstwy: LayerSpecification[] = [
 // Polska do z7 jest tłem intro. Od z8 mapa używa dokładnego wycinka Krakowa i obwarzanka.
 // Granice wycinków i procedura odtworzenia są w public/mapa/README.md.
 for (const [zrodlo, przedzial] of [
-  ['polska', { minzoom: 0, maxzoom: 8 }],
+  ['polska', { minzoom: 0, maxzoom: 24 }],
   ['krakow', { minzoom: 8, maxzoom: 24 }],
 ] as const) {
+  if (zrodlo === 'krakow') {
+    // Polska ma kafelki tylko do z7 i powyżej jest rozciągana (inne miasta nie mają własnych).
+    // Nad Krakowem przykrywamy ją tłem, żeby nie prześwitywała pod dokładnym wycinkiem.
+    warstwy.push({
+      id: 'podklad-maska-krakowa',
+      type: 'fill',
+      source: 'maska-krakowa',
+      minzoom: 8,
+      paint: { 'fill-color': '#f6f7f4' },
+    })
+  }
   const dodaj = (grupa: GrupaPodkladu, warstwa: LayerSpecification) => {
     warstwy.push({
       ...warstwa,
@@ -190,6 +201,25 @@ export const STYL: StyleSpecification = {
   sources: {
     polska: { type: 'vector', url: ADRES_POLSKI, attribution: ATRYBUCJA },
     krakow: { type: 'vector', url: ADRES_MIASTA, attribution: ATRYBUCJA },
+    'maska-krakowa': {
+      type: 'geojson',
+      data: {
+        type: 'Feature',
+        properties: {},
+        geometry: {
+          type: 'Polygon',
+          coordinates: [
+            [
+              [19.6, 49.83],
+              [20.43, 49.83],
+              [20.43, 50.3],
+              [19.6, 50.3],
+              [19.6, 49.83],
+            ],
+          ],
+        },
+      },
+    },
   },
   layers: warstwy,
 }
