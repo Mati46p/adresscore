@@ -16,6 +16,7 @@ import { sciezkaGrafu } from '@/wynik/sciezkiDanych'
 import { useStan } from '@/wynik/stan'
 import { opisAdresu } from '../adres'
 import { Wyszukiwarka } from '../wyszukiwarka/Wyszukiwarka'
+import { opisZrodelRozkladu } from './zrodlaRozkladu'
 
 const DOMYSLNY_ODJAZD = 7 * 60
 let worker: Worker | null = null
@@ -58,10 +59,21 @@ export function PanelDojazdu() {
   const dane = useDane()
   const wybrany = useStan((s) => s.wybrany)
   const porownanie = useStan((s) => s.porownanie)
+  const miasto = useStan((s) => s.miasto)
   const [cel, setCel] = useState<number | null>(null)
   const [odjazd, setOdjazd] = useState(DOMYSLNY_ODJAZD)
   const [info, setInfo] = useState<InfoDojazdu | null>(null)
   const [wynik, setWynik] = useState<Wynik>({ stan: 'brak' })
+  // Cel to indeks w adresach JEDNEGO miasta, a godziny i źródła rozkładu (info) należą do jego grafu: po
+  // zmianie miasta cel wskazywałby cudzy adres, a wynik i opis rozkładu byłyby z poprzedniego miasta (#223).
+  const [miastoPanelu, setMiastoPanelu] = useState(miasto)
+  if (miastoPanelu !== miasto) {
+    setMiastoPanelu(miasto)
+    setCel(null)
+    setInfo(null)
+    setOdjazd(DOMYSLNY_ODJAZD)
+    setWynik({ stan: 'brak' })
+  }
 
   const adresy = dane.stan === 'gotowe' ? dane.adresy : null
   const adresCelu = adresy && cel !== null ? adresy[cel] : undefined
@@ -159,10 +171,10 @@ export function PanelDojazdu() {
       )}
       {info && (
         <p className="panel-uwaga dojazd-cel__zalozenia">
-          Rozkład GTFS ZTP Kraków na dzień {info.dataRozkladu} ({dzienTygodnia(info.dataRozkladu)}
-          ), wyjście o {gg(odjazd)}; inne dni mogą mieć inny rozkład. Dane:{' '}
-          {[...new Set(info.zrodla.map((z) => z.dataDanych))].join(', ')}. Czas planowy, bez
-          opóźnień. Dojście do przystanku i od przystanku do celu do{' '}
+          Rozkład GTFS: {opisZrodelRozkladu(info.zrodla)}, na dzień {info.dataRozkladu} (
+          {dzienTygodnia(info.dataRozkladu)}), wyjście o {gg(odjazd)}; inne dni mogą mieć inny
+          rozkład. Dane: {[...new Set(info.zrodla.map((z) => z.dataDanych))].join(', ')}. Czas
+          planowy, bez opóźnień. Dojście do przystanku i od przystanku do celu do{' '}
           {liczbaPL(MAX_DOJSCIE_M / 1000)} km, przesiadki do {MAX_PRZESIADKA_M} m i min.{' '}
           {BUFOR_PRZESIADKI_MIN} min – liczone po linii prostej przy {liczbaPL(PREDKOSC_PIESZO_MS)}{' '}
           m/s, nie po chodnikach. Cel zaokrąglony do ok. 100 m. Brak trasy w {MAX_PODROZ_MIN / 60} h

@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useRef } from 'react'
 import { Pokaz3D, parametrPokazu } from '@/miasto3d/Pokaz3D'
 import { useDane } from '@/wynik/dane'
+import { useMiasto } from '@/wynik/miastoDanych'
 import { hrefAdresu } from '@/wynik/slug'
 import { useStan } from '@/wynik/stan'
 import { opisAdresu } from './adres'
@@ -15,6 +16,8 @@ import {
   ladujPorownanie,
   przygotujEkran,
 } from './ladowanieEkranow'
+import { sciezkaKanoniczna, tytulEkranu } from './miastoTeksty'
+import './aplikacja.css'
 import { Naglowek } from './Naglowek'
 
 const EkranOkolica = lazy(async () => ({ default: (await ladujOkolice()).EkranOkolica }))
@@ -59,27 +62,17 @@ export function Aplikacja() {
 function Powloka() {
   const ekran = useStan((s) => s.ekran)
   const wybrany = useStan((s) => s.wybrany)
+  const nieznaneMiasto = useStan((s) => s.nieznaneMiasto)
+  const miasto = useMiasto()
   const dane = useDane()
   const gotowe = dane.stan === 'gotowe'
   const adres = dane.stan === 'gotowe' && wybrany !== null ? dane.adresy[wybrany] : undefined
   const nazwaAdresu = adres ? opisAdresu(adres) : 'Karta okolicy'
 
-  // Tytuły ekranów z własnym adresem (/, /adres/…, /metoda) są te same co w HTML z serwera
-  // (index.html, api/seo.js): Google indeksuje tytuł po wykonaniu JS, więc rozjazd podmieniłby go.
-  const tytul =
-    ekran === 'okolica'
-      ? `${nazwaAdresu}: okolica w liczbach`
-      : ekran === 'porownanie'
-        ? 'Porównanie'
-        : ekran === 'metoda'
-          ? 'Metoda i źródła danych – jak liczymy wynik adresu'
-          : ekran === 'biznes'
-            ? 'Miejsce na biznes'
-            : ekran === 'katalog'
-              ? 'Katalog adresów Krakowa'
-              : ekran === 'miasto'
-                ? 'Dla miasta: luki w usługach i symulator inwestycji'
-                : 'Jakość życia pod każdym adresem w Krakowie i okolicach'
+  // Tytuły ekranów z własnym adresem (/, /adres/…, /metoda) są dla Krakowa te same co w HTML z serwera
+  // (index.html, api/seo.js): Google indeksuje tytuł po wykonaniu JS, więc rozjazd podmieniłby go. Inne
+  // miasto dostaje własną nazwę (#223) – tytuły i adres kanoniczny: miastoTeksty.ts.
+  const tytul = tytulEkranu(ekran, miasto, nazwaAdresu)
 
   // Przejście = inny ekran albo, na karcie, inny adres. Klik w mapę na Szukaj niczego nie resetuje.
   const klucz = ekran === 'okolica' ? `okolica:${wybrany}` : ekran
@@ -94,16 +87,14 @@ function Powloka() {
 
   useEffect(() => {
     if (ekran === 'okolica' && !adres) return
-    const sciezka =
-      ekran === 'okolica' && adres
-        ? hrefAdresu(adres)
-        : ekran === 'katalog'
-          ? location.pathname.startsWith('/katalog/')
-            ? location.pathname
-            : '/katalog'
-          : ekran === 'metoda'
-            ? '/metoda'
-            : '/'
+    // Strony SEO (karta adresu, katalog) są tylko dla Krakowa (FR-015): adres kanoniczny karty z innego
+    // miasta nie ma wskazywać nieistniejącego /adres/<slug>, tylko stronę główną (sciezkaKanoniczna).
+    const sciezka = sciezkaKanoniczna({
+      ekran,
+      miasto: miasto.slug,
+      sciezkaAdresu: adres ? hrefAdresu(adres) : null,
+      pathname: location.pathname,
+    })
     let link = document.querySelector<HTMLLinkElement>('link[rel="canonical"]')
     if (!link) {
       link = document.createElement('link')
@@ -111,7 +102,7 @@ function Powloka() {
       document.head.append(link)
     }
     link.href = `https://adresscore.pl${sciezka}`
-  }, [ekran, adres])
+  }, [ekran, adres, miasto.slug])
 
   useEffect(() => {
     const nastepny = ekran === 'szukaj' ? 'okolica' : ekran === 'okolica' ? 'porownanie' : 'metoda'
@@ -149,6 +140,13 @@ function Powloka() {
   return (
     <>
       <Naglowek />
+      {/* Link z `mst=` spoza rejestru (literówka, miasto z nowszej wersji): otwieramy Kraków, ale mówimy to
+          wprost, zamiast po cichu pokazać inne miasto, niż prosił link (#223, contracts/url.md). */}
+      {nieznaneMiasto && (
+        <p role="status" className="komunikat komunikat--info">
+          Nie mamy danych dla tego miasta. Pokazujemy {miasto.nazwa}.
+        </p>
+      )}
       {dane.stan === 'blad' && (
         <p role="alert" className="komunikat">
           Nie udało się wczytać danych: {dane.blad}

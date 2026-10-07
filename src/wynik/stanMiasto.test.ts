@@ -10,7 +10,7 @@ import { cellToLatLng, latLngToCell } from 'h3-js'
 import type { Adres, KategoriaId } from '../kontrakty/index.ts'
 import { MIASTA, MIASTO_DOMYSLNE, type SlugMiasta } from '../kontrakty/miasta.ts'
 import { PERSONA_DOMYSLNA, ustawieniaPersony } from './persony.ts'
-import { czytajHash, ID_MIEJSC, zapiszHash } from './url.ts'
+import { czytajHash, ID_MIEJSC, przeniesMstDoHasha, zapiszHash } from './url.ts'
 
 type Stan = typeof import('./stan.ts')
 
@@ -88,6 +88,38 @@ describe('link: parametr mst', () => {
     const zapis = zapiszHash(s)
     assert.equal(zapis, '#/?mst=lodz&p=rodzina')
     assert.deepEqual(czytajHash(zapis), s)
+  })
+
+  it('mst w query string (/?mst=gdansk) przenosi się do hasha, a hash z własnym mst wygrywa', () => {
+    assert.deepEqual(przeniesMstDoHasha('?mst=gdansk', ''), { search: '', hash: '#/?mst=gdansk' })
+    assert.deepEqual(przeniesMstDoHasha('?mst=gdansk', '#/'), { search: '', hash: '#/?mst=gdansk' })
+    assert.deepEqual(przeniesMstDoHasha('?mst=gdansk', '#/?p=senior'), {
+      search: '',
+      hash: '#/?p=senior&mst=gdansk',
+    })
+    assert.deepEqual(przeniesMstDoHasha('?mst=gdansk', '#/adres/abc'), {
+      search: '',
+      hash: '#/adres/abc?mst=gdansk',
+    })
+    assert.equal(
+      przeniesMstDoHasha('?mst=gdansk', '#/?mst=lodz')?.hash,
+      '#/?mst=lodz',
+      'hash wygrywa',
+    )
+    // Reszta query zostaje (utm, pokaz), a przeniesiony adres czyta się jak zwykły link.
+    const wynik = przeniesMstDoHasha('?utm_source=a&mst=gdansk', '')
+    assert.equal(wynik?.search, '?utm_source=a')
+    assert.equal(czytajHash(wynik?.hash ?? '').miasto, 'gdansk')
+    assert.equal(przeniesMstDoHasha('?utm_source=a', '#/'), null, 'bez mst nie ma czego przenosić')
+    assert.equal(przeniesMstDoHasha('', ''), null)
+  })
+
+  it('mst w query: nieznane miasto i Kraków po przeniesieniu zachowują się jak w hashu', () => {
+    assert.equal(
+      czytajHash(przeniesMstDoHasha('?mst=atlantyda', '')?.hash ?? '').nieznaneMiasto,
+      true,
+    )
+    assert.equal('miasto' in czytajHash(przeniesMstDoHasha('?mst=krakow', '')?.hash ?? ''), false)
   })
 
   it('link do karty adresu w innym mieście: #/adres/<id>?mst=<slug>', () => {

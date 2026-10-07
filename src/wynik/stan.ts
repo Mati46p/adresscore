@@ -36,6 +36,7 @@ import {
   ID_MIEJSC,
   type IdMiejsca,
   MAKS_POROWNANIE,
+  przeniesMstDoHasha,
   type StanUrl,
   zapiszHash,
 } from './url.ts'
@@ -935,6 +936,11 @@ export function zastosujZmianeUrl(url: StanUrl) {
 }
 
 if (typeof window !== 'undefined') {
+  // `/?mst=gdansk` → `/#/?mst=gdansk` zanim stan przeczyta link (url.ts: przeniesMstDoHasha).
+  const przeniesione = przeniesMstDoHasha(location.search, location.hash)
+  if (przeniesione) {
+    history.replaceState(null, '', `${location.pathname}${przeniesione.search}${przeniesione.hash}`)
+  }
   wczytajLinkStartowy(czytajBiezacyUrl())
   const odczytajZmianeUrl = () => zastosujZmianeUrl(czytajBiezacyUrl())
   window.addEventListener('hashchange', odczytajZmianeUrl)

@@ -86,7 +86,8 @@ function BiznesTylkoKrakow() {
 function BiznesZPopytem() {
   // Katalog danych zbioru, z którego ekran bierze katalog branż, a worker popyt i pliki branż (worker nie
   // zna bieżącego miasta, więc dostaje katalog w wiadomości). Ten ekran żyje tylko w mieście z popytem.
-  const baza = bazaDanych(useMiasto().slug)
+  const miasto = useMiasto()
+  const baza = bazaDanych(miasto.slug)
   const branza = useStan((s) => s.branza)
   const miejsca = useStan((s) => s.miejsca)
   // Filtry konkurencji żyją w stanie aplikacji i w linku (`k=`, #108): odświeżenie strony i skopiowany
@@ -312,6 +313,7 @@ function BiznesZPopytem() {
             <Suspense fallback={<p role="status">Wczytuję mapę…</p>}>
               <MapaKrakowa
                 heksy={heksy}
+                miasto={miasto.slug}
                 podpisWarstwy="Adresy w zasięgu na 1 punkt: więcej = słabiej obsłużone"
                 punktyUslug={punkty}
                 postawionePunkty={postawione}

@@ -1,4 +1,6 @@
+import { MIASTO_DOMYSLNE } from '@/kontrakty'
 import { useDane } from '@/wynik/dane'
+import { useMiasto } from '@/wynik/miastoDanych'
 import { opisZrodelOkolic } from '@/wynik/miejsceAdresu'
 import { rankingUlic } from '@/wynik/rankingUlic'
 import { slugUlicy } from '@/wynik/slug'
@@ -7,11 +9,15 @@ import { MAKS_POROWNANIE } from '@/wynik/url'
 import { useWyniki } from '@/wynik/useWyniki'
 import { liczba, opisAdresu } from './adres'
 
-/** Pięć ulic z najwyższą średnią oceną adresów dla aktualnych wag lub wybranej warstwy. */
-export function Ranking() {
+/**
+ * Pięć ulic bieżącego miasta z najwyższą średnią oceną adresów dla aktualnych wag lub wybranej warstwy.
+ * `nazwaWarstwy` to podpis wybranej warstwy z przeglądu: miasto, które jej nie ma, nie zna jej nazwy.
+ */
+export function Ranking({ nazwaWarstwy }: { nazwaWarstwy: string }) {
   const dane = useDane()
   const wyniki = useWyniki()
   const stan = useStan((s) => s)
+  const miasto = useMiasto()
   if (dane.stan !== 'gotowe' || !wyniki) return <p className="komunikat">Wczytuję dane…</p>
 
   const najlepsze = rankingUlic(
@@ -22,6 +28,12 @@ export function Ranking() {
     dane.okolice,
   )
   const atrapa = dane.plikAdresow.atrapa || dane.wskazniki.some((w) => w.meta.atrapa)
+  // Strona ulicy (/katalog/<slug>) istnieje tylko dla Krakowa (FR-015). Ulica z innego miasta prowadzi do karty
+  // adresu, który pokazuje wiersz („Do porównania: …”), zamiast do nieistniejącej strony.
+  const hrefUlicy = (ulica: (typeof najlepsze)[number]) =>
+    miasto.slug === MIASTO_DOMYSLNE
+      ? `/katalog/${ulica.slug}`
+      : hrefDla(stan, { ekran: 'okolica', wybrany: ulica.adresDoPorownania })
 
   return (
     <section
@@ -31,7 +43,8 @@ export function Ranking() {
     >
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
         <h2 id="h-ranking" className="etykieta-sekcji">
-          Najlepiej pasujące ulice · {wyniki.podpis}
+          Najlepiej pasujące ulice {miasto.wMiescie} ·{' '}
+          {wyniki.brakWarstwy ? nazwaWarstwy : wyniki.podpis}
         </h2>
         {atrapa && <span className="atrapa">dane przykładowe</span>}
         {stan.porownanie.length > 0 && (
@@ -40,7 +53,13 @@ export function Ranking() {
           </a>
         )}
       </div>
-      {najlepsze.length === 0 ? (
+      {wyniki.brakWarstwy ? (
+        // Warstwa wybrana w innym mieście: tu jej nie ma, więc brak danych, a nie wynik łączny ani zero (FR-004).
+        <p style={{ margin: 0, color: 'var(--tekst-2)' }}>
+          Warstwy „{nazwaWarstwy}” nie ma {miasto.wMiescie}, więc nie ułożymy rankingu ulic. Brak
+          danych to nie zero – wybierz „Wynik tej okolicy” albo warstwę z listy nad mapą.
+        </p>
+      ) : najlepsze.length === 0 ? (
         <p style={{ margin: 0, color: 'var(--tekst-2)' }}>Ustaw wagi, żeby policzyć wynik.</p>
       ) : (
         <>
@@ -58,7 +77,7 @@ export function Ranking() {
               const pelne = stan.porownanie.length >= MAKS_POROWNANIE
               return (
                 <li className="ranking-ulica" key={ulica.slug}>
-                  <a className="pozycja-wyniku" href={`/katalog/${ulica.slug}`}>
+                  <a className="pozycja-wyniku" href={hrefUlicy(ulica)}>
                     <span className="plakietka-wyniku">{liczba(ulica.wynik)}</span>
                     <span className="ranking-ulica__opis">
                       <span>
@@ -99,7 +118,7 @@ export function Ranking() {
             })}
           </ol>
           <p style={{ margin: 0, color: 'var(--tekst-3)', fontSize: '0.85em' }}>
-            {opisZrodelOkolic(dane.okolice)}
+            {opisZrodelOkolic(dane.okolice, miasto.slug === MIASTO_DOMYSLNE)}
           </p>
         </>
       )}

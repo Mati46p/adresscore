@@ -271,6 +271,30 @@ export function czytajHash(hash: string, search = ''): StanUrl {
   }
 }
 
+/**
+ * `/?mst=gdansk` → `/#/?mst=gdansk`. Link z `mst` w query string (tak wpisuje się go „od ręki”, a hosting SPA
+ * zachowuje query) przenosimy do hasha, gdzie miasto żyje: dwa źródła tej samej informacji rozjechałyby się,
+ * gdy ktoś zmieni miasto, zanim wczytają się dane (zapis stanu w tym oknie przepisuje sam hash, query zostaje).
+ * Hash z własnym `mst` wygrywa. `null` = nie ma czego przenosić. Reszta query (`utm_*`, `pokaz`, `panel`) zostaje.
+ */
+export function przeniesMstDoHasha(
+  search: string,
+  hash: string,
+): { search: string; hash: string } | null {
+  const zapytanie = new URLSearchParams(search)
+  const mst = zapytanie.get('mst')
+  if (mst === null) return null
+  zapytanie.delete('mst')
+  const [sciezka = '', zapytanieHasha = ''] = hash.replace(/^#/, '').split('?')
+  const parametry = new URLSearchParams(zapytanieHasha)
+  if (!parametry.get('mst')) parametry.set('mst', mst)
+  const reszta = zapytanie.toString()
+  return {
+    search: reszta ? `?${reszta}` : '',
+    hash: `#${sciezka || '/'}?${parametry.toString()}`,
+  }
+}
+
 export function zapiszHash(s: StanUrl): string {
   // Panel nie ma parametrów w linku (persona, tryb, filtry należą do ekranów zwiedzającego).
   if (s.ekran === 'panel') return '#/panel'

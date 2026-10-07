@@ -1,6 +1,8 @@
 import { useState } from 'react'
+import { MIASTO_DOMYSLNE } from '@/kontrakty'
 import { useDane } from '@/wynik/dane'
 import { policzLuki, progLuki } from '@/wynik/luki'
+import { useMiasto } from '@/wynik/miastoDanych'
 import { opisZrodelOkolic } from '@/wynik/miejsceAdresu'
 import {
   liczbaPelna,
@@ -42,6 +44,7 @@ export function PanelLuk({
   bezWyboruWarstwy = false,
 }: PanelLukProps) {
   const dane = useDane()
+  const miasto = useMiasto()
   const [sortowanie, setSortowanie] = useState<SortowanieLuk>('liczba')
 
   if (dane.stan === 'ladowanie') return <p className="komunikat">Wczytuję dane…</p>
@@ -109,7 +112,9 @@ export function PanelLuk({
         )}
         {dane.okolice === null && (
           <p className="luki-uwaga">
-            Plik okolic się nie wczytał, więc okolicą jest dzielnica Krakowa albo cała gmina.
+            {miasto.slug === MIASTO_DOMYSLNE
+              ? 'Plik okolic się nie wczytał, więc okolicą jest dzielnica Krakowa albo cała gmina.'
+              : `Dla miasta ${miasto.nazwa} nie mamy podziału na okolice, więc okolicą jest dzielnica albo cała gmina.`}
           </p>
         )}
       </div>
@@ -205,7 +210,7 @@ export function PanelLuk({
           Dane: {zrodlaWarstwy(meta)}. Rozdzielczość: {rozdzielczoscWarstwy(meta)}. Liczymy{' '}
           {wynik.jednostka}, nie mieszkańców.
         </p>
-        <p>{opisZrodelOkolic(dane.okolice)}</p>
+        <p>{opisZrodelOkolic(dane.okolice, miasto.slug === MIASTO_DOMYSLNE)}</p>
       </div>
     </section>
   )

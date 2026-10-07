@@ -13,8 +13,10 @@ import {
 } from '@/mapa/luki/skalaLuk'
 import { MapaKrakowa } from '@/mapa/MapaKrakowa'
 import { KRYCIE_DANYCH, szrafuraCss } from '@/mapa/skala'
+import { TEKST_POZA_MIASTEM } from '@/mapa/tlo'
 import { useDane } from '@/wynik/dane'
 import { policzLuki, progLuki, type WynikLuk } from '@/wynik/luki'
+import { useMiasto } from '@/wynik/miastoDanych'
 import type { GrupyHeksow, WskaznikPrzygotowany } from '@/wynik/silnik'
 import './mapaLuk.css'
 
@@ -79,6 +81,7 @@ export function MapaLuk({
   okolicaDoPokazania = null,
 }: MapaLukProps): JSX.Element {
   const dane = useDane()
+  const miasto = useMiasto()
   const gotowe = dane.stan === 'gotowe' ? dane : null
   // Tylko warstwy z progiem luki i bez atrapy – `progLuki` daje null dla obu przypadków.
   const warstwy = gotowe ? gotowe.wskazniki.filter((w) => progLuki(w.meta) !== null) : []
@@ -130,6 +133,7 @@ export function MapaLuk({
       <div className="mapa-luk__mapa">
         <MapaKrakowa
           heksy={luki?.heksy ?? BRAK_HEKSOW}
+          miasto={miasto.slug}
           podpisWarstwy={tytul}
           granice={granice}
           wartoscRodzica={
@@ -175,7 +179,7 @@ export function LegendaLuk({ tytul }: { tytul: string }): JSX.Element {
       </div>
       <div className="mapa-legenda__wiersz">
         <span className="mapa-legenda__probka mapa-legenda__probka--mgla" />
-        poza Krakowem – brak danych
+        {TEKST_POZA_MIASTEM}
       </div>
     </>
   )

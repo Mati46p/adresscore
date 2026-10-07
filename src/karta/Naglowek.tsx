@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useMiasto } from '@/wynik/miastoDanych'
 import { hrefDla, useStan } from '@/wynik/stan'
 import { TRYBY_APLIKACJI, trybEkranu } from '@/wynik/trybyAplikacji'
 import type { Ekran } from '@/wynik/url'
@@ -15,6 +16,7 @@ const KROKI: { ekran: Ekran; etykieta: string }[] = [
 
 export function Naglowek() {
   const stan = useStan((s) => s)
+  const miasto = useMiasto()
   const aktywnyTryb = trybEkranu(stan.ekran)
   // Telefon: kroki i tryby chowają się za przyciskiem, żeby nagłówek zajmował jeden wiersz, a nie ćwierć ekranu.
   const [menuOtwarte, setMenuOtwarte] = useState(false)
@@ -31,7 +33,7 @@ export function Naglowek() {
       <a href={hrefDla(stan, { ekran: 'szukaj' })} className="logo">
         <Logo />
         <span>adresscore</span>
-        <span className="logo-miasto">Kraków</span>
+        <span className="logo-miasto">{miasto.nazwa}</span>
       </a>
       <button
         type="button"

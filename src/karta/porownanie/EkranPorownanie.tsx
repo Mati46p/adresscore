@@ -44,7 +44,14 @@ function TabelaAtrybutow({
   filtry: readonly TwardyFiltr[]
   wykluczone: ReadonlySet<string>
 }) {
+  const dane = useDane()
   const grupy = warstwyPorownania(okolice[0]!.wynik)
+  // Okolice z pliku ma tylko Kraków (jednostki SIM i miejscowości obwarzanka, D8, #223); inne miasta pokazują
+  // dzielnicę albo gminę z adresu (miejsceAdresu: zapas), więc podpis wiersza mówi to, co jest w komórkach.
+  const podpisOkolicy =
+    dane.stan === 'gotowe' && dane.okolice
+      ? 'Jednostka SIM w Krakowie, miejscowość poza nim'
+      : 'Dzielnica albo gmina adresu'
   return (
     <section
       className="porownanie-tabela"
@@ -82,7 +89,7 @@ function TabelaAtrybutow({
           <tbody>
             <tr className="porownanie-tabela__okolica">
               <th scope="row">
-                Okolica<small>Jednostka SIM w Krakowie, miejscowość poza nim</small>
+                Okolica<small>{podpisOkolicy}</small>
               </th>
               {okolice.map((o) => (
                 <td key={o.id}>

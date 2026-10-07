@@ -13,13 +13,12 @@ import { zakryjBrakiHeksow } from './heksy.ts'
 import {
   type Kierunki,
   mapaHeksow,
-  ocenyWarstwy,
   srednieHeksow,
   type WynikAdresu,
   wynikAdresu,
-  wynikiWszystkich,
 } from './silnik.ts'
 import { useStan, type WarstwaMapy } from './stan.ts'
+import { ocenyMapy } from './warstwaMapy.ts'
 
 export interface Wyniki {
   /** Wartość 0–100 aktywnej warstwy per adres (NaN = brak danych). Wykluczone adresy zachowują swój wynik. */
@@ -32,6 +31,12 @@ export interface Wyniki {
   wykluczenia: Wykluczenia
   /** Podpis legendy: „Wynik tej okolicy" albo nazwa wskaźnika. */
   podpis: string
+  /**
+   * Wybranej warstwy mapy nie ma w danych bieżącego miasta (#223): mapa pokazuje je w szrafurze, a
+   * `podpis` nie zna nazwy warstwy – nazwę podaje przegląd (`usePrzeglad().podpis`), bo zna ją
+   * dowolne miasto, które warstwę ma.
+   */
+  brakWarstwy: boolean
 }
 
 const BRAK_WYKLUCZONYCH: ReadonlySet<string> = new Set()
@@ -65,11 +70,8 @@ export function policzWyniki(
   }
   const n = dane.plikAdresow.kolumny.id.length
   const wskaznik = warstwa === 'wynik' ? null : dane.wskazniki.find((w) => w.meta.id === warstwa)
-  const naAdres =
-    (wskaznik ? ocenyWarstwy(wskaznik, kierunki) : null) ??
-    (wskaznik
-      ? new Float32Array(n).fill(Number.NaN)
-      : wynikiWszystkich(dane.wskazniki, wagi, kierunki, n))
+  // Warstwa nieobecna w tym mieście to brak danych, nie wynik łączny (FR-004): `warstwaMapy.ts`.
+  const { naAdres, brakWarstwy } = ocenyMapy(dane.wskazniki, wagi, kierunki, warstwa, n)
   // Filtr tylko maskuje adresy: naAdres zostaje nietknięte, a średnie heksów liczymy bez wykluczonych.
   const wykluczenia = policzWykluczenia(dane.wskazniki, filtry, n)
   const zMaska = wykluczenia.liczbaWykluczonych > 0
@@ -94,6 +96,7 @@ export function policzWyniki(
       : BRAK_WYKLUCZONYCH,
     wykluczenia,
     podpis: wskaznik ? wskaznik.meta.nazwa : 'Wynik tej okolicy',
+    brakWarstwy,
   }
   ostatni = { dane, wagi, kierunki, warstwa, filtry, wynik }
   return wynik

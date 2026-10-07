@@ -1,5 +1,5 @@
 import { Fragment, type MouseEvent, useId, useSyncExternalStore } from 'react'
-import { KATEGORIE, type WskaznikMeta } from '@/kontrakty'
+import { KATEGORIE, MIASTO_DOMYSLNE, type WskaznikMeta } from '@/kontrakty'
 import {
   pomiarWylaczony,
   produktowe,
@@ -8,6 +8,7 @@ import {
   wylaczonyPrzezGpc,
 } from '@/pomiar/pomiar.ts'
 import { useDane } from '@/wynik/dane'
+import { useMiasto } from '@/wynik/miastoDanych'
 import { PROGI_LITER, WAGA_MAX, type WskaznikPrzygotowany } from '@/wynik/silnik'
 import './metoda.css'
 import { przelaczPomiar } from './przelacznikPomiaru.ts'
@@ -193,6 +194,7 @@ function TabelaZrodel() {
 
 function Ograniczenia() {
   const dane = useDane()
+  const miasto = useMiasto()
   if (dane.stan !== 'gotowe') return null
   const atrapy = dane.wskazniki.filter((w) => w.meta.atrapa)
   const luki = dane.wskazniki
@@ -213,10 +215,12 @@ function Ograniczenia() {
         )}
         {luki.length > 0 && (
           <li>
-            <strong>Luki w pokryciu.</strong> Rejestry miejskie obejmują Kraków. Dla gmin obwarzanka
-            i dla adresów poza zasięgiem warstwy brakuje danych. Pokazujemy to jako szarą kategorię
-            i niższą kompletność danych, nie jako zero. Warstwy z lukami:{' '}
-            {luki.map(({ w, p }) => `${w.meta.nazwa} (${procent(p)})`).join('; ')}.
+            <strong>Luki w pokryciu.</strong>{' '}
+            {miasto.slug === MIASTO_DOMYSLNE
+              ? 'Rejestry miejskie obejmują Kraków. Dla gmin obwarzanka i dla adresów poza zasięgiem warstwy brakuje danych.'
+              : `Warstwy mają różny zasięg ${miasto.wMiescie}: dla adresów poza zasięgiem warstwy brakuje danych.`}{' '}
+            Pokazujemy to jako szarą kategorię i niższą kompletność danych, nie jako zero. Warstwy z
+            lukami: {luki.map(({ w, p }) => `${w.meta.nazwa} (${procent(p)})`).join('; ')}.
           </li>
         )}
         {niedostepne.length > 0 && (
@@ -302,6 +306,7 @@ function PrzelacznikPomiaru() {
 }
 
 export function Metoda() {
+  const miasto = useMiasto()
   function przewinDoSekcji(zdarzenie: MouseEvent<HTMLAnchorElement>) {
     const cel = zdarzenie.currentTarget.hash.slice(1)
     const sekcja = document.getElementById(cel)
@@ -615,7 +620,10 @@ export function Metoda() {
       </section>
 
       <footer className="met-stopka">
-        <a href="#/">Wróć do wyszukiwania</a>
+        {/* Link niesie miasto: gołe #/ otwierałoby Kraków i czyściłoby wybór innego miasta (#223). */}
+        <a href={miasto.slug === MIASTO_DOMYSLNE ? '#/' : `#/?mst=${miasto.slug}`}>
+          Wróć do wyszukiwania
+        </a>
       </footer>
     </main>
   )

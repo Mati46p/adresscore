@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react'
-import type { Adres } from '@/kontrakty'
+import { type Adres, MIASTO_DOMYSLNE } from '@/kontrakty'
 import { useDane } from '@/wynik/dane'
+import { useMiasto } from '@/wynik/miastoDanych'
 import { hrefAdresu, slugUlicy } from '@/wynik/slug'
+import { hrefDla, useStan } from '@/wynik/stan'
+import { przykladAdresu } from './adres'
 import { indeksDla, normalizuj, szukaj } from './wyszukiwarka/indeks'
 import './katalog.css'
 
@@ -42,9 +45,9 @@ function katalog(adresy: Adres[]): Ulica[] {
   return lista
 }
 
-function LinkAdresu({ adres }: { adres: Adres }) {
+function LinkAdresu({ adres, href }: { adres: Adres; href: string }) {
   return (
-    <a href={hrefAdresu(adres)}>
+    <a href={href}>
       {adres.ulica ?? adres.miejscowosc} {adres.nr}, {adres.miejscowosc}
     </a>
   )
@@ -52,6 +55,8 @@ function LinkAdresu({ adres }: { adres: Adres }) {
 
 export function KatalogAdresow() {
   const dane = useDane()
+  const miasto = useMiasto()
+  const stan = useStan((s) => s)
   const [zapytanie, setZapytanie] = useState('')
   const [widoczne, setWidoczne] = useState(80)
   const grupy = dane.stan === 'gotowe' ? katalog(dane.adresy) : []
@@ -70,6 +75,18 @@ export function KatalogAdresow() {
       </main>
     )
   }
+  // Strony SEO (/adres/<slug>, /katalog/<ulica>) istnieją tylko dla Krakowa (FR-015). Adres z innego miasta
+  // otwiera kartę w aplikacji (#/adres/<id>?mst=…), a nie nieistniejącą stronę; ulica nie ma osobnej strony.
+  const wKrakowie = miasto.slug === MIASTO_DOMYSLNE
+  const hrefKarty = (a: Adres) =>
+    wKrakowie ? hrefAdresu(a) : hrefDla(stan, { ekran: 'okolica', wybrany: a.i })
+  // Przykład z danych bieżącego miasta, nie z Krakowa: „Np. Zofii Nałkowskiej 6C, Gdańsk”.
+  const zDanych = wKrakowie ? null : przykladAdresu(dane.adresy, true)
+  const przyklad = wKrakowie
+    ? 'Np. Grodzka 12, Kraków'
+    : zDanych
+      ? `Np. ${zDanych}`
+      : 'Np. nazwa ulicy i numer domu'
   const q = normalizuj(zapytanie)
   const wynikiAdresow = q && /\d/.test(q) ? szukaj(indeksDla(dane.adresy), zapytanie, 100) : []
   const pasujace = q
@@ -91,7 +108,7 @@ export function KatalogAdresow() {
             <ul className="katalog-adresy">
               {wybrana.adresy.map((a) => (
                 <li key={a.id}>
-                  <LinkAdresu adres={a} />
+                  <LinkAdresu adres={a} href={hrefKarty(a)} />
                 </li>
               ))}
             </ul>
@@ -108,8 +125,8 @@ export function KatalogAdresow() {
       <h1 tabIndex={-1}>Katalog adresów</h1>
       <p>
         {dane.adresy.length.toLocaleString('pl-PL')} adresów ·{' '}
-        {grupy.length.toLocaleString('pl-PL')} ulic i miejscowości w Krakowie oraz sąsiednich
-        gminach.
+        {grupy.length.toLocaleString('pl-PL')} ulic i miejscowości{' '}
+        {wKrakowie ? 'w Krakowie oraz sąsiednich gminach' : miasto.wMiescie}.
       </p>
       <label className="katalog-szukaj">
         Szukaj ulicy lub adresu
@@ -120,7 +137,7 @@ export function KatalogAdresow() {
             setZapytanie(e.currentTarget.value)
             setWidoczne(80)
           }}
-          placeholder="Np. Grodzka 12, Kraków"
+          placeholder={przyklad}
           autoComplete="street-address"
         />
       </label>
@@ -132,7 +149,7 @@ export function KatalogAdresow() {
               const a = dane.adresy[w.i]
               return a ? (
                 <li key={a.id}>
-                  <LinkAdresu adres={a} />
+                  <LinkAdresu adres={a} href={hrefKarty(a)} />
                 </li>
               ) : null
             })}
@@ -149,11 +166,11 @@ export function KatalogAdresow() {
                 <summary>
                   {g.nazwa}, {g.miejscowosc} <span>({g.adresy.length})</span>
                 </summary>
-                <a href={`/katalog/${g.slug}`}>Otwórz stronę ulicy</a>
+                {wKrakowie && <a href={`/katalog/${g.slug}`}>Otwórz stronę ulicy</a>}
                 <ul className="katalog-adresy">
                   {g.adresy.map((a) => (
                     <li key={a.id}>
-                      <LinkAdresu adres={a} />
+                      <LinkAdresu adres={a} href={hrefKarty(a)} />
                     </li>
                   ))}
                 </ul>

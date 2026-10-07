@@ -319,6 +319,13 @@ describe('źródła okolic', () => {
     assert.match(opisZrodelOkolic(null), /dzielnice Krakowa i gminy/)
     assert.match(opisZrodelOkolic(undefined), /dzielnice Krakowa i gminy/)
   })
+
+  it('inne miasto bez pliku okolic: gminy z rejestru adresów, bez słowa o Krakowie (#223)', () => {
+    assert.equal(opisZrodelOkolic(null, false), 'Okolice: gminy z rejestru adresów.')
+    assert.equal(opisZrodelOkolic(undefined, false), 'Okolice: gminy z rejestru adresów.')
+    // Z plikiem flaga niczego nie zmienia: źródła są opisane w pliku.
+    assert.equal(opisZrodelOkolic({ zrodla }, false), opisZrodelOkolic({ zrodla }))
+  })
 })
 
 // ── Prawdziwe dane ───────────────────────────────────────────────────────────────────────

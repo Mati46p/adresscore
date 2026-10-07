@@ -606,18 +606,29 @@ export function MapaKrakowa({
         if (nazwa) dymek.setLngLat(e.lngLat).setText(String(nazwa)).addTo(mapa)
       })
       mapa.on('mouseleave', 'punkty-uslug', () => dymek.remove())
-      mapa.addLayer({
-        id: 'mgla',
-        type: 'fill',
-        source: 'mgla',
-        paint: { 'fill-color': '#EEF0EE', 'fill-opacity': 0.78 },
-      })
-      mapa.addLayer({
-        id: 'obrys',
-        type: 'line',
-        source: 'obrys',
-        paint: { 'line-color': '#9AA2A8', 'line-width': 1.5, 'line-dasharray': [4, 3] },
-      })
+      // Mgła, poświata i obrys leżą POD heksami (przed pierwszą warstwą danych). Dziury w mgle obejmują
+      // wszystkie miasta z danymi, więc dane niczego nie tracą na widoczności, a biała poświata nie zasłania
+      // ich kolorów. Nad heksami wybielała małe miasta na widoku kraju: pomiar na zrzucie (#223, F6) dał 0%
+      // pikseli w kolorze wokół dziewięciu z dziesięciu miast, a pod heksami od 0,1% (Białystok) do 39% (Kraków).
+      const nadDanymi = zrodloHeksow(POZIOMY[0]?.res ?? 8)
+      mapa.addLayer(
+        {
+          id: 'mgla',
+          type: 'fill',
+          source: 'mgla',
+          paint: { 'fill-color': '#EEF0EE', 'fill-opacity': 0.78 },
+        },
+        nadDanymi,
+      )
+      mapa.addLayer(
+        {
+          id: 'obrys',
+          type: 'line',
+          source: 'obrys',
+          paint: { 'line-color': '#9AA2A8', 'line-width': 1.5, 'line-dasharray': [4, 3] },
+        },
+        nadDanymi,
+      )
       dodajWarstwyLotu(mapa)
       przeniesNazwyNaWierzch(mapa)
       // Strict Mode montuje dwa razy – zdarzenie ze zdjętej mapy nie może ustawić stanu.
