@@ -37,3 +37,6 @@ docs/warianty/
 Thumbs.db
 *.swp
 .idea
+
+# Mapa Polski 2 GB: poza repo (patrz public/mapa/README.md)
+public/mapa/*.pmtiles

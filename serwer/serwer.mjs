@@ -10,6 +10,9 @@ import seo from '../api/seo.js'
 import zdarzenie from '../api/zdarzenie.js'
 
 const KORZEN = resolve(process.env.DIST_DIR ?? 'dist')
+// Duże pliki mapy (polska.pmtiles, 2 GB) leżą na wolumenie poza obrazem: /mapa/<plik> czytamy stąd
+// przed dist/. Bez zmiennej serwer działa jak dotąd.
+const MAPA_DIR = process.env.MAPA_DIR ? resolve(process.env.MAPA_DIR) : null
 const PORT = Number(process.env.PORT ?? 3000)
 
 const TYPY = {
@@ -57,14 +60,15 @@ function naglowkiPliku(sciezka) {
   if (sciezka === '/sw.js') naglowki['Cache-Control'] = 'no-cache'
   else if (sciezka.startsWith('/assets/'))
     naglowki['Cache-Control'] = 'public, max-age=31536000, immutable'
+  else if (sciezka.endsWith('.pmtiles')) naglowki['Cache-Control'] = 'public, max-age=86400'
   else naglowki['Cache-Control'] = 'public, max-age=300'
   return naglowki
 }
 
-async function plik(req, res, sciezka) {
+async function plik(req, res, sciezka, korzen = KORZEN, zadanaSciezka = sciezka) {
   const wzgledna = normalize(sciezka === '/' ? '/index.html' : sciezka)
-  const pelna = join(KORZEN, wzgledna)
-  if (pelna !== KORZEN && !pelna.startsWith(KORZEN + sep)) return false
+  const pelna = join(korzen, wzgledna)
+  if (pelna !== korzen && !pelna.startsWith(korzen + sep)) return false
   let info
   try {
     info = await stat(pelna)
@@ -74,7 +78,7 @@ async function plik(req, res, sciezka) {
   if (!info.isFile()) return false
 
   const naglowki = {
-    ...naglowkiPliku(sciezka),
+    ...naglowkiPliku(zadanaSciezka),
     'Content-Type': TYPY[extname(pelna)] ?? 'application/octet-stream',
     'Accept-Ranges': 'bytes',
     'Last-Modified': info.mtime.toUTCString(),
@@ -127,7 +131,15 @@ async function obsluz(req, res) {
   const funkcja = API[sciezka]
   if (funkcja) return funkcja(req, res)
 
-  if ((req.method === 'GET' || req.method === 'HEAD') && (await plik(req, res, sciezka))) return
+  const czytanie = req.method === 'GET' || req.method === 'HEAD'
+  if (
+    czytanie &&
+    MAPA_DIR &&
+    sciezka.startsWith('/mapa/') &&
+    (await plik(req, res, sciezka.slice('/mapa'.length), MAPA_DIR, sciezka))
+  )
+    return
+  if (czytanie && (await plik(req, res, sciezka))) return
 
   const cel = przepisz(adres.pathname)
   if (cel) {
