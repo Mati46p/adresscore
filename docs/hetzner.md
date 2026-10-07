@@ -1,7 +1,8 @@
 # Hosting na Hetznerze (Coolify)
 
 Stan od 2026-10-07: aplikacja stoi na serwerze Hetzner obok z-dykty (Coolify, projekt `adresscore`),
-równolegle do Vercela. DNS adresscore.pl nadal wskazuje Vercel – przełączenie to osobna decyzja.
+jako produkcja adresscore.pl i www (DNS w home.pl wskazuje 95.217.198.88, HTTPS z Let's Encrypt
+przez Traefik).
 
 | Element | Wartość |
 |---|---|
@@ -12,6 +13,9 @@ równolegle do Vercela. DNS adresscore.pl nadal wskazuje Vercel – przełączen
 | Zmienne | build: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`; runtime: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `JEV_API_KEY`, `ADRESSCORE_HOSTY` |
 
 - Routing w `serwer/serwer.mjs` jest kopią reguł z `vercel.json`. Zmieniasz jedno, zmieniasz drugie.
-- `SUPABASE_SERVICE_ROLE_KEY` trzeba dodać w Coolify. Bez niego pomiar ruchu przyjmuje zdarzenia, ale ich nie zapisuje.
-- Przełączenie domeny: w Coolify ustaw domenę `https://adresscore.pl`, w DNS wskaż IP serwera, dodaj
-  `www`. Dopiero po tym wyłącz deploy na Vercela (`wdroz.yml`).
+- `SUPABASE_SERVICE_ROLE_KEY` musi pochodzić z tego samego projektu co `SUPABASE_URL`; inny klucz
+  daje 401, a brak migracji analityki na bazie daje 404 (w logu kontenera: „zapis nieudany").
+- Wdrożenie: Coolify → aplikacja `adresscore` → Deploy. Zmiana domen i zmiennych wymaga Deploy,
+  sam Restart nie ładuje nowego środowiska.
+- Powrót na Vercel (awaria): DNS w home.pl z powrotem na Vercel i ręczny bieg `wdroz`
+  (workflow_dispatch).

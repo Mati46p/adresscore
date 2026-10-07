@@ -11,8 +11,8 @@ Domena docelowa: adresscore.pl.
 - Mapa: MapLibre GL; heatmapa heksów H3 i warstwy 3D: deck.gl (wariant A z koncepcji).
 - Biome (lint + format), bez eslinta i prettiera.
 - Supabase (baza, auth); migracje w `supabase/migrations`.
-- Hosting: Vercel (SPA) + Supabase Cloud. **Tymczasowo** – docelowo serwer Hetzner obok z-dykty
-  (Coolify, układ jak `infra/hetzner` w repo z-dykty).
+- Hosting: serwer Hetzner obok z-dykty (Coolify, `serwer/serwer.mjs`, opis w `docs/hetzner.md`)
+  + Supabase Cloud. Vercel zostaje wyłącznie jako ręczny powrót awaryjny.
 
 ## Komendy
 

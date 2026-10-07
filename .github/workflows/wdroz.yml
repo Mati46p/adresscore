@@ -4,8 +4,8 @@
 name: wdroz
 
 on:
-  push:
-    branches: [main]
+  # Od 2026-10-07 produkcja stoi na Hetznerze (Coolify), patrz docs/hetzner.md.
+  # Push na main nie wdraża już na Vercela; ręczny bieg zostaje jako powrót awaryjny.
   workflow_dispatch:
 
 concurrency:
