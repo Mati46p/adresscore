@@ -1,5 +1,9 @@
 // Router na hashu bez biblioteki: trzy ekrany i kilka parametrów do udostępniania.
 // Hash, a nie ścieżka, bo hosting SPA nie musi wtedy przepisywać adresów na index.html.
+//
+// Względny import rejestru miast (nie `@/kontrakty`): ten plik testuje `node --test`, a indeks
+// kontraktów czyta `import.meta.env`, którego Node nie ma.
+import { czySlugMiasta, MIASTO_DOMYSLNE, type SlugMiasta } from '../kontrakty/miasta.ts'
 import { filtryDoTekstuLinku, filtryZTekstuLinku } from './biznesFiltryUrl.ts'
 import { BEZ_FILTROW, type FiltryUslug } from './biznesUslugi.ts'
 import { filtryDoTekstu, filtryZTekstu, type TwardyFiltr } from './filtry.ts'
@@ -58,6 +62,18 @@ export interface StanUrl {
    * `null` = domyślna (pierwsza warstwa z progiem luki). Tylko na ekranie Miasto.
    */
   warstwaLuk?: string | null
+  /**
+   * Bieżące miasto z parametru `mst=<slug>` (#223). Brak pola = Kraków, miasto domyślne: link bez
+   * parametru (każdy sprzed tej funkcji) i `mst=krakow` znaczą to samo, więc `zapiszHash` w ogóle
+   * nie pisze `mst` dla Krakowa, a `czytajHash` nie zwraca go dla Krakowa. Nazwa `mst`, a nie `m`
+   * (miejsca Biznesu) ani `miasto` (ekran `#/miasto`) – patrz D7 w specs/002-wszystkie-miasta/plan.md.
+   */
+  miasto?: SlugMiasta
+  /**
+   * `mst=` niosło slug spoza rejestru (literówka, miasto z nowszej wersji, link spreparowany): stan
+   * otwiera Kraków, a ekran mówi to wprost zamiast po cichu pokazać inne miasto, niż prosił link.
+   */
+  nieznaneMiasto?: true
 }
 
 export const MAKS_POROWNANIE = 5
@@ -152,6 +168,17 @@ function czytajWarstweLuk(tekst: string | null): string | null {
   return tekst !== null && WARSTWA_LUK.test(tekst) ? tekst : null
 }
 
+/**
+ * Miasto z `mst=`. Pusta wartość to brak parametru (nie ma czego komunikować). Slug spoza rejestru
+ * daje `nieznaneMiasto`, a Kraków (jawny albo domyślny) – pusty wynik, żeby `czytajHash(zapiszHash(s))`
+ * był punktem stałym. Rejestr (`czySlugMiasta`) jest jedynym źródłem listy slugów: brak własnej kopii.
+ */
+function czytajMiasto(tekst: string | null): Pick<StanUrl, 'miasto' | 'nieznaneMiasto'> {
+  if (!tekst) return {}
+  if (!czySlugMiasta(tekst)) return { nieznaneMiasto: true }
+  return tekst === MIASTO_DOMYSLNE ? {} : { miasto: tekst }
+}
+
 function czytajPunkt(tekst: string | null): { lon: number; lat: number } | null {
   if (!tekst) return null
   const czesci = tekst.split(',')
@@ -226,6 +253,8 @@ export function czytajHash(hash: string, search = ''): StanUrl {
     porownanie: cmp ? cmp.split(',').filter(Boolean).slice(0, MAKS_POROWNANIE) : [],
     ustawienia,
     filtry: filtryZTekstu(parametry.get('f')),
+    // Miasto należy do każdego ekranu poza panelem (panel nie niesie parametrów, `zapiszHash`).
+    ...czytajMiasto(parametry.get('mst')),
     ...(ekran === 'biznes'
       ? {
           branza: branzaBiznesu,
@@ -242,6 +271,30 @@ export function czytajHash(hash: string, search = ''): StanUrl {
   }
 }
 
+/**
+ * `/?mst=gdansk` → `/#/?mst=gdansk`. Link z `mst` w query string (tak wpisuje się go „od ręki”, a hosting SPA
+ * zachowuje query) przenosimy do hasha, gdzie miasto żyje: dwa źródła tej samej informacji rozjechałyby się,
+ * gdy ktoś zmieni miasto, zanim wczytają się dane (zapis stanu w tym oknie przepisuje sam hash, query zostaje).
+ * Hash z własnym `mst` wygrywa. `null` = nie ma czego przenosić. Reszta query (`utm_*`, `pokaz`, `panel`) zostaje.
+ */
+export function przeniesMstDoHasha(
+  search: string,
+  hash: string,
+): { search: string; hash: string } | null {
+  const zapytanie = new URLSearchParams(search)
+  const mst = zapytanie.get('mst')
+  if (mst === null) return null
+  zapytanie.delete('mst')
+  const [sciezka = '', zapytanieHasha = ''] = hash.replace(/^#/, '').split('?')
+  const parametry = new URLSearchParams(zapytanieHasha)
+  if (!parametry.get('mst')) parametry.set('mst', mst)
+  const reszta = zapytanie.toString()
+  return {
+    search: reszta ? `?${reszta}` : '',
+    hash: `#${sciezka || '/'}?${parametry.toString()}`,
+  }
+}
+
 export function zapiszHash(s: StanUrl): string {
   // Panel nie ma parametrów w linku (persona, tryb, filtry należą do ekranów zwiedzającego).
   if (s.ekran === 'panel') return '#/panel'
@@ -253,6 +306,9 @@ export function zapiszHash(s: StanUrl): string {
   else if (s.ekran === 'biznes') sciezka = '/biznes'
   else if (s.ekran === 'miasto') sciezka = '/miasto'
   const parametry = new URLSearchParams()
+  // Pierwszy w zapisie (`#/?mst=lodz&p=rodzina`): z początku linku widać, o które miasto chodzi.
+  // Kraków bez parametru – linki sprzed #223 i linki Krakowa zostają takie, jakie były.
+  if (s.miasto && s.miasto !== MIASTO_DOMYSLNE) parametry.set('mst', s.miasto)
   if (s.persona) parametry.set('p', s.persona)
   if (s.tryb) parametry.set('t', s.tryb)
   if (s.tryb === 'biznes' && s.biznes && s.biznes !== 'sklep') parametry.set('biz', s.biznes)

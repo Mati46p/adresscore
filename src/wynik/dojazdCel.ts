@@ -1,5 +1,7 @@
 // Planowy dojazd komunikacją do celu wybranego przez użytkownika (#85, kontynuacja #38).
-// Graf rozkładu: `public/dane/dojazd/graf.json` z `etl/dojazd-gtfs-graf.mjs` (GTFS ZTP, jeden dzień).
+// Graf rozkładu: `<katalog danych miasta>/dojazd/graf.json` z `etl/dojazd-gtfs-graf.mjs` (GTFS, jeden
+// dzień): `public/dane/dojazd/graf.json` dla Krakowa (ZTP), `public/dane/miasta/<slug>/dojazd/graf.json`
+// dla pozostałych miast (#223). Worker dostaje ścieżkę grafu od wątku głównego (`dojazdCel.worker.ts`).
 // Dla celu i godziny wyjścia skanujemy odjazdy od końca okna (profil jak w etl/dojazd-gtfs.mjs):
 // raz na (cel zaokrąglony, godzina) dostajemy najwcześniejszy przyjazd dla każdego przystanku,
 // a czas z dowolnego adresu to już tylko kilka przystanków w zasięgu dojścia. Nie liczymy

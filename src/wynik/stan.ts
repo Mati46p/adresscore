@@ -4,6 +4,9 @@
 
 import { useSyncExternalStore } from 'react'
 import type { Adres, WskaznikMeta } from '@/kontrakty'
+// Względnie, nie `@/kontrakty`: ten plik testuje `node --test`, a indeks kontraktów czyta `import.meta.env`.
+import { adresWKliknietymHeksie } from '../karta/wyszukiwarka/heks.ts'
+import { czySlugMiasta, MIASTO_DOMYSLNE, type SlugMiasta } from '../kontrakty/miasta.ts'
 import { BEZ_FILTROW, type FiltryUslug } from './biznesUslugi.ts'
 import type { Budzet } from './budzet.ts'
 import { type TwardyFiltr, zPodmienionymFiltrem } from './filtry.ts'
@@ -33,6 +36,7 @@ import {
   ID_MIEJSC,
   type IdMiejsca,
   MAKS_POROWNANIE,
+  przeniesMstDoHasha,
   type StanUrl,
   zapiszHash,
 } from './url.ts'
@@ -41,6 +45,10 @@ import { czyWarstwaWyborow, zmienKomitet } from './wybory.ts'
 /** `'wynik'` = wynik łączny; inaczej id wskaźnika pokazywanego na mapie. */
 export type WarstwaMapy = 'wynik' | (string & {})
 export type TrybMapy = 'suma' | 'ostatnia'
+
+/** Z meta warstwy wagi persony biorą id, kategorię i to, co zmienia wagę domyślną. */
+type MetaWag = Pick<WskaznikMeta, 'id' | 'kategoria'> &
+  Partial<Pick<WskaznikMeta, 'atrapa' | 'domyslnaWaga'>>
 
 export interface StanAplikacji {
   ekran: Ekran
@@ -79,9 +87,21 @@ export interface StanAplikacji {
    * z progiem luki.
    */
   warstwaLuk: string | null
+  /**
+   * Bieżące miasto (#223): jedno naraz. Jego pełne dane (adresy, warstwy, okolice) zasilają kartę,
+   * porównanie, ranking, katalog i 3D (`useDane`, `dane.ts`); pozostałe miasta widać tylko jako
+   * przegląd na mapie. Zmienia je `ustawMiasto` albo link (`mst=`); domyślnie Kraków.
+   */
+  miasto: SlugMiasta
+  /**
+   * Link niósł `mst=` ze slugiem spoza rejestru: otwieramy Kraków, a ekran powinien powiedzieć,
+   * że miasta z linku nie ma. Zdejmuje to nowy link albo `ustawMiasto`.
+   */
+  nieznaneMiasto: boolean
 }
 
 const PUSTE_MIEJSCA: readonly null[] = ID_MIEJSC.map(() => null)
+const PUSTA_SYMULACJA = { a: '', b: '' }
 
 let stan: StanAplikacji = {
   ekran: 'szukaj',
@@ -100,8 +120,10 @@ let stan: StanAplikacji = {
   branza: 'sklep',
   miejsca: PUSTE_MIEJSCA,
   filtryBiznesu: BEZ_FILTROW,
-  symulacja: { a: '', b: '' },
+  symulacja: PUSTA_SYMULACJA,
   warstwaLuk: null,
+  miasto: MIASTO_DOMYSLNE,
+  nieznaneMiasto: false,
 }
 
 const sluchacze = new Set<() => void>()
@@ -113,8 +135,34 @@ let indeksPoId = new Map<string, number>()
 // są tylko przy wejściu z linku /adres/… i przy zapisie ścieżki wybranego adresu.
 let indeksPoHash: Map<string, number> | null = null
 let adresyStanu: readonly Adres[] = []
-let metaWskaznikow: readonly (Pick<WskaznikMeta, 'id' | 'kategoria'> &
-  Partial<Pick<WskaznikMeta, 'atrapa' | 'domyslnaWaga'>>)[] = []
+/**
+ * Miasto, do którego należy słownik powyżej (id ↔ indeks, adresy). Różni się od `stan.miasto` w oknie
+ * między `ustawMiasto` a `podlaczDane` nowego miasta (jego dane jeszcze się wczytują): w tym oknie
+ * stary słownik nie wolno rozwiązywać id z linku, bo pochodzą już z innego zbioru adresów.
+ */
+let miastoSlownika: SlugMiasta | null = null
+/**
+ * Meta warstw używana do liczenia wag persony: SUMA miast (D9), nie tylko bieżące – tych, których dane
+ * podpięto (`podlaczDane`), i tych, których warstwy zna przegląd (`dodajMetaMiasta`). Dlaczego suma:
+ * `wagi`/`kierunki` w stanie liczą też przegląd pozostałych miast (kolor Krakowa na mapie nie może
+ * zależeć od tego, które miasto jest akurat bieżące), a Kraków ma ok. 60 warstw, których inne miasta
+ * nie mają. Persona wybrana w Łodzi policzona tylko na warstwach Łodzi zgubiłaby wagi tych 60 i
+ * przekłamała kolor Krakowa. Przy tym samym id wygrywa meta ostatnio podpiętego miasta (bieżącego),
+ * a kolejność wstawiania daje stałą kolejność kluczy w `wagi`.
+ */
+const znaneMeta = new Map<string, MetaWag>()
+
+function metaDoWag(): readonly MetaWag[] {
+  return [...znaneMeta.values()]
+}
+
+/** Klik w heks innego miasta czeka na dane tego miasta (`ustawMiasto`, `podlaczDane`). */
+let oczekujacyKlik: { lon: number; lat: number } | null = null
+/**
+ * Link, którego części zależne od słownika adresów (id adresu, porównanie, ustawienia) czekają na
+ * dane: start strony i zmiana hasha przed wczytaniem danych miasta z linku. Zmiana miasta z poziomu
+ * aplikacji (`ustawMiasto`) linku nie niesie, więc `podlaczDane` bierze wtedy profil ze stanu.
+ */
 let oczekujacyUrl: StanUrl | null = null
 let odczytujemyHistorie = false
 type UstawieniaTrybu = Pick<StanAplikacji, 'persona' | 'wagi' | 'kierunki' | 'filtry'>
@@ -135,14 +183,15 @@ function ustawieniaTrybu(s: StanAplikacji): UstawieniaTrybu {
 /** Ustawienia zapisane w linku (parametry `p`, `u`, `biz`), przeliczone dla `tryb` na żywe warstwy. */
 function ustawieniaZUrl(url: StanUrl, tryb: Tryb): UstawieniaTrybu {
   const persona = url.ustawienia ? 'wlasna' : (url.persona ?? PERSONA_DOMYSLNA)
+  const meta = metaDoWag()
   const domyslne = ustawieniaPersony(
     persona === 'wlasna' ? PERSONA_DOMYSLNA : persona,
     tryb,
-    metaWskaznikow,
+    meta,
     url.biznes ?? stan.biznes,
   )
   const { wagi, kierunki } = url.ustawienia
-    ? sprawdzUstawienia(url.ustawienia, metaWskaznikow, domyslne, tryb, url.biznes ?? stan.biznes)
+    ? sprawdzUstawienia(url.ustawienia, meta, domyslne, tryb, url.biznes ?? stan.biznes)
     : domyslne
   return { persona, wagi, kierunki, filtry: [] }
 }
@@ -182,7 +231,7 @@ function latkaMieszkanca(
   const domyslne = ustawieniaPersony(
     persona === 'wlasna' ? PERSONA_DOMYSLNA : persona,
     tryb,
-    metaWskaznikow,
+    metaDoWag(),
   )
   return {
     tryb,
@@ -242,7 +291,7 @@ export function useStan<T>(selektor: (s: StanAplikacji) => T): T {
 // ── Akcje ────────────────────────────────────────────────────────────────────────────────
 
 export function wybierzPersone(persona: PersonaId) {
-  const { wagi, kierunki } = ustawieniaPersony(persona, stan.tryb, metaWskaznikow)
+  const { wagi, kierunki } = ustawieniaPersony(persona, stan.tryb, metaDoWag())
   zmien({ persona, wagi, kierunki })
 }
 
@@ -251,7 +300,7 @@ export function ustawTryb(tryb: Tryb) {
   if (tryb === 'biznes') {
     // Mieszkańca zapamiętuje `zmien` (wejście w tryb biznes z każdej drogi, nie tylko z tego kafla).
     const zapis = ostatniBiznes ?? ustawieniaZSesji('biznes', 'biznes')
-    const domyslne = ustawieniaPersony(PERSONA_DOMYSLNA, 'biznes', metaWskaznikow, stan.biznes)
+    const domyslne = ustawieniaPersony(PERSONA_DOMYSLNA, 'biznes', metaDoWag(), stan.biznes)
     // Tryb biznes żyje tylko na ekranie Biznes, więc wejście w niego tam przenosi.
     return zmien({
       ekran: 'biznes',
@@ -270,7 +319,7 @@ export function ustawTryb(tryb: Tryb) {
     return zmien(latkaMieszkanca(stan, tryb))
   }
   if (stan.persona === 'wlasna') return zmien({ tryb })
-  const { wagi, kierunki } = ustawieniaPersony(stan.persona, tryb, metaWskaznikow)
+  const { wagi, kierunki } = ustawieniaPersony(stan.persona, tryb, metaDoWag())
   zmien({ tryb, wagi, kierunki })
 }
 
@@ -293,7 +342,7 @@ export function ustawWage(id: string, waga: number) {
 
 export function ustawRodzajBiznesu(biznes: RodzajBiznesu) {
   if (biznes === stan.biznes) return
-  const { wagi, kierunki } = ustawieniaPersony(PERSONA_DOMYSLNA, 'biznes', metaWskaznikow, biznes)
+  const { wagi, kierunki } = ustawieniaPersony(PERSONA_DOMYSLNA, 'biznes', metaDoWag(), biznes)
   zmien({
     biznes,
     wagi,
@@ -306,7 +355,7 @@ export function ustawRodzajBiznesu(biznes: RodzajBiznesu) {
 }
 
 export function ustawKomitet(id: string) {
-  if (!czyWarstwaWyborow(id) || !metaWskaznikow.some((m) => m.id === id)) return
+  if (!czyWarstwaWyborow(id) || !znaneMeta.has(id)) return
   const ustawienia = zmienKomitet(id, stan.wagi, stan.kierunki, stan.filtry)
   zmien({
     ...ustawienia,
@@ -448,6 +497,79 @@ export function wyczyscFiltry() {
   zmien({ filtry: [] })
 }
 
+// ── Bieżące miasto (#223) ────────────────────────────────────────────────────────────────
+
+/**
+ * Co traci stan przy zmianie bieżącego miasta (FR-007). Wybrany adres i porównanie to indeksy w
+ * adresach JEDNEGO miasta (porównanie między miastami jest poza v1, D6), a obiekty symulatora i miejsca
+ * Biznesu to współrzędne w poprzednim mieście. Zostają wybory użytkownika, które nie są danymi miasta:
+ * profil (persona, wagi, kierunki), twarde filtry, warstwa mapy, branża i filtry konkurencji. Pola,
+ * które już są puste, zachowują tożsamość – worker obliczeń nie liczy drugi raz bez powodu.
+ */
+function latkaZmianyMiasta(cel: SlugMiasta): Partial<StanAplikacji> {
+  if (cel === stan.miasto) return {}
+  return {
+    miasto: cel,
+    wybrany: null,
+    porownanie: stan.porownanie.length === 0 ? stan.porownanie : [],
+    symulacja:
+      stan.symulacja.a === '' && stan.symulacja.b === '' ? stan.symulacja : PUSTA_SYMULACJA,
+    miejsca: stan.miejsca.every((p) => p === null) ? stan.miejsca : PUSTE_MIEJSCA,
+  }
+}
+
+/**
+ * Zmienia bieżące miasto (lista miast, klik w heks innego miasta, kamera nad innym miastem). Dane
+ * nowego miasta wczytuje `dane.ts` – ten stan tylko zapisuje wybór, czyści to, co należało do
+ * poprzedniego miasta, i trafia do linku (`mst=`).
+ *
+ * `klik` to współrzędne kliknięcia w heks tego miasta: po wczytaniu jego danych `podlaczDane` wybiera
+ * adres z klikniętego heksu (ta sama reguła co klik w bieżącym mieście, `adresWKliknietymHeksie`).
+ * Ten sam slug co bieżące miasto = nic (klik w bieżącym mieście obsługuje wołający, jak dotąd).
+ */
+export function ustawMiasto(slug: SlugMiasta, opcje?: { klik?: { lon: number; lat: number } }) {
+  if (!czySlugMiasta(slug) || slug === stan.miasto) return
+  oczekujacyKlik = opcje?.klik ?? null
+  zmien({
+    ...latkaZmianyMiasta(slug),
+    nieznaneMiasto: false,
+    // Karta bez wybranego adresu byłaby pusta: wracamy do wyszukiwania (jak przy nieznanym adresie
+    // w linku). Porównanie po wyczyszczeniu pokazuje własny pusty stan, więc zostaje na miejscu.
+    ...(stan.ekran === 'okolica' ? { ekran: 'szukaj' as const } : {}),
+  })
+}
+
+/**
+ * Warstwy miasta, którego pełne dane nie są podpięte (przegląd mapy zna je z kompaktu, `przeglad.ts`):
+ * wchodzą do mapy wag, więc kolor tego miasta w przeglądzie liczy się tym samym profilem co bieżące
+ * miasto (FR-003) i nie skacze, gdy użytkownik w nie wejdzie (D9: mapa po sumie warstw WSZYSTKICH
+ * miast, a nie tylko odwiedzonych). Warstwy już znane zostają bez zmian – ich wagę ustawił użytkownik
+ * albo persona; nowe dostają wagę persony. Powtórne dodanie tych samych warstw niczego nie zmienia
+ * i nie budzi nasłuchujących.
+ */
+export function dodajMetaMiasta(wskazniki: readonly MetaWag[]) {
+  const przed = znaneMeta.size
+  for (const m of wskazniki) if (!znaneMeta.has(m.id)) znaneMeta.set(m.id, m)
+  if (znaneMeta.size === przed) return
+  const persona = stan.persona === 'wlasna' ? PERSONA_DOMYSLNA : stan.persona
+  const domyslne = ustawieniaPersony(persona, stan.tryb, metaDoWag(), stan.biznes)
+  zmien({
+    wagi: { ...domyslne.wagi, ...stan.wagi },
+    kierunki: { ...domyslne.kierunki, ...stan.kierunki },
+  })
+}
+
+/**
+ * Miasto z linku (start, hashchange) jako łatka stanu. Link jest źródłem prawdy, więc miasto z linku
+ * wygrywa z bieżącym; klik czekający na dane poprzedniego miasta traci sens i odpada. Pola z linku
+ * (obiekty symulatora, miejsca Biznesu) nakładają się PO tej łatce, więc czyszczenie ich nie ruszy.
+ */
+function miastoZLinku(url: StanUrl): Partial<StanAplikacji> {
+  const cel = url.miasto ?? MIASTO_DOMYSLNE
+  if (cel !== stan.miasto) oczekujacyKlik = null
+  return latkaZmianyMiasta(cel)
+}
+
 /** Id adresu pod indeksem – do linków `#/adres/<id>`. */
 export function idAdresu(i: number | null): string | null {
   return i === null ? null : (idAdresow?.[i] ?? null)
@@ -458,35 +580,63 @@ export function indeksAdresu(id: string | null): number | null {
 }
 
 /**
- * Woła useDane po wczytaniu danych: podpina słownik id ↔ indeks, liczy wagi persony dla
- * żywych warstw i rozwiązuje id z URL, które czekały na adresy.
+ * Woła `dane.ts` po wczytaniu danych bieżącego miasta (i przy powrocie do miasta, którego dane już
+ * są w pamięci): podpina słownik id ↔ indeks, liczy wagi persony dla warstw i rozwiązuje to, co
+ * czekało na adresy – id z linku i klik w heks (`ustawMiasto`).
+ *
+ * Tylko dla BIEŻĄCEGO miasta (pilnuje tego `dane.ts`): słownik innego miasta pod `stan.miasto` dałby
+ * id rozwiązane na cudzych adresach.
+ *
+ * Wagi i kierunki to mapa po SUMIE warstw wszystkich podpiętych miast (D9), nie po warstwach
+ * bieżącego: `znaneMeta` zachowuje id spoza meta bieżącego miasta. Bez tego kolor Krakowa w
+ * przeglądzie zależałby od tego, które miasto jest bieżące, a powrót do Krakowa gubiłby wagi jego
+ * warstw (Kraków ma ok. 60 warstw, których inne miasta nie mają).
  */
 export function podlaczDane(
   ids: readonly string[],
-  wskazniki: readonly (Pick<WskaznikMeta, 'id' | 'kategoria'> &
-    Partial<Pick<WskaznikMeta, 'atrapa' | 'domyslnaWaga'>>)[],
+  wskazniki: readonly MetaWag[],
   adresy: readonly Adres[],
 ) {
   idAdresow = ids
   indeksPoId = new Map(ids.map((id, i) => [id, i]))
   indeksPoHash = null
   adresyStanu = adresy
-  metaWskaznikow = wskazniki
-  const url = typeof window === 'undefined' ? oczekujacyUrl : czytajBiezacyUrl()
+  miastoSlownika = stan.miasto
+  for (const m of wskazniki) znaneMeta.set(m.id, m)
+  // Link czeka na dane tylko po starcie i po zmianie hasha przed wczytaniem (`oczekujacyUrl`): niesie
+  // profil (persona, ustawienia) i id adresów. Zmiana miasta z aplikacji (`ustawMiasto`) linku nie
+  // niesie, a adres w pasku jest wtedy odbiciem stanu – stan ma pełniejszy profil niż `u=` (link
+  // przyjmuje do 100 wag, a Kraków ma 127 warstw). Bierzemy go więc ze stanu: zmiana miasta nie
+  // może cofnąć wag, które użytkownik ustawił.
+  const url =
+    typeof window === 'undefined' ? oczekujacyUrl : oczekujacyUrl ? czytajBiezacyUrl() : null
   oczekujacyUrl = null
-  const persona = url?.ustawienia
-    ? 'wlasna'
-    : (url?.persona ?? (stan.persona === 'wlasna' ? PERSONA_DOMYSLNA : stan.persona))
+  const persona: PersonaId | 'wlasna' = url
+    ? url.ustawienia
+      ? 'wlasna'
+      : (url.persona ?? (stan.persona === 'wlasna' ? PERSONA_DOMYSLNA : stan.persona))
+    : stan.persona
   const tryb = url?.tryb ?? stan.tryb
+  const biznes = url?.biznes ?? stan.biznes
   const domyslne = ustawieniaPersony(
     persona === 'wlasna' ? PERSONA_DOMYSLNA : persona,
     tryb,
-    wskazniki,
-    url?.biznes ?? stan.biznes,
+    metaDoWag(),
+    biznes,
   )
-  const { wagi, kierunki } = url?.ustawienia
-    ? sprawdzUstawienia(url.ustawienia, wskazniki, domyslne, tryb, url?.biznes ?? stan.biznes)
+  const policzone = url?.ustawienia
+    ? sprawdzUstawienia(url.ustawienia, metaDoWag(), domyslne, tryb, biznes)
     : domyslne
+  // Profil z linku liczy się od nowa dla wszystkich znanych warstw (link jest źródłem prawdy), a profil
+  // ze stanu wygrywa z wagami domyślnymi: wagi, które użytkownik już ma, zostają, a warstwy nowego
+  // miasta dostają wagę z persony.
+  const wagi = url ? policzone.wagi : { ...policzone.wagi, ...stan.wagi }
+  const kierunki = url ? policzone.kierunki : { ...policzone.kierunki, ...stan.kierunki }
+  const klik = oczekujacyKlik
+  oczekujacyKlik = null
+  const zKlikniecia = klik
+    ? (adresWKliknietymHeksie(adresy, klik.lon, klik.lat).adres?.i ?? null)
+    : null
   // Z linku bierzemy tu TYLKO to, co potrzebuje słownika (id adresu, lista porównania). Branża, punkty
   // i filtry Biznesu, obiekty symulatora i ekran stan dostał przy starcie albo od zmiany użytkownika
   // w trakcie ładowania – ponowne czytanie linku cofnęłoby tę zmianę (#108), bo przed wczytaniem
@@ -494,10 +644,12 @@ export function podlaczDane(
   zmien({
     persona,
     tryb,
-    biznes: url?.biznes ?? stan.biznes,
+    biznes,
     wagi,
     kierunki,
     ...(url ? zUrlPoWczytaniuAdresow(url) : {}),
+    // Klik w heks innego miasta wybiera adres po wczytaniu jego danych (nowszy niż adres z linku).
+    ...(zKlikniecia === null ? {} : { wybrany: zKlikniecia }),
   })
 }
 
@@ -522,6 +674,7 @@ function zUrlZeSlownikiem(url: StanUrl): Partial<StanAplikacji> {
 function zUrlBezSlownika(url: StanUrl): Partial<StanAplikacji> {
   return {
     filtry: [],
+    nieznaneMiasto: url.nieznaneMiasto === true,
     biznes: url.biznes ?? stan.biznes,
     ...(url.symulacja ? { symulacja: url.symulacja } : {}),
     ...(url.warstwaLuk !== undefined ? { warstwaLuk: url.warstwaLuk } : {}),
@@ -550,8 +703,7 @@ function zUrlPoWczytaniuAdresow(url: StanUrl): Partial<StanAplikacji> {
 
 function sprawdzUstawienia(
   ustawienia: NonNullable<StanUrl['ustawienia']>,
-  wskazniki: readonly (Pick<WskaznikMeta, 'id' | 'kategoria'> &
-    Partial<Pick<WskaznikMeta, 'atrapa' | 'domyslnaWaga'>>)[],
+  wskazniki: readonly MetaWag[],
   domyslne: { wagi: Record<string, number>; kierunki: Kierunki },
   tryb: Tryb,
   biznes: RodzajBiznesu = RODZAJ_BIZNESU_DOMYSLNY,
@@ -582,6 +734,8 @@ function doUrl(s: StanAplikacji): StanUrl {
     ustawienia:
       s.persona === 'wlasna' ? { wagi: { ...s.wagi }, kierunki: { ...s.kierunki } } : null,
     filtry: [],
+    // Kraków `zapiszHash` pomija (miasto domyślne), więc to pole nie psuje linków sprzed #223.
+    miasto: s.miasto,
     ...(s.ekran === 'miasto' ? { symulacja: s.symulacja, warstwaLuk: s.warstwaLuk } : {}),
     branza: s.branza,
     miejsca: s.miejsca,
@@ -608,7 +762,10 @@ function czytajBiezacyUrl(): StanUrl {
   if (sciezka.startsWith('/adres/')) {
     const slug = sciezka.slice('/adres/'.length)
     const hash = hashZeSluga(slug)
-    if (hash && !indeksPoHash && idAdresow)
+    // Ścieżka /adres/<slug> to strona SEO, a te powstają z adresów Krakowa (FR-015): rozwiązujemy ją
+    // wyłącznie na słowniku Krakowa. Słownik innego miasta nie zna tego adresu, a gdyby znał z
+    // przypadku skrótu, otworzyłby cudzy adres.
+    if (hash && !indeksPoHash && idAdresow && miastoSlownika === MIASTO_DOMYSLNE)
       indeksPoHash = new Map(idAdresow.map((id, i) => [hashAdresu(id), i]))
     const indeks = hash ? indeksPoHash?.get(hash) : undefined
     return {
@@ -621,12 +778,17 @@ function czytajBiezacyUrl(): StanUrl {
 }
 
 function sciezkaStanu(s: StanAplikacji): string {
-  if (s.ekran === 'okolica' && s.wybrany !== null) {
-    const adres = adresyStanu[s.wybrany]
-    const slug = adres && slugAdresu(adres)
-    if (slug) return `/adres/${slug}`
+  // Ładne ścieżki (/adres/<slug>, /katalog) to adresy stron SEO, które istnieją tylko dla Krakowa
+  // (FR-015) i nie niosą `mst=`: link do innego miasta musi iść hashem (`#/adres/<id>?mst=lodz`),
+  // inaczej po odświeżeniu otworzyłby Kraków albo nieistniejącą stronę.
+  if (s.miasto === MIASTO_DOMYSLNE) {
+    if (s.ekran === 'okolica' && s.wybrany !== null) {
+      const adres = adresyStanu[s.wybrany]
+      const slug = adres && slugAdresu(adres)
+      if (slug) return `/adres/${slug}`
+    }
+    if (s.ekran === 'katalog') return '/katalog'
   }
-  if (s.ekran === 'katalog') return '/katalog'
   if (s.ekran === 'biznes') return '/' + zapiszHash(doUrl(s))
   return `/${zapiszHash(doUrl(s))}`
 }
@@ -649,10 +811,14 @@ export function hrefDla(s: StanAplikacji, latka: Partial<StanAplikacji>): string
  * punktu albo filtra w pierwszych sekundach przeżywa odświeżenie strony i trafia do skopiowanego linku.
  */
 function zapiszParametryEkranuPrzedDanymi(poprzedni: StanAplikacji) {
-  const klucze = PARAMETRY_EKRANU[stan.ekran]
-  // Zmiana ekranu to hashchange (adres już się zmienił), a pozostałe ekrany nie mają własnych parametrów.
-  if (!klucze || poprzedni.ekran !== stan.ekran) return
-  const obecny = location.hash
+  // Zmiana ekranu to hashchange (adres już się zmienił).
+  if (poprzedni.ekran !== stan.ekran) return
+  // `mst` należy do każdego ekranu, nie tylko do Biznesu i Miasta: miasto wybrane w oknie ładowania
+  // (lista miast działa, zanim wczytają się adresy) trafia do linku od razu, a nie dopiero z danymi.
+  const klucze = ['mst', ...(PARAMETRY_EKRANU[stan.ekran] ?? [])]
+  // Strona bez hasha (`/`) to to samo co `#/`; z pustym hashem podmiana dopisałaby `?mst=…` do ścieżki
+  // zamiast do hasha, a `mst` czytamy tylko z hasha.
+  const obecny = location.hash || '#/'
   const cel = zPodmienionymiParametrami(obecny, zapiszHash(doUrl(stan)), klucze)
   if (cel !== obecny) history.replaceState(null, '', cel)
 }
@@ -666,15 +832,24 @@ function zapiszDoUrl(poprzedni: StanAplikacji) {
   // cichą porażką, szczególnie gdy dostawca obetnie fragment adresu powrotu.
   if (stan.ekran === 'panel') return
   if (!idAdresow) return zapiszParametryEkranuPrzedDanymi(poprzedni)
+  // Indeksowalne ścieżki (/katalog/<ulica>, /metoda) to strony Krakowa i nie niosą `mst=`: zostają
+  // tylko, gdy miasto było i jest Krakowem. Zmiana miasta przepisuje adres na hash z `mst=`.
+  const wKrakowie = stan.miasto === MIASTO_DOMYSLNE && poprzedni.miasto === MIASTO_DOMYSLNE
   // Strona konkretnej ulicy ma własną ścieżkę, chociaż w aplikacji używa ekranu katalogu.
   if (
+    wKrakowie &&
     stan.ekran === 'katalog' &&
     poprzedni.ekran === 'katalog' &&
     location.pathname.startsWith('/katalog/')
   )
     return
   // Wejście z wyszukiwarki na /metoda: zostawiamy indeksowalną ścieżkę, dopóki ekran się nie zmieni.
-  if (stan.ekran === 'metoda' && poprzedni.ekran === 'metoda' && location.pathname === '/metoda')
+  if (
+    wKrakowie &&
+    stan.ekran === 'metoda' &&
+    poprzedni.ekran === 'metoda' &&
+    location.pathname === '/metoda'
+  )
     return
   const cel = sciezkaStanu(stan)
   const obecny = `${location.pathname}${location.hash}`
@@ -700,7 +875,8 @@ export function wczytajLinkStartowy(startowy: StanUrl) {
   // ustawia trybu, a po wczytaniu adresów `zgodnyZTrybem` dopilnuje reszty (`czyDoMieszkanca`).
   if (startowy.tryb && !(startowy.ekran !== 'biznes' && startowy.tryb === 'biznes'))
     stan = { ...stan, tryb: startowy.tryb }
-  stan = { ...stan, ...zUrlBezSlownika(startowy) }
+  // Miasto z linku (#223) przed polami linku: dane Biznesu i symulatora z linku należą już do tego miasta.
+  stan = { ...stan, ...miastoZLinku(startowy), ...zUrlBezSlownika(startowy) }
   if (startowy.ekran === 'biznes') stan = { ...stan, tryb: 'biznes' }
 }
 
@@ -708,12 +884,16 @@ export function wczytajLinkStartowy(startowy: StanUrl) {
  * Zmiana hasha (wklejony link, Wstecz/Dalej) przed wczytaniem adresów. Pola bez słownika od razu
  * do stanu; id adresu i porównanie czekają w `oczekujacyUrl` na `podlaczDane`. Adres w pasku już
  * jest właściwy, więc niczego nie zapisujemy z powrotem do historii.
+ *
+ * Tą drogą idzie też link z INNYM miastem niż bieżące, nawet po wczytaniu danych: id adresów z tego
+ * linku nie istnieją w słowniku bieżącego miasta, więc czekają na dane miasta z linku (`dane.ts`
+ * wywoła `podlaczDane` od razu, jeśli ma je w pamięci).
  */
 export function zastosujUrlPrzedDanymi(url: StanUrl) {
   oczekujacyUrl = url
   odczytujemyHistorie = true
   try {
-    zmien({ ekran: url.ekran, ...zUrlBezSlownika(url) })
+    zmien({ ...miastoZLinku(url), ekran: url.ekran, ...zUrlBezSlownika(url) })
   } finally {
     odczytujemyHistorie = false
   }
@@ -721,21 +901,30 @@ export function zastosujUrlPrzedDanymi(url: StanUrl) {
 
 /** Zmiana hasha: przed adresami tylko pola bez słownika, po adresach pełny odczyt (ekran, wybór, tryb, ustawienia). */
 export function zastosujZmianeUrl(url: StanUrl) {
-  if (!idAdresow) return zastosujUrlPrzedDanymi(url)
+  // Pełny odczyt wymaga słownika adresów miasta Z LINKU i tego miasta jako bieżącego. Inaczej (inne
+  // miasto w linku albo dane bieżącego miasta jeszcze się wczytują po `ustawMiasto`) link czeka na
+  // dane jak przed pierwszym wczytaniem: stary słownik rozwiązałby id na adresach innego miasta.
+  if (
+    !idAdresow ||
+    miastoSlownika !== stan.miasto ||
+    (url.miasto ?? MIASTO_DOMYSLNE) !== stan.miasto
+  )
+    return zastosujUrlPrzedDanymi(url)
   const latka: Partial<StanAplikacji> = zUrl(url)
   const persona = url.ustawienia ? 'wlasna' : (url.persona ?? PERSONA_DOMYSLNA)
   const tryb = url.tryb ?? stan.tryb
+  const meta = metaDoWag()
   const domyslne = ustawieniaPersony(
     persona === 'wlasna' ? PERSONA_DOMYSLNA : persona,
     tryb,
-    metaWskaznikow,
+    meta,
     url.biznes ?? stan.biznes,
   )
   Object.assign(latka, {
     persona,
     tryb,
     ...(url.ustawienia
-      ? sprawdzUstawienia(url.ustawienia, metaWskaznikow, domyslne, tryb, url.biznes ?? stan.biznes)
+      ? sprawdzUstawienia(url.ustawienia, meta, domyslne, tryb, url.biznes ?? stan.biznes)
       : domyslne),
   })
   odczytujemyHistorie = true
@@ -747,6 +936,11 @@ export function zastosujZmianeUrl(url: StanUrl) {
 }
 
 if (typeof window !== 'undefined') {
+  // `/?mst=gdansk` → `/#/?mst=gdansk` zanim stan przeczyta link (url.ts: przeniesMstDoHasha).
+  const przeniesione = przeniesMstDoHasha(location.search, location.hash)
+  if (przeniesione) {
+    history.replaceState(null, '', `${location.pathname}${przeniesione.search}${przeniesione.hash}`)
+  }
   wczytajLinkStartowy(czytajBiezacyUrl())
   const odczytajZmianeUrl = () => zastosujZmianeUrl(czytajBiezacyUrl())
   window.addEventListener('hashchange', odczytajZmianeUrl)

@@ -122,6 +122,11 @@
   font-size: 11px;
   color: #3d4652;
 }
+/* Przypis do skali (#223): kolory liczone osobno w każdym mieście. Zwykły tekst, bez próbki. */
+.mapa-legenda__nota {
+  margin: 0 0 6px;
+  color: #3d4652;
+}
 .mapa-legenda__wiersz {
   display: flex;
   align-items: center;
@@ -201,6 +206,13 @@
   .mapa-legenda__tytul {
     font-size: 12px;
   }
+  /* Podpis „poza obsługiwanymi miastami – brak danych" ma 41 znaków: na telefonie zawija się do
+     dwóch wierszy zamiast wychodzić poza mapę. */
+  .mapa-mgla-podpis {
+    max-width: 200px;
+    white-space: normal;
+    text-align: center;
+  }
 }
 
 /* Intro Polski (#19, link z ?pokaz): winieta przyciemnia brzegi, środek z Krakowem zostaje jasny. */
@@ -251,6 +263,12 @@
 .mapa-intro-przycisk:focus-visible {
   outline: 2px solid #1f5c46;
   outline-offset: 2px;
+}
+/* Na dotyku stan hover zostawałby przyklejony po tapnięciu. */
+@media (hover: hover) {
+  .mapa-intro-przycisk:hover {
+    background: #17493a;
+  }
 }
 .mapa-krakowa--intro .mapa-mgla-podpis {
   display: none;

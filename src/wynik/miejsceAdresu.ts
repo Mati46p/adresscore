@@ -183,10 +183,19 @@ export function zrodlaOkolic(plik: Pick<PlikOkolic, 'zrodla'>): ZrodloOkolic[] {
  * Jedno zdanie pod rankingiem: skąd okolice. Ranking pokazuje nazwy jednostek SIM i miejscowości,
  * nie nazwy potoczne, więc źródło OSM zostaje poza zdaniem (atrybucję OSM niesie karta adresu,
  * która te nazwy pokazuje). Bez pliku okolicą jest dzielnica albo gmina z rejestru adresów
- * i zdanie mówi to wprost.
+ * i zdanie mówi to wprost; `wKrakowie = false` (inne miasto, które pliku nigdy nie ma) pomija dzielnice Krakowa.
  */
-export function opisZrodelOkolic(plik: Pick<PlikOkolic, 'zrodla'> | null | undefined): string {
-  if (!plik) return 'Okolice: dzielnice Krakowa i gminy z rejestru adresów.'
+export function opisZrodelOkolic(
+  plik: Pick<PlikOkolic, 'zrodla'> | null | undefined,
+  wKrakowie = true,
+): string {
+  // Okolice (jednostki SIM, miejscowości) ma tylko Kraków (D8, #223): inne miasto nigdy nie ma pliku, a jego
+  // adresy nie mają dzielnicy (kolumna null), więc okolicą jest gmina – zdanie nie może mówić o Krakowie.
+  if (!plik) {
+    return wKrakowie
+      ? 'Okolice: dzielnice Krakowa i gminy z rejestru adresów.'
+      : 'Okolice: gminy z rejestru adresów.'
+  }
   const lista = zrodlaOkolic(plik)
     .filter((z) => !z.osm)
     .map((z) => (z.dataDanych ? `${z.nazwa} (stan ${z.dataDanych})` : z.nazwa))

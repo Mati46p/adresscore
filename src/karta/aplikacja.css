@@ -1,0 +1,16 @@
+/* Komunikat powłoki pod nagłówkiem (#223): link z miastem spoza rejestru. Informacja, nie błąd, więc
+   tonacja ostrzeżenia z tokenów (kontrast tekstu 7a3e08 na fbebdd mierzony w przeglądarce, T061). */
+.komunikat--info {
+  margin: 0;
+  padding: 10px 32px;
+  border-bottom: 1px solid var(--ostrzezenie);
+  background: var(--ostrzezenie-tlo);
+  color: var(--ostrzezenie-tekst);
+  font-size: 14px;
+}
+
+@media (max-width: 860px) {
+  .komunikat--info {
+    padding: 10px 16px;
+  }
+}

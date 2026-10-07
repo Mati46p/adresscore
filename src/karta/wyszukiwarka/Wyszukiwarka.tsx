@@ -1,7 +1,10 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { produktowe } from '@/pomiar/pomiar.ts'
+import { useMiasto } from '@/wynik/miastoDanych'
 import type { Adres } from '../../kontrakty/index.ts'
+import { MIASTO_DOMYSLNE } from '../../kontrakty/miasta.ts'
 import type { PlikOkolic } from '../../kontrakty/okolice.ts'
+import { przykladAdresu } from '../adres.ts'
 import { indeksDla, maNumerDomu } from './indeks.ts'
 import { type Podpowiedz, podpowiedzi } from './podpowiedzi.ts'
 import {
@@ -47,11 +50,22 @@ export function Wyszukiwarka({
   wyczyscPoWyborze = false,
   okolice,
   onWybierzOkolice,
-  etykieta = 'Adres w Krakowie',
-  placeholder = 'np. Grodzka 52',
+  etykieta,
+  placeholder,
   onFokus,
   mierz = false,
 }: Props) {
+  const miasto = useMiasto()
+  // Domyślny podpis i przykład mówią o bieżącym mieście (#223): „Adres we Wrocławiu”, a przykład z jego danych.
+  const etykietaPola = etykieta ?? `Adres ${miasto.wMiescie}`
+  const przyklad = adresy && miasto.slug !== MIASTO_DOMYSLNE ? przykladAdresu(adresy) : null
+  const podpowiedzPola =
+    placeholder ??
+    (miasto.slug === MIASTO_DOMYSLNE
+      ? 'np. Grodzka 52'
+      : przyklad
+        ? `np. ${przyklad}`
+        : 'np. nazwa ulicy i numer domu')
   const id = useId()
   const idPola = `${id}-pole`
   const idListy = `${id}-lista`
@@ -170,7 +184,7 @@ export function Wyszukiwarka({
   return (
     <div className="wysz">
       <label className="wysz-etykieta" htmlFor={idPola}>
-        {etykieta}
+        {etykietaPola}
       </label>
       <input
         id={idPola}
@@ -183,7 +197,7 @@ export function Wyszukiwarka({
         aria-activedescendant={pokazListe && aktywna >= 0 ? idOpcji(aktywna) : undefined}
         autoComplete="off"
         spellCheck={false}
-        placeholder={placeholder}
+        placeholder={podpowiedzPola}
         value={tekst}
         onChange={(e) => {
           setTekst(e.target.value)

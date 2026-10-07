@@ -64,14 +64,23 @@ Kolory: `PALETA_WYNIKU` (5 stopni z makiety, od słabo do idealnie) i `KOLOR_BRA
 
 - `useDane()` daje `{ stan: 'ladowanie' } | { stan: 'blad', blad } | { stan: 'gotowe', ...Dane }`.
 - `Dane`: `plikAdresow`, `adresy` (`Adres[]`), `manifest`, `wskazniki` (`WskaznikPrzygotowany[]`), `pominiete`, `grupyHeksow`.
-- Aplikacja ładuje dane raz. Każdy komponent może wołać `useDane()` bez kosztu.
+- Aplikacja ładuje dane raz **na miasto** (#223). `useDane()` zwraca dane BIEŻĄCEGO miasta (`Dane.miasto`), a jego
+  zmiana w stanie (`ustawMiasto`) odświeża komponent i zaczyna ładowanie nowego zbioru; w pamięci zostają najwyżej dwa
+  miasta (`pamiecDanych.ts`, `MAKS_MIAST_W_PAMIECI`). Miasto wyparte w trakcie ładowania jest przerywane
+  (`AbortController` na wpis, `signal` idzie do `fetch` przez `wczytaj*`), a przerwanie nie jest błędem.
+  Pozostałe miasta widać tylko jako przegląd na mapie (niżej).
+- Każdy komponent może wołać `useDane()` bez kosztu.
 - `wskazniki` ma wszystkie warstwy manifestu. Warstwa z inną wersją adresów albo z błędem pobrania
   ma pole `niedostepny` i brak danych pod każdym adresem. Loader dopisuje ją też do `pominiete`
   i pisze ostrzeżenie w konsoli.
 
 ## Wyniki dla UI – `useWyniki.ts`
 
-- `useWyniki()` daje `{ naAdres: Float32Array, heksy: Map<h3, number | null>, podpis }` dla aktywnej warstwy albo `null` w trakcie ładowania.
+- `useWyniki()` daje `{ naAdres: Float32Array, heksy: Map<h3, number | null>, podpis, brakWarstwy }` dla aktywnej warstwy albo `null` w trakcie ładowania.
+- `brakWarstwy` (#223): wybranej warstwy mapy nie ma w danych bieżącego miasta (wybrano ją w innym). Wszystkie adresy
+  mają wtedy brak danych (`NaN` → szrafura na mapie), a NIE wynik łączny ani zero (FR-004, SC-005); liczy to
+  `ocenyMapy` w `warstwaMapy.ts` (test `warstwaMapy.test.ts`). `podpis` nie zna nazwy takiej warstwy – nazwę podaje
+  `usePrzeglad().podpis`, bo zna ją dowolne miasto, które warstwę ma.
 - `useWynikAdresu(i)` daje `WynikAdresu` dla karty i porównania.
 - Przeliczenie po zmianie wagi trwa ok. 25 ms dla 70 tys. adresów.
 
@@ -147,6 +156,12 @@ const sasiedzi = usePropsSasiadowMapy()
 
 - `useStan((s) => s.pole)` czyta stan. Selektor zwraca pole stanu albo prymityw, nigdy nowy obiekt.
 - Pola: `ekran`, `tryb`, `persona` (`'wlasna'` po ręcznej zmianie wagi), `wagi`, `kierunki`, `wybrany` (indeks | null), `porownanie` (do 5 indeksów), `warstwa` (`'wynik'` albo id wskaźnika).
+- Bieżące miasto (#223): `miasto` (`SlugMiasta`, domyślnie `krakow`) i `nieznaneMiasto` (link z `mst=` spoza rejestru: otwieramy
+  Kraków, a `Aplikacja` mówi to wprost). `ustawMiasto(slug, { klik? })` zmienia miasto i czyści `wybrany`, `porownanie`,
+  `symulacja` i miejsca Biznesu (FR-007); `klik` to oczekujący klik w heks tego miasta – po wczytaniu jego danych `podlaczDane`
+  wybiera adres z klikniętego heksu. `wagi` i `kierunki` to mapa po SUMIE warstw wszystkich miast (D9): `podlaczDane` i
+  `dodajMetaMiasta` scalają, nie zastępują, więc kolor Krakowa na mapie nie zależy od tego, które miasto jest bieżące.
+  Nie-React: `miastoDanych.ts` (`miastoBiezace()`, `bazaBiezaca()`, `tylkoKrakow()`; w komponencie `useMiasto()`, `useTylkoKrakow()`).
 - Pola trybów Miasto i Biznes (#92, #98, #108): `symulacja` (`{ a, b }`, obiekty wariantów), `warstwaLuk` (warstwa rankingu i mapy luk albo `null` = pierwsza z progiem), `branza`, `miejsca` (miejsca testowe A–E, zawsze 5 pozycji, `null` = puste), `filtryBiznesu`. Akcje: `ustawSymulacje`, `ustawWarstweLuk`, `ustawBranze` (miejsca zostają), `ustawPunktBiznesu('a'..'e', punkt | null)`, `dodajMiejsceBiznesu(punkt)`, `ustawFiltryBiznesu`.
 - Akcje: `wybierzPersone`, `ustawTryb`, `ustawWage(id, 0–4)`, `ustawKierunek(id, k | null)`, `wybierzAdres(i | null)`, `pokazOkolice(i)`, `przejdz(ekran)`, `dodajDoPorownania`, `usunZPorownania`, `przelaczPorownanie`, `wyczyscPorownanie`, `ustawWarstwe`.
 - Twarde filtry: pole `filtry` (`{ id, warunek: 'max' | 'min' | 'rowne-zero', prog }`, jeden na warstwę), akcje `ustawFiltr`, `usunFiltr`, `wyczyscFiltry`. W URL: `f=halas_ldwn:max:55,powodz_1proc:zero`.
@@ -165,7 +180,16 @@ const sasiedzi = usePropsSasiadowMapy()
 | `#/biznes?b=<branża>&m=<lon,lat;lon,lat;…>&k=<filtry>` | tryb Biznes (E10): branża, miejsca A–E (`m`, puste pozycje między średnikami), filtry konkurencji (`k`). Stare linki z `a=` i `c=` (miejsca A i B) działają. Opis niżej |
 
 Uszkodzony hash (np. `#/adres/%`) daje ekran Szukaj.
-Parametry: `p` (persona), `t` (tryb), `cmp` (id adresów do porównania, po przecinku).
+Parametry: `p` (persona), `t` (tryb), `cmp` (id adresów do porównania, po przecinku), `mst` (bieżące miasto).
+
+**Parametr `mst=<slug>`** (#223, D7, `contracts/url.md`): `#/?mst=gdansk&p=rodzina`, `#/adres/<id>?mst=lodz`. Należy do każdego
+ekranu poza panelem. Kraków jest pomijany w zapisie, a brak parametru = Kraków (linki sprzed #223 działają jak dotąd).
+Slug spoza rejestru daje Kraków i flagę `nieznaneMiasto`. `mst` w query string (`/?mst=gdansk`, tak wpisuje
+się link „od ręki”) przenosi do hasha przy starcie `przeniesMstDoHasha` (`url.ts`, wołane w `stan.ts` przed odczytem linku): miasto
+ma jedno źródło, a hash z własnym `mst` wygrywa. Nazwa `mst`, bo `m` to miejsca
+Biznesu, a `miasto` myli się z ekranem `#/miasto`. Strony SEO (`/adres/<slug>`, `/katalog`) są tylko dla Krakowa (FR-015): link do
+innego miasta idzie hashem (`/#/adres/<id>?mst=lodz`), a adres kanoniczny karty z innego miasta to strona główna
+(`karta/miastoTeksty.ts`).
 Stan i hash synchronizują się w obie strony. Zmiana ekranu albo adresu dodaje krok w historii przeglądarki.
 
 ### Tryb „Dla miasta”: luki w usługach i symulator – `karta/miasto`, `widokMiasta.ts` (#91, #92, #108)
@@ -310,7 +334,7 @@ Tryb Miasto (symulator) i tryb Biznes liczą w JEDNYM workerze. Każda wiadomoś
 | `obliczenia.worker.ts` | Jedyny skrypt workera: `fetch` i `postMessage`, reszta w routerze. |
 | `obliczenia.ts` | Protokół (`DoWorkera`, `ZWorkera`, `WiadomoscTrybu`) i router `utworzRouter`. Czysty, test na Node (`obliczenia.test.ts`). |
 | `obliczeniaMiasto.ts` | Tryb Miasto: `baza` → `licz` / `sugeruj` na `symulacja.ts`. |
-| `obliczeniaBiznes.ts` | Tryb Biznes: `start` / `init` / `ocen` na `biznes.ts`, popyt i pliki branż pobiera sam. |
+| `obliczeniaBiznes.ts` | Tryb Biznes: `start` / `init` / `ocen` na `biznes.ts`, popyt i pliki branż pobiera sam z katalogu danych z wiadomości (`baza`, patrz „Dane poboczne per miasto”). |
 | `menedzerObliczen.ts` | Wątek główny: `menedzerObliczen.otworz(tryb)` daje uchwyt (`wyslij`, `nasluchuj`, `naBledzie`, `zwolnij`). Test: `menedzerObliczen.test.ts`. |
 
 Ekran bierze uchwyt na czas życia (`useSymulacja` w Mieście, `EkranBiznes` w Biznesie) i oddaje go przy wyjściu.
@@ -344,6 +368,52 @@ Dlaczego jeden worker, ale z osobnymi stanami i zwalnianiem (decyzja #108, komen
 
 Nowy tryb w tym samym workerze: obsługa `utworzObsluge<Tryb>` (stan + `obsluz` + `zwolnij`) w osobnym pliku,
 wpis w `TrybObliczen`, w unii wiadomości i w `utworzRouter`.
+
+## Wszystkie miasta na mapie – `przeglad*.ts`, ekran Szukaj (#223)
+
+Mapa ekranu Szukaj pokazuje naraz 10 zbiorów danych: bieżące miasto z pełnych danych (r10), pozostałe jako tło r8/r9
+liczone z kompaktów tym samym silnikiem i tymi samymi wagami (FR-003). `usePrzeglad()` (`przeglad.ts`) zwraca `tlo`,
+`biezaceR10` (kolory bieżącego miasta, zanim wczytają się jego pełne dane), `podpis`, `miasta` (stan każdego: `ladowanie`,
+`gotowe`, `brak` = dane chwilowo niedostępne), `miastoPunktu(lon, lat)` i `kadrWszystkich`. Pliki: `przegladLiczenie.ts`
+(arytmetyka), `przegladMenedzer.ts` (ładowanie i kolejka), `przegladSklad.ts` (złożenie widoku, stabilne referencje).
+
+`EkranSzukaj` składa to tak:
+- `heksy = wyniki?.heksy ?? przeglad.biezaceR10 ?? BRAK`, `tlo = przeglad.tlo` zawsze (sama obecność propa zmienia
+  podpis mgły i legendę), `miasto={biezace}` na każdej mapie, także na ekranach Miasto, Symulator i Biznes.
+- Kadr startowy (`kadrStartowy`): widok wszystkich miast (`WIDOK_MIAST`) tylko przy pierwszym wejściu na ekran w sesji i bez
+  linku z miastem albo adresem (`linkWskazujeMiejsce`, FR-012); potem mapa zostaje przy bieżącym mieście.
+- Zmiana miasta (`WyborMiasta` – lista, klik w heks innego miasta, kamera): lot do obrysu miasta idzie kanałem `okolica`
+  mapy (nowy obiekt = nowy przelot, także na to samo miasto), bo `granice` reagują na zmianę liczb. Kamera zmienia miasto
+  sama dopiero przy zoomie ≥ 11 (`decyzjaKamery`) i tylko bez wybranego adresu i porównania; inaczej pasek „Przełącz na …”
+  z ostrzeżeniem (D5). Po zmianie ekran ogłasza czytnikowi, co się stało i co wyczyszczono (FR-007).
+- Warstwa mapy jest wspólna dla wszystkich miast: miasto bez niej jest w szrafurze (`brakWarstwy`), w pasku warstw stoi
+  znacznik „<warstwa>: brak danych w <mieście>”, a ranking mówi wprost, że warstwy tu nie ma.
+- Teksty z nazwą miasta (nagłówek, tytuł karty, adres kanoniczny, ogłoszenia): czyste funkcje w `karta/miastoTeksty.ts`
+  z testem; Kraków zostaje przy dotychczasowych brzmieniach (zgodnych z `index.html` i `api/seo.js`).
+
+## Dane poboczne per miasto – `sciezkiDanych.ts`, `pamiecPlikow.ts` (#223)
+
+Pliki pobierane na żądanie (graf dojazdu, katalog i pliki branż, popyt Biznesu, szczegóły szkół, kafle budynków
+3D) leżą w katalogu danych miasta: `public/dane` dla Krakowa, `public/dane/miasta/<slug>` dla reszty. Katalog
+bieżącego miasta to `bazaBiezaca()` (`miastoDanych.ts`, poza Reactem) albo `bazaDanych(useMiasto().slug)`
+(komponent, odświeża się przy zmianie miasta).
+
+| Plik | Rola |
+|---|---|
+| `sciezkiDanych.ts` | Układ plików od katalogu danych: `sciezkaGrafu`, `sciezkaKataloguUslug`, `sciezkaBranzy`, `sciezkaPopytu`, `sciezkaSzkol`, `sciezkaKafla`; `czyKatalogDanych` i `czySciezkaGrafu` sprawdzają katalog z wiadomości do workera; `popytDostepny(baza)` mówi, czy zbiór ma popyt Biznesu. Czysty, test `sciezkiDanych.test.ts` porównuje to z plikami w `public/dane`. |
+| `pamiecPlikow.ts` | `utworzPamiecPlikow<T>(maks)`: jedno wczytanie na PEŁNĄ ścieżkę pliku, najdawniej użyta odpada, błąd pobrania nie zostaje w pamięci. Używają jej: worker dojazdu (graf, najwyżej `MAKS_MIAST_W_PAMIECI` miasta), `SzczegolySzkoly`, `obliczeniaBiznes.ts`. |
+
+- **Worker nie zna bieżącego miasta.** Ma własną kopię modułów stanu, więc `bazaBiezaca()` zwróci w nim zawsze
+  Kraków. Ścieżkę przysyła wątek główny: Dojazd – pole `graf` w wiadomości `licz` (`sciezkaGrafu(bazaBiezaca())`
+  w `PanelDojazdu`), Biznes – pole `baza` w `start` i `init`. Worker sprawdza ją, zanim trafi do `fetch`.
+- **Pamięć kluczuje pełna ścieżka**, bo pliki każdego miasta mają te same nazwy (`dojazd/graf.json`,
+  `szkoly_e8_szczegoly.json`): klucz z samą nazwą oddałby po zmianie miasta plik poprzedniego.
+- **Funkcje tylko krakowskie (D8)**: wyszukiwarka okolic (`okolice.json`, granice SIM), tryb Biznes (popyt), plan
+  miejscowy i pozwolenia na budowę. W innym mieście bramka `tylkoKrakow()` (`useTylkoKrakow()` w komponencie)
+  pokazuje „Na razie tylko w Krakowie” zamiast pustych albo zerowych wartości i niczego nie pobiera. Tryb Biznes:
+  `EkranBiznes` pokazuje komunikat z przyciskiem „Pokaż Kraków”, a worker odpowiada `blad` (`BLAD_BEZ_POPYTU`)
+  na `init` z katalogiem miasta. Test `sciezkiDanych.test.ts` sprawdza, że żadne miasto nie ma tych plików – gdy
+  ETL któreś doda, test jest czerwony i trzeba zdjąć bramkę tej funkcji.
 
 ## Sloty i kto je wypełnia
 

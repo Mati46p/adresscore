@@ -8,6 +8,15 @@ export const W_WYKLUCZONY = -2
 export const KOLOR_WYKLUCZONEGO = '#2F3438'
 export const KRYCIE_WYKLUCZONEGO = 0.62
 
+/**
+ * Wartość heksu w feature-state `w`. Brak danych (null, undefined, NaN) to `W_BRAK`, nigdy 0: zero
+ * jest prawdziwym, najniższym wynikiem i dostaje kolor skali, a brak dostaje szrafurę. Jedna funkcja
+ * dla heksów bieżącego miasta i tła – dwie kopie tej decyzji cicho by się rozjechały.
+ */
+export function stanHeksu(w: number | null | undefined): number {
+  return w === null || w === undefined || Number.isNaN(w) ? W_BRAK : w
+}
+
 export const jestWykluczony = (wartosc: ExpressionSpecification): ExpressionSpecification => [
   '<',
   wartosc,

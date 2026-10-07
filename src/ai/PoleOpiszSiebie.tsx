@@ -11,6 +11,7 @@ import {
   wagiZeZrozumienia,
   type Zrozumienie,
 } from './opiszSiebie'
+import { poza } from './wagiInnychMiast'
 import './opiszSiebie.css'
 
 function tekstPozycji(p: PozycjaZrozumienia): string {
@@ -64,8 +65,15 @@ export function PoleOpiszSiebie() {
       dane.wskazniki.map((x) => x.meta),
       { wagi: s.wagi, kierunki: s.kierunki },
     )
-    if (nowe.persona === 'wlasna') ustawWagi(nowe.wagi, nowe.kierunki)
-    else wybierzPersone(nowe.persona)
+    if (nowe.persona === 'wlasna') {
+      // Opis zamienia się w wagi tylko dla warstw bieżącego miasta, a profil jest wspólny dla wszystkich miast
+      // na mapie (D9): wagi warstw, które ma tylko inne miasto, zostają (wagiInnychMiast.ts).
+      const idMiasta = new Set(dane.wskazniki.map((x) => x.meta.id))
+      ustawWagi(
+        { ...poza(s.wagi, idMiasta), ...nowe.wagi },
+        { ...poza(s.kierunki, idMiasta), ...nowe.kierunki },
+      )
+    } else wybierzPersone(nowe.persona)
   }
 
   function enterWysyla(e: KeyboardEvent<HTMLTextAreaElement>) {

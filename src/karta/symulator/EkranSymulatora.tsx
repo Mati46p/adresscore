@@ -9,6 +9,7 @@ import { MapaKrakowa } from '@/mapa/MapaKrakowa'
 import type { ObiektNaMapie } from '@/mapa/symulator/ZnacznikiObiektow'
 import { type Dane, useDane } from '@/wynik/dane'
 import { type LiczbyLuki, policzLuki, progLuki } from '@/wynik/luki'
+import { useMiasto } from '@/wynik/miastoDanych'
 import { PERSONY } from '@/wynik/persony'
 import { rozdzielczoscWarstwy, zrodlaWarstwy } from '@/wynik/rankingLuk'
 import type { WskaznikPrzygotowany } from '@/wynik/silnik'
@@ -48,6 +49,7 @@ const wspolrzedne = (o: Pick<Obiekt, 'lon' | 'lat'>) =>
 
 export function EkranSymulatora(): JSX.Element {
   const stanDanych = useDane()
+  const miasto = useMiasto()
   const dane = stanDanych.stan === 'gotowe' ? stanDanych : null
   // Na ekranie Miasto stan ma zawsze profil mieszkańca, nigdy wagi trybu biznes (`czyDoMieszkanca`
   // w `trybyAplikacji.ts`): bilans nie zależy od tego, czy użytkownik był w Biznesie (E10, #108).
@@ -366,6 +368,7 @@ export function EkranSymulatora(): JSX.Element {
       <section className="symulator-mapa" aria-label="Mapa symulatora">
         <MapaKrakowa
           heksy={heksy}
+          miasto={miasto.slug}
           podpisWarstwy={podpisMapy}
           onKlik={postaw}
           onWidok={(lon, lat) => setSrodek([lon, lat])}

@@ -3,12 +3,18 @@
 // a test w Node podstawia pliki z dysku, więc cała logika działa tak samo w obu miejscach.
 //
 // Kontrakt wiadomości (do routera dochodzą z polem `tryb: 'biznes'`):
-//   → { typ: 'start' }                                  popyt (największy plik) pobiera się z góry
-//   → { typ: 'init', branza, filtry }                   indeks branży i filtrów
+//   → { typ: 'start', baza }                            popyt (największy plik) pobiera się z góry
+//   → { typ: 'init', baza, branza, filtry }             indeks branży i filtrów
 //   ← { typ: 'gotowe', wersja, meta, punkty, plamy, zrodla }
 //   → { typ: 'ocen', id: 'a'..'e', punkt, wersja }       ocena stawianego miejsca (miejsca A–E)
 //   ← { typ: 'ocena', wersja, id, ocena }
 //   ← { typ: 'blad', wersja, blad }
+//
+// `baza` to katalog danych zbioru (`/dane`, `/dane/miasta/lublin`, #223). Worker ma własną kopię modułów
+// stanu (zawsze Kraków), więc bieżącego miasta nie zna – katalog przysyła wątek główny (`bazaBiezaca()`).
+// Popyt i pliki branż są pamiętane po PEŁNEJ ŚCIEŻCE, więc zmiana zbioru nie poda plików poprzedniego.
+// Popyt policzono tylko dla Krakowa (D8): dla katalogu miasta nic się nie pobiera, a `init` odpowiada
+// `blad` z `BLAD_BEZ_POPYTU` (ekran i tak pokazuje wtedy „Na razie tylko w Krakowie”, zanim cokolwiek wyśle).
 import {
   type BialaPlama,
   bialePlamyZIndeksu,
@@ -30,6 +36,8 @@ import {
   type PlikUslug,
   punktyBranzy,
 } from './biznesUslugi.ts'
+import { utworzPamiecPlikow } from './pamiecPlikow.ts'
+import { czyKatalogDanych, popytDostepny, sciezkaBranzy, sciezkaPopytu } from './sciezkiDanych.ts'
 import type { IdMiejsca } from './url.ts'
 
 interface DanePopytu {
@@ -38,10 +46,18 @@ interface DanePopytu {
 }
 
 export type WiadomoscBiznesu =
-  | { typ: 'start' }
+  /** `baza`: katalog danych zbioru, z którego worker bierze popyt (patrz nagłówek pliku). */
+  | { typ: 'start'; baza: string }
   /** `filtry` przychodzą z ekranu, ale walidujemy je tu: byle co daje „bez filtrów”, nie wyjątek. */
-  | { typ: 'init'; branza: string; filtry: FiltryUslug }
+  | { typ: 'init'; baza: string; branza: string; filtry: FiltryUslug }
   | { typ: 'ocen'; id: IdMiejsca; punkt: { lon: number; lat: number }; wersja: number }
+
+/** Powód odmowy dla zbioru bez popytu (D8): ten sam komunikat trafia na ekran jako `blad`. */
+export const BLAD_BEZ_POPYTU =
+  'Tryb Biznes jest na razie tylko w Krakowie: popyt policzono tylko dla Krakowa i okolicznych gmin.'
+
+/** Pliki branż trzymane naraz: katalog jednego zbioru ma 26–27 branż, z zapasem na drugi zbiór. */
+const MAKS_PLIKOW_BRANZ = 64
 
 export type OdpowiedzBiznesu =
   | {
@@ -82,51 +98,59 @@ export function utworzObslugeBiznesu({ pobierz, wyslij }: WejscieObslugiBiznesu)
   // branży albo zmianie filtrów budujemy tylko indeks jej punktów, a każda ocena miejsca liczy
   // wyłącznie heksy w jego promieniu. Punkty pochodzą z katalogu usług (`public/dane/uslugi`,
   // #104 i #160).
-  let popyt: Promise<{ komorki: IndeksKomorek; zrodla: ZrodloDanych[] }> | null = null
+  // Pamięć po pełnej ścieżce (patrz nagłówek): popyt jeden naraz, bo to największy plik trybu, pliki
+  // branż zostają, więc przełączenie filtra ich nie pobiera ponownie. Błąd pobrania nie zostaje w
+  // pamięci – kolejna zmiana branży ponowi pobranie.
+  const popyty = utworzPamiecPlikow<{ komorki: IndeksKomorek; zrodla: ZrodloDanych[] }>(1)
+  const pliki = utworzPamiecPlikow<PlikUslug>(MAKS_PLIKOW_BRANZ)
   let indeks: IndeksBiznesu | null = null
   let wersja = 0
-  // Pliki branż zostają w pamięci: przełączenie filtra nie pobiera ich ponownie.
-  const pliki = new Map<string, Promise<PlikUslug>>()
 
-  function wczytajPopyt() {
-    popyt ??= (pobierz('/dane/biznes/popyt.json') as Promise<DanePopytu>)
-      .then((d) => ({ komorki: przygotujKomorki(d.komorki), zrodla: d.zrodla ?? [] }))
-      .catch((e) => {
-        popyt = null // kolejna zmiana branży ponowi pobranie
-        throw e
-      })
-    return popyt
+  /**
+   * Katalog danych z wiadomości ekranu, gdy wolno z niego brać popyt. Wyjątek zamiast cichego Krakowa:
+   * `init` zamienia go w `blad`, a ekran pokaże powód. Zbiór bez popytu nie pobiera niczego.
+   */
+  function katalogZPopytem(baza: unknown): string {
+    if (!czyKatalogDanych(baza)) throw new Error('Nieprawidłowy katalog danych')
+    if (!popytDostepny(baza)) throw new Error(BLAD_BEZ_POPYTU)
+    return baza
   }
 
-  function wczytajPlik(id: string): Promise<PlikUslug> {
+  function wczytajPopyt(baza: string) {
+    const sciezka = sciezkaPopytu(baza)
+    return popyty.pobierz(sciezka, () =>
+      (pobierz(sciezka) as Promise<DanePopytu>).then((d) => ({
+        komorki: przygotujKomorki(d.komorki),
+        zrodla: d.zrodla ?? [],
+      })),
+    )
+  }
+
+  function wczytajPlik(baza: string, id: string): Promise<PlikUslug> {
     // Id trafia do ścieżki, więc przechodzą tylko nazwy z katalogu (małe litery i podkreślenia).
     if (typeof id !== 'string' || !/^[a-z_]+$/.test(id))
       return Promise.reject(new Error('Nieprawidłowa nazwa branży'))
-    let plik = pliki.get(id)
-    if (!plik) {
-      plik = (pobierz(`/dane/uslugi/${id}.json`) as Promise<PlikUslug>).catch((e) => {
-        pliki.delete(id) // kolejny wybór tej branży ponowi pobranie
-        throw e
-      })
-      pliki.set(id, plik)
-    }
-    return plik
+    const sciezka = sciezkaBranzy(baza, id)
+    return pliki.pobierz(sciezka, () => pobierz(sciezka) as Promise<PlikUslug>)
   }
 
   return {
     async obsluz(d) {
       if (d.typ === 'start') {
-        // Popyt pobiera się równolegle z katalogiem branż, zanim padnie wybór branży.
-        wczytajPopyt().catch(() => undefined)
+        // Popyt pobiera się równolegle z katalogiem branż, zanim padnie wybór branży. Zły katalog albo
+        // zbiór bez popytu: nic nie pobieramy, a powód dostanie ekran w odpowiedzi na `init`.
+        if (czyKatalogDanych(d.baza) && popytDostepny(d.baza))
+          wczytajPopyt(d.baza).catch(() => undefined)
         return
       }
       if (d.typ === 'init') {
         const mojaWersja = ++wersja
         indeks = null // do czasu zbudowania nowego nie oceniamy na indeksie poprzedniej branży
         try {
+          const baza = katalogZPopytem(d.baza)
           const [{ komorki, zrodla }, plik] = await Promise.all([
-            wczytajPopyt(),
-            wczytajPlik(d.branza),
+            wczytajPopyt(baza),
+            wczytajPlik(baza, d.branza),
           ])
           if (mojaWersja !== wersja) return
           const filtry = filtryZWiadomosci(d.filtry)
@@ -163,8 +187,8 @@ export function utworzObslugeBiznesu({ pobierz, wyslij }: WejscieObslugiBiznesu)
       // do ekranu, którego już nie ma.
       wersja++
       indeks = null
-      popyt = null
-      pliki.clear()
+      popyty.wyczysc()
+      pliki.wyczysc()
     },
   }
 }

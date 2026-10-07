@@ -4,6 +4,7 @@
 import { ColumnLayer } from '@deck.gl/layers'
 import { useEffect, useState } from 'react'
 import type { Zrodlo } from '@/kontrakty'
+import { useTylkoKrakow } from '@/wynik/miastoDanych'
 import { odmiana } from './laczenie'
 import {
   GRUPY,
@@ -40,11 +41,20 @@ export type StanPozwolen =
   | { stan: 'ladowanie' }
   | { stan: 'gotowe'; lista: Pozwolenie[] }
   | { stan: 'blad' }
+  /**
+   * Rejestr pozwoleń (`pozwolenia.geojson`) obejmuje tylko Kraków (D8, #223). W innym mieście nie
+   * pobieramy go i nie pokazujemy pustej listy („brak pozwoleń w promieniu 500 m” byłoby nieprawdą,
+   * a nie brakiem danych): panel mówi wprost, że to na razie tylko Kraków.
+   */
+  | { stan: 'tylko-krakow' }
+
+const TYLKO_KRAKOW: StanPozwolen = { stan: 'tylko-krakow' }
 
 export function usePozwolenia(lon: number | null, lat: number | null): StanPozwolen {
+  const tylkoKrakow = useTylkoKrakow()
   const [stan, setStan] = useState<StanPozwolen>({ stan: 'ladowanie' })
   useEffect(() => {
-    if (lon === null || lat === null) return
+    if (tylkoKrakow || lon === null || lat === null) return
     let aktualne = true
     wczytaj().then(
       (w) => aktualne && setStan({ stan: 'gotowe', lista: pozwoleniaWokol(w, lon, lat) }),
@@ -53,8 +63,8 @@ export function usePozwolenia(lon: number | null, lat: number | null): StanPozwo
     return () => {
       aktualne = false
     }
-  }, [lon, lat])
-  return stan
+  }, [lon, lat, tylkoKrakow])
+  return tylkoKrakow ? TYLKO_KRAKOW : stan
 }
 
 export function warstwaPozwolen(lista: Pozwolenie[]) {
@@ -93,6 +103,9 @@ export function PanelPozwolen({
   widoczne: boolean
   onPrzelacz: (w: boolean) => void
 }) {
+  if (stan.stan === 'tylko-krakow') {
+    return <p className="m3d-komunikat">Pozwolenia na budowę: na razie tylko w Krakowie.</p>
+  }
   if (stan.stan === 'blad') {
     return <p className="m3d-komunikat">Nie udało się wczytać pozwoleń na budowę.</p>
   }

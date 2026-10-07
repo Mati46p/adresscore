@@ -47,10 +47,10 @@ describe('jedna instancja na oba tryby', () => {
     assert.equal(porty.length, 1)
     assert.equal(zywe(), 1)
     assert.deepEqual(m.stan(), { zywy: true, uchwyty: { miasto: 1, biznes: 1 } })
-    assert.equal(biznes.wyslij({ typ: 'start' }), true)
+    assert.equal(biznes.wyslij({ typ: 'start', baza: '/dane' }), true)
     assert.equal(miasto.wyslij({ typ: 'licz', id: 7, warianty: [[]] }), true)
     assert.deepEqual(porty[0]?.wyslane, [
-      { tryb: 'biznes', typ: 'start' },
+      { tryb: 'biznes', typ: 'start', baza: '/dane' },
       { tryb: 'miasto', typ: 'licz', id: 7, warianty: [[]] },
     ])
   })

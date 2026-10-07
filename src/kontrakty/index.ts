@@ -2,8 +2,11 @@
 // Dlaczego surowe wartości, a nie gotowe oceny: wagi zmienia użytkownik na żywo (persony, JEV),
 // więc przeliczenie na 0–100 należy do silnika w src/wynik. ETL dostarcza pomiar + metadane.
 // Opis formatu plików i przykłady: docs/etapy/kontrakt-danych.md.
+import { MIASTO_DOMYSLNE, miasto, type SlugMiasta } from './miasta.ts'
 import { niezgodnoscOkolic, type PlikOkolic } from './okolice.ts'
 
+// Rejestr miast (#223): jak okolice – osobny plik bez `import.meta.env`.
+export * from './miasta.ts'
 // Okolice adresów (#75): typy i kontrola wersji leżą w osobnym pliku bez `import.meta.env`.
 export * from './okolice.ts'
 
@@ -147,23 +150,49 @@ export function rozwinAdresy(p: PlikAdresow): Adres[] {
 
 const BAZA = `${import.meta.env.BASE_URL}dane`
 
-async function pobierz<T>(sciezka: string): Promise<T> {
-  const r = await fetch(`${BAZA}/${sciezka}`)
-  if (!r.ok) throw new Error(`Brak pliku danych ${sciezka} (${r.status})`)
+/**
+ * Katalog danych zbioru: bez argumentu (Kraków) `<BASE_URL>dane`, dla miasta
+ * `<BASE_URL>dane/miasta/<slug>`. Wynik trafia jako `baza` do `wczytaj*` poniżej i do ścieżek
+ * plików pobocznych (budynki, dojazd, usługi). Pliki każdego zbioru leżą w tym samym układzie,
+ * więc reszta ścieżki zostaje taka sama.
+ */
+export function bazaDanych(slug: SlugMiasta = MIASTO_DOMYSLNE): string {
+  const m = miasto(slug)
+  // Błąd zamiast cichego Krakowa: dane innego miasta pod złym slugiem to gorsza usterka niż wyjątek.
+  if (!m) throw new Error(`Nieznane miasto: ${String(slug)}`)
+  return m.katalog ? `${BAZA}/${m.katalog}` : BAZA
+}
+
+async function pobierz<T>(sciezka: string, baza: string, signal?: AbortSignal): Promise<T> {
+  const r = await fetch(`${baza}/${sciezka}`, { signal })
+  if (!r.ok) throw new Error(`Brak pliku danych ${baza}/${sciezka} (${r.status})`)
   return (await r.json()) as T
 }
 
-export const wczytajAdresy = () => pobierz<PlikAdresow>('adresy.json')
-export const wczytajManifest = () => pobierz<Manifest>('manifest.json')
+// Opcjonalny `baza` wybiera zbiór (domyślnie Kraków), więc wywołania sprzed #223 działają bez zmian.
+// Opcjonalny `signal` (zawsze ostatni parametr) przerywa pobieranie: pamięć danych (`wynik/dane.ts`)
+// przerywa tak ładowanie miasta, które wypadło z pamięci. Przerwane pobieranie odrzuca się
+// `AbortError`, czyli nie jest awarią pliku.
+// Uwaga: nie podawaj tych funkcji jako callbacku (`.then(wczytajAdresy)`) – wynik poprzedniego
+// kroku trafiłby w `baza`.
+export const wczytajAdresy = (baza: string = BAZA, signal?: AbortSignal) =>
+  pobierz<PlikAdresow>('adresy.json', baza, signal)
+export const wczytajManifest = (baza: string = BAZA, signal?: AbortSignal) =>
+  pobierz<Manifest>('manifest.json', baza, signal)
 
 /** Zwraca null, gdy wskaźnik policzono dla innej wersji adresów (nieaktualny plik). */
 export async function wczytajWskaznik(
   id: string,
   wersjaAdresow: string,
+  baza: string = BAZA,
+  signal?: AbortSignal,
 ): Promise<PlikWskaznika | null> {
-  const p = await pobierz<PlikWskaznika>(`wskazniki/${id}.json`)
+  const p = await pobierz<PlikWskaznika>(`wskazniki/${id}.json`, baza, signal)
   if (p.wersjaAdresow !== wersjaAdresow) {
-    console.warn(`Wskaźnik ${id} liczony dla adresów ${p.wersjaAdresow}, mamy ${wersjaAdresow}`)
+    // Id warstw powtarzają się między miastami, więc komunikat mówi, o który zbiór chodzi.
+    console.warn(
+      `Wskaźnik ${id} (${baza}) liczony dla adresów ${p.wersjaAdresow}, mamy ${wersjaAdresow}`,
+    )
     return null
   }
   return p
@@ -177,11 +206,13 @@ export async function wczytajWskaznik(
 export async function wczytajOkolice(
   wersjaAdresow: string,
   liczbaAdresow?: number,
+  baza: string = BAZA,
+  signal?: AbortSignal,
 ): Promise<PlikOkolic | null> {
-  const p = await pobierz<PlikOkolic>('okolice.json')
+  const p = await pobierz<PlikOkolic>('okolice.json', baza, signal)
   const powod = niezgodnoscOkolic(p, wersjaAdresow, liczbaAdresow)
   if (powod !== null) {
-    console.warn(`Okolice (okolice.json) pominięte: ${powod}`)
+    console.warn(`Okolice (${baza}/okolice.json) pominięte: ${powod}`)
     return null
   }
   return p

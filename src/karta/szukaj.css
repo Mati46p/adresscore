@@ -359,3 +359,91 @@
     font-size: 10px;
   }
 }
+
+/* Lista miast (#223): przyciski zawijają się w wiersze, więc na 360 px nie ma poziomego przewijania.
+   Akcent (tło przycisku) ma tylko bieżące miasto – `.seg[aria-pressed="true"]`. */
+.wybor-miasta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wybor-miasta__lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.wybor-miasta .seg {
+  /* Nazwa nie dzieli się na dwa wiersze, a przycisk nie rośnie ponad swoją treść. */
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+/* Globalny `.seg:hover` zostawałby przyklejony po tapnięciu na dotyku: tu obrys reaguje tylko na mysz. */
+.wybor-miasta .seg:hover {
+  border-color: var(--ramka-pola);
+}
+
+.wybor-miasta .seg[aria-pressed="true"]:hover {
+  border-color: var(--akcent);
+}
+
+@media (hover: hover) {
+  .wybor-miasta .seg:hover {
+    border-color: var(--akcent-obrys);
+    color: var(--tekst);
+  }
+
+  .wybor-miasta .seg[aria-pressed="true"]:hover {
+    border-color: var(--akcent-hover);
+    background: var(--akcent-hover);
+    color: #fff;
+  }
+}
+
+.wybor-miasta__status {
+  margin: 0;
+  color: var(--tekst-2);
+  font-size: 13px;
+}
+
+/* „Przełącz na <miasto>” (D5): kamera stoi nad innym miastem, a wybrany adres albo porównanie nie pozwalają
+   zmienić go samoczynnie. Pasek leży nad mapą w przepływie, więc nie zasłania jej kontrolek. */
+.przelacz-miasto {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--ostrzezenie);
+  border-radius: var(--promien);
+  background: var(--ostrzezenie-tlo);
+  color: var(--ostrzezenie-tekst);
+  font-size: 14px;
+}
+
+.przelacz-miasto p {
+  flex: 1 1 220px;
+  margin: 0;
+}
+
+.przelacz-miasto .seg {
+  flex: none;
+  min-height: 44px;
+}
+
+/* Znacznik nieobecnej warstwy w pasku: informacja, nie przycisk – przerywany obrys, bez akcentu. */
+.pasek-warstw__brak {
+  display: inline-flex;
+  flex: none;
+  white-space: nowrap;
+  align-items: center;
+  min-height: var(--cel-dotyku);
+  padding: 0 14px;
+  border: 1px dashed var(--ramka-pola);
+  border-radius: 999px;
+  color: var(--tekst-2);
+  font-size: 14px;
+}
