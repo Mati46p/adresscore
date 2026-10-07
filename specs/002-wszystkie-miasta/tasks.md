@@ -85,12 +85,12 @@ cienka nakładka). Kontrakt: [contracts/przeglad.md](contracts/przeglad.md). Zal
 Pliki: `src/mapa/MapaKrakowa.tsx`, `src/mapa/geometria.ts`, `src/mapa/lot.ts`, `src/mapa/mapa.css`.
 Zależy tylko od Fazy 1 (typ `TloMapy`). Kontrakt: [contracts/przeglad.md](contracts/przeglad.md).
 
-- [ ] T030 [P] [US1] `src/mapa/geometria.ts`: `zbudujGeometrieTla(heksy r8, r9)` (kolekcje bez r10) i otoczka mgły z sumy r8 bieżącego miasta i tła; geometria tła przebudowywana tylko przy zmianie zbioru kluczy
-- [ ] T031 [US1] `src/mapa/MapaKrakowa.tsx`: prop `tlo?: TloMapy`; źródła `tlo-r8` (0–11) i `tlo-r9` (11–13) z tymi samymi wyrażeniami koloru, krycia, szrafury, obrysu braku i linii co heksy bieżącego miasta; feature-state wysyłane tylko dla zmienionych wartości (jak `wyslaneRef`); suwak krycia obejmuje tło
-- [ ] T032 [US1] `src/mapa/MapaKrakowa.tsx`: dymek tła „<Miasto> · wynik N (średnia okolicy)" / „<Miasto> · brak danych" przez `tlo.miastoHeksu`; `onWidok(lon, lat, zoom)` (trzeci argument, zgodnie wstecz); `kadrStartowy` – bez wybranego adresu i granic pierwsze `fitBounds` na prostokąt wszystkich miast zamiast Krakowa (D4)
-- [ ] T033 [US1] `src/mapa/MapaKrakowa.tsx` teksty: podpis mgły i wiersz legendy „poza obsługiwanymi miastami – brak danych"; wiersz legendy „Skala liczona osobno w każdym mieście", gdy `tlo` niepuste (D10); intro „Dane: Kraków i 9 największych miast"; `aria-label` „Mapa miast – …"
-- [ ] T034 [P] [US1] `src/mapa/lot.ts`: lot startowy (`?pokaz`) ląduje w bieżącym mieście, kadr zapasowy = `srodek` bieżącego miasta zamiast `WIDOK_KRAKOWA`, gdy obrys jeszcze nie gotowy
-- [ ] T035 Weryfikacja fazy: `pnpm verify`; ręcznie z atrapą `tlo` (2 miasta, część `null`) – szrafura w tle, dymek z nazwą miasta, suwak krycia działa na tło
+- [x] T030 [P] [US1] `src/mapa/geometria.ts`: `zbudujGeometrieTla(heksy r8, r9)` (kolekcje bez r10) i otoczka mgły z sumy r8 bieżącego miasta i tła; geometria tła przebudowywana tylko przy zmianie zbioru kluczy
+- [x] T031 [US1] `src/mapa/MapaKrakowa.tsx`: prop `tlo?: TloMapy`; źródła `tlo-r8` (0–11) i `tlo-r9` (11–13) z tymi samymi wyrażeniami koloru, krycia, szrafury, obrysu braku i linii co heksy bieżącego miasta; feature-state wysyłane tylko dla zmienionych wartości (jak `wyslaneRef`); suwak krycia obejmuje tło
+- [x] T032 [US1] `src/mapa/MapaKrakowa.tsx`: dymek tła „<Miasto> · wynik N (średnia okolicy)" / „<Miasto> · brak danych" przez `tlo.miastoHeksu`; `onWidok(lon, lat, zoom)` (trzeci argument, zgodnie wstecz); `kadrStartowy` – bez wybranego adresu i granic pierwsze `fitBounds` na prostokąt wszystkich miast zamiast Krakowa (D4)
+- [x] T033 [US1] `src/mapa/MapaKrakowa.tsx` teksty: podpis mgły i wiersz legendy „poza obsługiwanymi miastami – brak danych"; wiersz legendy „Skala liczona osobno w każdym mieście", gdy `tlo` niepuste (D10); intro „Dane: Kraków i 9 największych miast"; `aria-label` „Mapa miast – …"
+- [x] T034 [P] [US1] `src/mapa/lot.ts`: lot startowy (`?pokaz`) ląduje w bieżącym mieście, kadr zapasowy = `srodek` bieżącego miasta zamiast `WIDOK_KRAKOWA`, gdy obrys jeszcze nie gotowy
+- [x] T035 Weryfikacja fazy: `pnpm verify`; ręcznie z atrapą `tlo` (2 miasta, część `null`) – szrafura w tle, dymek z nazwą miasta, suwak krycia działa na tło
 
 ---
 
