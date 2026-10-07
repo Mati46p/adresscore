@@ -84,6 +84,10 @@ for (const [zrodlo, przedzial] of [['polska', { minzoom: 0, maxzoom: 24 }]] as c
     type: 'fill',
     source: zrodlo,
     'source-layer': 'water',
+    // Woda bez podtypu (kind = water, brak kind_detail) to w danych OSM niedomknięte brzegi rzek
+    // zamknięte prostą linią: dają klinowate „wody" na przestrzeni kilometrów (np. pod Lublinem).
+    // Rzeki rysuje warstwa liniowa niżej, jeziora i zbiorniki mają podtyp.
+    filter: ['any', ['!=', ['get', 'kind'], 'water'], ['has', 'kind_detail']],
     paint: { 'fill-color': '#c5dce8' },
   })
   dodaj('woda', {
