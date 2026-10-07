@@ -3,6 +3,7 @@
 import assert from 'node:assert/strict'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { describe, it } from 'node:test'
+import vm from 'node:vm'
 import { latLngToCell } from 'h3-js'
 import { czySlugMiasta, MIASTA, MIASTO_DOMYSLNE, miasto } from './miasta.ts'
 
@@ -130,32 +131,132 @@ describe('service worker (public/sw.js)', () => {
   const zrodlo = readFileSync(new URL('../../public/sw.js', import.meta.url), 'utf8')
 
   /** Wyjątek „zawsze z sieci" wyjęty z kodu workera: sw.js to zwykły skrypt, nie da się go zaimportować. */
-  function wyjatekIndeksu(): RegExp {
-    const literal = /^const INDEKS_KOMPAKTU = (\/.+\/[a-z]*)$/m.exec(zrodlo)?.[1]
-    assert.ok(literal, 'brak stałej INDEKS_KOMPAKTU w public/sw.js')
+  function wyjatekZSieci(): RegExp {
+    const literal = /^const ZAWSZE_Z_SIECI = (\/.+\/[a-z]*)$/m.exec(zrodlo)?.[1]
+    assert.ok(literal, 'brak stałej ZAWSZE_Z_SIECI w public/sw.js')
     const koniec = literal.lastIndexOf('/')
     return new RegExp(literal.slice(1, koniec), literal.slice(koniec + 1))
   }
 
   it('wyjątek jest używany w gałęzi /dane/', () => {
-    assert.match(zrodlo, /INDEKS_KOMPAKTU\.test\(/)
+    assert.match(zrodlo, /ZAWSZE_Z_SIECI\.test\(/)
   })
 
-  it('wyjątek obejmuje indeks Krakowa i każdego miasta, a nic poza indeksami', () => {
-    const wyjatek = wyjatekIndeksu()
+  it('wyjątek obejmuje indeks kompaktu i manifest Krakowa oraz każdego miasta, a nic poza nimi', () => {
+    const wyjatek = wyjatekZSieci()
     for (const m of MIASTA) {
-      const sciezka = `/dane/${m.katalog ? `${m.katalog}/` : ''}kompakt/indeks.json`
-      assert.ok(wyjatek.test(sciezka), `${m.slug}: ${sciezka}`)
+      const katalog = `/dane/${m.katalog ? `${m.katalog}/` : ''}`
+      for (const plik of ['kompakt/indeks.json', 'manifest.json']) {
+        assert.ok(wyjatek.test(`${katalog}${plik}`), `${m.slug}: ${katalog}${plik}`)
+      }
     }
     for (const inny of [
       '/dane/miasta/lodz/kompakt/heksy.75f6074230.bin',
       '/dane/miasta/lodz/adresy.json',
-      '/dane/miasta/lodz/manifest.json',
       '/dane/miasta/lodz/wskazniki/halas_ldwn.json',
-      '/dane/manifest.json',
+      '/dane/adresy.json',
       '/dane/kompakt/skale.639eb9818b.json',
+      '/dane/miasta/lodz/kompakt/skale.639eb9818b.json',
+      // Te same nazwy w głębszym katalogu albo z dopiskiem to nie manifest ani indeks zbioru.
+      '/dane/miasta/lodz/budynki/manifest.json',
+      '/dane/wskazniki/manifest.json',
+      '/dane/stare/dane/manifest.json',
+      '/dane/miasta/lodz/manifest.json.map',
+      '/dane/miasta/lodz/kompakt/indeks.json.map',
     ]) {
       assert.equal(wyjatek.test(inny), false, inny)
     }
+  })
+
+  // Wzorzec wyżej to tylko napis w kodzie. Tu działa prawdziwy kod workera na atrapach API
+  // przeglądarki (Cache API, fetch, zdarzenie `fetch`) i liczy się to, co widzi użytkownik: skąd
+  // przyszedł plik. Wzorzec niepodpięty do obsługi `/dane/` przejdzie test wyżej, a tu zawiedzie.
+  // Dlaczego manifest razem z indeksem: przegląd miasta porównuje je ze sobą (`niezgodnoscKompaktu`),
+  // a jedno z cache i drugie z sieci po wdrożeniu danych daje miastu `brak` do końca sesji.
+  describe('trasa pliku w workerze', () => {
+    const ORIGIN = 'https://adresscore.test'
+    type Obsluga = (zdarzenie: {
+      request: Request
+      respondWith: (odpowiedz: Promise<Response>) => void
+      waitUntil: (zadanie: Promise<unknown>) => void
+    }) => void
+
+    /**
+     * GET `sciezka` w workerze, który ma w cache `kopia`, a z sieci dostaje `siec` (null = brak sieci).
+     * Zwraca treść odpowiedzi: „z sieci" albo „z kopii".
+     */
+    async function odpowiedzWorkera(
+      sciezka: string,
+      { siec, kopia }: { siec: string | null; kopia: string },
+    ): Promise<string> {
+      const kopie = new Map<string, Response>([[`${ORIGIN}${sciezka}`, new Response(kopia)]])
+      const klucz = (zad: Request | string) => (typeof zad === 'string' ? zad : zad.url)
+      const cache = {
+        match: async (zad: Request | string) => kopie.get(klucz(zad))?.clone(),
+        put: async (zad: Request | string, odp: Response) => {
+          kopie.set(klucz(zad), odp)
+        },
+        addAll: async () => {},
+      }
+      const nasluchy = new Map<string, Obsluga>()
+      vm.runInNewContext(zrodlo, {
+        self: {
+          location: { origin: ORIGIN },
+          addEventListener: (typ: string, f: Obsluga) => {
+            nasluchy.set(typ, f)
+          },
+          skipWaiting: async () => {},
+          clients: { claim: async () => {} },
+        },
+        caches: { open: async () => cache, keys: async () => [], delete: async () => true },
+        fetch: async () => {
+          if (siec === null) throw new TypeError('Failed to fetch')
+          return new Response(siec)
+        },
+        Headers,
+        Request,
+        Response,
+        URL,
+        console,
+      })
+      const odpowiedzi: Promise<Response>[] = []
+      const zadania: Promise<unknown>[] = []
+      nasluchy.get('fetch')?.({
+        request: new Request(`${ORIGIN}${sciezka}`),
+        respondWith: (odpowiedz) => odpowiedzi.push(odpowiedz),
+        waitUntil: (zadanie) => zadania.push(zadanie),
+      })
+      const [odpowiedz] = odpowiedzi
+      assert.ok(odpowiedz, `${sciezka}: worker nie obsłużył żądania`)
+      const tresc = await (await odpowiedz).text()
+      await Promise.all(zadania) // odświeżanie w tle kończy się przed końcem testu
+      return tresc
+    }
+
+    const SCIEZKI_Z_SIECI = MIASTA.flatMap((m) => {
+      const katalog = `/dane/${m.katalog ? `${m.katalog}/` : ''}`
+      return [`${katalog}kompakt/indeks.json`, `${katalog}manifest.json`]
+    })
+
+    it('indeks kompaktu i manifest: sieć najpierw, więc po wdrożeniu danych oba są świeże', async () => {
+      for (const sciezka of SCIEZKI_Z_SIECI) {
+        const tresc = await odpowiedzWorkera(sciezka, { siec: 'z sieci', kopia: 'z kopii' })
+        assert.equal(tresc, 'z sieci', sciezka)
+      }
+    })
+
+    it('indeks kompaktu i manifest bez sieci: kopia z cache, więc tryb offline działa', async () => {
+      for (const sciezka of SCIEZKI_Z_SIECI) {
+        const tresc = await odpowiedzWorkera(sciezka, { siec: null, kopia: 'z kopii' })
+        assert.equal(tresc, 'z kopii', sciezka)
+      }
+    })
+
+    it('reszta danych: kopia z cache od razu, bez czekania na sieć', async () => {
+      for (const sciezka of ['/dane/miasta/lodz/adresy.json', '/dane/wskazniki/halas_ldwn.json']) {
+        const tresc = await odpowiedzWorkera(sciezka, { siec: 'z sieci', kopia: 'z kopii' })
+        assert.equal(tresc, 'z kopii', sciezka)
+      }
+    })
   })
 })

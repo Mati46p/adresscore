@@ -41,7 +41,7 @@ Blokuje wszystkie pozostałe fazy. Pliki: `src/kontrakty/miasta.ts` (nowy),
 - [x] T002 [P] Test `src/kontrakty/miasta.test.ts`: zbiór slugów ≠ `krakow` = katalogi `public/dane/miasta/*` z `kompakt/indeks.json` (katalog bez wpisu i wpis bez katalogu = czerwony); slugi unikalne; `wMiescie` zaczyna się od „w " albo „we "
 - [x] T003 W `src/kontrakty/index.ts` dodaj `bazaDanych(slug?)` i opcjonalny parametr `baza` w `wczytajAdresy`, `wczytajManifest`, `wczytajWskaznik`, `wczytajOkolice` (domyślnie Kraków – dotychczasowe wywołania bez zmian); eksportuj `./miasta.ts`
 - [x] T004 W `vite.config.ts` rozszerz `manifestDanych`: `zbuduj(katalog)` dla `public/dane/wskazniki` i każdego `public/dane/miasta/<slug>/wskazniki`; middleware dev `/dane/miasta/<slug>/manifest.json`; `emitFile` `dane/miasta/<slug>/manifest.json`; komentarz „dlaczego" (jedno źródło prawdy, D2)
-- [x] T005 [P] W `public/sw.js` wyjątek „zawsze z sieci" dla `/^\/dane\/(miasta\/[a-z]+\/)?kompakt\/indeks\.json$/` (R7); podnieś `CACHE` na `adresscore-v2`, żeby stare kopie indeksów wypadły
+- [x] T005 [P] W `public/sw.js` wyjątek „zawsze z sieci" dla `/^\/dane\/(miasta\/[a-z]+\/)?kompakt\/indeks\.json$/` (R7); podnieś `CACHE` na `adresscore-v2`, żeby stare kopie indeksów wypadły – po przeglądzie kodu: wyjątek (stała `ZAWSZE_Z_SIECI`) obejmuje też `manifest.json` Krakowa i miast, bo przegląd porównuje go z indeksem, `CACHE` = `adresscore-v3`, a test uruchamia kod workera (R7)
 - [x] T006 Weryfikacja fazy: `node --test src/kontrakty/miasta.test.ts`, `pnpm verify`, `ls dist/dane/miasta/*/manifest.json` = 9 plików, każdy z `wersjaAdresow` równym `adresy.json` miasta
 
 **Punkt kontrolny**: build daje manifesty 10 zbiorów; reszta aplikacji działa jak na `main`.

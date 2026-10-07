@@ -103,8 +103,17 @@ Krakowie znaczy „lepiej niż ~70% adresów **tego** miasta". Legenda i dymek t
 ## R7. Service worker
 
 Wyjątek „zawsze z sieci" rozszerzony z `/dane/kompakt/indeks.json` na
-`/^\/dane\/(miasta\/[a-z]+\/)?kompakt\/indeks\.json$/`. Pozostałe pliki miast (z hashem albo
-z kontrolą wersji) mogą iść ścieżką „cache + odświeżanie".
+`/^\/dane\/(miasta\/[a-z]+\/)?(kompakt\/indeks|manifest)\.json$/`: indeks kompaktu **i manifest**
+Krakowa oraz każdego miasta (stała `ZAWSZE_Z_SIECI`). Manifest dołączony po przeglądzie kodu: przegląd
+miasta porównuje go z indeksem (`niezgodnoscKompaktu`), więc świeży indeks przy manifeście z cache
+dawał miastu `brak` do końca sesji po wdrożeniu danych zmieniających meta albo wersję. Test
+(`miasta.test.ts`) uruchamia kod workera i sprawdza, skąd przychodzi plik. Pozostałe pliki miast
+(z hashem albo z kontrolą wersji) mogą iść ścieżką „cache + odświeżanie".
+
+Ryzyko szczątkowe: `adresy.json` i pliki warstw dalej idą z cache, więc po zmianie WERSJI adresów
+miasta pierwsza wizyta ma świeży manifest przy starym `adresy.json`. Pełne dane bieżącego miasta
+wypadają wtedy jako niedostępne („adresy …, mamy …" w `dane.ts`) do następnej wizyty; przegląd na mapie
+jest świeży, bo jego pliki mają hash w nazwie.
 
 ## R8. SEO
 
