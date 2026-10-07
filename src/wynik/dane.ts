@@ -1,51 +1,27 @@
-// Jedno ładowanie danych na aplikację: obietnica w pamięci modułu, więc każdy komponent
-// może wołać useDane() bez dublowania 70 tys. adresów i kilku MB wskaźników.
+// Dane bieżącego miasta: jedno ładowanie na miasto, więc każdy komponent może wołać useDane() bez
+// dublowania 70 tys. adresów i kilku MB wskaźników. Pełne dane (adresy, wszystkie warstwy, okolice)
+// ma tylko bieżące miasto (FR-005, #223): `useDane()` zwraca zawsze jego stan, a pozostałe miasta
+// widać wyłącznie jako przegląd na mapie (`przeglad.ts`). Pamięć i jej reguły (najwyżej 2 miasta,
+// podpięcie słownika w stanie, ponowienie po błędzie) są w `pamiecDanych.ts` – testowalne bez Vite.
 import { useSyncExternalStore } from 'react'
 import {
-  type Adres,
+  bazaDanych,
   type Manifest,
-  type PlikAdresow,
+  MIASTO_DOMYSLNE,
   type PlikOkolic,
   rozwinAdresy,
+  type SlugMiasta,
   wczytajAdresy,
   wczytajManifest,
   wczytajOkolice,
   wczytajWskaznik,
 } from '@/kontrakty'
 import { type IndeksKompaktu, niezgodnoscKompaktu } from './kompakt.ts'
-import {
-  type GrupyHeksow,
-  grupujHeksy,
-  przygotujWskaznikZeSkala,
-  type Skala,
-  type WskaznikPrzygotowany,
-  wskaznikNiedostepny,
-} from './silnik.ts'
-import { podlaczDane } from './stan.ts'
+import { type Dane, type StanDanych, utworzPamiecDanych } from './pamiecDanych.ts'
+import { grupujHeksy, przygotujWskaznikZeSkala, type Skala, wskaznikNiedostepny } from './silnik.ts'
+import { pobierzStan, podlaczDane, subskrybuj as subskrybujStan } from './stan.ts'
 
-export interface Dane {
-  plikAdresow: PlikAdresow
-  adresy: Adres[]
-  manifest: Manifest
-  /**
-   * Wszystkie warstwy manifestu w jego kolejności. Warstwa, która się nie wczytała, ma
-   * `niedostepny` i brak danych pod każdym adresem – liczy się do pewności, nie do wyniku.
-   */
-  wskazniki: WskaznikPrzygotowany[]
-  /** Id warstw pominiętych (inna wersja adresów albo błąd pobrania) z powodem. */
-  pominiete: { id: string; powod: string }[]
-  grupyHeksow: GrupyHeksow
-  /**
-   * Okolice adresów (jednostki SIM i miejscowości, #185). null = plik się nie wczytał albo jest
-   * z innej wersji adresów – okolicą zostaje wtedy dzielnica Krakowa albo gmina (`okolicaAdresu`).
-   */
-  okolice: PlikOkolic | null
-}
-
-export type StanDanych =
-  | { stan: 'ladowanie' }
-  | { stan: 'blad'; blad: string }
-  | ({ stan: 'gotowe' } & Dane)
+export type { Dane, StanDanych } from './pamiecDanych.ts'
 
 type SkaleGotowe = Map<string, { skala: Skala; zDanymi: number }>
 
@@ -57,14 +33,16 @@ type SkaleGotowe = Map<string, { skala: Skala; zDanymi: number }>
 async function wczytajSkaleKompaktu(
   manifest: Promise<Manifest>,
   wersjaAdresow: Promise<string>,
+  /** Katalog danych miasta (`bazaDanych`): kompakt leży w nim w `kompakt/`. */
+  baza: string,
 ): Promise<SkaleGotowe | null> {
   try {
-    const baza = `${import.meta.env.BASE_URL}dane/kompakt/`
-    const odp = await fetch(`${baza}indeks.json`)
+    const kompakt = `${baza}/kompakt/`
+    const odp = await fetch(`${kompakt}indeks.json`)
     if (!odp.ok) return null
     const indeks = (await odp.json()) as IndeksKompaktu
     if (niezgodnoscKompaktu(indeks, await manifest)) return null
-    const plikSkal = await fetch(`${baza}${indeks.skale.plik}`)
+    const plikSkal = await fetch(`${kompakt}${indeks.skale.plik}`)
     if (!plikSkal.ok) return null
     const skale = (await plikSkal.json()) as Record<string, Skala>
     if (indeks.wersjaAdresow !== (await wersjaAdresow)) return null
@@ -79,22 +57,30 @@ async function wczytajSkaleKompaktu(
   }
 }
 
-async function wczytajWszystko(): Promise<Dane> {
-  const adresyP = wczytajAdresy()
-  const manifestP = wczytajManifest()
+async function wczytajWszystko(slug: SlugMiasta): Promise<Dane> {
+  const baza = bazaDanych(slug)
+  const adresyP = wczytajAdresy(baza)
+  const manifestP = wczytajManifest(baza)
   const skaleP = wczytajSkaleKompaktu(
     manifestP,
     adresyP.then((p) => p.wersja),
+    baza,
   )
   const [plikAdresow, manifest] = await Promise.all([adresyP, manifestP])
   const skaleGotowe = await skaleP
   const pominiete: Dane['pominiete'] = []
   const n = plikAdresow.kolumny.id.length
   // Okolice ładują się równolegle ze wskaźnikami. Brak pliku nie blokuje mapy: zapas to dzielnica/gmina.
-  const okolicePlik = wczytajOkolice(plikAdresow.wersja, n).catch((e: unknown) => {
-    console.warn(`Okolice (okolice.json) bez danych: ${String(e)}`)
-    return null
-  })
+  // Plik `okolice.json` (jednostki SIM i miejscowości obwarzanka) istnieje tylko dla Krakowa (D8):
+  // miasta go nie pobierają, więc nie ma zbędnego żądania 404 przy każdej zmianie miasta. Gdyby ETL
+  // dołożył okolice dla miast, ten warunek jest jedynym miejscem do zmiany.
+  const okolicePlik: Promise<PlikOkolic | null> =
+    slug === MIASTO_DOMYSLNE
+      ? wczytajOkolice(plikAdresow.wersja, n, baza).catch((e: unknown) => {
+          console.warn(`Okolice (okolice.json) bez danych: ${String(e)}`)
+          return null
+        })
+      : Promise.resolve(null)
   const wskazniki = await Promise.all(
     manifest.wskazniki.map(async ({ wersjaAdresow, ...meta }) => {
       const pomin = (powod: string) => {
@@ -105,7 +91,7 @@ async function wczytajWszystko(): Promise<Dane> {
         return pomin(`adresy ${wersjaAdresow}, mamy ${plikAdresow.wersja}`)
       }
       try {
-        const plik = await wczytajWskaznik(meta.id, plikAdresow.wersja)
+        const plik = await wczytajWskaznik(meta.id, plikAdresow.wersja, baza)
         return plik
           ? przygotujWskaznikZeSkala(plik, skaleGotowe?.get(meta.id))
           : pomin('niezgodna wersja adresów')
@@ -115,16 +101,12 @@ async function wczytajWszystko(): Promise<Dane> {
       }
     }),
   )
-  for (const p of pominiete) console.warn(`Wskaźnik ${p.id} bez danych: ${p.powod}`)
-  const adresy = rozwinAdresy(plikAdresow)
-  podlaczDane(
-    plikAdresow.kolumny.id,
-    wskazniki.map((w) => w.meta),
-    adresy,
-  )
+  // Id warstw powtarzają się między miastami, więc ostrzeżenie mówi, o które miasto chodzi.
+  for (const p of pominiete) console.warn(`Wskaźnik ${p.id} (${slug}) bez danych: ${p.powod}`)
   return {
+    miasto: slug,
     plikAdresow,
-    adresy,
+    adresy: rozwinAdresy(plikAdresow),
     manifest,
     wskazniki,
     pominiete,
@@ -133,41 +115,25 @@ async function wczytajWszystko(): Promise<Dane> {
   }
 }
 
-let obietnica: Promise<StanDanych> | null = null
-let biezacy: StanDanych = { stan: 'ladowanie' }
-const sluchacze = new Set<() => void>()
+const pamiec = utworzPamiecDanych(wczytajWszystko, {
+  pobierzStan,
+  podlaczDane,
+  subskrybuj: subskrybujStan,
+})
 
-function ustaw(s: StanDanych): StanDanych {
-  biezacy = s
-  for (const f of sluchacze) f()
-  return s
-}
+/**
+ * Startuje ładowanie danych miasta (raz na miasto, dopóki mieści się w pamięci) i zwraca obietnicę
+ * stanu końcowego. Bez argumentu: bieżące miasto.
+ */
+export const zaladujDane = pamiec.zaladujDane
 
-/** Startuje ładowanie (raz na aplikację) i zwraca obietnicę stanu końcowego. */
-export function zaladujDane(): Promise<StanDanych> {
-  obietnica ??= wczytajWszystko().then(
-    (d) => ustaw({ stan: 'gotowe', ...d }),
-    (e) => ustaw({ stan: 'blad', blad: e instanceof Error ? e.message : String(e) }),
-  )
-  return obietnica
-}
-
-function subskrybuj(f: () => void) {
-  sluchacze.add(f)
-  void zaladujDane()
-  return () => sluchacze.delete(f)
-}
-
-/** Stan danych: `ladowanie` → `gotowe` albo `blad`. Każde wywołanie dzieli jedno ładowanie. */
+/**
+ * Stan danych BIEŻĄCEGO miasta: `ladowanie` → `gotowe` albo `blad`. Każde wywołanie dzieli jedno
+ * ładowanie na miasto; zmiana miasta w stanie odświeża komponent (`ladowanie` do wczytania nowych danych).
+ */
 export function useDane(): StanDanych {
-  return useSyncExternalStore(
-    subskrybuj,
-    () => biezacy,
-    () => biezacy,
-  )
+  return useSyncExternalStore(pamiec.subskrybuj, pamiec.stanBiezacego, pamiec.stanBiezacego)
 }
 
-/** Dane albo null, bez Reacta. */
-export function daneJesliGotowe(): Dane | null {
-  return biezacy.stan === 'gotowe' ? biezacy : null
-}
+/** Dane bieżącego miasta albo null, bez Reacta. */
+export const daneJesliGotowe = pamiec.daneJesliGotowe

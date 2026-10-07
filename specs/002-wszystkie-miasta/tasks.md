@@ -54,13 +54,13 @@ Blokuje wszystkie pozostałe fazy. Pliki: `src/kontrakty/miasta.ts` (nowy),
 Pliki: `src/wynik/miastoDanych.ts` (nowy), `src/wynik/stan.ts`, `src/wynik/url.ts`,
 `src/wynik/dane.ts`, `src/wynik/stanMiasto.test.ts` (nowy). Kontrakt: [contracts/url.md](contracts/url.md).
 
-- [ ] T010 [US2] `src/wynik/url.ts`: `StanUrl.miasto?: SlugMiasta`; czytanie/zapis `mst=` (pomijany dla Krakowa, nieznany → `undefined` + flaga do komunikatu); nie ruszać `m` (miejsca Biznesu) ani ekranu `#/miasto`
-- [ ] T011 [US2] `src/wynik/stan.ts`: pole `miasto` (domyślnie `krakow`) z linku; `ustawMiasto(slug, { klik? })` czyści `wybrany`, `porownanie`, `symulacja`, miejsca Biznesu; oczekujący klik wybiera adres po `podlaczDane` nowego miasta (reguła `adresWKliknietymHeksie`)
-- [ ] T012 [US2] `src/wynik/stan.ts` `podlaczDane`: `wagi`/`kierunki` scalane, nie zastępowane – id spoza meta bieżącego miasta zostają (D9); komentarz „dlaczego"
-- [ ] T013 [P] [US2] `src/wynik/miastoDanych.ts`: `miastoBiezace()`, `bazaBiezaca()`, `useMiasto()`, `tylkoKrakow()` – bez Reacta tam, gdzie to możliwe (getter z `pobierzStan()`)
-- [ ] T014 [US2] `src/wynik/dane.ts`: pamięć `Map<SlugMiasta, Promise<StanDanych>>` (najwyżej 2 miasta w pamięci), `wczytajWszystko(slug)` z `bazaDanych(slug)` dla adresów, manifestu, wskaźników, okolic i skal kompaktu; `useDane()`/`daneJesliGotowe()` = bieżące miasto (subskrypcja także na zmianę `miasto` w stanie); `Dane.miasto`; `podlaczDane` tylko gdy miasto nadal bieżące
-- [ ] T015 [US2] Test `src/wynik/stanMiasto.test.ts`: `mst=lodz` → `miasto: 'lodz'`; brak `mst` → Kraków; nieznany slug → Kraków; zapis linku pomija Kraków; `ustawMiasto` czyści wybór i porównanie; scalanie wag zachowuje id spoza meta
-- [ ] T016 Weryfikacja fazy: testy `src/wynik/*.test.ts` dotychczasowe zielone (`stanLink*`, `urlMiasto`, `urlBiznes`), `pnpm verify`; ręcznie `#/?mst=gdansk` → karta i ranking z adresami Gdańska (bez mapy przeglądu)
+- [x] T010 [US2] `src/wynik/url.ts`: `StanUrl.miasto?: SlugMiasta`; czytanie/zapis `mst=` (pomijany dla Krakowa, nieznany → `undefined` + flaga do komunikatu); nie ruszać `m` (miejsca Biznesu) ani ekranu `#/miasto`
+- [x] T011 [US2] `src/wynik/stan.ts`: pole `miasto` (domyślnie `krakow`) z linku; `ustawMiasto(slug, { klik? })` czyści `wybrany`, `porownanie`, `symulacja`, miejsca Biznesu; oczekujący klik wybiera adres po `podlaczDane` nowego miasta (reguła `adresWKliknietymHeksie`)
+- [x] T012 [US2] `src/wynik/stan.ts` `podlaczDane`: `wagi`/`kierunki` scalane, nie zastępowane – id spoza meta bieżącego miasta zostają (D9); komentarz „dlaczego"
+- [x] T013 [P] [US2] `src/wynik/miastoDanych.ts`: `miastoBiezace()`, `bazaBiezaca()`, `useMiasto()`, `tylkoKrakow()` – bez Reacta tam, gdzie to możliwe (getter z `pobierzStan()`)
+- [x] T014 [US2] `src/wynik/dane.ts`: pamięć `Map<SlugMiasta, Promise<StanDanych>>` (najwyżej 2 miasta w pamięci), `wczytajWszystko(slug)` z `bazaDanych(slug)` dla adresów, manifestu, wskaźników, okolic i skal kompaktu; `useDane()`/`daneJesliGotowe()` = bieżące miasto (subskrypcja także na zmianę `miasto` w stanie); `Dane.miasto`; `podlaczDane` tylko gdy miasto nadal bieżące
+- [x] T015 [US2] Test `src/wynik/stanMiasto.test.ts`: `mst=lodz` → `miasto: 'lodz'`; brak `mst` → Kraków; nieznany slug → Kraków; zapis linku pomija Kraków; `ustawMiasto` czyści wybór i porównanie; scalanie wag zachowuje id spoza meta
+- [x] T016 Weryfikacja fazy: testy `src/wynik/*.test.ts` dotychczasowe zielone (`stanLink*`, `urlMiasto`, `urlBiznes`), `pnpm verify`; ręcznie `#/?mst=gdansk` → karta i ranking z adresami Gdańska (bez mapy przeglądu)
 
 ---
 
