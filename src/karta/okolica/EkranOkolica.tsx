@@ -26,6 +26,7 @@ import {
 import { useWynikAdresu } from '@/wynik/useWyniki'
 import { czyWarstwaWyborow } from '@/wynik/wybory'
 import { Etykieta } from './Etykieta'
+import { JakLiczymy } from './JakLiczymy'
 import type { LiteraEtykiety } from './kolory'
 import { LepszySasiad } from './LepszySasiad'
 import { SzczegolyMpzp } from './SzczegolyMpzp'
@@ -36,6 +37,7 @@ import {
   mocneISlabe,
   opisRozdzielczosci,
   opisWartosci,
+  powodPominiecia,
   type Wplyw,
   zdanieWarstwy,
   znakowanePunkty,
@@ -56,6 +58,7 @@ export function EkranOkolica() {
   const wynik = useWynikAdresu(stan.wybrany)
   const adres = dane.stan === 'gotowe' && stan.wybrany !== null ? dane.adresy[stan.wybrany] : null
   const linkMapa = hrefDla(stan, { ekran: 'szukaj' })
+  const [jakOtwarte, setJakOtwarte] = useState(false)
 
   if (dane.stan === 'ladowanie') {
     return (
@@ -99,7 +102,20 @@ export function EkranOkolica() {
         Wróć do mapy
       </a>
 
-      <Naglowek wynik={wynik} nazwa={opisAdresu(adres)} miejsce={miejsce} atrapa={atrapa} />
+      <Naglowek
+        wynik={wynik}
+        nazwa={opisAdresu(adres)}
+        miejsce={miejsce}
+        atrapa={atrapa}
+        onJakLiczymy={() => {
+          setJakOtwarte(true)
+          requestAnimationFrame(() =>
+            document.getElementById('jak-liczymy')?.scrollIntoView({ behavior: 'smooth' }),
+          )
+        }}
+      />
+
+      <JakLiczymy wynik={wynik} otwarte={jakOtwarte} onZmiana={setJakOtwarte} />
 
       <section
         className="karta okol-wybor-trybu"
@@ -213,11 +229,13 @@ function Naglowek({
   nazwa,
   miejsce,
   atrapa,
+  onJakLiczymy,
 }: {
   wynik: WynikAdresu
   nazwa: string
   miejsce: MiejsceAdresu
   atrapa: boolean
+  onJakLiczymy: () => void
 }) {
   const stan = useStan((s) => s)
   const [komunikat, setKomunikat] = useState('')
@@ -311,6 +329,14 @@ function Naglowek({
             onClick={udostepnij}
           >
             Udostępnij
+          </button>
+          <button
+            type="button"
+            className="seg okol-przycisk"
+            data-cel="jak-liczymy"
+            onClick={onJakLiczymy}
+          >
+            Jak to policzyliśmy?
           </button>
           <span role="status" className="okol-status">
             {komunikat}
@@ -492,13 +518,8 @@ function Rozbicie({ warstwy, wynik }: { warstwy: RozbicieWarstwy[]; wynik: numbe
 
 function KomorkaOceny({ w }: { w: RozbicieWarstwy }) {
   if (w.ocena === null) {
-    // Brak oceny ma trzy powody, a żaden nie jest zerem.
-    const powod =
-      w.wartosc === null
-        ? 'brak danych'
-        : w.kierunek === null
-          ? 'bez kierunku, nie liczona'
-          : 'nie liczona'
+    // Brak oceny ma kilka powodów, a żaden nie jest zerem.
+    const powod = powodPominiecia(w)
     return (
       <span className="okol-ocena">
         <span className="okol-pasek okol-pasek-brak" />

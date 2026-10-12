@@ -125,3 +125,81 @@ test('punkty z prawdziwym minusem, liczba warstw', () => {
   const w = [warstwa('a', 50, 1), warstwa('b', null, 0), warstwa('c', 1, 0, { liczona: false })]
   assert.deepEqual(liczbyWarstw(w), { zDanymi: 1, razem: 2 })
 })
+
+import type { RozbicieKategorii, WynikAdresu } from '../../wynik/silnik.ts'
+import { powodPominiecia, skladWyniku } from './wyjasnienie.ts'
+
+function kat(kategoria: string, warstwy: RozbicieWarstwy[]): RozbicieKategorii {
+  const z = warstwy.filter((w) => w.ocena !== null)
+  const waga = z.reduce((a, w) => a + w.waga, 0)
+  const wklad = z.reduce((a, w) => a + (w.wklad ?? 0), 0)
+  return {
+    kategoria,
+    ocena: waga > 0 ? wklad / waga : null,
+    waga,
+    wklad: z.length ? wklad : null,
+    pewnosc: 1,
+    warstwy,
+  } as RozbicieKategorii
+}
+
+function wynikZ(warstwy: RozbicieWarstwy[]): WynikAdresu {
+  const wklad = warstwy.reduce((a, w) => a + (w.wklad ?? 0), 0)
+  const byKat = new Map<string, RozbicieWarstwy[]>()
+  for (const w of warstwy) byKat.set(w.kategoria, [...(byKat.get(w.kategoria) ?? []), w])
+  return {
+    i: 0,
+    wynik: warstwy.some((w) => w.ocena !== null) ? wklad : null,
+    litera: null,
+    pewnosc: 0.8,
+    kategorie: [...byKat].map(([k, w]) => kat(k, w)),
+    warstwy,
+  } as WynikAdresu
+}
+
+test('skladWyniku: wkłady sumują się do wyniku, udziały do 100', () => {
+  const s = skladWyniku(
+    wynikZ([
+      warstwa('a', 80, 0.5),
+      warstwa('b', 40, 0.25, { kategoria: 'spokoj' }),
+      warstwa('c', 60, 0.25, { kategoria: 'spokoj' }),
+    ]),
+  )
+  assert.equal(s.wynik, 65)
+  const wklady = s.kategorie.reduce((a, k) => a + k.wklad, 0)
+  assert.ok(Math.abs(wklady - 65) <= 0.05)
+  const udzialy = s.kategorie.reduce((a, k) => a + k.udzial, 0)
+  assert.ok(Math.abs(udzialy - 100) <= 0.05)
+  assert.ok(Math.abs(s.brakDo100 - 35) <= 0.05)
+})
+
+test('skladWyniku: wynik null daje pusty skład bez dzielenia przez 0', () => {
+  const s = skladWyniku(wynikZ([warstwa('a', null, 0, { wartosc: null })]))
+  assert.equal(s.wynik, null)
+  assert.deepEqual(s.kategorie, [])
+  assert.equal(s.brakDo100, 0)
+})
+
+test('skladWyniku: warstwa bez danych trafia do pominiętych, nie do zera', () => {
+  const s = skladWyniku(
+    wynikZ([warstwa('a', 70, 1), warstwa('b', null, 0, { wartosc: null, wagaUzytkownika: 2 })]),
+  )
+  assert.equal(s.pominiete.length, 1)
+  assert.equal(s.pominiete[0]?.warstwa.id, 'b')
+  assert.equal(s.pominiete[0]?.powod, 'brak danych')
+  assert.equal(s.kategorie.flatMap((k) => k.warstwy).length, 1)
+})
+
+test('powodPominiecia: kolejność powodów', () => {
+  const baza = {
+    ocena: null,
+    wartosc: 1,
+    kierunek: 'mniej-lepiej',
+    niedostepny: undefined,
+  } as const
+  assert.equal(powodPominiecia({ ...baza, ocena: 5 }), null)
+  assert.equal(powodPominiecia({ ...baza, niedostepny: 'x' }), 'plik warstwy się nie wczytał')
+  assert.equal(powodPominiecia({ ...baza, wartosc: null }), 'brak danych')
+  assert.equal(powodPominiecia({ ...baza, kierunek: null }), 'bez kierunku, nie liczona')
+  assert.equal(powodPominiecia(baza), 'nie liczona')
+})

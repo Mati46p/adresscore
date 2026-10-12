@@ -1,7 +1,7 @@
 // Czysta logika karty okolicy: mocne i słabe strony oraz zdania z surowych wartości.
 // Importy tylko typowe, żeby testy szły na gołym `node --test` (patrz src/wynik/silnik.ts).
 import type { Rozdzielczosc } from '../../kontrakty/index.ts'
-import type { RozbicieWarstwy } from '../../wynik/silnik.ts'
+import type { RozbicieKategorii, RozbicieWarstwy, WynikAdresu } from '../../wynik/silnik.ts'
 
 const FORMAT = new Intl.NumberFormat('pl-PL', { maximumFractionDigits: 1 })
 
@@ -113,4 +113,98 @@ export function liczbyWarstw(warstwy: readonly RozbicieWarstwy[]): {
 } {
   const liczone = warstwy.filter((w) => w.liczona)
   return { zDanymi: liczone.filter((w) => w.ocena !== null).length, razem: liczone.length }
+}
+
+/** Powód braku oceny warstwy; żaden z powodów nie jest zerem. null = warstwa ma ocenę. */
+export function powodPominiecia(
+  w: Pick<RozbicieWarstwy, 'ocena' | 'wartosc' | 'kierunek' | 'niedostepny'>,
+): string | null {
+  if (w.ocena !== null) return null
+  if (w.niedostepny) return 'plik warstwy się nie wczytał'
+  if (w.wartosc === null) return 'brak danych'
+  if (w.kierunek === null) return 'bez kierunku, nie liczona'
+  return 'nie liczona'
+}
+
+export interface WarstwaSkladu {
+  warstwa: RozbicieWarstwy
+  /** Udział wagi w wyniku, 0–100 (podstawa = suma wag warstw z danymi). */
+  udzial: number
+  ocena: number
+  /** Punkty wyniku wniesione przez warstwę. */
+  wklad: number
+}
+
+export interface KategoriaSkladu {
+  kategoria: RozbicieKategorii['kategoria']
+  udzial: number
+  ocena: number
+  wklad: number
+  warstwy: WarstwaSkladu[]
+}
+
+export interface PominietaWarstwa {
+  warstwa: RozbicieWarstwy
+  powod: string
+}
+
+export interface SkladWyniku {
+  wynik: number | null
+  kategorie: KategoriaSkladu[]
+  pominiete: PominietaWarstwa[]
+  /** Punkty do 100, których wynik nie ma; 0, gdy wyniku nie ma. */
+  brakDo100: number
+  /** Kompletność danych, 0–100. */
+  kompletnosc: number
+}
+
+/**
+ * Rachunek wyniku od góry do dołu na podstawie gotowego rozbicia z silnika, bez liczenia od nowa.
+ * Udziały liczone względem SUMY wag warstw z danymi (nie największej), więc domykają się do 100.
+ * Warstwa bez danych trafia do `pominiete`, nigdy do składu jako zero.
+ */
+export function skladWyniku(wynik: WynikAdresu): SkladWyniku {
+  const warstwy = wynik.warstwy.filter((w) => w.kategoria !== 'kontekst')
+  const pominiete = warstwy
+    .filter((w) => w.wagaUzytkownika > 0 && w.ocena === null)
+    .map((w) => ({ warstwa: w, powod: powodPominiecia(w) ?? 'nie liczona' }))
+  const kompletnosc = Math.round(wynik.pewnosc * 100)
+  if (wynik.wynik === null) {
+    return { wynik: null, kategorie: [], pominiete, brakDo100: 0, kompletnosc }
+  }
+
+  const liczone = (k: RozbicieKategorii) =>
+    k.warstwy.filter((w) => w.ocena !== null && w.wklad !== null && w.waga > 0)
+  const suma = wynik.kategorie.reduce((s, k) => s + liczone(k).reduce((a, w) => a + w.waga, 0), 0)
+  const kategorie: KategoriaSkladu[] = []
+  if (suma > 0) {
+    for (const k of wynik.kategorie) {
+      if (k.kategoria === 'kontekst') continue
+      const w = liczone(k)
+      if (w.length === 0) continue
+      const wagaKat = w.reduce((a, x) => a + x.waga, 0)
+      kategorie.push({
+        kategoria: k.kategoria,
+        udzial: (wagaKat / suma) * 100,
+        ocena: k.ocena ?? 0,
+        wklad: w.reduce((a, x) => a + (x.wklad ?? 0), 0),
+        warstwy: w
+          .map((x) => ({
+            warstwa: x,
+            udzial: (x.waga / suma) * 100,
+            ocena: x.ocena ?? 0,
+            wklad: x.wklad ?? 0,
+          }))
+          .sort((a, b) => b.wklad - a.wklad),
+      })
+    }
+  }
+  kategorie.sort((a, b) => b.wklad - a.wklad)
+  return {
+    wynik: wynik.wynik,
+    kategorie,
+    pominiete,
+    brakDo100: Math.max(0, 100 - wynik.wynik),
+    kompletnosc,
+  }
 }

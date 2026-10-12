@@ -531,3 +531,116 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Panel „Jak policzyliśmy ten wynik”. Kolor kategorii tylko na kropce i segmencie, nie na tekście. */
+.okol-jak {
+  --jak-k0: #1f7a8c;
+  --jak-k1: #d98e04;
+  --jak-k2: #6a4c93;
+  --jak-k3: #2e8b57;
+  --jak-k4: #c1440e;
+  --jak-k5: #3a6ea5;
+  --jak-k6: #8a8d1f;
+  --jak-k7: #b0457a;
+}
+.okol-jak-k0 {
+  background: var(--jak-k0);
+}
+.okol-jak-k1 {
+  background: var(--jak-k1);
+}
+.okol-jak-k2 {
+  background: var(--jak-k2);
+}
+.okol-jak-k3 {
+  background: var(--jak-k3);
+}
+.okol-jak-k4 {
+  background: var(--jak-k4);
+}
+.okol-jak-k5 {
+  background: var(--jak-k5);
+}
+.okol-jak-k6 {
+  background: var(--jak-k6);
+}
+.okol-jak-k7 {
+  background: var(--jak-k7);
+}
+.okol-jak-pasek {
+  display: flex;
+  height: 16px;
+  margin: 12px 0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--linia);
+}
+.okol-jak-seg {
+  display: block;
+  height: 100%;
+}
+.okol-jak-reszta {
+  display: block;
+  background: repeating-linear-gradient(135deg, var(--brak-danych) 0 4px, #d4d8db 4px 8px);
+}
+.okol-jak-legenda {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  font-size: 14px;
+  color: var(--tekst-2);
+}
+.okol-jak-kropka {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 8px;
+  border-radius: 50%;
+}
+.okol-jak-tabela th[scope="row"] {
+  text-align: left;
+  font-weight: 500;
+}
+.okol-jak-warstwy td {
+  padding-top: 0;
+  font-size: 14px;
+}
+.okol-jak-warstwy summary {
+  cursor: pointer;
+  min-height: 32px;
+  color: var(--tekst-2);
+}
+.okol-jak-warstwy ul,
+.okol-jak-pominiete {
+  list-style: none;
+  margin: 8px 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.okol-jak-warstwy li,
+.okol-jak-pominiete li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 12px;
+}
+.okol-jak-link {
+  display: inline-block;
+  margin-top: 8px;
+  color: var(--akcent);
+  text-decoration: underline;
+}
+.okol-jak-przelacznik {
+  min-height: 44px;
+  padding: 0 14px;
+}
+@media (hover: hover) {
+  .okol-jak-warstwy summary:hover,
+  .okol-jak-link:hover {
+    color: var(--tekst);
+  }
+}
