@@ -614,6 +614,56 @@ export function Metoda() {
         <PrzelacznikPomiaru />
       </section>
 
+      <section id="met-prywatnosc" aria-labelledby="met-prywatnosc-h" className="met-sekcja">
+        <h2 id="met-prywatnosc-h">Polityka prywatności</h2>
+        <ul className="met-punkty">
+          <li>
+            Administrator: Mateusz Przybysz, Gluon AI Mateusz Przybysz, NIP 7133093777, REGON
+            366384646. Kontakt: kontakt@z-dykty.pl.
+          </li>
+          <li>
+            Serwis nie wymaga konta i nie zbiera danych, które pozwalają Cię zidentyfikować. Jedyne
+            przetwarzanie to pomiar ruchu opisany wyżej (prawnie uzasadniony interes, art. 6 ust. 1
+            lit. f RODO).
+          </li>
+          <li>
+            Odbiorcy: hosting serwisu (Hetzner, Niemcy) i baza danych (Supabase). Mapa i czcionki
+            pobierane z zewnętrznych serwerów widzą Twój adres IP, jak przy każdej stronie.
+          </li>
+          <li>
+            Masz prawo dostępu, sprostowania, usunięcia, ograniczenia, sprzeciwu i skargi do Prezesa
+            UODO.
+          </li>
+        </ul>
+      </section>
+
+      <section id="met-cookies" aria-labelledby="met-cookies-h" className="met-sekcja">
+        <h2 id="met-cookies-h">Cookies</h2>
+        <ul className="met-punkty">
+          <li>Serwis nie ustawia ciasteczek, dlatego nie pyta o zgodę.</li>
+          <li>
+            W pamięci przeglądarki zapisujemy tylko to, co potrzebne do działania: ostatni widok
+            mapy na czas sesji i Twój wybór „pomiar wyłączony”. Nie służą do śledzenia.
+          </li>
+        </ul>
+      </section>
+
+      <section id="met-regulamin" aria-labelledby="met-regulamin-h" className="met-sekcja">
+        <h2 id="met-regulamin-h">Regulamin</h2>
+        <ul className="met-punkty">
+          <li>Serwis jest bezpłatny i nie wymaga rejestracji. Usługodawcą jest administrator.</li>
+          <li>
+            Wyniki są szacunkiem z rejestrów publicznych, mają charakter informacyjny i nie są
+            wyceną, opinią ani poradą. Nie odpowiadamy za decyzje podjęte na ich podstawie.
+          </li>
+          <li>
+            Nie wolno obciążać serwisu automatami ani używać go niezgodnie z prawem. Wystarczy
+            aktualna przeglądarka.
+          </li>
+          <li>Reklamacje i uwagi: kontakt@z-dykty.pl, odpowiadamy w 14 dni.</li>
+        </ul>
+      </section>
+
       <section id="met-ograniczenia" aria-labelledby="met-ograniczenia-h" className="met-sekcja">
         <h2 id="met-ograniczenia-h">Ograniczenia</h2>
         <Ograniczenia />
@@ -623,6 +673,18 @@ export function Metoda() {
         {/* Link niesie miasto: gołe #/ otwierałoby Kraków i czyściłoby wybór innego miasta (#223). */}
         <a href={miasto.slug === MIASTO_DOMYSLNE ? '#/' : `#/?mst=${miasto.slug}`}>
           Wróć do wyszukiwania
+        </a>{' '}
+        ·{' '}
+        <a href="#met-prywatnosc" onClick={przewinDoSekcji}>
+          Prywatność
+        </a>{' '}
+        ·{' '}
+        <a href="#met-cookies" onClick={przewinDoSekcji}>
+          Cookies
+        </a>{' '}
+        ·{' '}
+        <a href="#met-regulamin" onClick={przewinDoSekcji}>
+          Regulamin
         </a>
       </footer>
     </main>
