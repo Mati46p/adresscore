@@ -619,7 +619,7 @@ export function Metoda() {
         <ul className="met-punkty">
           <li>
             Administrator: Mateusz Przybysz, Gluon AI Mateusz Przybysz, NIP 7133093777, REGON
-            366384646. Kontakt: kontakt@z-dykty.pl.
+            366384646. Kontakt: gluon.v3@gmail.com.
           </li>
           <li>
             Serwis nie wymaga konta i nie zbiera danych, które pozwalają Cię zidentyfikować. Jedyne
@@ -660,7 +660,7 @@ export function Metoda() {
             Nie wolno obciążać serwisu automatami ani używać go niezgodnie z prawem. Wystarczy
             aktualna przeglądarka.
           </li>
-          <li>Reklamacje i uwagi: kontakt@z-dykty.pl, odpowiadamy w 14 dni.</li>
+          <li>Reklamacje i uwagi: gluon.v3@gmail.com, odpowiadamy w 14 dni.</li>
         </ul>
       </section>
 
