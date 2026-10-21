@@ -245,4 +245,64 @@ zapiszWskaznik(
   },
   wartosci,
 )
+
+// ---------------------------------------------------------------------------------------------
+// Tryb miasta: liceum_odleglosc z RSPO (w Krakowie ten wskaźnik pochodzi z SMK, metropolia-smk.mjs).
+// Liceum ogólnokształcące dla młodzieży, bez specjalnych; lokalizacja = punkt adresowy PRG dopasowany
+// po ulicy i numerze. Szkoła bez dopasowania adresu jest pominięta (liczba w opisie), więc odległość
+// bywa zawyżona. Brak liceów z lokalizacją = wskaźnika nie zapisujemy (szara kategoria, nie zero).
+if (MIASTO_INFO) {
+  const licea = []
+  let bezAdresu = 0
+  for (const r of rows) {
+    if (
+      field(r, 'Typ podmiotu') !== 'Liceum ogólnokształcące' ||
+      field(r, 'Kategoria uczniów') !== 'Dzieci lub młodzież' ||
+      field(r, 'Specyfika szkoły') === 'specjalna' ||
+      !gminy.has(bezZer(field(r, 'idTerytGmina')))
+    )
+      continue
+    const a = indeksAdresow.get(
+      klucz(field(r, 'Miejscowość'), field(r, 'Ulica'), field(r, 'Numer domu')),
+    )
+    if (!a) bezAdresu++
+    else licea.push({ lon: a.lon, lat: a.lat })
+  }
+  console.log(`Licea (RSPO): ${licea.length} z lokalizacją, ${bezAdresu} bez dopasowania adresu.`)
+  if (!licea.length) console.log('Brak liceów z lokalizacją: liceum_odleglosc pominięte.')
+  else {
+    const odleglosci = adresy.map((a) => {
+      let min = Infinity
+      for (const l of licea) {
+        const d = metry(a, l)
+        if (d < min) min = d
+      }
+      return Math.round(min)
+    })
+    zapiszWskaznik(
+      {
+        id: 'liceum_odleglosc',
+        kategoria: 'codziennosc',
+        nazwa: 'Najbliższe liceum ogólnokształcące',
+        opis: `Odległość w linii prostej od adresu do najbliższego liceum ogólnokształcącego dla młodzieży (publicznego lub niepublicznego) w mieście ${MIASTO_INFO.nazwa}. Liczba liceów w zbiorze: ${licea.length}. Pominięto licea dla dorosłych i specjalne, technika oraz gimnazja. Lokalizację szkoły ustalono po ulicy i numerze domu z oficjalnych punktów adresowych; ${bezAdresu} liceów bez dopasowania adresu pominięto, więc odległość bywa zawyżona. Poza granicą miasta nie szukano, a wykaz (stan 30.09.2025) mógł się zdezaktualizować. To nie jest trasa ani czas dojazdu.`,
+        jednostka: 'm',
+        rozdzielczosc: 'adres',
+        kierunek: 'neutralny',
+        zakres: [0, 10000],
+        zadanie: 241,
+        zrodla: [
+          {
+            nazwa: 'MEN, wykaz szkół SIO/RSPO na 30.09.2025 – liceum ogólnokształcące',
+            url: 'https://dane.gov.pl/pl/dataset/839,wykaz-szko-i-placowek-oswiatowych/resource/1254769',
+            licencja: 'CC BY 4.0',
+            dataDanych: '2025-09-30',
+            pobrano: dzis(),
+          },
+          ...zrodlaAdresow,
+        ],
+      },
+      odleglosci,
+    )
+  }
+}
 console.log(`Czas: ${((performance.now() - start) / 1000).toFixed(1)} s`)

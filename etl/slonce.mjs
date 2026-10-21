@@ -1,7 +1,7 @@
 // Godziny słońca 21 grudnia przed fasadą adresu (zadanie #122): wskaźnik slonce_grudzien_h.
 // Dane: obrysy i wysokości dachów GUGiK LoD1 2024 (public/dane/budynki-3d.geojson, powiat Kraków)
 // oraz punkty adresowe MSIP. Model i jego ograniczenia: etl/lib/slonce.mjs i meta wskaźnika niżej.
-// Uruchom: node etl/slonce.mjs [--watki=N] [--probka=N]. --probka liczy tylko pierwsze N adresów
+// Uruchom: [ADRESCORE_MIASTO=<slug>] node etl/slonce.mjs [--watki=N] [--probka=N]. --probka liczy tylko pierwsze N adresów
 // Krakowa i niczego nie zapisuje. Surowych pobrań nie ma – wszystko z plików w repo.
 //
 // Zasięg: budynki obejmują tylko miasto Kraków, więc adresy obwarzanka dostają null (brak danych),
@@ -10,6 +10,7 @@ import { readFileSync } from 'node:fs'
 import { availableParallelism } from 'node:os'
 import { join } from 'node:path'
 import { Worker } from 'node:worker_threads'
+import { MIASTO_INFO } from './lib/miasto.mjs'
 import {
   budynkiZGeoJson,
   D_MAX,
@@ -19,6 +20,7 @@ import {
   probkiSlonca,
   SRODEK,
   udostepnijScene,
+  ustawSrodek,
   zbudujScene,
 } from './lib/slonce.mjs'
 import { DANE, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
@@ -49,10 +51,22 @@ const { adresy } = wczytajAdresy()
 const geojson = odczyt('budynki-3d.geojson')
 const metaBudynkow = odczyt('budynki-3d.meta.json')
 const zrodloAdresow = odczyt('adresy.json').zrodla[0]
+// Tryb miasta: środek układu i słońca = środek prostokąta adresów (budynki z tego samego miasta).
+let srodek = SRODEK
+if (MIASTO_INFO) {
+  const zakres = (t) => [
+    t.reduce((m, v) => Math.min(m, v), Infinity),
+    t.reduce((m, v) => Math.max(m, v), -Infinity),
+  ]
+  const [l0, l1] = zakres(adresy.map((a) => a.lon))
+  const [b0, b1] = zakres(adresy.map((a) => a.lat))
+  srodek = { lon: (l0 + l1) / 2, lat: (b0 + b1) / 2 }
+  ustawSrodek(srodek)
+}
 const scena = udostepnijScene(zbudujScene(budynkiZGeoJson(geojson.features)))
 // Jedna trajektoria słońca dla całego miasta (środek Krakowa). Na skrajach miasta słońce stoi
 // inaczej o najwyżej 0,2° (ok. 1,5 min przy wschodzie), czyli poniżej błędu samego modelu.
-const slonce = probkiSlonca({ lat: SRODEK.lat, lon: SRODEK.lon })
+const slonce = probkiSlonca({ lat: srodek.lat, lon: srodek.lon })
 const godzinaCET = (ms) => new Date(ms + 3_600_000).toISOString().slice(11, 19)
 console.log(
   `Budynki: ${geojson.features.length}, krawędzi ${scena.liczbaKrawedzi}. Słońce 21.12: wschód ${godzinaCET(slonce.wschodMs)}, zachód ${godzinaCET(slonce.zachodMs)} (CET), ${slonce.dlugoscH.toFixed(2)} h, ${slonce.n} próbek. Wczytanie ${sekundy(start)} s.`,
@@ -64,7 +78,7 @@ const y = wspolna(Float64Array, N)
 const wKrakowie = []
 adresy.forEach((a, i) => {
   ;[x[i], y[i]] = naMetry(a.lon, a.lat)
-  if (a.gmina === 'Kraków') wKrakowie.push(i)
+  if (MIASTO_INFO || a.gmina === 'Kraków') wKrakowie.push(i)
 })
 const doLiczenia = wspolna(
   Int32Array,
@@ -105,7 +119,7 @@ const policzone = await Promise.all(
 )
 const razem = policzone.reduce((a, b) => a + b, 0)
 console.log(
-  `Obliczenia: ${doLiczenia.length} adresów Krakowa, ${WATKI} wątków, ${sekundy(obliczenia)} s. Z fasadą w ${MAX_ODL_FASADY} m: ${razem} (${((100 * razem) / doLiczenia.length).toFixed(1)}%).`,
+  `Obliczenia: ${doLiczenia.length} adresów ${MIASTO_INFO ? MIASTO_INFO.nazwa : 'Krakowa'}, ${WATKI} wątków, ${sekundy(obliczenia)} s. Z fasadą w ${MAX_ODL_FASADY} m: ${razem} (${((100 * razem) / doLiczenia.length).toFixed(1)}%).`,
 )
 
 // Kontrola: średnia godzin wg strony fasady. Fasady od północy muszą mieć dokładnie 0 h (słońce
@@ -131,9 +145,11 @@ const kwantyl = (p) => policzoneWartosci[Math.floor(p * (policzoneWartosci.lengt
 console.log(
   `  kwantyle (h): p10 ${kwantyl(0.1)}, p25 ${kwantyl(0.25)}, p50 ${kwantyl(0.5)}, p75 ${kwantyl(0.75)}, p90 ${kwantyl(0.9)}, max ${kwantyl(1)}`,
 )
-console.log('Miejsca kontrolne:')
-for (const [ulica, nr] of MIEJSCA_KONTROLNE) {
-  const a = adresy.find((p) => p.gmina === 'Kraków' && p.ulica === ulica && p.nr === nr)
+if (!MIASTO_INFO) console.log('Miejsca kontrolne:')
+for (const [ulica, nr] of MIASTO_INFO ? [] : MIEJSCA_KONTROLNE) {
+  const a = adresy.find(
+    (p) => !MIASTO_INFO && p.gmina === 'Kraków' && p.ulica === ulica && p.nr === nr,
+  )
   if (!a) console.log(`  ${ulica} ${nr}: brak w adresach`)
   else if (Number.isNaN(godziny[a.i]))
     console.log(`  ${ulica} ${nr}: brak danych (brak budynku przy adresie)`)
@@ -158,7 +174,7 @@ zapiszWskaznik(
     id: 'slonce_grudzien_h',
     kategoria: 'spokoj',
     nazwa: 'Słońce 21 grudnia',
-    opis: `Godziny bezpośredniego słońca 21 grudnia, w najkrótszy dzień roku (bez przeszkód ${slonce.dlugoscH.toFixed(1).replace('.', ',')} h). Liczone w punkcie 1 m przed fasadą najbliższą punktowi adresowemu, na wysokości okna najwyższej kondygnacji (do 6 m); etykieta podaje, w którą stronę świata patrzy fasada. Słońce co minutę wg wzoru NOAA, zasłaniają je bryły budynków LoD1 GUGiK w promieniu ${D_MAX / 1000} km, a słońce za płaszczyzną fasady nie świeci, więc fasada od północy ma zawsze 0 h. Bez drzew, terenu i budynków spoza modelu; przy granicy miasta brak zasłon z sąsiednich gmin. Tylko adresy w Krakowie z budynkiem bliżej niż ${MAX_ODL_FASADY} m od punktu adresowego, reszta bez danych.`,
+    opis: `Godziny bezpośredniego słońca 21 grudnia, w najkrótszy dzień roku (bez przeszkód ${slonce.dlugoscH.toFixed(1).replace('.', ',')} h). Liczone w punkcie 1 m przed fasadą najbliższą punktowi adresowemu, na wysokości okna najwyższej kondygnacji (do 6 m); etykieta podaje, w którą stronę świata patrzy fasada. Słońce co minutę wg wzoru NOAA, zasłaniają je bryły budynków LoD1 GUGiK w promieniu ${D_MAX / 1000} km, a słońce za płaszczyzną fasady nie świeci, więc fasada od północy ma zawsze 0 h. Bez drzew, terenu i budynków spoza modelu; przy granicy miasta brak zasłon z sąsiednich gmin. Tylko adresy ${MIASTO_INFO ? `w mieście ${MIASTO_INFO.nazwa}` : 'w Krakowie'} z budynkiem bliżej niż ${MAX_ODL_FASADY} m od punktu adresowego, reszta bez danych.`,
     jednostka: 'h',
     kierunek: 'wiecej-lepiej',
     rozdzielczosc: 'adres',
@@ -173,8 +189,9 @@ zapiszWskaznik(
         pobrano: metaBudynkow.pobrano,
       },
       {
-        nazwa:
-          'Gmina Miejska Kraków, Portal MSIP Obserwatorium (https://msip.krakow.pl) – punkty adresowe EMUiA',
+        nazwa: MIASTO_INFO
+          ? zrodloAdresow.nazwa
+          : 'Gmina Miejska Kraków, Portal MSIP Obserwatorium (https://msip.krakow.pl) – punkty adresowe EMUiA',
         url: zrodloAdresow.url,
         licencja: zrodloAdresow.licencja,
         dataDanych: zrodloAdresow.dataDanych,

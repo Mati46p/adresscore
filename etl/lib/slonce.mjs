@@ -47,7 +47,14 @@ export function metryNaStopien(lat) {
   }
 }
 
-const M_NA_STOPIEN = metryNaStopien(SRODEK.lat)
+let srodekUkladu = SRODEK
+let M_NA_STOPIEN = metryNaStopien(SRODEK.lat)
+
+/** Tryb miasta: układ lokalny wokół środka podanego miasta (domyślnie Kraków). */
+export function ustawSrodek(srodek) {
+  srodekUkladu = Object.freeze({ lon: srodek.lon, lat: srodek.lat })
+  M_NA_STOPIEN = metryNaStopien(srodek.lat)
+}
 
 /**
  * WGS84 → metry względem środka Krakowa (x = wschód, y = północ). Jedna skala na całe miasto:
@@ -55,7 +62,7 @@ const M_NA_STOPIEN = metryNaStopien(SRODEK.lat)
  * czyli kierunek promienia o ułamek stopnia.
  */
 export function naMetry(lon, lat) {
-  return [(lon - SRODEK.lon) * M_NA_STOPIEN.lon, (lat - SRODEK.lat) * M_NA_STOPIEN.lat]
+  return [(lon - srodekUkladu.lon) * M_NA_STOPIEN.lon, (lat - srodekUkladu.lat) * M_NA_STOPIEN.lat]
 }
 
 // ---------------------------------------------------------------------------------------------
