@@ -19,6 +19,7 @@ import {
 import { sciezkaKanoniczna, tytulEkranu } from './miastoTeksty'
 import './aplikacja.css'
 import { Naglowek } from './Naglowek'
+import { PasekSerwisow } from './PasekSerwisow'
 
 const EkranOkolica = lazy(async () => ({ default: (await ladujOkolice()).EkranOkolica }))
 const EkranPorownanie = lazy(async () => ({ default: (await ladujPorownanie()).EkranPorownanie }))
@@ -139,6 +140,7 @@ function Powloka() {
 
   return (
     <>
+      <PasekSerwisow />
       <Naglowek />
       {/* Link z `mst=` spoza rejestru (literówka, miasto z nowszej wersji): otwieramy Kraków, ale mówimy to
           wprost, zamiast po cichu pokazać inne miasto, niż prosił link (#223, contracts/url.md). */}

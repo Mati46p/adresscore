@@ -1,0 +1,79 @@
+.serwisy {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: var(--wys-paska-serwisow);
+  padding: 0 32px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  background: var(--tlo);
+  border-bottom: 1px solid var(--ramka);
+  white-space: nowrap;
+}
+.serwisy-tytul {
+  margin: 0;
+  color: var(--tekst-2);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.serwisy ul {
+  display: flex;
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.serwisy a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--wys-paska-serwisow);
+  color: var(--tekst-2);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.serwisy ul.serwisy-prawne {
+  margin-left: auto;
+  padding-left: 16px;
+}
+.serwisy-prawne a {
+  font-weight: 400;
+}
+.serwisy a:hover {
+  color: var(--tekst);
+}
+.serwisy img {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  object-fit: contain;
+}
+.dziennikarze {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--cel-dotyku);
+  padding: 0 16px;
+  border: 1px solid var(--ramka);
+  border-radius: 999px;
+  background: var(--powierzchnia);
+  color: var(--tekst);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.dziennikarze:hover {
+  border-color: var(--akcent-obrys);
+}
+@media (max-width: 860px) {
+  .serwisy {
+    padding: 0 16px;
+  }
+  .serwisy-tytul,
+  .serwisy img {
+    display: none;
+  }
+}

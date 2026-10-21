@@ -23,7 +23,9 @@
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
   --promien: 12px;
   --cel-dotyku: 44px;
-  --wys-naglowka: 69px;
+  /* Wysokość wszystkiego nad treścią: pasek serwisów + nagłówek. */
+  --wys-paska-serwisow: 32px;
+  --wys-naglowka: calc(69px + var(--wys-paska-serwisow));
   font-family: var(--font);
   color: var(--tekst);
   background: var(--tlo);
@@ -71,7 +73,7 @@ a:hover {
   align-items: center;
   justify-content: space-between;
   gap: 12px 16px;
-  min-height: var(--wys-naglowka);
+  min-height: calc(var(--wys-naglowka) - var(--wys-paska-serwisow));
   padding: 12px 32px;
   background: var(--powierzchnia);
   border-bottom: 1px solid var(--ramka);
@@ -261,13 +263,13 @@ a:hover {
 @media (max-width: 860px) {
   /* Telefon: nagłówek w jednym wierszu (logo + Menu), kroki i tryby w rozwijanym panelu pod nim. */
   :root {
-    --wys-naglowka: 57px;
+    --wys-naglowka: calc(57px + var(--wys-paska-serwisow));
   }
   .naglowek {
     position: relative;
     z-index: 30;
     flex-wrap: nowrap;
-    height: var(--wys-naglowka);
+    height: calc(var(--wys-naglowka) - var(--wys-paska-serwisow));
     min-height: 0;
     padding: 6px 16px;
   }

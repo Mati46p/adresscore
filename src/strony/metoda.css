@@ -50,8 +50,7 @@
   font-size: 14px;
 }
 .met-spis a:hover,
-.met-stopka a:hover,
-.met-cpdp:hover {
+.met-stopka a:hover {
   border-color: var(--akcent-obrys);
   color: var(--tekst);
 }
@@ -326,59 +325,4 @@
     border-top: 0;
     padding-top: 4px;
   }
-}
-
-/* Serwisy współpracujące (sieć CPDP) w stopce. */
-.met-serwisy {
-  margin-top: 24px;
-  padding-top: 24px;
-  border-top: 1px solid var(--ramka);
-}
-.met-serwisy h2 {
-  margin: 24px 0 12px;
-  color: var(--tekst-2);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-.met-serwisy ul {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.met-serwisy li a {
-  gap: 8px;
-  padding-left: 8px;
-}
-.met-serwisy img {
-  width: 24px;
-  height: 24px;
-  border-radius: 3px;
-  object-fit: contain;
-}
-.met-stopka a.met-cpdp {
-  justify-content: space-between;
-  gap: 16px;
-  padding: 16px 20px;
-  border-radius: 12px;
-  font-size: 20px;
-  color: var(--tekst-2);
-}
-.met-cpdp__etykieta {
-  display: block;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-.met-cpdp__tytul {
-  display: block;
-  margin-top: 4px;
-  color: var(--tekst);
-  font-weight: 700;
-  line-height: 1.2;
 }

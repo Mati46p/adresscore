@@ -5,6 +5,7 @@ import { TRYBY_APLIKACJI, trybEkranu } from '@/wynik/trybyAplikacji'
 import type { Ekran } from '@/wynik/url'
 import { Logo } from './Logo'
 import { przygotujEkran } from './ladowanieEkranow'
+import { PrzyciskDziennikarze } from './PasekSerwisow'
 import './tryby.css'
 
 // Kroki zwykłej pracy mieszkańca. „Dla miasta” i „Dla biznesu” to osobne tryby (przełącznik obok).
@@ -85,6 +86,7 @@ export function Naglowek() {
             </a>
           ))}
         </nav>
+        <PrzyciskDziennikarze />
       </div>
     </header>
   )
