@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
-import { type Adres, MIASTO_DOMYSLNE } from '@/kontrakty'
+import { type Adres, MIASTA, MIASTO_DOMYSLNE, type SlugMiasta } from '@/kontrakty'
 import { useDane } from '@/wynik/dane'
 import { useMiasto } from '@/wynik/miastoDanych'
 import { hrefAdresu, slugUlicy } from '@/wynik/slug'
-import { hrefDla, useStan } from '@/wynik/stan'
+import { hrefDla, useStan, ustawMiasto } from '@/wynik/stan'
 import { przykladAdresu } from './adres'
 import { indeksDla, normalizuj, szukaj } from './wyszukiwarka/indeks'
 import './katalog.css'
@@ -64,6 +64,26 @@ function sortuj(lista: Ulica[], s: Sortowanie): Ulica[] {
   return [...lista].sort((a, b) => kierunek * (a.adresy.length - b.adresy.length))
 }
 
+// Katalog pokazuje adresy bieżącego miasta; zmiana tu przełącza miasto w całej aplikacji.
+function PoleMiasta({ biezace }: { biezace: SlugMiasta }) {
+  return (
+    <label className="katalog-pole">
+      Miasto
+      <select
+        value={biezace}
+        data-cel="wybierz-miasto"
+        onChange={(e) => ustawMiasto(e.currentTarget.value as SlugMiasta)}
+      >
+        {MIASTA.map((m) => (
+          <option key={m.slug} value={m.slug}>
+            {m.nazwa}
+          </option>
+        ))}
+      </select>
+    </label>
+  )
+}
+
 function LinkAdresu({ adres, href }: { adres: Adres; href: string }) {
   return (
     <a href={href}>
@@ -93,7 +113,10 @@ export function KatalogAdresow() {
     return (
       <main className="tresc katalog">
         <h1>Katalog adresów</h1>
-        <p>Wczytuję adresy…</p>
+        <div className="katalog-narzedzia">
+          <PoleMiasta biezace={miasto.slug} />
+        </div>
+        <p>Wczytuję adresy: {miasto.nazwa}…</p>
       </main>
     )
   }
@@ -114,9 +137,11 @@ export function KatalogAdresow() {
   const miejscowosci = [...new Set(grupy.map((g) => g.miejscowosc))].sort((a, b) =>
     a.localeCompare(b, 'pl'),
   )
+  // Po zmianie miasta wybrana miejscowość może nie istnieć – wtedy filtr nie działa.
+  const miejscowosc = miejscowosci.includes(filtrMiejscowosci) ? filtrMiejscowosci : ''
   const filtrowane = grupy.filter(
     (g) =>
-      (!filtrMiejscowosci || g.miejscowosc === filtrMiejscowosci) &&
+      (!miejscowosc || g.miejscowosc === miejscowosc) &&
       g.adresy.length >= minAdresow &&
       (!q || normalizuj(`${g.nazwa} ${g.miejscowosc} ${g.gmina}`).includes(q)),
   )
@@ -175,6 +200,7 @@ export function KatalogAdresow() {
         </dl>
       </header>
       <div className="katalog-narzedzia">
+        <PoleMiasta biezace={miasto.slug} />
         <label className="katalog-szukaj">
           Szukaj ulicy lub adresu
           <input
@@ -208,7 +234,7 @@ export function KatalogAdresow() {
           <label className="katalog-pole">
             Miejscowość
             <select
-              value={filtrMiejscowosci}
+              value={miejscowosc}
               onChange={(e) => {
                 setFiltrMiejscowosci(e.currentTarget.value)
                 resetujListe()
