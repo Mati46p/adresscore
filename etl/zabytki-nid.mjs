@@ -384,8 +384,13 @@ async function main() {
   console.log(
     `SVG (${rozmiarPliku(svg.plik)} MB, pobrano ${pobrano}): ${obiekty.length} obiektów – wielokąty ${rodzaje.wielokat}, linie ${rodzaje.linia}, punkty ${rodzaje.punkt}`,
   )
-  if (obiekty.length < (MIASTO_INFO ? 100 : 1_000))
+  // Kraków: min 1000. Miasto: proporcjonalnie do adresów (1 obiekt na 2000 adresów, najmniej 1);
+  // 0 obiektów = awaria usługi, mniej niż oczekiwano = ostrzeżenie.
+  const oczekiwane = MIASTO_INFO ? Math.max(1, Math.floor(adresy.length / 2000)) : 1_000
+  if (obiekty.length < (MIASTO_INFO ? 1 : oczekiwane))
     throw new Error(`Podejrzanie mało obiektów w SVG (${obiekty.length}): zmiana usługi?`)
+  if (obiekty.length < oczekiwane)
+    console.warn(`UWAGA: mało obiektów w SVG (${obiekty.length} < ${oczekiwane} oczekiwanych)`)
 
   const skrotSvg = createHash('sha1').update(svg.tekst).digest('hex').slice(0, 10)
   const plikSond = join(CACHE, `zabytki-nid-sondy-${skrotSvg}.jsonl`)
@@ -457,7 +462,14 @@ async function main() {
   )
   if (pokrycieProc < 90)
     throw new Error(`Usługa pokrywa tylko ${pokrycieProc}% wykazu CSV (próg 90%)`)
-  if (zgodnosc.zObiektem < 100 || zgodnosc.w50m < 0.7 * zgodnosc.zObiektem)
+  // Próbka proporcjonalna do miasta: małe miasto ma kilkadziesiąt pozycji z dokładnym adresem,
+  // więc zbyt mała próbka (< 20) to ostrzeżenie, a nie awaria. Awarią jest zła zgodność na dość dużej próbce.
+  const minProbka = MIASTO_INFO ? 20 : 100
+  if (zgodnosc.zObiektem < minProbka)
+    console.warn(
+      `UWAGA: tylko ${zgodnosc.zObiektem} pozycji do kontroli położenia (próg ${minProbka}) – kontrola zgodności pominięta`,
+    )
+  else if (zgodnosc.w50m < 0.7 * zgodnosc.zObiektem)
     throw new Error(
       `Położenie obiektów nie zgadza się z adresami PRG: do 50 m ${zgodnosc.w50m} z ${zgodnosc.zObiektem}`,
     )
