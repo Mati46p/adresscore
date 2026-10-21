@@ -1,12 +1,12 @@
 // Punkty usługowe OpenStreetMap -> odległość od każdego adresu w linii prostej.
 // Uruchom: node etl/uslugi-osm.mjs. Surowa odpowiedź Overpass trafia do etl/.cache/.
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { DuckDBInstance } from '@duckdb/node-api'
 import { indeksPrzystankow, najblizszyPrzystanek } from './gtfs-przystanki.mjs'
 import { bboxMiasta, MIASTO_INFO, pbfRegionu } from './lib/miasto.mjs'
-import { CACHE, DANE, dzis, MIASTO, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
+import { CACHE, dzis, MIASTO, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
 
 const API = 'https://overpass-api.de/api/interpreter'
 const DEFINICJE = [
@@ -243,6 +243,14 @@ async function pobierz(adresy) {
   return wynik
 }
 
+const ID_Z_REJESTRU = new Set([
+  'sklep_odleglosc',
+  'apteka_odleglosc',
+  'przedszkole_odleglosc',
+  'zlobek_odleglosc',
+  'przychodnia_odleglosc',
+])
+
 export async function generuj() {
   const { adresy } = wczytajAdresy()
   const odpowiedz = await pobierz(adresy)
@@ -250,12 +258,13 @@ export async function generuj() {
   const dataDanych = odpowiedz.osm3s.timestamp_osm_base.slice(0, 10)
   let powstalo = 0
   for (const d of DEFINICJE) {
+    // Miasto: te id ma lepsze źródło rejestrowe (krok codziennosc, RPWDL/rejestry), który biegnie wcześniej.
+    if (MIASTO && ID_Z_REJESTRU.has(d.id)) continue
     const lista = punkty.get(d.id)
     if (lista.length < Math.min(MIN_PUNKTOW[d.id], Math.max(1, Math.floor(adresy.length / 1000)))) {
       if (!MIASTO) throw new Error(`OSM: za mało punktów ${d.id}: ${lista.length}`)
       // Miasto: kategoria bez dość punktów nie powstaje (szara), reszta liczy się dalej.
       console.warn(`UWAGA: za mało punktów ${d.id}: ${lista.length} – warstwa pominięta (szara)`)
-      rmSync(join(DANE, 'wskazniki', `${d.id}.json`), { force: true })
       continue
     }
     powstalo++
