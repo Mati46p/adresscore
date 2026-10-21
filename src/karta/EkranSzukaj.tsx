@@ -450,7 +450,7 @@ export function EkranSzukaj() {
                 data-liczba={wybraneAdresy.length}
               >
                 <div className="heksy-pasek__naglowek">
-                  <strong>Heksy do porównania</strong>
+                  <strong>Porównanie</strong>
                   <span>
                     {wybraneAdresy.length}/{MAKS_POROWNANIE}
                   </span>

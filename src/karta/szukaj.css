@@ -1,17 +1,16 @@
 .heksy-pasek {
   position: absolute;
   z-index: 5;
-  right: 16px;
   bottom: 14px;
-  left: 16px;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  left: 50%;
+  display: flex;
   align-items: center;
-  gap: 8px 12px;
-  min-height: 58px;
-  padding: 9px 12px;
+  gap: 6px;
+  max-width: calc(100% - 32px);
+  padding: 4px 4px 4px 12px;
+  transform: translateX(-50%);
   border: 1px solid var(--ramka);
-  border-radius: 14px;
+  border-radius: 999px;
   background: rgb(255 255 255 / 94%);
   box-shadow: 0 4px 20px rgb(20 41 31 / 15%);
   backdrop-filter: blur(8px);
@@ -38,25 +37,24 @@
 }
 
 .heksy-pasek__lista {
-  grid-column: 1 / -1;
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 6px;
+  display: flex;
+  gap: 4px;
   min-width: 0;
+  overflow: hidden;
 }
 
 .heksy-pasek__chip {
   display: inline-flex;
   align-items: center;
-  width: 100%;
+  max-width: 150px;
   min-width: 0;
-  gap: 6px;
-  padding: 3px 4px 3px 10px;
+  gap: 2px;
+  padding: 1px 2px 1px 8px;
   border: 1px solid #a4c6b4;
   border-radius: 999px;
   background: #edf5ef;
   color: #194d3c;
-  font-size: 0.84rem;
+  font-size: 0.78rem;
 }
 
 .heksy-pasek__chip[data-aktywny] {
@@ -75,8 +73,8 @@
 .heksy-pasek__chip button {
   display: grid;
   flex: none;
-  width: 30px;
-  height: 30px;
+  width: 22px;
+  height: 22px;
   place-items: center;
   padding: 0;
   border: 0;
@@ -84,7 +82,7 @@
   background: transparent;
   color: inherit;
   font: inherit;
-  font-size: 1.3rem;
+  font-size: 1rem;
   cursor: pointer;
 }
 
@@ -94,10 +92,11 @@
 }
 
 .heksy-pasek__akcja {
-  grid-column: 2;
-  grid-row: 1;
-  min-height: 38px;
-  padding: 6px 12px;
+  order: 3;
+  flex: none;
+  min-height: 30px;
+  padding: 4px 12px;
+  font-size: 0.85rem;
   border: 0;
   border-radius: 999px;
   background: #1f5c46;
@@ -133,42 +132,12 @@
 /* Pasek zajmuje dół mapy; legenda i przyciski mapy pozostają nad nim. */
 .slot-mapy:has(.heksy-pasek) .maplibregl-ctrl-bottom-left,
 .slot-mapy:has(.heksy-pasek) .maplibregl-ctrl-bottom-right {
-  bottom: 124px;
-}
-
-@media (max-width: 1100px) {
-  .heksy-pasek__lista {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .slot-mapy:has(.heksy-pasek[data-liczba="4"]) .maplibregl-ctrl-bottom-left,
-  .slot-mapy:has(.heksy-pasek[data-liczba="4"]) .maplibregl-ctrl-bottom-right,
-  .slot-mapy:has(.heksy-pasek[data-liczba="5"]) .maplibregl-ctrl-bottom-left,
-  .slot-mapy:has(.heksy-pasek[data-liczba="5"]) .maplibregl-ctrl-bottom-right {
-    bottom: 166px;
-  }
+  bottom: 60px;
 }
 
 @media (max-width: 700px) {
-  .heksy-pasek {
-    gap: 6px;
-    padding: 8px;
-  }
-
   .heksy-pasek__lista {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .slot-mapy:has(.heksy-pasek[data-liczba="3"]) .maplibregl-ctrl-bottom-left,
-  .slot-mapy:has(.heksy-pasek[data-liczba="3"]) .maplibregl-ctrl-bottom-right,
-  .slot-mapy:has(.heksy-pasek[data-liczba="4"]) .maplibregl-ctrl-bottom-left,
-  .slot-mapy:has(.heksy-pasek[data-liczba="4"]) .maplibregl-ctrl-bottom-right {
-    bottom: 166px;
-  }
-
-  .slot-mapy:has(.heksy-pasek[data-liczba="5"]) .maplibregl-ctrl-bottom-left,
-  .slot-mapy:has(.heksy-pasek[data-liczba="5"]) .maplibregl-ctrl-bottom-right {
-    bottom: 208px;
+    flex-wrap: wrap;
   }
 
   .heksy-podpowiedz {
@@ -337,6 +306,10 @@
     max-width: none;
     transform: none;
     box-shadow: none;
+  }
+  .slot-mapy .heksy-pasek {
+    flex-wrap: wrap;
+    border-radius: 14px;
   }
   .slot-mapy .heksy-podpowiedz {
     align-self: center;
