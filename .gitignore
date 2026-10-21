@@ -40,3 +40,6 @@ Thumbs.db
 
 # Mapa Polski 2 GB: poza repo (patrz public/mapa/README.md)
 public/mapa/*.pmtiles
+
+# Dane ETL miast (GB-y): poza repo, na wolumenie serwera (docs/hetzner.md, „Dane miast")
+public/dane/

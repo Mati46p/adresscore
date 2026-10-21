@@ -16,7 +16,8 @@
     "verify": "pnpm lint && pnpm typecheck && pnpm build",
     "db:start": "supabase start",
     "db:push": "supabase db push",
-    "zadanie": "node scripts/zadanie.mjs"
+    "zadanie": "node scripts/zadanie.mjs",
+    "dane:wyslij": "node scripts/dane-wyslij.mjs"
   },
   "dependencies": {
     "@deck.gl/core": "^9.4.0",

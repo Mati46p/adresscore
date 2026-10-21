@@ -3,11 +3,23 @@ import { gunzipSync } from 'node:zlib'
 import { gzipDeterministyczny, maStalyNaglowek } from '../etl/lib/gzip.mjs'
 import { PROGI_LITER, WAGA_MAX } from '../src/wynik/silnik.ts'
 import { hashAdresu, kluczUlicy, slugAdresu, slugUlicy } from '../src/wynik/slug.ts'
+import { zapiszMapyILlms } from './katalog-mapy.mjs'
 
-const DOMENA = 'https://adresscore.pl'
-const zrodlo = JSON.parse(
-  readFileSync(new URL('../public/dane/adresy.json', import.meta.url), 'utf8'),
-)
+// Build bez public/dane (obraz Dockera, dane leżą poza repo – #237): indeks SEO jest w gicie
+// (api/_seo-index.json.gz), więc mapy witryny i llms.txt składamy z niego, bez przeliczania.
+// Indeks odświeża się lokalnie, tam gdzie dane są (pnpm build).
+const plikDanych = new URL('../public/dane/adresy.json', import.meta.url)
+if (!existsSync(plikDanych)) {
+  const indeks = JSON.parse(
+    gunzipSync(readFileSync(new URL('../api/_seo-index.json.gz', import.meta.url))),
+  )
+  const liczbaMap = zapiszMapyILlms(indeks)
+  console.log(
+    `Katalog bez danych: indeks z gita (${indeks.adresy.length} adresów), ${liczbaMap} map witryny`,
+  )
+  process.exit(0)
+}
+const zrodlo = JSON.parse(readFileSync(plikDanych, 'utf8'))
 const c = zrodlo.kolumny
 
 // Fakty na stronie adresu (SEO i wyszukiwarki AI): surowe pomiary z rejestrów, nie wynik A–G.
@@ -204,65 +216,8 @@ const aktualny =
   poprzedni !== null && maStalyNaglowek(poprzedni) && gunzipSync(poprzedni).toString() === tresc
 if (!aktualny) writeFileSync(plikIndeksu, gzipDeterministyczny(tresc))
 
-const lastmod = stanDanych ? `<lastmod>${stanDanych}</lastmod>` : ''
-const url = (sciezka) => `<url><loc>${DOMENA}${sciezka}</loc>${lastmod}</url>`
-const xml = (tresc) =>
-  `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${tresc}</urlset>\n`
-const rozmiar = 50_000
-const pliki = []
-for (let i = 0; i < adresy.length; i += rozmiar) {
-  const nazwa = `sitemap-adresy-${Math.floor(i / rozmiar) + 1}.xml`
-  const tresc = xml(
-    adresy
-      .slice(i, i + rozmiar)
-      .map((a) => url(`/adres/${a[1]}`))
-      .join(''),
-  )
-  writeFileSync(new URL(`../public/${nazwa}`, import.meta.url), tresc)
-  pliki.push(nazwa)
-}
-const sciezkiStale = ['/', '/metoda', '/katalog', '/katalog/ulice']
-const uliceXml = xml(
-  [...sciezkiStale.map(url), ...meta.ulice.map((u) => url(`/katalog/${u[0]}`))].join(''),
-)
-writeFileSync(new URL('../public/sitemap-katalog.xml', import.meta.url), uliceXml)
-pliki.push('sitemap-katalog.xml')
-writeFileSync(
-  new URL('../public/sitemap.xml', import.meta.url),
-  `<?xml version="1.0" encoding="UTF-8"?>\n<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${pliki.map((p) => `<sitemap><loc>${DOMENA}/${p}</loc>${lastmod}</sitemap>`).join('')}</sitemapindex>\n`,
-)
-
-// llms.txt (https://llmstxt.org): streszczenie serwisu dla modeli językowych. Liczby z tych samych
-// danych co strony, więc nie rozjadą się po przeliczeniu ETL. Plik generowany, poza gitem.
-const liczba = (n) => n.toLocaleString('pl-PL')
-const kategorie = [...new Set(wskazniki.map((w) => KATEGORIE[w.kategoria]))]
-const llms = `# adresscore
-
-> Jeden wynik jakości życia (0–100 i litera A–G) dla każdego adresu w Krakowie i ${gminy.length - 1} sąsiednich gminach, liczony z rejestrów publicznych. Każda liczba ma podane źródło, licencję i datę danych.
-
-- Zasięg: ${liczba(adresy.length)} punktów adresowych, ${liczba(ulice.size)} ulic i miejscowości, ${gminy.length} gmin (${gminy.join(', ')}).
-- Warstwy danych: ${wskazniki.length} wskaźników w kategoriach: ${kategorie.join(', ')}.
-- Stan danych: ${stanDanych ?? 'brak daty'}. Dane liczone jednorazowo skryptem i serwowane jako pliki statyczne.
-- Brak danych pod adresem oznacza „brak danych" (szara kategoria), nigdy wartość zero.
-- Odległości to linia prosta, nie długość dojścia. Wynik nie jest wyceną nieruchomości ani poradą.
-
-## Strony
-
-- [Metoda i źródła](${DOMENA}/metoda): jak liczymy wynik 0–100 i literę A–G, lista wszystkich warstw ze źródłami, licencjami i datami.
-- [Katalog adresów](${DOMENA}/katalog): wyszukiwarka adresów; strona każdej ulicy i każdego adresu.
-- [Przykładowa strona adresu](${DOMENA}/adres/${adresy[0][1]}): pomiary z rejestrów pod jednym adresem (odległości, dojazd, zieleń, hałas, powietrze) z porównaniem do mediany w gminie.
-
-## Dane
-
-- [Manifest warstw (JSON)](${DOMENA}/dane/manifest.json): meta każdej warstwy – nazwa, jednostka, rozdzielczość, źródła.
-- [Mapa witryny](${DOMENA}/sitemap.xml)
-
-## Optional
-
-- [Aplikacja](${DOMENA}/): mapa heksów H3, karta adresu, porównanie adresów, wagi według profilu.
-`
-writeFileSync(new URL('../public/llms.txt', import.meta.url), llms)
+const liczbaMap = zapiszMapyILlms(meta)
 
 console.log(
-  `Katalog: ${adresy.length} adresów, ${ulice.size} ulic, ${faktyWKolejnosci.length} faktów, ${wskazniki.length} warstw; indeks ${(statSync(plikIndeksu).size / 1024 / 1024).toFixed(1)} MiB, ${pliki.length} map witryny`,
+  `Katalog: ${adresy.length} adresów, ${ulice.size} ulic, ${faktyWKolejnosci.length} faktów, ${wskazniki.length} warstw; indeks ${(statSync(plikIndeksu).size / 1024 / 1024).toFixed(1)} MiB, ${liczbaMap} map witryny`,
 )
