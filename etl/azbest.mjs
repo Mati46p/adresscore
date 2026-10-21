@@ -144,7 +144,9 @@ async function main() {
   if (poza.length && (!MIASTO || poza.length > Math.max(1, obiekty.length * 0.05)))
     throw new Error(`${poza.length} obrysów leży poza zapytanym obszarem (osie GML?)`)
   if (poza.length)
-    console.warn(`UWAGA: ${poza.length}/${obiekty.length} obrysów wystaje poza obszar (duże obrysy)`)
+    console.warn(
+      `UWAGA: ${poza.length}/${obiekty.length} obrysów wystaje poza obszar (duże obrysy)`,
+    )
   console.log(
     `Baza Azbestowa (${dataDanych}): ${obiekty.length} obrysów budynków z azbestem w obszarze`,
   )
