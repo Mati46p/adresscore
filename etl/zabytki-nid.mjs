@@ -469,7 +469,8 @@ async function main() {
     console.warn(
       `UWAGA: tylko ${zgodnosc.zObiektem} pozycji do kontroli położenia (próg ${minProbka}) – kontrola zgodności pominięta`,
     )
-  else if (zgodnosc.w50m < 0.7 * zgodnosc.zObiektem)
+  else if (zgodnosc.w50m < (MIASTO_INFO ? 0.35 : 0.7) * zgodnosc.zObiektem)
+    // miasto: adres zespołu/parku leży daleko od obrysu, więc zgodność bywa ~45% (Tychy); przesunięcie georeferencji daje ~0%
     throw new Error(
       `Położenie obiektów nie zgadza się z adresami PRG: do 50 m ${zgodnosc.w50m} z ${zgodnosc.zObiektem}`,
     )

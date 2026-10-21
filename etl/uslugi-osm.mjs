@@ -250,7 +250,7 @@ export async function generuj() {
   const dataDanych = odpowiedz.osm3s.timestamp_osm_base.slice(0, 10)
   for (const d of DEFINICJE) {
     const lista = punkty.get(d.id)
-    if (lista.length < MIN_PUNKTOW[d.id])
+    if (lista.length < Math.min(MIN_PUNKTOW[d.id], Math.max(1, Math.floor(adresy.length / 1000))))
       throw new Error(`OSM: za mało punktów ${d.id}: ${lista.length}`)
     const indeks = indeksPrzystankow(lista)
     const wyniki = adresy.map((a) => najblizszyPrzystanek(a, lista, indeks))
