@@ -686,7 +686,88 @@ export function Metoda() {
         <a href="#met-regulamin" onClick={przewinDoSekcji}>
           Regulamin
         </a>
+        <SerwisyWspolpracujace />
       </footer>
     </main>
+  )
+}
+
+const SERWISY = [
+  { cel: 'psoz', href: 'https://psoz.pl', nazwa: 'psoz.pl', logo: 'storage/logos/psoz.svg' },
+  {
+    cel: 'cpdp',
+    href: 'https://cpdp.media',
+    nazwa: 'cpdp.media',
+    logo: 'images/brand/cpdp-mark.svg',
+  },
+  {
+    cel: 'openbooks',
+    href: 'https://openbooks.pl',
+    nazwa: 'openbooks.pl',
+    logo: 'storage/logos/openbooks.svg',
+  },
+  {
+    cel: 'leniwy-posel',
+    href: 'https://leniwyposel.pl',
+    nazwa: 'leniwyposel.pl',
+    logo: 'storage/logos/leniwy-posel.svg',
+  },
+  {
+    cel: 'wyniki-szkol',
+    href: 'https://cpdp.media/edukacja/',
+    nazwa: 'Wyniki szkół',
+    logo: 'storage/logos/wyniki-szkol.svg',
+  },
+  {
+    cel: 'wokanda',
+    href: 'https://cpdp.media/sady/',
+    nazwa: 'Wokanda',
+    logo: 'storage/logos/wokanda.svg',
+  },
+  {
+    cel: 'mapa-przestepczosci',
+    href: 'https://cpdp.media/przestepczosc/',
+    nazwa: 'Mapa przestępczości',
+    logo: 'storage/logos/mapa-przestepczosci.svg',
+  },
+]
+
+/** Serwisy siostrzane z sieci CPDP: baner dla dziennikarzy i lista partnerów (adresscore pominięty, to my). */
+function SerwisyWspolpracujace() {
+  return (
+    <section className="met-serwisy" aria-labelledby="met-serwisy-h">
+      <a
+        className="met-cpdp"
+        href="https://cpdp.media"
+        target="_blank"
+        rel="noopener"
+        data-cel="partner-cpdp"
+      >
+        <span>
+          <span className="met-cpdp__etykieta">Dla dziennikarzy</span>
+          <span className="met-cpdp__tytul">Centrum Prasowe Danych Publicznych</span>
+        </span>
+        <span aria-hidden="true">↗</span>
+        <span className="sr-only">(otwiera się w nowej karcie)</span>
+      </a>
+      <h2 id="met-serwisy-h">Serwisy współpracujące</h2>
+      <ul>
+        {SERWISY.map((s) => (
+          <li key={s.cel}>
+            <a href={s.href} target="_blank" rel="noopener" data-cel={`partner-${s.cel}`}>
+              <img
+                src={`https://cpdp.media/${s.logo}`}
+                alt=""
+                width={24}
+                height={24}
+                loading="lazy"
+              />
+              {s.nazwa}
+              <span className="sr-only">(otwiera się w nowej karcie)</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
   )
 }
