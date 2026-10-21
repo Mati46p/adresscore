@@ -52,7 +52,7 @@ export async function generuj(data = dataRobocza(), okno = OKNO_DOMYSLNE) {
   const punkty = []
   const zdarzenia = []
   const zrodla = []
-  for (const { grupa, bufor, zrodlo } of await listaFeedow()) {
+  for (const { grupa, bufor, zrodlo } of await listaFeedow(data)) {
     const feed = odczytajFeed(bufor, grupa, data, punkty.length, { start, koniec })
     punkty.push(...feed.punkty)
     for (const z of feed.zdarzenia) if (z.dep >= start) zdarzenia.push(z)

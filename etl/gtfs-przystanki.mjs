@@ -333,7 +333,7 @@ async function pobierzGrupe(grupa, dataObslugi, dataSzczyt) {
 
 /** Tryb miasta: feed z etl/.cache/gtfs-miasta (pobierany raz), ten sam kształt wyniku co pobierzGrupe. */
 async function pobierzGrupeMiasta(feed, dataObslugi, dataSzczyt) {
-  const { bufor, meta } = await wczytajFeedMiasta(feed)
+  const { bufor, meta } = await wczytajFeedMiasta(feed, dataObslugi)
   const dane = odczytajDwieDaty(bufor, feed.grupa, dataObslugi, dataSzczyt)
   return {
     ...dane,

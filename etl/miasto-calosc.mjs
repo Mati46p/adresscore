@@ -55,7 +55,7 @@ export const KROKI = [
   { nazwa: 'osm-uzupelnienie', skrypt: 'osm-uzupelnienie.mjs' },
   { nazwa: 'uslugi', skrypt: 'uslugi.mjs' },
   { nazwa: 'gtfs-przystanki', skrypt: 'gtfs-przystanki.mjs' },
-  { nazwa: 'dojazd-gtfs', skrypt: 'dojazd-gtfs.mjs' },
+  { nazwa: 'dojazd-gtfs', skrypt: 'dojazd-gtfs.mjs', arg: 'rynek' },
   { nazwa: 'dojazd-gtfs-graf', skrypt: 'dojazd-gtfs-graf.mjs' },
   { nazwa: 'uprosc-kryteria', skrypt: 'uprosc-kryteria.mjs', warunek: 'tryb-miasta' },
   { nazwa: 'kompakt', skrypt: 'kompakt.mjs' },
@@ -200,6 +200,7 @@ async function main() {
       w = uruchom(slug, process.execPath, [
         join('etl', krok.skrypt),
         ...(krok.arg === 'slug' ? [slug] : []),
+        ...(krok.arg === 'rynek' ? ['', '--rynek'] : []), // data domyślna (następny dzień roboczy), cel = centrum miasta
         ...(krok.arg === 'sewik' ? [join(CACHE, 'sewik', 'raw', USTAWIENIA[slug].pbf)] : []),
       ])
     czasy.push([krok.nazwa, w.sek])

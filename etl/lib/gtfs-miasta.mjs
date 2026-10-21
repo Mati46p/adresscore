@@ -41,7 +41,7 @@ const FEED_GDYNIA = {
  * z których każdy ma własny, krótki zakres ważności (w dniu 2026-10-21: pierwsze ZIP-y to pojedyncze dni
  * 21, 22, 23.10, a kolejne tygodnie, np. 04–10.11). Dlatego URL nie jest stały: `zasoby()` czyta listę
  * z API CKAN, a `wczytajFeedMiasta` bierze pierwszy ZIP, którego feed_info (feed_start_date..feed_end_date)
- * obejmuje dzisiejszą datę. Gdy żaden nie obejmuje dziś (np. dzień bez wariantu), bierze najwcześniejszy
+ * obejmuje datę, dla której liczymy rozkład (domyślnie dziś; dojazd-gtfs podaje następny dzień roboczy). Gdy żaden nie obejmuje dziś (np. dzień bez wariantu), bierze najwcześniejszy
  * przyszły (najbliższy tydzień). Cache: gzm-<data>.zip, więc kolejnego dnia pobiera się wariant od nowa.
  * Licencja zbioru wg CKAN: CC BY 4.0 (wymagane wskazanie źródła: GZM ZTM).
  */
@@ -318,10 +318,10 @@ async function wybierzWariant(feed, dzis) {
 }
 
 /** Zawartość ZIP-a feedu z cache (pobiera raz). Zwraca { bufor, meta: { bajty, sha256, dataPobrania } }. */
-export async function wczytajFeedMiasta(feed) {
+export async function wczytajFeedMiasta(feed, dzien = new Date().toLocaleDateString('sv-SE')) {
   mkdirSync(KATALOG, { recursive: true })
   let cel = join(KATALOG, feed.plik)
-  if (feed.zasoby) cel = await wybierzWariant(feed, new Date().toLocaleDateString('sv-SE'))
+  if (feed.zasoby) cel = await wybierzWariant(feed, dzien)
   else if (!existsSync(cel)) await pobierzZip(feed.url, cel)
   const bufor = readFileSync(cel)
   return {
