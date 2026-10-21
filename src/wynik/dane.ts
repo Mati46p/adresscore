@@ -152,5 +152,10 @@ export function useDane(): StanDanych {
   return useSyncExternalStore(pamiec.subskrybuj, pamiec.stanBiezacego, pamiec.stanBiezacego)
 }
 
+/** Stan danych bieżącego miasta bez startu ładowania (powłoka: czyta, gdy ekran już je pobrał). */
+export function useDaneJesliSa(): StanDanych {
+  return useSyncExternalStore(pamiec.obserwuj, pamiec.stanBiezacego, pamiec.stanBiezacego)
+}
+
 /** Dane bieżącego miasta albo null, bez Reacta. */
 export const daneJesliGotowe = pamiec.daneJesliGotowe

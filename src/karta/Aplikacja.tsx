@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useRef } from 'react'
 import { Pokaz3D, parametrPokazu } from '@/miasto3d/Pokaz3D'
-import { useDane } from '@/wynik/dane'
+import { useDaneJesliSa } from '@/wynik/dane'
 import { useMiasto } from '@/wynik/miastoDanych'
 import { hrefAdresu } from '@/wynik/slug'
 import { useStan } from '@/wynik/stan'
@@ -65,7 +65,8 @@ function Powloka() {
   const wybrany = useStan((s) => s.wybrany)
   const nieznaneMiasto = useStan((s) => s.nieznaneMiasto)
   const miasto = useMiasto()
-  const dane = useDane()
+  // Bez startu ładowania: pełne dane (~300 MB dla Krakowa) pobiera ekran, który ich używa, a katalog nie.
+  const dane = useDaneJesliSa()
   const gotowe = dane.stan === 'gotowe'
   const adres = dane.stan === 'gotowe' && wybrany !== null ? dane.adresy[wybrany] : undefined
   const nazwaAdresu = adres ? opisAdresu(adres) : 'Karta okolicy'

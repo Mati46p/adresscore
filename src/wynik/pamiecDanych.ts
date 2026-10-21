@@ -77,6 +77,8 @@ export function utworzPamiecDanych(
   // Kolejność wstawiania = kolejność ostatniego użycia (`zaladujDane` przesuwa miasto na koniec).
   const wpisy = new Map<SlugMiasta, WpisMiasta>()
   const sluchacze = new Set<() => void>()
+  /** Słuchacze, którzy potrzebują pełnych danych (`subskrybuj`), w odróżnieniu od samych obserwatorów. */
+  const ladujacy = new Set<() => void>()
   let obserwujemyMiasto = false
 
   function powiadom() {
@@ -176,7 +178,8 @@ export function utworzPamiecDanych(
   function aktywuj(slug: SlugMiasta) {
     // Błąd nie zostaje na całą sesję: ponowny wybór miasta ładuje je od nowa.
     if (wpisy.get(slug)?.stan.stan === 'blad') wpisy.delete(slug)
-    void zaladujDane(slug)
+    // Bez ekranu, który potrzebuje pełnych danych (np. sam katalog), zmiana miasta niczego nie pobiera.
+    if (ladujacy.size > 0) void zaladujDane(slug)
     const s = stanMiasta(slug)
     if (s.stan === 'gotowe') podlaczGotowe(s)
     powiadom()
@@ -202,8 +205,22 @@ export function utworzPamiecDanych(
   /** Dla `useSyncExternalStore`: rejestruje komponent i uruchamia ładowanie bieżącego miasta. */
   function subskrybuj(f: () => void) {
     sluchacze.add(f)
+    ladujacy.add(f)
     obserwujMiasto()
     void zaladujDane()
+    return () => {
+      sluchacze.delete(f)
+      ladujacy.delete(f)
+    }
+  }
+
+  /**
+   * Jak `subskrybuj`, ale bez startu ładowania: dla powłoki, która tylko czyta dane, gdy już są.
+   * Ładowanie startuje ekran, który ich potrzebuje (katalog wystarcza sobie samymi adresami).
+   */
+  function obserwuj(f: () => void) {
+    sluchacze.add(f)
+    obserwujMiasto()
     return () => sluchacze.delete(f)
   }
 
@@ -218,5 +235,5 @@ export function utworzPamiecDanych(
     return s.stan === 'gotowe' ? s : null
   }
 
-  return { zaladujDane, stanMiasta, stanBiezacego, daneJesliGotowe, subskrybuj }
+  return { zaladujDane, stanMiasta, stanBiezacego, daneJesliGotowe, subskrybuj, obserwuj }
 }

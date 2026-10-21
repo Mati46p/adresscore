@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { type Adres, MIASTA, MIASTO_DOMYSLNE, type SlugMiasta } from '@/kontrakty'
-import { useDane } from '@/wynik/dane'
+import { useAdresyMiasta } from '@/wynik/adresyMiasta'
 import { useMiasto } from '@/wynik/miastoDanych'
 import { hrefAdresu, slugUlicy } from '@/wynik/slug'
 import { hrefDla, useStan, ustawMiasto } from '@/wynik/stan'
@@ -95,7 +95,7 @@ function LinkAdresu({ adres, href }: { adres: Adres; href: string }) {
 }
 
 export function KatalogAdresow() {
-  const dane = useDane()
+  const dane = useAdresyMiasta()
   const miasto = useMiasto()
   const stan = useStan((s) => s)
   const [zapytanie, setZapytanie] = useState('')
@@ -118,7 +118,11 @@ export function KatalogAdresow() {
         <div className="katalog-narzedzia">
           <PoleMiasta biezace={miasto.slug} />
         </div>
-        <p>Wczytuję adresy: {miasto.nazwa}…</p>
+        <p>
+          {dane.stan === 'blad'
+            ? `Nie udało się wczytać adresów: ${dane.blad}`
+            : `Wczytuję adresy: ${miasto.nazwa}…`}
+        </p>
       </main>
     )
   }
