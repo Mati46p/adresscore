@@ -378,7 +378,8 @@ if (MIASTO_INFO)
   console.log(
     `POZ z udogodnieniami w mieście: ${poz.wMiescieGeo}/${poz.wMiescie} z położeniem (${(udzialGeo * 100).toFixed(0)}%)`,
   )
-if (MIASTO_INFO && udzialGeo < UDZIAL_GEO_MIN) {
+const MIN_POZ_W_MIESCIE = 10
+if (MIASTO_INFO && (udzialGeo < UDZIAL_GEO_MIN || poz.wMiescie < MIN_POZ_W_MIESCIE)) {
   console.log(
     'przychodnia_bez_barier_odleglosc: za mało zgeokodowanych POZ, warstwa zostaje szara.',
   )

@@ -47,6 +47,7 @@ const ZADANIE = 124
 const MAX_M = 30_000 // dalej niż 30 km od jakiegokolwiek obiektu = brak danych (null)
 const MAX_DO_GMINY_M = 1_000 // obiekt liczy się do gminy najbliższego adresu, jeśli ten jest bliżej
 const TERYT_KRAKOWA = '1261011'
+const ADRESY_KRAKOWA = 176_684 // progi `minObiektow` to progi dla Krakowa, w mieście skalowane liczbą adresów
 const UA = 'adresscore-etl/1.0 (https://github.com/Mati46p/adresscore)'
 
 const GEOFABRIK = 'https://download.geofabrik.de/europe/poland/malopolskie-latest.osm.pbf'
@@ -583,9 +584,10 @@ export async function licz() {
       (a, b) => a + b,
       0,
     )
-    if (wObszarze < w.minObiektow) {
+    const prog = Math.max(3, Math.ceil((w.minObiektow * adresy.length) / ADRESY_KRAKOWA))
+    if (wObszarze < prog) {
       console.log(
-        `${w.id}: ${wObszarze} obiektów OSM w obszarze miasta (próg ${w.minObiektow}), warstwa zostaje szara`,
+        `${w.id}: ${wObszarze} obiektów OSM w obszarze miasta (próg ${prog}), warstwa zostaje szara`,
       )
       continue
     }

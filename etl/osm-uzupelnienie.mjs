@@ -550,8 +550,12 @@ export async function licz() {
     const g = grupy[w.grupa]
     const wGminach = obiektyWGminach(g.miejsca, najblizszyAdres)
     const wObszarze = [...wGminach.values()].reduce((s, n) => s + n, 0)
-    if (wObszarze < MIN_OBIEKTOW) {
-      odpadly.push(`${w.id}: ${wObszarze} miejsc w obszarze 14 gmin (próg ${MIN_OBIEKTOW})`)
+    // Tryb miasta: próg Krakowa skalowany liczbą adresów (Kraków 176 684), dolna granica 3.
+    const prog = MIASTO_INFO
+      ? Math.max(3, Math.ceil((MIN_OBIEKTOW * adresy.length) / 176_684))
+      : MIN_OBIEKTOW
+    if (wObszarze < prog) {
+      odpadly.push(`${w.id}: ${wObszarze} miejsc w obszarze 14 gmin (próg ${prog})`)
       continue
     }
     const licznik = ludnosc ? licznikNa1000(wGminach, ludnosc, TERYT_KRAKOWA) : null
