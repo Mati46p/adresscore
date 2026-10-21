@@ -293,8 +293,9 @@ function stronaKatalogu(res, d) {
       canonical: '/katalog/ulice',
       tresc,
       stanDanych: d.stanDanych,
-      // Strona z linkami do wszystkich ulic: dla robota hub, w aplikacji wystarcza wyszukiwarka.
-      aplikacja: false,
+      // Dla robota hub z linkami do wszystkich ulic; człowiekowi aplikacja podmienia go na
+      // KatalogAdresow (wyszukiwarka, sortowanie, filtry).
+      aplikacja: true,
       schemat: [okruszki(sciezki)],
     }),
   )
