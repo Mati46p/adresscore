@@ -24,6 +24,7 @@ import {
   type TloMapy,
 } from '@/kontrakty/miasta'
 import { useZnacznikiBiznesu } from '@/mapa/biznes/ZnacznikiBiznesu'
+import { useEtykietyZrodel } from '@/mapa/etykietyZrodel'
 import {
   type Geometria,
   type GeometriaTla,
@@ -884,6 +885,7 @@ export function MapaKrakowa({
     znacznik.setLngLat(kotwicaPodpisu(ramka))
   }
 
+  useEtykietyZrodel(mapaRef, gotowa, tlo !== undefined)
   useZnacznikiSasiadow(mapaRef, gotowa, sasiedzi)
   useZnacznikiObiektow(mapaRef, gotowa, obiekty)
   useObrysOkolicy(mapaRef, gotowa, okolica, () => {

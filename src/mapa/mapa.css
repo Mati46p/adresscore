@@ -176,6 +176,23 @@
   pointer-events: none;
 }
 
+/* Liczba źródeł danych nad miastem w widoku kraju (etykietyZrodel.ts). */
+.mapa-zrodla-miasta {
+  padding: 1px 6px;
+  border-radius: 9px;
+  background: rgb(255 255 255 / 0.9);
+  box-shadow: 0 1px 2px rgb(24 32 43 / 0.2);
+  font-size: 11px;
+  font-weight: 600;
+  color: #3d4652;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.mapa-zrodla-miasta[hidden],
+.mapa-krakowa--intro .mapa-zrodla-miasta {
+  display: none;
+}
+
 .mapa-dymek .maplibregl-popup-content {
   padding: 4px 8px;
   border-radius: 6px;
