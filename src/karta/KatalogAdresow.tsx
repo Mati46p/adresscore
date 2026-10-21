@@ -40,7 +40,9 @@ function katalog(adresy: Adres[]): Ulica[] {
   const lista = [...grupy.values()].sort((a, b) =>
     `${a.miejscowosc} ${a.nazwa}`.localeCompare(`${b.miejscowosc} ${b.nazwa}`, 'pl'),
   )
-  for (const g of lista) g.adresy.sort((a, b) => a.nr.localeCompare(b.nr, 'pl', { numeric: true }))
+  // Jeden collator: localeCompare z opcjami tworzy nowy przy każdym porównaniu (~12 s dla Krakowa).
+  const numery = new Intl.Collator('pl', { numeric: true })
+  for (const g of lista) g.adresy.sort((a, b) => numery.compare(a.nr, b.nr))
   cache.set(adresy, lista)
   return lista
 }
