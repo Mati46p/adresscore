@@ -4,59 +4,277 @@
   padding-block: 30px 80px;
 }
 .katalog h1 {
-  margin: 0 0 12px;
+  margin: 0 0 8px;
 }
 .katalog h2 {
-  margin-top: 32px;
+  margin: 32px 0 4px;
+  font-size: 1.15rem;
+}
+.katalog > a {
+  display: inline-block;
+  margin-bottom: 16px;
+  color: var(--akcent);
+  font-weight: 600;
+}
+
+/* Nagłówek z liczbami */
+.katalog-naglowek {
+  padding: 28px;
+  border: 1px solid var(--ramka);
+  border-radius: var(--promien);
+  background: linear-gradient(135deg, var(--akcent-jasny), var(--powierzchnia) 70%);
+}
+.katalog-naglowek > p {
+  margin: 0;
+  color: var(--tekst-2, #3d4652);
+}
+.katalog-liczby {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 36px;
+  margin: 20px 0 0;
+}
+.katalog-liczby div {
+  display: flex;
+  flex-direction: column-reverse;
+}
+.katalog-liczby dt {
+  color: var(--tekst-2, #3d4652);
+  font-size: 0.85rem;
+}
+.katalog-liczby dd {
+  margin: 0;
+  color: var(--akcent);
+  font-family: var(--font-mono);
+  font-size: 1.6rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Pasek narzędzi: szukaj, sortuj, filtry */
+.katalog-narzedzia {
+  position: sticky;
+  top: var(--wys-naglowka);
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 12px 16px;
+  margin: 16px 0 0;
+  padding: 14px 16px;
+  border: 1px solid var(--ramka);
+  border-radius: var(--promien);
+  background: var(--powierzchnia);
+  box-shadow: 0 6px 16px -12px rgb(24 32 43 / 0.35);
+}
+.katalog-szukaj,
+.katalog-pole {
+  display: grid;
+  gap: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
 }
 .katalog-szukaj {
-  display: grid;
-  gap: 8px;
-  max-width: 600px;
-  margin: 24px 0;
-  font-weight: 600;
+  flex: 1 1 280px;
 }
-.katalog-szukaj input {
-  min-height: 48px;
-  padding: 10px 14px;
-  border: 1px solid #929da5;
+.katalog-szukaj input,
+.katalog-pole select {
+  min-height: var(--cel-dotyku);
+  padding: 8px 12px;
+  border: 1px solid var(--ramka-pola);
   border-radius: 8px;
-  background: #fff;
+  background: var(--powierzchnia);
+  color: var(--tekst);
   font: inherit;
+  font-size: 1rem;
+  font-weight: 400;
 }
-.katalog-szukaj input:focus-visible {
-  outline: 3px solid #1f5c46;
+.katalog-szukaj input:focus-visible,
+.katalog-pole select:focus-visible,
+.katalog-progi button:focus-visible,
+.katalog-ulice summary:focus-visible,
+.katalog-wiecej:focus-visible {
+  outline: 3px solid var(--akcent);
   outline-offset: 2px;
 }
-.katalog-ulice,
-.katalog-adresy {
-  padding-left: 24px;
+.katalog-progi {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  border: 0;
 }
-.katalog-ulice > li {
-  margin: 8px 0;
-}
-.katalog-ulice details {
-  padding: 10px 14px;
-  border: 1px solid #d9dfdc;
-  border-radius: 8px;
-  background: #fff;
-}
-.katalog-ulice summary {
-  cursor: pointer;
+.katalog-progi legend {
+  margin-bottom: 6px;
+  padding: 0;
+  font-size: 0.85rem;
   font-weight: 600;
 }
-.katalog-ulice summary span {
-  color: #5b6470;
-  font-weight: 400;
+.katalog-progi button {
+  min-height: var(--cel-dotyku);
+  padding: 0 12px;
+  border: 1px solid var(--ramka-pola);
+  background: var(--powierzchnia);
+  color: var(--tekst);
+  font: inherit;
+  cursor: pointer;
+}
+.katalog-progi button + button {
+  margin-left: -1px;
+}
+.katalog-progi button:first-of-type {
+  border-radius: 8px 0 0 8px;
+}
+.katalog-progi button:last-of-type {
+  border-radius: 0 8px 8px 0;
+}
+.katalog-progi button[aria-pressed="true"] {
+  position: relative;
+  border-color: var(--akcent);
+  background: var(--akcent);
+  color: #fff;
+}
+
+.katalog-status {
+  margin: 0 0 12px;
+  color: var(--tekst-2, #3d4652);
+}
+
+/* Lista ulic */
+.katalog-ulice {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--ramka);
+  border-radius: var(--promien);
+  background: var(--powierzchnia);
+  overflow: hidden;
+}
+.katalog-ulice > li + li {
+  border-top: 1px solid var(--linia);
+}
+.katalog-ulice summary {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 56px;
+  padding: 10px 16px;
+  cursor: pointer;
+  list-style: none;
+}
+.katalog-ulice summary::-webkit-details-marker {
+  display: none;
+}
+.katalog-ulice summary::before {
+  content: "›";
+  color: var(--akcent);
+  font-size: 1.3rem;
+  transition: transform 0.15s;
+}
+.katalog-ulice details[open] summary::before {
+  transform: rotate(90deg);
+}
+.katalog-ulice summary:hover {
+  background: var(--tlo);
+}
+.katalog-ulice details[open] summary {
+  background: var(--akcent-jasny);
+}
+.katalog-nazwa {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+.katalog-nazwa small {
+  color: var(--tekst-2, #3d4652);
+  font-size: 0.85rem;
+}
+.katalog-licznik {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 140px;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.9rem;
+}
+.katalog-licznik > span:last-child {
+  min-width: 3.5ch;
+  text-align: right;
+}
+.katalog-pasek {
+  flex: none;
+  max-width: 90px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--akcent-obrys);
 }
 .katalog-ulice details > a {
   display: inline-block;
-  margin: 12px 0 4px;
+  margin: 14px 16px 0;
+  color: var(--akcent);
+  font-weight: 600;
 }
+.katalog-ulice details > .katalog-adresy {
+  padding: 8px 16px 16px;
+}
+
+/* Adresy w kolumnach */
 .katalog-adresy {
-  columns: 3 200px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  columns: 4 160px;
+  column-gap: 16px;
 }
 .katalog-adresy li {
   break-inside: avoid;
-  margin: 5px 0;
+}
+.katalog-adresy a {
+  display: block;
+  padding: 6px 8px;
+  border-radius: 6px;
+  color: var(--tekst);
+  text-decoration: none;
+}
+.katalog-adresy a:hover {
+  background: var(--akcent-jasny);
+  color: var(--akcent-hover);
+}
+section > .katalog-adresy {
+  padding: 8px;
+  border: 1px solid var(--ramka);
+  border-radius: var(--promien);
+  background: var(--powierzchnia);
+}
+
+.katalog-wiecej {
+  display: block;
+  width: 100%;
+  min-height: var(--cel-dotyku);
+  margin-top: 12px;
+  border: 1px dashed var(--akcent-obrys);
+  border-radius: var(--promien);
+  background: var(--powierzchnia);
+  color: var(--akcent);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.katalog-wiecej:hover {
+  background: var(--akcent-jasny);
+}
+
+@media (max-width: 640px) {
+  .katalog-naglowek {
+    padding: 20px 16px;
+  }
+  .katalog-narzedzia {
+    position: static;
+  }
+  .katalog-licznik {
+    flex-basis: auto;
+  }
+  .katalog-pasek {
+    display: none;
+  }
 }

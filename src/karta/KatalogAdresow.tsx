@@ -45,6 +45,25 @@ function katalog(adresy: Adres[]): Ulica[] {
   return lista
 }
 
+type Sortowanie = 'az' | 'za' | 'najwiecej' | 'najmniej'
+
+const SORTOWANIA: { id: Sortowanie; etykieta: string }[] = [
+  { id: 'az', etykieta: 'Nazwa A–Z' },
+  { id: 'za', etykieta: 'Nazwa Z–A' },
+  { id: 'najwiecej', etykieta: 'Najwięcej adresów' },
+  { id: 'najmniej', etykieta: 'Najmniej adresów' },
+]
+
+const PROGI_ADRESOW = [1, 10, 50, 100]
+
+// Lista z katalog() jest już posortowana A–Z, więc 'az' nie kopiuje tablicy.
+function sortuj(lista: Ulica[], s: Sortowanie): Ulica[] {
+  if (s === 'az') return lista
+  if (s === 'za') return [...lista].reverse()
+  const kierunek = s === 'najwiecej' ? -1 : 1
+  return [...lista].sort((a, b) => kierunek * (a.adresy.length - b.adresy.length))
+}
+
 function LinkAdresu({ adres, href }: { adres: Adres; href: string }) {
   return (
     <a href={href}>
@@ -59,6 +78,9 @@ export function KatalogAdresow() {
   const stan = useStan((s) => s)
   const [zapytanie, setZapytanie] = useState('')
   const [widoczne, setWidoczne] = useState(80)
+  const [sortowanie, setSortowanie] = useState<Sortowanie>('az')
+  const [filtrMiejscowosci, setFiltrMiejscowosci] = useState('')
+  const [minAdresow, setMinAdresow] = useState(1)
   const grupy = dane.stan === 'gotowe' ? katalog(dane.adresy) : []
   const slug = location.pathname.startsWith('/katalog/')
     ? location.pathname.slice('/katalog/'.length)
@@ -89,9 +111,18 @@ export function KatalogAdresow() {
       : 'Np. nazwa ulicy i numer domu'
   const q = normalizuj(zapytanie)
   const wynikiAdresow = q && /\d/.test(q) ? szukaj(indeksDla(dane.adresy), zapytanie, 100) : []
-  const pasujace = q
-    ? grupy.filter((g) => normalizuj(`${g.nazwa} ${g.miejscowosc} ${g.gmina}`).includes(q))
-    : grupy
+  const miejscowosci = [...new Set(grupy.map((g) => g.miejscowosc))].sort((a, b) =>
+    a.localeCompare(b, 'pl'),
+  )
+  const filtrowane = grupy.filter(
+    (g) =>
+      (!filtrMiejscowosci || g.miejscowosc === filtrMiejscowosci) &&
+      g.adresy.length >= minAdresow &&
+      (!q || normalizuj(`${g.nazwa} ${g.miejscowosc} ${g.gmina}`).includes(q)),
+  )
+  const pasujace = sortuj(filtrowane, sortowanie)
+  const najwiecej = Math.max(1, ...grupy.map((g) => g.adresy.length))
+  const resetujListe = () => setWidoczne(80)
 
   if (slug) {
     return (
@@ -122,25 +153,93 @@ export function KatalogAdresow() {
 
   return (
     <main className="tresc katalog">
-      <h1 tabIndex={-1}>Katalog adresów</h1>
-      <p>
-        {dane.adresy.length.toLocaleString('pl-PL')} adresów ·{' '}
-        {grupy.length.toLocaleString('pl-PL')} ulic i miejscowości{' '}
-        {wKrakowie ? 'w Krakowie oraz sąsiednich gminach' : miasto.wMiescie}.
-      </p>
-      <label className="katalog-szukaj">
-        Szukaj ulicy lub adresu
-        <input
-          type="search"
-          value={zapytanie}
-          onChange={(e) => {
-            setZapytanie(e.currentTarget.value)
-            setWidoczne(80)
-          }}
-          placeholder={przyklad}
-          autoComplete="street-address"
-        />
-      </label>
+      <header className="katalog-naglowek">
+        <h1 tabIndex={-1}>Katalog adresów</h1>
+        <p>
+          Każdy adres {wKrakowie ? 'w Krakowie oraz sąsiednich gminach' : miasto.wMiescie} z
+          wynikiem jakości życia.
+        </p>
+        <dl className="katalog-liczby">
+          <div>
+            <dt>adresów</dt>
+            <dd>{dane.adresy.length.toLocaleString('pl-PL')}</dd>
+          </div>
+          <div>
+            <dt>ulic i miejscowości</dt>
+            <dd>{grupy.length.toLocaleString('pl-PL')}</dd>
+          </div>
+          <div>
+            <dt>miejscowości</dt>
+            <dd>{miejscowosci.length.toLocaleString('pl-PL')}</dd>
+          </div>
+        </dl>
+      </header>
+      <div className="katalog-narzedzia">
+        <label className="katalog-szukaj">
+          Szukaj ulicy lub adresu
+          <input
+            type="search"
+            value={zapytanie}
+            onChange={(e) => {
+              setZapytanie(e.currentTarget.value)
+              resetujListe()
+            }}
+            placeholder={przyklad}
+            autoComplete="street-address"
+          />
+        </label>
+        <label className="katalog-pole">
+          Sortuj
+          <select
+            value={sortowanie}
+            onChange={(e) => {
+              setSortowanie(e.currentTarget.value as Sortowanie)
+              resetujListe()
+            }}
+          >
+            {SORTOWANIA.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.etykieta}
+              </option>
+            ))}
+          </select>
+        </label>
+        {miejscowosci.length > 1 && (
+          <label className="katalog-pole">
+            Miejscowość
+            <select
+              value={filtrMiejscowosci}
+              onChange={(e) => {
+                setFiltrMiejscowosci(e.currentTarget.value)
+                resetujListe()
+              }}
+            >
+              <option value="">Wszystkie</option>
+              {miejscowosci.map((m) => (
+                <option key={m} value={m}>
+                  {m}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+        <fieldset className="katalog-progi">
+          <legend>Liczba adresów</legend>
+          {PROGI_ADRESOW.map((p) => (
+            <button
+              key={p}
+              type="button"
+              aria-pressed={minAdresow === p}
+              onClick={() => {
+                setMinAdresow(p)
+                resetujListe()
+              }}
+            >
+              {p === 1 ? 'Wszystkie' : `${p}+`}
+            </button>
+          ))}
+        </fieldset>
+      </div>
       {wynikiAdresow.length > 0 && (
         <section aria-label="Pasujące adresy">
           <h2>Adresy</h2>
@@ -158,13 +257,30 @@ export function KatalogAdresow() {
       )}
       <section aria-label="Ulice i miejscowości">
         <h2>Ulice i miejscowości</h2>
-        <p role="status">{pasujace.length.toLocaleString('pl-PL')} pozycji</p>
+        <p role="status" className="katalog-status">
+          {pasujace.length.toLocaleString('pl-PL')} pozycji
+          {pasujace.length === 0 && ' – zmień wyszukiwanie albo filtry.'}
+        </p>
         <ul className="katalog-ulice">
           {pasujace.slice(0, widoczne).map((g) => (
             <li key={g.slug}>
               <details>
                 <summary>
-                  {g.nazwa}, {g.miejscowosc} <span>({g.adresy.length})</span>
+                  <span className="katalog-nazwa">
+                    <strong>{g.nazwa}</strong>
+                    <small>
+                      {g.miejscowosc === g.nazwa
+                        ? `gmina ${g.gmina}`
+                        : `${g.miejscowosc} · gmina ${g.gmina}`}
+                    </small>
+                  </span>
+                  <span className="katalog-licznik" title={`${g.adresy.length} adresów`}>
+                    <span
+                      className="katalog-pasek"
+                      style={{ width: `${Math.max(4, (g.adresy.length / najwiecej) * 100)}%` }}
+                    />
+                    <span>{g.adresy.length.toLocaleString('pl-PL')}</span>
+                  </span>
                 </summary>
                 {wKrakowie && <a href={`/katalog/${g.slug}`}>Otwórz stronę ulicy</a>}
                 <ul className="katalog-adresy">
@@ -179,8 +295,12 @@ export function KatalogAdresow() {
           ))}
         </ul>
         {pasujace.length > widoczne && (
-          <button type="button" className="seg" onClick={() => setWidoczne((n) => n + 80)}>
-            Pokaż kolejne ulice
+          <button
+            type="button"
+            className="katalog-wiecej"
+            onClick={() => setWidoczne((n) => n + 80)}
+          >
+            Pokaż kolejne ulice ({(pasujace.length - widoczne).toLocaleString('pl-PL')} zostało)
           </button>
         )}
       </section>
