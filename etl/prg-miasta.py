@@ -152,13 +152,29 @@ def fetch_miasto(teryt):
         json.dumps(
             {"pobrano": fetched, "miasto": nazwa, "teryt": teryt, "wiersze": rows},
             ensure_ascii=False,
-        )
+        ),
+        encoding="utf-8",
     )
     print(f"{nazwa} ({teryt}): {len(rows)}", flush=True)
     return len(rows)
 
 
+def konwertuj_cp1250():
+    """Jednorazowo: pliki zapisane na Windows bez encoding (cp1250) -> UTF-8. Pliki już w UTF-8 pomija."""
+    for plik in sorted(CACHE.glob("[0-9]*.json")):
+        bajty = plik.read_bytes()
+        try:
+            bajty.decode("utf-8")
+            print(f"{plik.name}: już UTF-8")
+        except UnicodeDecodeError:
+            plik.write_text(bajty.decode("cp1250"), encoding="utf-8")
+            print(f"{plik.name}: cp1250 -> UTF-8")
+
+
 def main():
+    if sys.argv[1:] == ["--konwertuj-cp1250"]:
+        konwertuj_cp1250()
+        return
     kody = sys.argv[1:] or list(MIASTA)
     nieznane = [k for k in kody if k not in MIASTA]
     if nieznane:

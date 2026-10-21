@@ -10,6 +10,7 @@ import { strFromU8, unzipSync } from 'fflate'
 import KDBush from 'kdbush'
 import { csv, odlegloscMetry } from './gtfs-przystanki.mjs'
 import {
+  BRAK_GTFS_MIASTA,
   DATA_OBSLUGI_MIASTA,
   dataDanychFeedu,
   FEEDY_MIASTA,
@@ -363,6 +364,10 @@ export async function listaFeedow() {
 }
 
 export async function generuj(data = dataRobocza(), cel = null, opcje = {}) {
+  if (BRAK_GTFS_MIASTA) {
+    console.log('Miasto bez otwartego feedu GTFS: pomijam warstwę (szara kategoria, brak danych).')
+    return
+  }
   const rynek = opcje.rynek === true
   if (rynek && !cel) throw new Error('Rynek wymaga współrzędnych celu')
   if (

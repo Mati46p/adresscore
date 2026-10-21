@@ -3,11 +3,13 @@
 import { execFileSync } from 'node:child_process'
 import { writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import {
   CACHE,
   DANE,
   dzis,
   MIASTO,
+  PYTHON,
   pobierzDoCache,
   wczytajAdresy,
   zapiszWskaznik,
@@ -50,8 +52,8 @@ async function main() {
   const sciezka = await pobierzDoCache(KG_URL, 'kgpsp-tabele-2025.zip')
   const tabela = JSON.parse(
     execFileSync(
-      'python3',
-      [new URL('./pozary-swd.py', import.meta.url).pathname, sciezka, String(ROK)],
+      PYTHON,
+      [fileURLToPath(new URL('./pozary-swd.py', import.meta.url)), sciezka, String(ROK)],
       {
         maxBuffer: 2_000_000,
         encoding: 'utf8',

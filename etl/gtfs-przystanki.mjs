@@ -10,6 +10,7 @@ import { promisify } from 'node:util'
 import { strFromU8, unzipSync } from 'fflate'
 import KDBush from 'kdbush'
 import {
+  BRAK_GTFS_MIASTA,
   DATA_OBSLUGI_MIASTA,
   dataDanychFeedu,
   FEEDY_MIASTA,
@@ -396,6 +397,10 @@ function najblizszaSroda(data) {
 }
 
 export async function generuj() {
+  if (BRAK_GTFS_MIASTA) {
+    console.log('Miasto bez otwartego feedu GTFS: pomijam warstwę (szara kategoria, brak danych).')
+    return
+  }
   const dataObslugi = DATA_OBSLUGI_MIASTA ?? dataLokalna()
   const dataSzczyt = najblizszaSroda(dataObslugi)
   const grupy = FEEDY_MIASTA ? FEEDY_MIASTA.map((f) => f.grupa) : GRUPY

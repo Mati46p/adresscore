@@ -23,6 +23,9 @@ const KATEGORIE = [
 const ROZDZIELCZOSCI = ['adres', 'budynek', 'heks', 'siatka', 'rejon', 'gmina', 'powiat']
 const KIERUNKI = ['mniej-lepiej', 'wiecej-lepiej', 'neutralny']
 
+/** Interpreter Pythona 3: na Windowsie „python3" to atrapa Sklepu Microsoft, więc „python". */
+export const PYTHON = process.env.PYTHON || (process.platform === 'win32' ? 'python' : 'python3')
+
 export const dzis = () => new Date().toISOString().slice(0, 10)
 
 /** Pobiera URL do etl/.cache/<plik> (raz). Zwraca ścieżkę lokalną. */

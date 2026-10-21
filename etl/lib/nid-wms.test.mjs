@@ -168,6 +168,18 @@ test('urlGetMap i urlGetFeatureInfo: EPSG:2180, BBOX od północy, piksel 10 cm 
 
 // ── Ścieżki SVG ──────────────────────────────────────────────────────────────────────────────
 
+test('pierscienieZSciezki: łuki (okrągły znacznik punktu z usługi) rozwijają się w pierścień wokół środka', () => {
+  // dwa półłuki r = 6,95 z punktu (2429,75; 1617,21): środek (2422,80; 1617,21)
+  const [p] = pierscienieZSciezki(
+    'M2429.75 1617.21a6.95 6.95 0  0  0 -13.90 .00a6.95 6.95 0  0  0 13.90 -0z',
+  )
+  assert.equal(p?.length, 1 + 24)
+  for (const [x, y] of p ?? [])
+    assert.ok(Math.abs(Math.hypot(x - 2422.8, y - 1617.21) - 6.95) < 1e-6)
+  const ostatni = p?.at(-1)
+  assert.ok(Math.abs((ostatni?.[0] ?? 0) - 2429.75) < 1e-9)
+})
+
 test('pierscienieZSciezki: polecenia względne i bezwzględne, liczby sklejone znakiem minus, podścieżki', () => {
   assert.deepEqual(pierscienieZSciezki('M10 10l20 0 0 20-20 0'), [
     [
