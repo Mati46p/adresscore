@@ -128,3 +128,11 @@ wewnętrznych). Reszta (service, track, droga wewnętrzna) to podjazdy, drogi po
   `src/wynik/silnik.ts` rozwija słownik, ale `src/ai/zapytajOAdres.ts` (wiersz z `w.etykiety?.[i]`) czyta
   klucz bez słownika, więc w odpowiedzi „zapytaj o adres” pojawiłby się kod `u11` (tak samo dla `sejm2023_lista_*`).
 - `etl/kompakt.mjs` nie przenosi `slownikEtykiet` do kafli; nie ruszałem go (to praca integratora).
+
+## Tryb miasta (#241)
+
+`ADRESCORE_MIASTO=<slug> node etl/drogi-gruntowe.mjs`: OSM z ekstraktu województwa miasta (`pbfRegionu`),
+BDOT10k z paczki powiatu miasta (pierwsze 4 cyfry TERYT gminy, `SHP/<woj>/<powiat>_SHP.zip`). Numer w nazwie
+plików paczki zależy od województwa (Kraków 283, Łódź 340), więc nazwę warstwy `OT_SKDR_L` czytamy z katalogu
+archiwum ZIP (`nazwyWZip`). Drogi sąsiednich powiatów nie wchodzą do BDOT10k, więc przy granicy miasta sieć bywa
+uboższa (brak materiału = nawierzchnia z OSM albo nieznana, nigdy gruntowa z braku danych).

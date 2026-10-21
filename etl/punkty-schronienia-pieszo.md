@@ -55,3 +55,10 @@ Jakość zależy od kompletności OSM: brakujące przejście czy chodnik wydłu�
 nieoznaczona jako zamknięta może ją skrócić. Nie uwzględniamy bram osiedli zamykanych w nocy, wind,
 schodów jako przeszkody, czasu oczekiwania na światłach ani rzeczywistego wejścia do obiektu.
 Wartość to orientacyjny czas dojścia, nie gwarancja dostępności punktu.
+
+## Tryb miasta (#241)
+
+`ADRESCORE_MIASTO=<slug> node etl/punkty-schronienia-pieszo.mjs` (po `punkty-schronienia.mjs` w tym samym
+trybie). Sieć piesza pochodzi z ekstraktu OSM województwa (`pbfRegionu`, DuckDB `ST_ReadOSM`, `etl/lib/pbf-warstwy.mjs`)
+zamiast z Overpass, z tą samą definicją dróg (klasy `highway`, wyłączone `access`/`foot` = no|private, `area=yes`).
+Prostokąt sieci to prostokąt adresów miasta z zapasem ok. 11 km. Wynik Krakowa nadal idzie przez Overpass.

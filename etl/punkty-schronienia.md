@@ -33,3 +33,11 @@ potwierdzonych schronów, ukryć ani miejsc doraźnego schronienia w rozumieniu 
 nie określa pojemności, odporności, dostępności wejścia ani czasu dojścia. Czas dojścia wymaga
 zweryfikowanego trasowania pieszo; odległość geodezyjna nie jest czasem ani długością trasy.
 Do prezentacji należy zachować tę nazwę, datę danych i atrybucję KG PSP/CC BY 4.0.
+
+## Tryb miasta (#241)
+
+`ADRESCORE_MIASTO=<slug> node etl/punkty-schronienia.mjs` liczy ten sam wskaźnik dla jednego z miast z
+`etl/lib/miasto.mjs`. Zamiast filtra `Gmina=Kraków` bierzemy punkty z województwa miasta w prostokącie
+jego adresów powiększonym o ok. 11 km (katalog bywa prowadzony po powiecie: Warszawa ma 7 tys. punktów
+z gminą „Nieznana”, a punkt tuż za granicą miasta bywa bliższy niż własny). Zakres wskaźnika sięga
+promienia szukania (8 km); adres bez punktu w 8 km ma brak danych. Wynik Krakowa się nie zmienia.

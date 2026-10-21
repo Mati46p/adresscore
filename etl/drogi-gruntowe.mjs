@@ -30,13 +30,18 @@
 // Ulica to w BDOT10k każda klasa poza „droga wewnętrzna”, w OSM residential, unclassified,
 // living_street i tertiary lub wyższa (także gdy BDOT10k nazywa ją drogą wewnętrzną, a OSM ulicą).
 //
+// Tryb miasta (ADRESCORE_MIASTO=<slug>): ekstrakt OSM województwa miasta (pbfRegionu) i paczka BDOT10k
+// powiatu miasta (pierwsze 4 cyfry TERYT gminy). Drogi sąsiednich powiatów w BDOT10k nie wchodzą, więc przy
+// granicy miasta sieć bywa uboższa (brak materiału BDOT10k = nawierzchnia z OSM albo nieznana, nigdy zero).
+//
 // Uruchom: node etl/drogi-gruntowe.mjs [ścieżka do malopolskie-*.osm.pbf]
 // Surowe pobrania: etl/.cache/bdot10k (4 paczki, ok. 125 MB, jednorazowo) i etl/.cache/malopolskie-*.osm.pbf.
-import { existsSync, mkdirSync, readdirSync, statSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { basename, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { DuckDBInstance } from '@duckdb/node-api'
 import { do2180 } from './lib/geo.mjs'
+import { bboxMiasta, MIASTO_INFO, pbfRegionu, terytMiasta } from './lib/miasto.mjs'
 import { pobierzTrwale } from './lib/pobieranie.mjs'
 import { dlugoscWKole, odlegloscDoOdcinka, SiecOdcinkow } from './lib/siec-drog.mjs'
 import { CACHE, DANE, dzis, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
@@ -54,8 +59,8 @@ const OKOLICA = PROMIEN + 100 // m od adresu, w których sieć jest potrzebna (k
 const OSM_STRONA = 'https://download.geofabrik.de/europe/poland/malopolskie.html'
 const LICENCJA_OSM =
   'ODbL 1.0, © współtwórcy OpenStreetMap (https://www.openstreetmap.org/copyright); wynik to dzieło wytworzone z wyboru dróg i klasyfikacji nawierzchni, atrybucja wymagana'
-const BDOT_URL = (powiat) =>
-  `https://opendata.geoportal.gov.pl/bdot10k/schemat2021/SHP/12/${powiat}_SHP.zip`
+const BDOT_URL = (powiat, woj = '12') =>
+  `https://opendata.geoportal.gov.pl/bdot10k/schemat2021/SHP/${woj}/${powiat}_SHP.zip`
 const BDOT_STRONA =
   'https://www.geoportal.gov.pl/pl/dane/baza-danych-obiektow-topograficznych-bdot10k/'
 const LICENCJA_BDOT =
@@ -586,7 +591,7 @@ function ramkaStopnie([xmin, ymin, xmax, ymax]) {
 }
 
 /** Drogi z PBF jako { id, tagi, punkty w EPSG:2180 }; ramka = [xmin, ymin, xmax, ymax] w EPSG:2180. */
-export async function wczytajOsm(pbf, ramka) {
+export async function wczytajOsm(pbf, ramka, ramkaWStopniach = null) {
   const lista = HIGHWAY_DOJAZDOWE.map((h) => `'${h}'`).join(', ')
   const plik = `'${sq(pbf.replaceAll('\\', '/'))}'`
   const tag = (k) => `map_extract_value(tags, '${k}')`
@@ -601,7 +606,7 @@ export async function wczytajOsm(pbf, ramka) {
       WHERE kind = 'way' AND cardinality(tags) > 0 AND ${tag('highway')} IN (${lista})
       ORDER BY id`)
     // Węzły filtrujemy już w SQL, żeby nie ładować całej Małopolski do pamięci Node.
-    const [lonMin, latMin, lonMax, latMax] = ramkaStopnie(ramka)
+    const [lonMin, latMin, lonMax, latMax] = ramkaWStopniach ?? ramkaStopnie(ramka)
     const [ids, lony, laty] = (
       await c.runAndReadAll(`
         SELECT id::DOUBLE, lon, lat FROM ST_ReadOSM(${plik})
@@ -634,19 +639,45 @@ export async function wczytajOsm(pbf, ramka) {
 }
 
 /** Paczki BDOT10k do etl/.cache/bdot10k (jednorazowo); zwraca ścieżki w kolejności POWIATY. */
-export async function pobierzPaczkiBdot() {
+export async function pobierzPaczkiBdot(powiaty = POWIATY, woj = '12') {
   mkdirSync(join(CACHE, 'bdot10k'), { recursive: true })
   const sciezki = []
-  for (const p of POWIATY) {
+  for (const p of powiaty) {
     const wzgledna = `bdot10k/${p}_SHP.zip`
     const sciezka = join(CACHE, wzgledna)
     if (!existsSync(sciezka)) {
       console.log(`Pobieram paczkę BDOT10k ${p} (jednorazowo)…`)
-      await pobierzTrwale(BDOT_URL(p), wzgledna, { proby: 3, limitMs: 900_000 })
+      await pobierzTrwale(BDOT_URL(p, woj), wzgledna, { proby: 3, limitMs: 900_000 })
     }
     sciezki.push(sciezka)
   }
   return sciezki
+}
+
+/**
+ * Nazwy plików z centralnego katalogu archiwum ZIP (bez rozpakowywania). Numer w nazwie paczki BDOT10k
+ * (PL.PZGiK.<numer>.BDOT10k.<powiat>__…) zależy od województwa, więc nazwę shp trzeba odczytać z archiwum.
+ */
+export function nazwyWZip(sciezka) {
+  const bufor = readFileSync(sciezka)
+  let eocd = -1
+  for (let i = bufor.length - 22; i >= Math.max(0, bufor.length - 66_000); i--)
+    if (bufor.readUInt32LE(i) === 0x06054b50) {
+      eocd = i
+      break
+    }
+  if (eocd < 0) throw new Error(`${sciezka}: to nie jest archiwum ZIP`)
+  const liczba = bufor.readUInt16LE(eocd + 10)
+  let poz = bufor.readUInt32LE(eocd + 16)
+  const nazwy = []
+  for (let k = 0; k < liczba; k++) {
+    if (bufor.readUInt32LE(poz) !== 0x02014b50)
+      throw new Error(`${sciezka}: uszkodzony katalog ZIP`)
+    const dl = bufor.readUInt16LE(poz + 28)
+    nazwy.push(bufor.toString('utf8', poz + 46, poz + 46 + dl))
+    poz += 46 + dl + bufor.readUInt16LE(poz + 30) + bufor.readUInt16LE(poz + 32)
+  }
+  return nazwy
 }
 
 const dlugoscLamanej = (punkty) => {
@@ -657,7 +688,7 @@ const dlugoscLamanej = (punkty) => {
 }
 
 /** Odcinki OT_SKDR_L z paczek SHP w ramce EPSG:2180: linie z klasą nawierzchni i rangą oraz data najnowszej wersji. */
-export async function wczytajBdot(paczki, ramka) {
+export async function wczytajBdot(paczki, ramka, powiaty = POWIATY) {
   const { instancja, c } = await polaczenieDuckDb()
   const linie = []
   const rozklad = new Map()
@@ -666,8 +697,12 @@ export async function wczytajBdot(paczki, ramka) {
   let wszystkich = 0
   try {
     for (const [i, paczka] of paczki.entries()) {
-      const powiat = POWIATY[i]
-      const shp = `/vsizip/${paczka.replaceAll('\\', '/')}/PL.PZGiK.283.BDOT10k.${powiat}__OT_SKDR_L.shp`
+      const powiat = powiaty[i]
+      const nazwaShp = MIASTO_INFO
+        ? nazwyWZip(paczka).find((n) => n.endsWith(`.BDOT10k.${powiat}__OT_SKDR_L.shp`))
+        : `PL.PZGiK.283.BDOT10k.${powiat}__OT_SKDR_L.shp`
+      if (!nazwaShp) throw new Error(`${paczka}: brak warstwy OT_SKDR_L`)
+      const shp = `/vsizip/${paczka.replaceAll('\\', '/')}/${nazwaShp}`
       const wiersze = (
         await c.runAndReadAll(`
           SELECT KAT_ISTNIE, POLOZENIE, KLASA_DROG, KAT_ZARZAD, SZER_NAWIE, MATE_NAWIE, POCZ_WERSJ,
@@ -741,9 +776,11 @@ async function main() {
   const pobrano = dzis()
   const { adresy } = wczytajAdresy()
   const xy = adresy.map((a) => do2180(a.lon, a.lat))
-  const wKrakowie = adresy.map((a) => a.teryt === TERYT_KRAKOW)
+  // Tryb miasta: wszystkie adresy są z jednego miasta (grupa „Kraków” w logach = to miasto).
+  const grupaA = MIASTO_INFO?.nazwa ?? 'Kraków'
+  const wKrakowie = adresy.map((a) => MIASTO_INFO || a.teryt === TERYT_KRAKOW)
   console.log(
-    `Adresy: ${adresy.length}, w tym Kraków ${wKrakowie.filter(Boolean).length}, obwarzanek ${wKrakowie.filter((w) => !w).length}`,
+    `Adresy: ${adresy.length}, w tym ${grupaA} ${wKrakowie.filter(Boolean).length}, obwarzanek ${wKrakowie.filter((w) => !w).length}`,
   )
   // Zasięg adresów pętlą, bo Math.min(...tablica) przy 176 tys. elementów przepełnia stos.
   let [xmin, ymin, xmax, ymax] = [Infinity, Infinity, -Infinity, -Infinity]
@@ -756,8 +793,9 @@ async function main() {
   const ramka = [xmin - MARGINES, ymin - MARGINES, xmax + MARGINES, ymax + MARGINES]
 
   // 1. Źródła
-  const paczki = await pobierzPaczkiBdot()
-  const bdot = await wczytajBdot(paczki, ramka)
+  const powiatyBdot = MIASTO_INFO ? [terytMiasta().slice(0, 4)] : POWIATY
+  const paczki = await pobierzPaczkiBdot(powiatyBdot, MIASTO_INFO?.teryt2 ?? '12')
+  const bdot = await wczytajBdot(paczki, ramka, powiatyBdot)
   const razemLata = [...bdot.lata.values()].reduce((s, d) => s + d, 0)
   const lataTekst = [...bdot.lata]
     .sort()
@@ -766,9 +804,20 @@ async function main() {
   console.log(
     `BDOT10k: odcinków w ramce ${bdot.wszystkich}, w sieci ${bdot.linie.length}; materiały: ${[...bdot.rozklad].map(([k, v]) => `${k} ${v}`).join(', ')}; wersje obiektów wg roku (długość dróg): ${lataTekst}; najnowsza ${bdot.dataDanych}`,
   )
-  const pbf = rozwiazPbf(process.argv[2] ?? process.env.OSM_PBF)
-  const dataOsm = dataPbf(pbf)
-  const osmSurowe = await wczytajOsm(pbf, ramka)
+  let pbf
+  let dataOsm
+  let ramkaOsm = null
+  if (MIASTO_INFO) {
+    const region = await pbfRegionu()
+    pbf = region.plik
+    dataOsm = region.stan
+    const b = bboxMiasta(0.02, 0.03)
+    ramkaOsm = [b.minLon, b.minLat, b.maxLon, b.maxLat]
+  } else {
+    pbf = rozwiazPbf(process.argv[2] ?? process.env.OSM_PBF)
+    dataOsm = dataPbf(pbf)
+  }
+  const osmSurowe = await wczytajOsm(pbf, ramka, ramkaOsm)
   const liniaOsm = []
   const nieznaneSurface = new Map()
   for (const d of osmSurowe.drogi) {
@@ -782,7 +831,8 @@ async function main() {
     `OSM ${basename(pbf)} (stan ${dataOsm}): dróg highway w ekstrakcie ${osmSurowe.wszystkich}, w ramce ${osmSurowe.drogi.length}, w sieci ${liniaOsm.length}; ` +
       `niezrozumiałe surface: ${[...nieznaneSurface].map(([k, v]) => `${k} ${v}`).join(', ') || 'brak'}`,
   )
-  if (bdot.linie.length < 10_000 || liniaOsm.length < 10_000)
+  const minDrog = MIASTO_INFO ? 2_000 : 10_000
+  if (bdot.linie.length < minDrog || liniaOsm.length < minDrog)
     throw new Error('Podejrzanie mało dróg w źródłach')
 
   // 2. Sieć (tylko okolice adresów)
@@ -843,13 +893,13 @@ async function main() {
   const grupa = (tablica, wMiescie) =>
     tablica.filter((v, i) => wKrakowie[i] === wMiescie && v !== null)
   const zaokr = odleglosc.map((v) => (v === null ? null : Math.round(v)))
-  console.log(`Odległość do wybranej drogi (m), Kraków:   ${percentyle(grupa(zaokr, true))}`)
+  console.log(`Odległość do wybranej drogi (m), ${grupaA}:   ${percentyle(grupa(zaokr, true))}`)
   console.log(`Odległość do wybranej drogi (m), obwarzanek: ${percentyle(grupa(zaokr, false))}`)
-  console.log(`drogi_gruntowe_300m (%), Kraków:   ${percentyle(grupa(udzial, true))}`)
+  console.log(`drogi_gruntowe_300m (%), ${grupaA}:   ${percentyle(grupa(udzial, true))}`)
   console.log(`drogi_gruntowe_300m (%), obwarzanek: ${percentyle(grupa(udzial, false))}`)
   const pokrycie = (t, m) => `${grupa(t, m).length}/${wKrakowie.filter((w) => w === m).length}`
   console.log(
-    `Pokrycie dojazd_utwardzony: Kraków ${pokrycie(flaga, true)}, obwarzanek ${pokrycie(flaga, false)}; drogi_gruntowe_300m: Kraków ${pokrycie(udzial, true)}, obwarzanek ${pokrycie(udzial, false)}`,
+    `Pokrycie dojazd_utwardzony: ${grupaA} ${pokrycie(flaga, true)}, obwarzanek ${pokrycie(flaga, false)}; drogi_gruntowe_300m: ${grupaA} ${pokrycie(udzial, true)}, obwarzanek ${pokrycie(udzial, false)}`,
   )
   console.log(`Brak flagi dojazdu: ${JSON.stringify(przyczynaBraku)}`)
   let blisko = 0
@@ -936,7 +986,10 @@ async function main() {
   console.log('Miejsca kontrolne (najbliższy adres w bazie):')
   const opisOdcinka = (id) =>
     id < 0 ? 'brak drogi' : etykietaOdcinka(siec.ranga[id], siec.detal[id], siec.zrodlo[id])
-  for (const [nazwa, lon, lat] of MIEJSCA_KONTROLNE) {
+  const miejscaKontrolne = MIASTO_INFO
+    ? [[MIASTO_INFO.centrum.nazwa, MIASTO_INFO.centrum.lon, MIASTO_INFO.centrum.lat]]
+    : MIEJSCA_KONTROLNE
+  for (const [nazwa, lon, lat] of miejscaKontrolne) {
     const [px, py] = do2180(lon, lat)
     let najlepszy = -1
     let odl = Infinity
@@ -973,14 +1026,16 @@ async function main() {
     return klucz
   })
   const zrodloOsm = {
-    nazwa: 'OpenStreetMap, ekstrakt Geofabrik – Małopolska (highway, surface, tracktype)',
-    url: OSM_STRONA,
+    nazwa: MIASTO_INFO
+      ? `OpenStreetMap, ekstrakt województwa ${MIASTO_INFO.woj} (openstreetmap.fr) – highway, surface, tracktype`
+      : 'OpenStreetMap, ekstrakt Geofabrik – Małopolska (highway, surface, tracktype)',
+    url: MIASTO_INFO ? 'https://download.openstreetmap.fr/extracts/europe/poland/' : OSM_STRONA,
     licencja: LICENCJA_OSM,
     dataDanych: dataOsm,
     pobrano,
   }
   const zrodloBdot = {
-    nazwa: `BDOT10k, warstwa OT_SKDR_L (droga), powiaty ${POWIATY.join(', ')} – GUGiK`,
+    nazwa: `BDOT10k, warstwa OT_SKDR_L (droga), powiat${MIASTO_INFO ? '' : 'y'} ${powiatyBdot.join(', ')} – GUGiK`,
     url: BDOT_STRONA,
     licencja: LICENCJA_BDOT,
     dataDanych: bdot.dataDanych ?? pobrano,

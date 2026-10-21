@@ -15,6 +15,10 @@
 // wartość jest dolnym oszacowaniem: podajemy ją, gdy w 300 m jest co najmniej jedna zlokalizowana
 // pozycja, a w pozostałych miejscach zostaje null (brak danych), nigdy 0.
 //
+// Tryb miasta (ADRESCORE_MIASTO=<slug>): bez MSIP, tylko ścieżka NID po adresach PRG miasta (wartość to dolne
+// oszacowanie, brak trafienia w 300 m to null). Pełniejszy rejestr z lokalizacją daje zabytki-nid.mjs
+// (zabytki_rejestr_500m), ale to osobny wskaźnik w innym promieniu.
+//
 // Uruchom: node etl/zabytki.mjs. Surowe pobrania w etl/.cache/ (MSIP: zabytki-*.geojson, NID:
 // nid-zasoby.json i nid-zen-<data>.csv, ok. 70 MB); żeby pobrać ponownie, usuń pliki. MSIP idzie
 // przez etl/lib/msip.mjs (powtórzenia, a przy odrzuconym certyfikacie obejście tylko dla hosta MSIP).
@@ -22,6 +26,7 @@ import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { odlegloscMetry } from './lib/codziennosc-geo.mjs'
+import { MIASTO_INFO, WOJEWODZTWO } from './lib/miasto.mjs'
 import { ATRYBUCJA_MSIP, LICENCJA_MSIP, MSIP, naMetry, pobierzJsonDoCache } from './lib/msip.mjs'
 import { indeksPunktow, sumaWPromieniu } from './lib/przestrzen.mjs'
 import { dzis, pobierzDoCache, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
@@ -130,8 +135,19 @@ const nrNorm = (s) =>
   String(s ?? '')
     .toLowerCase()
     .replace(/\s+/g, '')
+/**
+ * Nazwa ulicy do klucza. W trybie miasta PRG podaje ulice z członem rodzajowym („ulica Rakowiecka”,
+ * „aleja Jerozolimskie”), a NID bez niego („Rakowiecka”), więc człon z początku zdejmujemy po obu
+ * stronach. Kraków i obwarzanek zostają bez zmian, bo wynik tamtych wskaźników jest już opublikowany.
+ */
+const ulicaNorm = (ulica) => {
+  const n = norm(ulica)
+  return MIASTO_INFO
+    ? n.replace(/^(ulica|ul|aleja|aleje|al|plac|pl|osiedle|os|rondo|skwer|bulwar|park)\s+/, '')
+    : n
+}
 const klucz = (gmina, miejscowosc, ulica, nr) =>
-  `${norm(gmina)}|${norm(miejscowosc)}|${norm(ulica)}|${nrNorm(nr)}`
+  `${norm(gmina)}|${norm(miejscowosc)}|${ulicaNorm(ulica)}|${nrNorm(nr)}`
 
 /** Najwyższy rozrzut punktów jednego adresu PRG, przy którym uśredniamy; powyżej adres jest niejednoznaczny. */
 const ROZRZUT_M = 200
@@ -143,11 +159,16 @@ const ROZRZUT_M = 200
  * (wieś bez nazw ulic): rekord „Kaszów 105" nie trafi w „Kaszów, Śląska 105". Zwraca punkty
  * i statystykę do opisu wskaźnika.
  */
-export function lokalizujNid(rekordy, adresy, wojewodztwo = 'małopolskie') {
+export function lokalizujNid(
+  rekordy,
+  adresy,
+  wojewodztwo = 'małopolskie',
+  pomijajKrakow = !MIASTO_INFO,
+) {
   const gminy = new Set()
   const indeks = new Map()
   for (const a of adresy) {
-    if (a.teryt === TERYT_KRAKOW) continue
+    if (pomijajKrakow && a.teryt === TERYT_KRAKOW) continue
     gminy.add(a.gmina)
     const k = klucz(a.gmina, a.miejscowosc, a.ulica, a.nr)
     const lista = indeks.get(k)
@@ -258,7 +279,7 @@ export const indeksPunktowNid = (punkty) => indeksPunktow(punkty.map((p) => naMe
  */
 export function wartoscAdresu(adres, msip, nid, promien = PROMIEN_M) {
   const [x, y] = naMetry(adres.lon, adres.lat)
-  if (adres.teryt === TERYT_KRAKOW) {
+  if (!MIASTO_INFO && adres.teryt === TERYT_KRAKOW) {
     const rejestr = sumaWPromieniu(msip.rejestr, x, y, promien)
     const ewidencja = sumaWPromieniu(msip.ewidencja, x, y, promien)
     const razem = rejestr + ewidencja
@@ -305,8 +326,66 @@ async function pobierzNid() {
   }
 }
 
+/** Opis wskaźnika w trybie miasta: wyłącznie NID dopasowany adresowo do PRG. */
+export function opisMiasta({ nazwa, nidGmina, nidZlokalizowane }) {
+  return `Liczba zabytków nieruchomych (pozycji ewidencji) w promieniu ${PROMIEN_M} m w linii prostej. Źródłem jest ewidencja zabytków nieruchomych NID (dane.gov.pl), która nie ma współrzędnych: lokalizujemy tylko pozycje o miejscowości, ulicy i numerze zgodnych z punktem adresowym PRG (${spacje(nidZlokalizowane)} z ${spacje(nidGmina)} pozycji w gminie ${nazwa}, ${proc(nidZlokalizowane, nidGmina)}%). Pozostałe pozycje (bez numeru, ze starym adresem, bez zgodnego punktu PRG) nie mają uczciwego położenia i nie są liczone, więc wartość to dolne oszacowanie, a brak pozycji w ${PROMIEN_M} m to brak danych, nie zero. Dane orientacyjne: nie przesądzają o ochronie konserwatorskiej, której zakres potwierdza konserwator zabytków. Sąsiedztwo zabytku bywa atutem okolicy i ograniczeniem (prace przy obiekcie z rejestru wymagają pozwolenia konserwatora). Nie wpływa na wynik.`
+}
+
+/** Tryb miasta: tylko NID dopasowany adresowo (bez MSIP, który obejmuje wyłącznie Kraków). */
+async function mainMiasto(adresy) {
+  const nid = await pobierzNid()
+  const lok = lokalizujNid(nid.rekordy, adresy, WOJEWODZTWO, false)
+  const nidGmina = nid.rekordy.filter(
+    (r) => r.WOJEWODZTWO === WOJEWODZTWO && gminaNid(r.GMINA) === MIASTO_INFO.nazwa,
+  ).length
+  console.log(
+    `NID ${nid.dataDanych}: w gminie ${MIASTO_INFO.nazwa} ${nidGmina} pozycji; rekordów dopasowanych do gminy ${lok.rekordy}, ` +
+      `zlokalizowane ${lok.zlokalizowane}, bez numeru ${lok.bezNumeru}, bez zgodnego adresu w PRG ${lok.bezAdresuPrg}, niejednoznaczne ${lok.niejednoznaczne}`,
+  )
+  if (!lok.zlokalizowane) throw new Error('NID: żadna pozycja nie dopasowała się do adresów PRG')
+  const indeksNid = indeksPunktowNid(lok.punkty)
+  const wyniki = adresy.map((a) => wartoscAdresu(a, null, indeksNid))
+  const wartosci = wyniki.map((w) => w.wartosc)
+  const znane = wartosci.filter((w) => w !== null).sort((a, b) => a - b)
+  const kw = (p) => znane[Math.min(znane.length - 1, Math.floor(p * znane.length))]
+  console.log(
+    `${MIASTO_INFO.nazwa}: ${znane.length}/${adresy.length} adresów z wartością; mediana ${kw(0.5)}, p90 ${kw(0.9)}, p99 ${kw(0.99)}, maks ${znane.at(-1)}`,
+  )
+  zapiszWskaznik(
+    {
+      id: 'zabytki_300m',
+      kategoria: 'kontekst',
+      nazwa: 'Zabytki w promieniu 300 m',
+      opis: opisMiasta({
+        nazwa: MIASTO_INFO.nazwa,
+        nidGmina,
+        nidZlokalizowane: lok.zlokalizowane,
+      }),
+      jednostka: 'szt.',
+      kierunek: 'neutralny',
+      rozdzielczosc: 'adres',
+      rozmiar: `promień ${PROMIEN_M} m`,
+      zakres: [0, Math.max(10, Math.ceil(kw(0.999) / 10) * 10)],
+      zadanie: 125,
+      zrodla: [
+        {
+          nazwa:
+            'Narodowy Instytut Dziedzictwa – Ewidencja zabytków nieruchomych (dane.gov.pl, zbiór 2627), przetworzono: dopasowanie adresów do PRG',
+          url: NID_ZBIOR,
+          licencja: 'CC BY 4.0',
+          dataDanych: nid.dataDanych,
+          pobrano: dzis(),
+        },
+      ],
+    },
+    wartosci,
+    wyniki.map((w) => w.etykieta),
+  )
+}
+
 async function main() {
   const { adresy } = wczytajAdresy()
+  if (MIASTO_INFO) return mainMiasto(adresy)
   const rejestr = punktyMsip(await warstwaMsip(0, 'zabytki-rejestr.geojson'), 'rejestr')
   const ewidencja = punktyMsip(await warstwaMsip(1, 'zabytki-ewidencja.geojson'), 'ewidencja')
   if (rejestr.liczbaWszystkich < 1_000 || ewidencja.liczbaWszystkich < 4_000)

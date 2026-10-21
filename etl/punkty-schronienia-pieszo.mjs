@@ -3,11 +3,16 @@
 // Sieć: drogi i ścieżki dostępne pieszo z OpenStreetMap (Overpass, kafle buforowane w etl/.cache/).
 // Algorytm: wielozródłowy Dijkstra od wszystkich punktów naraz; dojście z adresu i do punktu to
 // odcinek prosty do najbliższego węzła głównej spójnej składowej sieci (≤ DOJSCIE_MAX m).
+// Tryb miasta (ADRESCORE_MIASTO=<slug>): sieć z ekstraktu OSM województwa (PBF przez DuckDB, ta sama
+// definicja dróg co w zapytaniu Overpass), prostokąt adresów miasta z zapasem ok. 11 km; punkty z
+// etl/punkty-schronienia.mjs w tym samym trybie.
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import KDBush from 'kdbush'
 import { do2180 } from './lib/geo.mjs'
+import { bboxMiasta, MIASTO_INFO, pbfRegionu } from './lib/miasto.mjs'
+import { liniePbf } from './lib/pbf-warstwy.mjs'
 import { CACHE, DANE, dzis, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
 
 const OVERPASS = 'https://maps.mail.ru/osm/tools/overpass/api/interpreter'
@@ -51,6 +56,36 @@ async function pobierzKafel(bbox, plik) {
     }
   }
   throw new Error(`Overpass: nie pobrano kafla ${bbox}`)
+}
+
+/** Warunek SQL zgodny z zapytaniem Overpass (te same klasy dróg i wykluczenia dostępu). */
+const warunekPieszy = (tag) =>
+  `${tag('highway')} IN (${HIGHWAY.split('|')
+    .map((h) => `'${h}'`)
+    .join(', ')})
+   AND coalesce(${tag('access')}, '') NOT IN ('private', 'no')
+   AND coalesce(${tag('foot')}, '') NOT IN ('no', 'private')
+   AND coalesce(${tag('area')}, '') <> 'yes'`
+
+/** Sieć piesza miasta z PBF województwa; kształt wyniku jak z pobierzSiec (nodes + geometry). */
+async function pobierzSiecPbf() {
+  const pbf = await pbfRegionu()
+  const b = bboxMiasta()
+  const { linie, wszystkich } = await liniePbf(pbf.plik, {
+    tagi: ['highway'],
+    warunek: warunekPieszy,
+    ramka: [b.minLon, b.minLat, b.maxLon, b.maxLat],
+    nazwaTmp: 'duckdb_siec_piesza_tmp',
+  })
+  console.log(
+    `OSM ${pbf.plik} (stan ${pbf.stan}): dróg pieszych w województwie ${wszystkich}, w ramce ${linie.length}`,
+  )
+  if (linie.length < 5_000) throw new Error(`OSM: podejrzanie mało dróg (${linie.length})`)
+  const drogi = linie.map((l) => ({
+    nodes: l.wezly,
+    geometry: l.geometria.map(([lon, lat]) => ({ lon, lat })),
+  }))
+  return { drogi, dataDanych: pbf.stan, zrodloOsm: pbf }
 }
 
 async function pobierzSiec() {
@@ -276,7 +311,9 @@ export function trasa(g, indeks, wynik, x, y) {
 
 async function main() {
   const punkty = JSON.parse(readFileSync(join(DANE, 'punkty_schronienia.geojson'), 'utf8'))
-  const { drogi, dataDanych } = await pobierzSiec()
+  const { drogi, dataDanych, zrodloOsm } = MIASTO_INFO
+    ? await pobierzSiecPbf()
+    : await pobierzSiec()
   const linie = drogi.map((w) => ({
     wezly: w.nodes,
     punkty: w.geometry.map((p) => do2180(p.lon, p.lat)),
@@ -296,12 +333,15 @@ async function main() {
   const wynik = dijkstra(g, zrodla)
   const { adresy } = wczytajAdresy()
   const trasy = adresy.map((a) =>
-    a.gmina === 'Kraków' && Number.isFinite(a.lat)
+    (MIASTO_INFO || a.gmina === 'Kraków') && Number.isFinite(a.lat)
       ? trasa(g, indeks, wynik, ...do2180(a.lon, a.lat))
       : null,
   )
   const maks = trasy.reduce((m, t) => Math.max(m, t?.minuty ?? 0), 0)
-  if (maks > 150) throw new Error(`Czas ${maks} min wykracza poza deklarowany zakres`)
+  // W trybie miasta zakres sięga trasy ok. 11 km (promień szukania punktów 8 km po linii prostej).
+  const zakresMin = MIASTO_INFO ? 240 : 150
+  if (maks > zakresMin) throw new Error(`Czas ${maks} min wykracza poza deklarowany zakres`)
+  const nazwaObszaru = MIASTO_INFO?.nazwa ?? 'Kraków'
   const slownik = {}
   const etykiety = trasy.map((t) => {
     if (!t) return null
@@ -317,12 +357,12 @@ async function main() {
       id: 'punkt_schronienia_pieszo_min',
       kategoria: 'bezpieczenstwo',
       nazwa: 'Punkt Schronienia KG PSP – dojście pieszo',
-      opis: `Czas dojścia pieszo z adresu w gminie Kraków do najbliższego (po sieci) Punktu Schronienia KG PSP, przy stałej prędkości ${PREDKOSC_KMH} km/h. Trasa po sieci pieszej OpenStreetMap (bez autostrad i dróg ekspresowych, bez dróg z zakazem ruchu pieszego), więc rzeka, tory i duże drogi wydłużają dojście do najbliższego mostu, przejścia lub kładki. Dojście z adresu i do punktu: odcinek prosty do najbliższego węzła sieci (do ${DOJSCIE_MAX} m); współrzędne punktu traktujemy jako wejście, bo katalog nie podaje wejść. Nie uwzględnia schodów, wind, świateł, przeszkód czasowych ani zamkniętych bram. Punkty to kategoria informacyjna, nie potwierdzone schrony, ukrycia ani MDS. Poza gminą Kraków i bez trasy: brak danych.`,
+      opis: `Czas dojścia pieszo z adresu w gminie ${nazwaObszaru} do najbliższego (po sieci) Punktu Schronienia KG PSP, przy stałej prędkości ${PREDKOSC_KMH} km/h. Trasa po sieci pieszej OpenStreetMap${MIASTO_INFO ? ' (ekstrakt województwa)' : ''} (bez autostrad i dróg ekspresowych, bez dróg z zakazem ruchu pieszego), więc rzeka, tory i duże drogi wydłużają dojście do najbliższego mostu, przejścia lub kładki. Dojście z adresu i do punktu: odcinek prosty do najbliższego węzła sieci (do ${DOJSCIE_MAX} m); współrzędne punktu traktujemy jako wejście, bo katalog nie podaje wejść. Nie uwzględnia schodów, wind, świateł, przeszkód czasowych ani zamkniętych bram. Punkty to kategoria informacyjna, nie potwierdzone schrony, ukrycia ani MDS. Poza gminą ${nazwaObszaru} i bez trasy: brak danych.`,
       jednostka: 'min',
       kierunek: 'mniej-lepiej',
       domyslnaWaga: 0, // jak punkt_schronienia_odleglosc po etl/uprosc-kryteria.mjs
       rozdzielczosc: 'adres',
-      zakres: [0, 150],
+      zakres: [0, zakresMin],
       zadanie: 65,
       predkoscKmH: PREDKOSC_KMH,
       zrodla: [
@@ -334,8 +374,10 @@ async function main() {
           pobrano: psp.pobrano,
         },
         {
-          nazwa: 'OpenStreetMap – sieć dróg i ścieżek pieszych (Overpass API)',
-          url: OVERPASS,
+          nazwa: MIASTO_INFO
+            ? 'OpenStreetMap – sieć dróg i ścieżek pieszych (ekstrakt województwa, openstreetmap.fr)'
+            : 'OpenStreetMap – sieć dróg i ścieżek pieszych (Overpass API)',
+          url: MIASTO_INFO ? zrodloOsm.url : OVERPASS,
           licencja: '© współtwórcy OpenStreetMap, ODbL 1.0',
           dataDanych,
           pobrano: dzis(),
@@ -346,6 +388,7 @@ async function main() {
     etykiety,
     slownik,
   )
+  if (MIASTO_INFO) return // przykłady z barierą to materiał kontrolny Krakowa
   // Przykłady z barierą: największy stosunek trasy do odległości prostej.
   const kandydaci = []
   adresy.forEach((a, i) => {

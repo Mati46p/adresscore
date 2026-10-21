@@ -1,4 +1,6 @@
 // Publiczny katalog Punktów Schronienia KG PSP, ograniczony do gminy Kraków.
+// Tryb miasta (ADRESCORE_MIASTO=<slug>): punkty z województwa miasta w prostokącie adresów + ok. 11 km zapasu
+// (katalog bywa prowadzony po powiecie, np. Warszawa ma 7 tys. punktów z gminą „Nieznana”).
 // Uruchom: node etl/punkty-schronienia.mjs [ścieżka do CSV]
 // Bez argumentu pobiera bieżący CSV do ignorowanego etl/.cache/.
 import { createHash } from 'node:crypto'
@@ -6,6 +8,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import KDBush from 'kdbush'
+import { bboxMiasta, MIASTO_INFO } from './lib/miasto.mjs'
 import { CACHE, DANE, dzis, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
 
 const URL = 'https://gdziesieukryc.pl/PS_XML/punkty_schronienia.csv'
@@ -50,7 +53,23 @@ export function csv(tekst) {
   return dane.map((pola) => Object.fromEntries(naglowek.map((n, i) => [n, pola[i]])))
 }
 
+/**
+ * Zakres punktów: Kraków (gmina z katalogu, stałe GRANICE) albo, w trybie miasta, województwo
+ * miasta i prostokąt jego adresów z zapasem. Nazwę „Kraków” w komunikatach zostawiamy dla zgodności.
+ */
+function zakresPunktow() {
+  if (!MIASTO_INFO) return { gmina: 'Kraków', granice: GRANICE, woj: null, nazwa: 'Krakowem' }
+  const b = bboxMiasta()
+  return {
+    gmina: null,
+    granice: { lat: [b.minLat, b.maxLat], lon: [b.minLon, b.maxLon] },
+    woj: MIASTO_INFO.woj,
+    nazwa: MIASTO_INFO.nazwa,
+  }
+}
+
 export function punktyKrakowa(tekst) {
+  const zakres = zakresPunktow()
   const wiersze = csv(tekst)
   const wymagane = [
     'Identyfikator publiczny',
@@ -58,10 +77,22 @@ export function punktyKrakowa(tekst) {
     'Szerokosc geograficzna',
     'Dlugosc geograficzna',
     'Dostepnosc',
+    ...(zakres.woj ? ['Wojewodztwo'] : []),
   ]
   if (!wiersze.length || wymagane.some((n) => !(n in wiersze[0])))
     throw new Error('Nieoczekiwany schemat CSV KG PSP')
-  const krakow = wiersze.filter((w) => w.Gmina === 'Kraków')
+  const krakow = wiersze.filter((w) => {
+    if (zakres.gmina) return w.Gmina === zakres.gmina
+    const lat = Number(w['Szerokosc geograficzna'])
+    const lon = Number(w['Dlugosc geograficzna'])
+    return (
+      w.Wojewodztwo === zakres.woj &&
+      lat >= zakres.granice.lat[0] &&
+      lat <= zakres.granice.lat[1] &&
+      lon >= zakres.granice.lon[0] &&
+      lon <= zakres.granice.lon[1]
+    )
+  })
   const identyfikatory = new Set()
   const features = krakow.map((w) => {
     const lat = Number(w['Szerokosc geograficzna'])
@@ -72,12 +103,12 @@ export function punktyKrakowa(tekst) {
     if (
       !Number.isFinite(lat) ||
       !Number.isFinite(lon) ||
-      lat < GRANICE.lat[0] ||
-      lat > GRANICE.lat[1] ||
-      lon < GRANICE.lon[0] ||
-      lon > GRANICE.lon[1]
+      lat < zakres.granice.lat[0] ||
+      lat > zakres.granice.lat[1] ||
+      lon < zakres.granice.lon[0] ||
+      lon > zakres.granice.lon[1]
     )
-      throw new Error(`Współrzędne poza Krakowem: ${id}`)
+      throw new Error(`Współrzędne poza ${zakres.nazwa}: ${id}`)
     return {
       type: 'Feature',
       id,
@@ -108,9 +139,16 @@ export function indeksPunktow(features) {
   return indeks
 }
 
-/** Tylko Kraków: poza zakresem źródła brak wyniku, a nie odległość do Krakowa. */
+/**
+ * Tylko Kraków (w trybie miasta: adresy miasta, których zakres źródła pokrywa prostokąt punktów):
+ * poza zakresem źródła brak wyniku, a nie odległość do obcego miasta.
+ */
 export function najblizszyPunkt(adres, features, indeks) {
-  if (adres.gmina !== 'Kraków' || !Number.isFinite(adres.lat) || !Number.isFinite(adres.lon))
+  if (
+    (!MIASTO_INFO && adres.gmina !== 'Kraków') ||
+    !Number.isFinite(adres.lat) ||
+    !Number.isFinite(adres.lon)
+  )
     return null
   for (let promien = 500; promien <= 8_000; promien *= 2) {
     const deltaLat = promien / 110_500
@@ -160,10 +198,11 @@ async function main() {
     dataDanych = lastModified ? new Date(lastModified).toISOString().slice(0, 10) : null
     if (!dataDanych) throw new Error('Brak daty Last-Modified źródła')
   }
+  const nazwaObszaru = MIASTO_INFO?.nazwa ?? 'Kraków'
   const wynik = punktyKrakowa(bufor.toString('utf8'))
-  if (wynik.liczbaWszystkich < 80_000 || wynik.features.length < 2_000)
+  if (wynik.liczbaWszystkich < 80_000 || wynik.features.length < (MIASTO_INFO ? 100 : 2_000))
     throw new Error(
-      `Podejrzanie niepełny katalog: ${wynik.liczbaWszystkich} / Kraków ${wynik.features.length}`,
+      `Podejrzanie niepełny katalog: ${wynik.liczbaWszystkich} / ${nazwaObszaru} ${wynik.features.length}`,
     )
   const sha256 = createHash('sha256').update(bufor).digest('hex')
   mkdirSync(CACHE, { recursive: true })
@@ -171,7 +210,7 @@ async function main() {
   const geojson = {
     type: 'FeatureCollection',
     metadane: {
-      nazwa: 'Punkty Schronienia KG PSP – Kraków',
+      nazwa: `Punkty Schronienia KG PSP – ${nazwaObszaru}`,
       znaczenie:
         'Punkty informacyjne doraźnej osłony; nie są potwierdzonymi schronami, ukryciami ani miejscami doraźnego schronienia w rozumieniu ustawy.',
       zrodlo: URL,
@@ -182,8 +221,7 @@ async function main() {
       znaczenieDatyDanych:
         'Data nagłówka HTTP Last-Modified pobranego pliku CSV; nie oznacza daty weryfikacji każdego punktu.',
       pobrano: dzis(),
-      przetworzono:
-        'Odfiltrowano rekordy Gmina=Kraków; zachowano publiczny identyfikator i współrzędne WGS84. Dostępność pochodzi z katalogu i nie gwarantuje wejścia.',
+      przetworzono: `${MIASTO_INFO ? `Odfiltrowano rekordy z województwa ${MIASTO_INFO.woj} w prostokącie adresów miasta ${nazwaObszaru} z zapasem ok. 11 km` : 'Odfiltrowano rekordy Gmina=Kraków'}; zachowano publiczny identyfikator i współrzędne WGS84. Dostępność pochodzi z katalogu i nie gwarantuje wejścia.`,
       sha256Zrodla: sha256,
       liczbaWszystkich: wynik.liczbaWszystkich,
       liczbaKrakow: wynik.features.length,
@@ -195,18 +233,20 @@ async function main() {
   const indeks = indeksPunktow(wynik.features)
   const najblizsze = adresy.map((adres) => najblizszyPunkt(adres, wynik.features, indeks))
   const maksOdleglosc = najblizsze.reduce((maks, w) => Math.max(maks, w?.metry ?? 0), 0)
-  if (maksOdleglosc > 6_000)
-    throw new Error(`Odległość ${maksOdleglosc} m wykracza poza deklarowany zakres 6000 m`)
+  // W trybie miasta zakres sięga promienia szukania (8 km): na peryferiach dużych miast punkty bywają rzadkie.
+  const zakresM = MIASTO_INFO ? 8_000 : 6_000
+  if (maksOdleglosc > zakresM)
+    throw new Error(`Odległość ${maksOdleglosc} m wykracza poza deklarowany zakres ${zakresM} m`)
   zapiszWskaznik(
     {
       id: 'punkt_schronienia_odleglosc',
       kategoria: 'kontekst',
       nazwa: 'Najbliższy Punkt Schronienia KG PSP',
-      opis: 'Odległość geodezyjna w linii prostej od adresu w gminie Kraków do najbliższego Punktu Schronienia KG PSP. Nie jest to trasa ani czas dojścia. Punkty są kategorią informacyjną, nie potwierdzonymi schronami, ukryciami lub MDS; dostępność wejścia nie jest gwarantowana. Poza gminą Kraków i promieniem 8 km: brak danych.',
+      opis: `Odległość geodezyjna w linii prostej od adresu w gminie ${nazwaObszaru} do najbliższego Punktu Schronienia KG PSP. Nie jest to trasa ani czas dojścia. Punkty są kategorią informacyjną, nie potwierdzonymi schronami, ukryciami lub MDS; dostępność wejścia nie jest gwarantowana. Poza gminą ${nazwaObszaru} i promieniem 8 km: brak danych.`,
       jednostka: 'm',
       kierunek: 'neutralny',
       rozdzielczosc: 'adres',
-      zakres: [0, 6_000],
+      zakres: [0, zakresM],
       zadanie: 25,
       zrodla: [
         {
@@ -226,7 +266,7 @@ async function main() {
     ),
   )
   console.log(
-    `Punkty Schronienia KG PSP: ${wynik.features.length} Kraków / ${wynik.liczbaWszystkich} Polska, ${dataDanych}`,
+    `Punkty Schronienia KG PSP: ${wynik.features.length} ${nazwaObszaru} / ${wynik.liczbaWszystkich} Polska, ${dataDanych}`,
   )
 }
 

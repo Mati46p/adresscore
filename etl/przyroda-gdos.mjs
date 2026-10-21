@@ -5,6 +5,8 @@
 // krajobrazu (obejmują większość regionu, więc nic by nie różnicowały), pomniki przyrody
 // (pojedyncze drzewa i głazy) i stanowiska dokumentacyjne (obiekty geologiczne, zwykle niedostępne).
 // Adres w obrębie obszaru = 0 m, poza nim odległość do najbliższej granicy.
+// Tryb miasta (ADRESCORE_MIASTO=<slug>): bez zmian w kodzie – bbox pobierania liczy się z adresów miasta,
+// wynik trafia do public/dane/miasta/<slug>. Obszar chroniony w promieniu 25 km jest zawsze (brak = błąd).
 // Uruchom: node etl/przyroda-gdos.mjs. Surowe pobrania: etl/.cache/ryzyka/.
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
