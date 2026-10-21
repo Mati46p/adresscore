@@ -35,13 +35,6 @@
   font-weight: 600;
   text-decoration: none;
 }
-.serwisy ul.serwisy-prawne {
-  margin-left: auto;
-  padding-left: 16px;
-}
-.serwisy-prawne a {
-  font-weight: 400;
-}
 .serwisy a:hover {
   color: var(--tekst);
 }
@@ -76,4 +69,30 @@
   .serwisy img {
     display: none;
   }
+}
+.stopka-prawna {
+  padding: 16px 32px;
+  border-top: 1px solid var(--ramka);
+  background: var(--tlo);
+}
+.stopka-prawna ul {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 24px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.stopka-prawna a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--cel-dotyku);
+  color: var(--tekst-2);
+  font-size: 13px;
+  text-decoration: none;
+}
+.stopka-prawna a:hover {
+  color: var(--tekst);
+  text-decoration: underline;
 }

@@ -75,8 +75,6 @@ function doSekcji(zdarzenie: MouseEvent<HTMLAnchorElement>, id: string) {
 }
 
 export function PasekSerwisow() {
-  const stan = useStan((s) => s)
-  const hrefMetody = hrefDla(stan, { ekran: 'metoda' })
   return (
     <nav className="serwisy" aria-labelledby="serwisy-h">
       <h2 id="serwisy-h" className="serwisy-tytul">
@@ -99,15 +97,6 @@ export function PasekSerwisow() {
           </li>
         ))}
       </ul>
-      <ul className="serwisy-prawne">
-        {PRAWNE.map((p) => (
-          <li key={p.id}>
-            <a href={hrefMetody} onClick={(e) => doSekcji(e, p.id)}>
-              {p.etykieta}
-            </a>
-          </li>
-        ))}
-      </ul>
     </nav>
   )
 }
@@ -125,5 +114,24 @@ export function PrzyciskDziennikarze() {
       Dla dziennikarzy <span aria-hidden="true">↗</span>
       <span className="sr-only">(otwiera się w nowej karcie)</span>
     </a>
+  )
+}
+
+/** Stopka na dole każdego ekranu: linki prawne prowadzą do sekcji Metody. */
+export function StopkaPrawna() {
+  const stan = useStan((s) => s)
+  const hrefMetody = hrefDla(stan, { ekran: 'metoda' })
+  return (
+    <footer className="stopka-prawna">
+      <ul>
+        {PRAWNE.map((p) => (
+          <li key={p.id}>
+            <a href={hrefMetody} onClick={(e) => doSekcji(e, p.id)}>
+              {p.etykieta}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </footer>
   )
 }

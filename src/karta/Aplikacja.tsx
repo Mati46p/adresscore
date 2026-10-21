@@ -19,7 +19,7 @@ import {
 import { sciezkaKanoniczna, tytulEkranu } from './miastoTeksty'
 import './aplikacja.css'
 import { Naglowek } from './Naglowek'
-import { PasekSerwisow } from './PasekSerwisow'
+import { PasekSerwisow, StopkaPrawna } from './PasekSerwisow'
 
 const EkranOkolica = lazy(async () => ({ default: (await ladujOkolice()).EkranOkolica }))
 const EkranPorownanie = lazy(async () => ({ default: (await ladujPorownanie()).EkranPorownanie }))
@@ -171,6 +171,7 @@ function Powloka() {
         {ekran === 'biznes' && <EkranBiznes />}
         {ekran === 'miasto' && <EkranMiasto />}
       </Suspense>
+      <StopkaPrawna />
     </>
   )
 }
