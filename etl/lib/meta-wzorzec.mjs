@@ -86,3 +86,6 @@ export const TYLKO_W_MIASTACH = {
   ekopunkt_odleglosc: 'Warszawa: API dane.um.warszawa.pl',
   toaleta_publiczna_odleglosc: 'Warszawa: API dane.um.warszawa.pl',
 }
+
+// Warstwy, których brak nie jest błędem także w Krakowie (nie istnieją tam, tylko w części miast).
+export const OPCJONALNE = ['sejm2023_lista_8']

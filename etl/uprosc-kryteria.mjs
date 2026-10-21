@@ -2,7 +2,7 @@
 // Uruchom po odświeżeniu etl/codziennosc, inwestycje/obwarzanek, halas/obwarzanek i powodz.
 import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { PRZENIESIONE, USUWANE } from './lib/meta-wzorzec.mjs'
+import { OPCJONALNE, PRZENIESIONE, USUWANE } from './lib/meta-wzorzec.mjs'
 import { DANE, MIASTO, zapiszWskaznik } from './lib/wspolne.mjs'
 
 export { PRZENIESIONE }
@@ -103,7 +103,7 @@ function przypiszGrupy() {
   for (const [id, [kategoria, kierunek]] of Object.entries(PRZENIESIONE)) {
     if (!existsSync(sciezka(id))) {
       // Kraków ma komplet; miasto może nie mieć części warstw (brak źródła), co nie jest błędem.
-      if (MIASTO) continue
+      if (MIASTO || OPCJONALNE.includes(id)) continue
       throw new Error(`Brakuje warstwy do przeniesienia: ${id}`)
     }
     const p = wczytaj(id)
