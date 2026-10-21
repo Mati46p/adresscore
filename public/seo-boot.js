@@ -16,6 +16,12 @@ fetch('/')
     const skrypt = document.createElement('script')
     skrypt.type = 'module'
     skrypt.src = aplikacja.getAttribute('src')
+    // Styl strony HTML (#root max 1100px) ściskałby aplikację; zdejmujemy go dopiero, gdy aplikacja się wczyta.
+    skrypt.onload = () => {
+      for (const styl of document.head.querySelectorAll('style')) {
+        if (styl.textContent.includes('#root{max-width')) styl.remove()
+      }
+    }
     document.body.append(skrypt)
   })
   .catch((blad) =>
