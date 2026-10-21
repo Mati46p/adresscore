@@ -2,6 +2,7 @@
 // z linii OSM, szukanie najbliższego obiektu i licznik obiektów na 1000 mieszkańców.
 // Bez wejścia/wyjścia, więc da się je testować bez pliku PBF i bez sieci (etl/osm-uslugi.test.mjs).
 import { indeksPunktow, odlegloscMetry } from './codziennosc-geo.mjs'
+import { MIASTO_INFO } from './miasto.mjs'
 
 // Dostęp, który wyklucza obiekt z „ogólnodostępnych": miejsce prywatne, dla klientów, na zezwolenie.
 const OGRANICZONY = new Set(['private', 'no', 'customers', 'permit', 'delivery', 'members'])
@@ -106,10 +107,50 @@ export const GRUPY = [
   },
 ]
 
+// Jednostki, które w OSM bywają oznaczone jako policja, ale nie są komisariatem ani komendą.
+const NIE_POLICJA =
+  /stra[żz] miejsk|stra[żz] graniczn|żandarmeri|więzienn|areszt|ochron|wojskow|szkoła policji|biuro|centrum szkolenia|poligon/i
+
+/**
+ * Grupy tylko dla trybu miasta (ADRESCORE_MIASTO): w Krakowie te wskaźniki pochodzą z MSIP
+ * (etl/uslugi-krakowa.mjs), więc w jego przebiegu tych grup nie ma i wynik Krakowa się nie zmienia.
+ */
+export const GRUPY_MIASTA = [
+  {
+    id: 'policja',
+    tagi: [['amenity', 'police']],
+    akceptuj: (t) => !dostepOgraniczony(t) && !NIE_POLICJA.test(t.name ?? ''),
+  },
+  {
+    id: 'sport',
+    tagi: [
+      ['leisure', 'sports_centre'],
+      ['leisure', 'stadium'],
+      ['leisure', 'sports_hall'],
+      ['leisure', 'ice_rink'],
+      ['leisure', 'pitch'],
+    ],
+    // Boiska i hale prywatne, dla klientów, członków albo na zezwolenie nie są ogólnodostępne.
+    akceptuj: (t) => !dostepOgraniczony(t),
+  },
+  {
+    id: 'pitnik',
+    tagi: [['amenity', 'drinking_water']],
+    akceptuj: (t) =>
+      !dostepOgraniczony(t) &&
+      t.indoor !== 'yes' &&
+      t.drinking_water !== 'no' &&
+      t['drinking_water:legal'] !== 'no',
+  },
+]
+
+/** Grupy aktywne w tym przebiegu: Kraków i obwarzanek bez grup miejskich, miasta z nimi. */
+export const GRUPY_AKTYWNE = MIASTO_INFO ? [...GRUPY, ...GRUPY_MIASTA] : GRUPY
+
 /** Klucze tagów, które czytamy z pliku PBF: te z grup oraz pomocnicze dla filtrów. */
 export const KLUCZE_TAGOW = [
   ...new Set([
-    ...GRUPY.flatMap((g) => g.tagi.map(([k]) => k)),
+    ...GRUPY_AKTYWNE.flatMap((g) => g.tagi.map(([k]) => k)),
     'name',
     'operator',
     'access',
@@ -124,7 +165,7 @@ export const KLUCZE_TAGOW = [
 /** Warunek SQL (DuckDB, kolumna `tags` z ST_ReadOSM) wybierający obiekty z którymkolwiek tagiem grupy. */
 export function warunekSql() {
   const poKluczu = new Map()
-  for (const g of GRUPY)
+  for (const g of GRUPY_AKTYWNE)
     for (const [k, v] of g.tagi) poKluczu.set(k, [...(poKluczu.get(k) ?? []), v])
   return [...poKluczu]
     .map(
@@ -136,7 +177,7 @@ export function warunekSql() {
 
 /** Identyfikatory grup, do których należy obiekt o danych tagach (obiekt może być w kilku). */
 export function klasyfikuj(tagi) {
-  return GRUPY.filter(
+  return GRUPY_AKTYWNE.filter(
     (g) => g.tagi.some(([k, v]) => tagi[k] === v) && (!g.akceptuj || g.akceptuj(tagi)),
   ).map((g) => g.id)
 }

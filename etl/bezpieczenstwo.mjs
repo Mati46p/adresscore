@@ -16,6 +16,7 @@ import { join } from 'node:path'
 import { Readable } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
 import { DuckDBInstance } from '@duckdb/node-api'
+import { MIASTO_INFO, pbfRegionu } from './lib/miasto.mjs'
 import { CACHE, dzis, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
 
 // Publiczna instancja z globalnym pokryciem; główna overpass-api.de była niedostępna przy pobraniu.
@@ -58,6 +59,14 @@ async function pobierzLatarnie(bbox) {
 
   const zapytanie = `[out:json][timeout:180];node["highway"="street_lamp"](${bbox});out body;`
   let wynik
+  if (MIASTO_INFO) {
+    // Tryb miasta: ekstrakt OSM województwa (bez Overpass), ten sam filtr highway=street_lamp.
+    wynik = await latarnieZRegionu(bbox)
+    walidujOdpowiedz(wynik)
+    writeFileSync(sciezka, JSON.stringify(wynik))
+    console.log(`OSM: ${wynik.elements.length} latarni z ekstraktu województwa do ${sciezka}`)
+    return wynik
+  }
   try {
     const odpowiedz = await fetch(OVERPASS, {
       method: 'POST',
@@ -90,13 +99,26 @@ async function pobierzLatarnie(bbox) {
 function walidujOdpowiedz(wynik) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(wynik.dataDanych ?? '') || !Array.isArray(wynik.elements))
     throw new Error('OSM: niekompletna odpowiedź')
-  if (wynik.elements.length < 1000) throw new Error('OSM: podejrzanie mało latarni')
+  if (wynik.elements.length < (MIASTO_INFO ? 200 : 1000))
+    throw new Error('OSM: podejrzanie mało latarni')
   if (
     wynik.elements.some(
       (e) => e.type !== 'node' || !Number.isFinite(e.lat) || !Number.isFinite(e.lon),
     )
   )
     throw new Error('OSM: niepoprawne współrzędne latarni')
+}
+
+async function latarnieZRegionu(bbox) {
+  const { plik, stan, url } = await pbfRegionu()
+  const [s, w, n, e] = bbox.split(',').map(Number)
+  const db = await DuckDBInstance.create(':memory:')
+  const conn = await db.connect()
+  await conn.run('LOAD spatial')
+  const sql = `SELECT lat, lon FROM ST_ReadOSM('${plik.replaceAll("'", "''")}') WHERE kind = 'node' AND map_extract_value(tags, 'highway') = 'street_lamp' AND lat BETWEEN ${s} AND ${n} AND lon BETWEEN ${w} AND ${e}`
+  const rows = (await conn.runAndReadAll(sql)).getRows()
+  conn.closeSync()
+  return { elements: rows.map(([lat, lon]) => ({ type: 'node', lat, lon })), dataDanych: stan, url }
 }
 
 async function latarnieZGeofabrik(bbox) {
@@ -159,6 +181,15 @@ const bbox = bboxAdresow(adresy)
 const wynik = await pobierzLatarnie(bbox)
 walidujOdpowiedz(wynik)
 const wartosci = policz(adresy, wynik.elements)
+// Tryb miasta: latarnie w OSM są mapowane nierówno. Publikujemy tylko wtedy, gdy udział adresów
+// z co najmniej jedną latarnią w 100 m to min. połowa udziału w Krakowie (16,5%); inaczej szarość.
+const UDZIAL_KRAKOWA = 0.165
+const udzial = wartosci.filter((v) => v > 0).length / wartosci.length
+console.log(`Udział adresów z latarnią w 100 m: ${(udzial * 100).toFixed(1)}% (Kraków 16,5%)`)
+if (MIASTO_INFO && udzial < UDZIAL_KRAKOWA / 2) {
+  console.log('Pokrycie OSM za słabe: oswietlenie_100m zostaje szare (nie publikuję).')
+  process.exit(0)
+}
 zapiszWskaznik(
   {
     id: 'oswietlenie_100m',
@@ -172,7 +203,9 @@ zapiszWskaznik(
     zadanie: 45,
     zrodla: [
       {
-        nazwa: '© OpenStreetMap contributors – latarnie uliczne',
+        nazwa: MIASTO_INFO
+          ? `© OpenStreetMap contributors – latarnie uliczne (ekstrakt województwa ${MIASTO_INFO.woj})`
+          : '© OpenStreetMap contributors – latarnie uliczne',
         url: wynik.url,
         licencja: 'Open Database License (ODbL) 1.0: https://www.openstreetmap.org/copyright',
         dataDanych: wynik.dataDanych,

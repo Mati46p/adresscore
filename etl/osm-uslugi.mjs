@@ -28,7 +28,7 @@ import { odlegloscMetry } from './lib/codziennosc-geo.mjs'
 import { MIASTO_INFO, pbfRegionu, WOJEWODZTWO } from './lib/miasto.mjs'
 import {
   budujNajblizszy,
-  GRUPY,
+  GRUPY_AKTYWNE,
   KLUCZE_TAGOW,
   klasyfikuj,
   liczbaPL,
@@ -159,7 +159,7 @@ async function obiektyZPbf(pbf) {
 /** Odcisk definicji grup i geometrii: zmiana tagów albo filtrów unieważnia cache wyciągu. */
 function odciskDefinicji() {
   const tekst = JSON.stringify([
-    GRUPY.map((g) => [g.id, g.tagi, String(g.akceptuj), Boolean(g.brzeg)]),
+    GRUPY_AKTYWNE.map((g) => [g.id, g.tagi, String(g.akceptuj), Boolean(g.brzeg)]),
     String(srodekLinii),
     String(punktyBrzegu),
     String(scalDuplikaty),
@@ -171,7 +171,7 @@ function odciskDefinicji() {
 function zbudujGrupy({ obiekty, wezly }) {
   const wsp = new Map(wezly.map((w) => [w.id, [Number(w.lat), Number(w.lon)]]))
   const grupy = Object.fromEntries(
-    GRUPY.map((g) => [g.id, { obiekty: [], brzeg: g.brzeg ? [] : null }]),
+    GRUPY_AKTYWNE.map((g) => [g.id, { obiekty: [], brzeg: g.brzeg ? [] : null }]),
   )
   let bezWezlow = 0
   for (const o of obiekty) {
@@ -205,7 +205,7 @@ function zbudujGrupy({ obiekty, wezly }) {
           g.brzeg.push({ lat: bLat, lon: bLon, nazwa })
     }
   }
-  for (const g of GRUPY) {
+  for (const g of GRUPY_AKTYWNE) {
     // Ten sam obiekt bywa w OSM i węzłem, i budynkiem – dla obszarów (obrys) nie scalamy.
     if (!g.brzeg) grupy[g.id].obiekty = scalDuplikaty(grupy[g.id].obiekty)
   }
@@ -427,6 +427,48 @@ const WARSTWY = [
   },
 ]
 
+/**
+ * Wskaźniki tylko dla miast: w Krakowie liczy je MSIP (uslugi-krakowa.mjs), w miastach odpowiednik
+ * z tagów OSM. Kategoria, kierunek i jednostka jak w Krakowie (test zgodności: pnpm test:meta).
+ * `minObiektow`: poniżej tylu miejsc w obszarze adresów miasta mapa OSM jest zbyt rzadka i warstwa
+ * zostaje szara (nie publikujemy odległości do „najbliższego", gdy większość obiektów nie jest wpisana).
+ */
+const WARSTWY_MIAST = [
+  {
+    id: 'policja_odleglosc',
+    grupa: 'policja',
+    nazwa: 'Najbliższa jednostka policji',
+    tagi: 'amenity=police',
+    opis: 'Dostępność policji, nie przestępczość: odległość w linii prostej od adresu do najbliższej jednostki oznaczonej w OpenStreetMap jako policja (komisariaty, komendy, posterunki). Nie liczymy straży miejskiej, żandarmerii, służb więziennych ani szkół policji. Wskaźnik nie mówi nic o bezpieczeństwie okolicy, czasie reakcji patroli ani godzinach otwarcia. Odmiennie niż w Krakowie nie odróżnia komisariatów od komend powiatowych i wojewódzkich.',
+    zakres: [0, 8500],
+    kategoria: 'bezpieczenstwo',
+    kierunek: 'mniej-lepiej',
+    minObiektow: 5,
+  },
+  {
+    id: 'sport_odleglosc',
+    grupa: 'sport',
+    nazwa: 'Najbliższy obiekt sportowy',
+    tagi: 'leisure=sports_centre, stadium, sports_hall, ice_rink, pitch',
+    opis: 'Odległość w linii prostej (nie trasa pieszo) od adresu do najbliższego ogólnodostępnego obiektu sportowego z OpenStreetMap: centrum sportowego, stadionu, hali, lodowiska albo boiska. Pomijamy obiekty prywatne, dla klientów, członków i na zezwolenie. Przy tym samym kompleksie OSM ma wiele wpisów (boisko po boisku), a jakość mapy jest nierówna; wykaz nie podaje godzin ani warunków wstępu.',
+    zakres: [0, 2000],
+    kategoria: 'codziennosc',
+    kierunek: 'mniej-lepiej',
+    minObiektow: 50,
+  },
+  {
+    id: 'pitnik_odleglosc',
+    grupa: 'pitnik',
+    nazwa: 'Najbliższy pitnik zewnętrzny',
+    tagi: 'amenity=drinking_water',
+    opis: 'Odległość w linii prostej (nie trasa pieszo) od adresu do najbliższego punktu wody pitnej (pitnika, poidełka) oznaczonego w OpenStreetMap. Pomijamy punkty wody oznaczone jako niezdatne do picia, w budynkach oraz prywatne, dla klientów i na zezwolenie. OSM nie zna godzin ani sezonu działania, więc bliski pitnik nie gwarantuje wody o każdej porze.',
+    zakres: [0, 5500],
+    kategoria: 'codziennosc',
+    kierunek: 'mniej-lepiej',
+    minObiektow: 30,
+  },
+]
+
 const zrodloOsm = (tagi, stan) => ({
   nazwa: MIASTO_INFO
     ? `OpenStreetMap, ekstrakt województwa ${WOJEWODZTWO} (lustro download.openstreetmap.fr; ${tagi})`
@@ -534,8 +576,26 @@ export async function licz() {
   )
   const najblizszyAdres = budujNajblizszy(adresy, MAX_DO_GMINY_M)
 
+  // Warstwy miejskie publikujemy tylko, gdy OSM ma dość obiektów w obszarze adresów miasta.
+  const miejskie = []
+  for (const w of MIASTO_INFO ? WARSTWY_MIAST : []) {
+    const wObszarze = [...obiektyWGminach(grupy[w.grupa].obiekty, najblizszyAdres).values()].reduce(
+      (a, b) => a + b,
+      0,
+    )
+    if (wObszarze < w.minObiektow) {
+      console.log(
+        `${w.id}: ${wObszarze} obiektów OSM w obszarze miasta (próg ${w.minObiektow}), warstwa zostaje szara`,
+      )
+      continue
+    }
+    console.log(`${w.id}: ${wObszarze} obiektów OSM w obszarze miasta`)
+    miejskie.push(w)
+  }
+
   const wszystkie = [
     ...WARSTWY.map((w) => ({ ...w, g: grupy[w.grupa] })),
+    ...miejskie.map((w) => ({ ...w, g: grupy[w.grupa] })),
     {
       id: 'paczkomat_odleglosc',
       grupa: 'inpost',

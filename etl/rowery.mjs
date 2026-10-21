@@ -502,6 +502,77 @@ async function wczytajOsm(pbf) {
   }
 }
 
+// Dostęp, który wyklucza stojak z „ogólnodostępnych" (parking sklepowy, prywatny, dla personelu).
+const OGRANICZONY_OSM = new Set(['private', 'no', 'customers', 'permit', 'delivery', 'members'])
+// Wartości park_ride, które oznaczają parking Park and Ride (park_ride=no znaczy: nie jest).
+const PARK_RIDE_TAK = ['yes', 'bus', 'train', 'metro', 'tram', 'trolleybus', 'light_rail']
+
+/**
+ * Tryb miasta: stojaki rowerowe (amenity=bicycle_parking) i parkingi Park and Ride
+ * (amenity=parking + park_ride) z ekstraktu OSM województwa. Linie zamieniamy na środek obrysu.
+ * Zwraca punkty w układzie rzutowania skryptu: { x, y, miejsca } i { x, y, nazwa }.
+ */
+export async function wczytajPunktyRowerowe(pbf) {
+  const cytuj = (s) => `'${String(s).replaceAll("'", "''")}'`
+  const plik = cytuj(pbf.replaceAll('\\', '/'))
+  const tag = (k) => `map_extract_value(tags, ${cytuj(k)})`
+  const instancja = await DuckDBInstance.create(':memory:', {
+    temp_directory: join(CACHE, 'duckdb_rowery_tmp'),
+    memory_limit: '4GB',
+  })
+  const polaczenie = await instancja.connect()
+  try {
+    await polaczenie.run('INSTALL spatial; LOAD spatial')
+    await polaczenie.run(`
+      CREATE TABLE obiekty AS
+      SELECT kind, id, lat, lon, refs, ${tag('amenity')} AS amenity, ${tag('park_ride')} AS park_ride,
+             ${tag('capacity')} AS capacity, ${tag('access')} AS access, ${tag('name')} AS nazwa
+      FROM ST_ReadOSM(${plik})
+      WHERE kind IN ('node', 'way') AND cardinality(tags) > 0 AND (
+        ${tag('amenity')} = 'bicycle_parking'
+        OR (${tag('amenity')} = 'parking' AND ${tag('park_ride')} IN (${PARK_RIDE_TAK.map(cytuj).join(', ')}))
+      )`)
+    const obiekty = (await polaczenie.runAndReadAll('SELECT * FROM obiekty')).getRowObjectsJS()
+    const [ids, lony, laty] = (
+      await polaczenie.runAndReadAll(`
+        SELECT id::DOUBLE, lon, lat FROM ST_ReadOSM(${plik})
+        WHERE kind = 'node' AND id IN (SELECT unnest(refs) FROM obiekty WHERE kind = 'way')`)
+    ).getColumnsJS()
+    const wezly = new Map()
+    for (let i = 0; i < ids.length; i++) wezly.set(ids[i], [lony[i], laty[i]])
+    const stojaki = []
+    const pr = []
+    for (const o of obiekty) {
+      let lon = o.lon
+      let lat = o.lat
+      if (o.kind === 'way') {
+        const znane = (o.refs ?? []).map((r) => wezly.get(Number(r))).filter(Boolean)
+        if (znane.length < 2) continue
+        lon = znane.reduce((a, p) => a + p[0], 0) / znane.length
+        lat = znane.reduce((a, p) => a + p[1], 0) / znane.length
+      }
+      if (!Number.isFinite(lon) || !Number.isFinite(lat)) continue
+      const [x, y] = rzutuj([lon, lat])
+      if (o.amenity === 'bicycle_parking') {
+        if (OGRANICZONY_OSM.has(o.access)) continue
+        const pojemnosc = Number.parseInt(o.capacity, 10)
+        // Jak w Krakowie (liczbaStojakow): brak sensownej pojemności znaczy co najmniej jedno miejsce.
+        stojaki.push({
+          x,
+          y,
+          miejsca: liczbaStojakow(pojemnosc > 0 && pojemnosc <= 200 ? pojemnosc : Number.NaN),
+        })
+      } else if (o.access !== 'private' && o.access !== 'no') {
+        pr.push({ x, y, nazwa: o.nazwa?.trim() || 'Parking Park and Ride', miejsca: null })
+      }
+    }
+    return { stojaki, pr }
+  } finally {
+    polaczenie.closeSync()
+    instancja.closeSync()
+  }
+}
+
 // ---------------------------------------------------------------------------------------------
 // Skrypt
 // ---------------------------------------------------------------------------------------------
@@ -594,7 +665,92 @@ async function mainMiasto() {
     },
     infra,
   )
+  await stojakiIPrMiasta(pbf, dataOsm, adresy, xy)
   console.log(`Czas: ${((performance.now() - start) / 1000).toFixed(1)} s`)
+}
+
+// Progi publikacji w mieście (mapa OSM bywa rzadka): udział adresów ze stojakiem w 300 m co najmniej
+// połowa udziału w Krakowie (46%, ewidencja ZTP) i co najmniej 3 parkingi P+R w zasięgu miasta.
+const UDZIAL_STOJAKOW_KRAKOW = 0.46
+const MIN_PR = 3
+
+async function stojakiIPrMiasta(pbf, dataOsm, adresy, xy) {
+  const { stojaki, pr } = await wczytajPunktyRowerowe(pbf)
+  const zrodlo = (tagi) => ({
+    nazwa: `OpenStreetMap, ekstrakt województwa ${WOJEWODZTWO} (lustro download.openstreetmap.fr; ${tagi})`,
+    url: 'https://download.openstreetmap.fr/extracts/europe/poland/',
+    licencja: LICENCJA_OSM,
+    dataDanych: dataOsm,
+    pobrano: dzis(),
+  })
+  const xs = xy.map((p) => p[0])
+  const ys = xy.map((p) => p[1])
+  const ramka = [
+    xs.reduce((a, b) => Math.min(a, b)) - MAX_ODLEGLOSC,
+    ys.reduce((a, b) => Math.min(a, b)) - MAX_ODLEGLOSC,
+    xs.reduce((a, b) => Math.max(a, b)) + MAX_ODLEGLOSC,
+    ys.reduce((a, b) => Math.max(a, b)) + MAX_ODLEGLOSC,
+  ]
+  const wRamce = (p) => p.x >= ramka[0] && p.x <= ramka[2] && p.y >= ramka[1] && p.y <= ramka[3]
+  const stojakiMiasta = stojaki.filter(wRamce)
+  const parkingi = pr.filter(wRamce)
+  console.log(
+    `OSM: stojaków ${stojakiMiasta.length}, parkingów P+R ${parkingi.length} w zasięgu miasta (${adresy.length} adresów)`,
+  )
+
+  if (stojakiMiasta.length) {
+    const indeks = indeksStojakow(stojakiMiasta)
+    const wartosci = xy.map(([x, y]) => stojakiWPromieniu(indeks, x, y))
+    const udzial = wartosci.filter((v) => v > 0).length / wartosci.length
+    console.log(
+      `stojaki_300m: udział adresów z wynikiem > 0 ${(udzial * 100).toFixed(1)}% (Kraków 46%)`,
+    )
+    if (udzial < UDZIAL_STOJAKOW_KRAKOW / 2)
+      console.log('stojaki_300m: pokrycie OSM za słabe, warstwa zostaje szara.')
+    else
+      zapiszWskaznik(
+        {
+          id: 'stojaki_300m',
+          kategoria: 'transport',
+          nazwa: 'Stojaki rowerowe w 300 m',
+          opis: `Suma miejsc na rowery (pole capacity, a bez niego 1 na wpis) ze stojaków oznaczonych w OpenStreetMap jako amenity=bicycle_parking w promieniu ${PROMIEN_STOJAKOW} m w linii prostej od adresu; stojaki prywatne, dla klientów i na zezwolenie są pominięte. Zero znaczy brak wpisu w OSM w tym promieniu, nie brak miejsc na rower: kompletność mapy jest nierówna.`,
+          jednostka: 'szt.',
+          kierunek: 'wiecej-lepiej',
+          rozdzielczosc: 'adres',
+          rozmiar: `promień ${PROMIEN_STOJAKOW} m`,
+          zakres: [0, 50],
+          zadanie: ZADANIE,
+          zrodla: [zrodlo('amenity=bicycle_parking')],
+        },
+        wartosci,
+      )
+  }
+
+  if (parkingi.length < MIN_PR) {
+    console.log(
+      `pr_odleglosc: ${parkingi.length} parkingów P+R w OSM (próg ${MIN_PR}), warstwa zostaje szara.`,
+    )
+    return
+  }
+  const wartosci = xy.map(([x, y]) => {
+    const p = najblizszyPunkt(parkingi, x, y)
+    return p && p.metry <= MAX_ODLEGLOSC ? Math.round(p.metry) : null
+  })
+  zapiszWskaznik(
+    {
+      id: 'pr_odleglosc',
+      kategoria: 'transport',
+      nazwa: 'Najbliższy parking Park and Ride',
+      opis: `Odległość geodezyjna w linii prostej od adresu do najbliższego z ${parkingi.length} parkingów Park and Ride oznaczonych w OpenStreetMap (amenity=parking z tagiem park_ride; parkingi prywatne pominięte). To nie jest czas ani trasa dojazdu. Parking służy dojeżdżającym spoza miasta, więc bliskość nie jest zaletą ani wadą miejsca zamieszkania; wskaźnik jest kontekstem (kierunek neutralny) i wpływa na ocenę dopiero, gdy użytkownik sam wybierze kierunek. Dalej niż ${MAX_ODLEGLOSC / 1000} km: brak danych.`,
+      jednostka: 'm',
+      kierunek: 'neutralny',
+      rozdzielczosc: 'adres',
+      zakres: [0, 10000],
+      zadanie: ZADANIE,
+      zrodla: [zrodlo('amenity=parking, park_ride')],
+    },
+    wartosci,
+  )
 }
 
 async function main() {

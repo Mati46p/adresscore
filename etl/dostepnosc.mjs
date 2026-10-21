@@ -9,6 +9,7 @@ import { DuckDBInstance } from '@duckdb/node-api'
 import { unzipSync } from 'fflate'
 import KDBush from 'kdbush'
 import proj4 from 'proj4'
+import { MIASTO_INFO, pbfRegionu } from './lib/miasto.mjs'
 import { CACHE, DANE, pobierzDoCache, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
 
 const OSM = 'https://overpass-api.de/api/interpreter'
@@ -18,6 +19,10 @@ const start = performance.now()
 const { adresy } = wczytajAdresy()
 const katalog = join(CACHE, 'dostepnosc')
 mkdirSync(katalog, { recursive: true })
+// Tryb miasta: osobne pliki cache (OSM z ekstraktu województwa, GSL oddziału NFZ miasta).
+const KOD_NFZ = MIASTO_INFO ? MIASTO_INFO.nfz : '06'
+const PLIK_OSM = MIASTO_INFO ? `osm-${MIASTO_INFO.pbf}.json` : 'osm.json'
+const PLIK_GSL = `gsl-${KOD_NFZ}.mime`
 
 proj4.defs(
   'EPSG:2180',
@@ -38,8 +43,27 @@ function dystans(a, b) {
   return Math.hypot(a[0] - b[0], a[1] - b[1])
 }
 
+// Tryb miasta: obniżone krawężniki i ławki z ekstraktu OSM województwa (te same filtry co Overpass).
+async function osmZRegionu(s, w, n, e) {
+  const { plik, stan, url } = await pbfRegionu()
+  const instancja = await DuckDBInstance.create(':memory:')
+  const polaczenie = await instancja.connect()
+  await polaczenie.run('LOAD spatial')
+  const sql = `SELECT id, lat, lon, tags['kerb'] AS kerb, tags['amenity'] AS amenity FROM ST_ReadOSM('${plik.replaceAll("'", "''")}') WHERE kind = 'node' AND lat BETWEEN ${s} AND ${n} AND lon BETWEEN ${w} AND ${e} AND (tags['kerb'] IN ('lowered', 'flush') OR tags['amenity'] = 'bench')`
+  const wynik = await polaczenie.runAndReadAll(sql)
+  const elements = wynik.getRowObjectsJS().map((r) => ({
+    type: 'node',
+    id: String(r.id),
+    lat: r.lat,
+    lon: r.lon,
+    tags: { kerb: r.kerb, amenity: r.amenity },
+  }))
+  polaczenie.closeSync()
+  return { elements, osm3s: { timestamp_osm_base: stan }, zrodlo: url }
+}
+
 async function pobierzOsm() {
-  const cacheJson = join(katalog, 'osm.json')
+  const cacheJson = join(katalog, PLIK_OSM)
   if (existsSync(cacheJson)) {
     try {
       const dane = JSON.parse(readFileSync(cacheJson, 'utf8'))
@@ -60,9 +84,14 @@ async function pobierzOsm() {
     [90, 180, -90, -180],
   )
   const [s, w, n, e] = [ramka[0] - 0.01, ramka[1] - 0.015, ramka[2] + 0.01, ramka[3] + 0.015]
+  if (MIASTO_INFO) {
+    const dane = await osmZRegionu(s, w, n, e)
+    writeFileSync(cacheJson, JSON.stringify(dane))
+    return dane
+  }
   const q = `[out:json][timeout:180];(node["kerb"~"^(lowered|flush)$"](${s},${w},${n},${e});node["amenity"="bench"](${s},${w},${n},${e}););out body;`
   try {
-    const sciezka = await pobierzDoCache(OSM, join('dostepnosc', 'osm.json'), {
+    const sciezka = await pobierzDoCache(OSM, join('dostepnosc', PLIK_OSM), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -115,8 +144,8 @@ async function pobierzOsm() {
 }
 
 async function pobierzGsl() {
-  const koperta = `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:bro="http://xml.kamsoft.pl/ws/broker" xmlns:com="http://xml.kamsoft.pl/ws/common"><soapenv:Header/><soapenv:Body><bro:executeService><com:location><com:namespace>www.nfz.gov.pl/ws/broker/cen/gslpub</com:namespace><com:localname>getGSLPub</com:localname><com:version>1.0</com:version></com:location><bro:date>${new Date().toISOString()}</bro:date><bro:params><bro:item><bro:name>ow</bro:name><bro:value>06</bro:value></bro:item></bro:params><bro:payload/></bro:executeService></soapenv:Body></soapenv:Envelope>`
-  const sciezka = await pobierzDoCache(GSL, join('dostepnosc', 'gsl-06.mime'), {
+  const koperta = `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:bro="http://xml.kamsoft.pl/ws/broker" xmlns:com="http://xml.kamsoft.pl/ws/common"><soapenv:Header/><soapenv:Body><bro:executeService><com:location><com:namespace>www.nfz.gov.pl/ws/broker/cen/gslpub</com:namespace><com:localname>getGSLPub</com:localname><com:version>1.0</com:version></com:location><bro:date>${new Date().toISOString()}</bro:date><bro:params><bro:item><bro:name>ow</bro:name><bro:value>${KOD_NFZ}</bro:value></bro:item></bro:params><bro:payload/></bro:executeService></soapenv:Body></soapenv:Envelope>`
+  const sciezka = await pobierzDoCache(GSL, join('dostepnosc', PLIK_GSL), {
     method: 'POST',
     headers: { 'Content-Type': 'text/xml; charset=utf-8', SOAPAction: 'executeService' },
     body: koperta,
@@ -209,6 +238,9 @@ function pozZGeokodowaniem(miejsca) {
   let geokodowane = 0
   let wspolrzedneNfz = 0
   let adresMsipPrg = 0
+  let wMiescie = 0
+  let wMiescieGeo = 0
+  const miasto = MIASTO_INFO ? lokalnosc(MIASTO_INFO.nazwa) : null
   for (const m of miejsca) {
     const udogodnienia = [
       m['fl-podjazd'] === '1' && 'podjazd',
@@ -217,6 +249,8 @@ function pozZGeokodowaniem(miejsca) {
     ].filter(Boolean)
     if (!udogodnienia.length) continue
     kwalifikowane++
+    const wTymMiescie = miasto && lokalnosc(dekodujXml(m['adr-lok-miejsc'] ?? '')) === miasto
+    if (wTymMiescie) wMiescie++
     const klucz = [
       lokalnosc(dekodujXml(m['adr-lok-miejsc'] ?? '')),
       ulica(dekodujXml(m['adr-lok-ulica'] ?? '')),
@@ -248,11 +282,20 @@ function pozZGeokodowaniem(miejsca) {
     }
     if (!punkt) continue
     geokodowane++
+    if (wTymMiescie) wMiescieGeo++
     const id = `${punkt[0].toFixed(0)}|${punkt[1].toFixed(0)}`
     if (!punkty.has(id)) punkty.set(id, { xy: punkt })
   }
   if (!punkty.size) throw new Error('Nie udało się ustalić położenia żadnego POZ z udogodnieniami')
-  return { punkty: [...punkty.values()], kwalifikowane, geokodowane, wspolrzedneNfz, adresMsipPrg }
+  return {
+    punkty: [...punkty.values()],
+    kwalifikowane,
+    geokodowane,
+    wspolrzedneNfz,
+    adresMsipPrg,
+    wMiescie,
+    wMiescieGeo,
+  }
 }
 
 const [osm, gslXml] = await Promise.all([pobierzOsm(), pobierzGsl()])
@@ -276,19 +319,25 @@ console.log(
 
 const baza = { kategoria: 'codziennosc', rozdzielczosc: 'adres', zadanie: 46 }
 const zrodloOsm = {
-  nazwa: osm.zrodlo === OSM ? 'OpenStreetMap przez Overpass API' : 'OpenStreetMap przez Geofabrik',
+  nazwa: MIASTO_INFO
+    ? `OpenStreetMap, ekstrakt województwa ${MIASTO_INFO.woj} (lustro download.openstreetmap.fr)`
+    : osm.zrodlo === OSM
+      ? 'OpenStreetMap przez Overpass API'
+      : 'OpenStreetMap przez Geofabrik',
   url: osm.zrodlo ?? OSM,
   licencja: 'ODbL 1.0: https://www.openstreetmap.org/copyright',
   dataDanych: osm.osm3s.timestamp_osm_base,
-  pobrano: statSync(join(katalog, 'osm.json')).mtime.toISOString().slice(0, 10),
+  pobrano: statSync(join(katalog, PLIK_OSM)).mtime.toISOString().slice(0, 10),
 }
 const zrodloNfz = {
-  nazwa: 'NFZ, Gdzie się Leczyć – GSL_PUB, oddział małopolski',
+  nazwa: MIASTO_INFO
+    ? `NFZ, Gdzie się Leczyć – GSL_PUB, oddział ${MIASTO_INFO.woj}`
+    : 'NFZ, Gdzie się Leczyć – GSL_PUB, oddział małopolski',
   url: 'https://www.nfz.gov.pl/dla-swiadczeniodawcy/sprawozdawczosc-elektroniczna/interfejsy-integracyjne/gsl--gdzie-sie-leczyc-/',
   licencja:
     'Publiczna usługa NFZ; dokumentacja GSL nie wskazuje odrębnej licencji. Źródło: https://www.nfz.gov.pl/',
   dataDanych: dataNfz,
-  pobrano: statSync(join(katalog, 'gsl-06.mime')).mtime.toISOString().slice(0, 10),
+  pobrano: statSync(join(katalog, PLIK_GSL)).mtime.toISOString().slice(0, 10),
 }
 const zrodlaAdresow = JSON.parse(readFileSync(join(DANE, 'adresy.json'), 'utf8')).zrodla
 
@@ -298,6 +347,14 @@ for (const [id, nazwa, punkty] of [
 ]) {
   const bush = indeks(punkty)
   const wartosci = punktyAdresow.map(([x, y]) => bush.within(x, y, PROMIEN).length)
+  // Tryb miasta: gdy udział adresów z wynikiem > 0 jest poniżej połowy udziału w Krakowie
+  // (ławki 29,6%, krawężniki 32,2%), mapa OSM jest zbyt rzadka i warstwa zostaje szara.
+  const udzial = wartosci.filter((v) => v > 0).length / wartosci.length
+  console.log(`${id}: udział adresów z wynikiem > 0: ${(udzial * 100).toFixed(1)}%`)
+  if (MIASTO_INFO && udzial < (id.startsWith('lawki') ? 0.296 : 0.322) / 2) {
+    console.log(`${id}: pokrycie OSM za słabe, warstwa zostaje szara.`)
+    continue
+  }
   zapiszWskaznik(
     {
       ...baza,
@@ -313,6 +370,21 @@ for (const [id, nazwa, punkty] of [
   )
 }
 
+// Tryb miasta: odległość do POZ jest wiarygodna tylko, gdy znamy położenie większości placówek
+// z udogodnieniami w samym mieście; inaczej braki zawyżałyby odległość i warstwa zostaje szara.
+const UDZIAL_GEO_MIN = 0.7
+const udzialGeo = poz.wMiescie ? poz.wMiescieGeo / poz.wMiescie : 0
+if (MIASTO_INFO)
+  console.log(
+    `POZ z udogodnieniami w mieście: ${poz.wMiescieGeo}/${poz.wMiescie} z położeniem (${(udzialGeo * 100).toFixed(0)}%)`,
+  )
+if (MIASTO_INFO && udzialGeo < UDZIAL_GEO_MIN) {
+  console.log(
+    'przychodnia_bez_barier_odleglosc: za mało zgeokodowanych POZ, warstwa zostaje szara.',
+  )
+  console.log(`Czas: ${((performance.now() - start) / 1000).toFixed(1)} s`)
+  process.exit(0)
+}
 const pozBush = indeks(poz.punkty)
 const odleglosci = []
 for (const p of punktyAdresow) {
@@ -335,7 +407,7 @@ zapiszWskaznik(
     ...baza,
     id: 'przychodnia_bez_barier_odleglosc',
     nazwa: 'Najbliższa przychodnia POZ ze zgłoszonym udogodnieniem',
-    opis: `Odległość w linii prostej do najbliższego miejsca POZ, które w GSL NFZ ma zgłoszony co najmniej jeden z elementów: podjazd, windę dostosowaną lub toaletę dostosowaną. To nie potwierdza pełnej dostępności placówki; szczegóły należy sprawdzić w NFZ przed wizytą. Położenie ze współrzędnych NFZ lub dopasowania adresu do MSIP/PRG. GSL obejmuje całe województwo, katalog adresów tylko Kraków i sąsiednie gminy; geokodowanie objęło ${poz.geokodowane} z ${poz.kwalifikowane} miejsc z udogodnieniami w Małopolsce. Pominięte placówki mogą zawyżać odległość.`,
+    opis: `Odległość w linii prostej do najbliższego miejsca POZ, które w GSL NFZ ma zgłoszony co najmniej jeden z elementów: podjazd, windę dostosowaną lub toaletę dostosowaną. To nie potwierdza pełnej dostępności placówki; szczegóły należy sprawdzić w NFZ przed wizytą. Położenie ze współrzędnych NFZ lub dopasowania adresu do MSIP/PRG. GSL obejmuje całe województwo, katalog adresów ${MIASTO_INFO ? `tylko ${MIASTO_INFO.nazwa}` : 'tylko Kraków i sąsiednie gminy'}; geokodowanie objęło ${poz.geokodowane} z ${poz.kwalifikowane} miejsc z udogodnieniami w ${MIASTO_INFO ? `województwie ${MIASTO_INFO.woj}` : 'Małopolsce'}. Pominięte placówki mogą zawyżać odległość.`,
     jednostka: 'm',
     kierunek: 'mniej-lepiej',
     zakres: [0, 5000],

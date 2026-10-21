@@ -2,6 +2,7 @@
 import { pathToFileURL } from 'node:url'
 import { indeksPunktow } from './lib/codziennosc-geo.mjs'
 import { punktyOsm } from './lib/codziennosc-zrodla.mjs'
+import { MIASTO_INFO } from './lib/miasto.mjs'
 import { dzis, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
 
 export async function main() {
@@ -29,8 +30,12 @@ export async function main() {
       zadanie: 171,
       zrodla: [
         {
-          nazwa: 'OpenStreetMap, ekstrakt Geofabrik – małopolskie (restaurant, cafe, fast_food)',
-          url: 'https://download.geofabrik.de/europe/poland/malopolskie.html',
+          nazwa: MIASTO_INFO
+            ? `OpenStreetMap, ekstrakt województwa ${MIASTO_INFO.woj} (lustro download.openstreetmap.fr; restaurant, cafe, fast_food)`
+            : 'OpenStreetMap, ekstrakt Geofabrik – małopolskie (restaurant, cafe, fast_food)',
+          url: MIASTO_INFO
+            ? 'https://download.openstreetmap.fr/extracts/europe/poland/'
+            : 'https://download.geofabrik.de/europe/poland/malopolskie.html',
           licencja:
             'ODbL 1.0 – © współtwórcy OpenStreetMap: https://www.openstreetmap.org/copyright',
           dataDanych: stan ?? dzis(),
