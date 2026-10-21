@@ -26,6 +26,7 @@ import { czytajHash, MAKS_POROWNANIE } from '@/wynik/url'
 import { usePropsSasiadowMapy } from '@/wynik/useSasiedzi'
 import { useWyniki } from '@/wynik/useWyniki'
 import { opisAdresu } from './adres'
+import { MiniKarta } from './MiniKarta'
 import {
   biernikMiasta,
   decyzjaKamery,
@@ -484,6 +485,13 @@ export function EkranSzukaj() {
               </div>
             ) : (
               <span className="heksy-podpowiedz">Kliknij heks, aby porównać</span>
+            )}
+            {adres && (
+              <MiniKarta
+                indeks={adres.i}
+                nazwa={`${adres.ulica ?? adres.miejscowosc} ${adres.nr}`}
+                onOtworz={() => pokazOkolice(adres.i)}
+              />
             )}
             <span className="sr-only" role="status">
               {komunikatHeksow}
