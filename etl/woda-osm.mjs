@@ -185,11 +185,11 @@ async function main() {
   zapiszWskaznik(
     {
       id: 'woda_odleglosc',
-      kategoria: 'spokoj',
+      kategoria: 'kontekst',
       nazwa: 'Najbliższa woda powierzchniowa',
       opis: `Odległość w linii prostej od adresu do najbliższej wody powierzchniowej: osi cieku (rzeka, potok lub kanał, bez odcinków pod ziemią) albo brzegu zbiornika wodnego, także małego stawu; 0 dla adresu wewnątrz zbiornika. Dane OpenStreetMap (stan z ${pbf.stan}): ${st.zbiornikiProste + st.zbiornikiRelacje} zbiorników i ${st.cieki} odcinków cieków w okolicy miasta. Cieki liczone są od osi koryta, więc przy szerokiej rzece do brzegu jest bliżej. To kontekst, nie ocena: bliskość wody nie mówi o zagrożeniu powodziowym, to pokazują osobne warstwy. Źródło inne niż w Krakowie (tam model BDOT Metropolii Krakowskiej), więc wartości między miastami są porównywalne tylko w przybliżeniu: kompletność mapowania małych cieków i stawów w OSM bywa różna. Morze (linia brzegowa) nie jest liczone jako woda. Dalej niż ${MAKS_M / 1000} km od wody: brak danych.`,
       jednostka: 'm',
-      kierunek: 'mniej-lepiej',
+      kierunek: 'neutralny',
       rozdzielczosc: 'adres',
       zakres: [0, 1500],
       zadanie: ZADANIE,

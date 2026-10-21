@@ -385,7 +385,17 @@ async function mainMiasto(adresy) {
 
 async function main() {
   const { adresy } = wczytajAdresy()
-  if (MIASTO_INFO) return mainMiasto(adresy)
+  // Tryb miasta: warstwy nie publikujemy (pokrycie 14–32%, wynik nieporównywalny z MSIP Krakowa, więc szara).
+  // Kod dopasowania NID zostaje; włącza go ZABYTKI_MIASTO=1.
+  if (MIASTO_INFO) {
+    if (process.env.ZABYTKI_MIASTO !== '1') {
+      console.log(
+        'zabytki_300m: tryb miasta pominięty (ustaw ZABYTKI_MIASTO=1, by policzyć dolne oszacowanie z NID)',
+      )
+      return
+    }
+    return mainMiasto(adresy)
+  }
   const rejestr = punktyMsip(await warstwaMsip(0, 'zabytki-rejestr.geojson'), 'rejestr')
   const ewidencja = punktyMsip(await warstwaMsip(1, 'zabytki-ewidencja.geojson'), 'ewidencja')
   if (rejestr.liczbaWszystkich < 1_000 || ewidencja.liczbaWszystkich < 4_000)
