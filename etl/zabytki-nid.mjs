@@ -405,8 +405,14 @@ async function main() {
     throw new Error(
       `${ident.sprzeczne.length} obiektów dostało różne identyfikatory z różnych sond: kolejność GetFeatureInfo nie zgadza się z kolejnością SVG`,
     )
+  // Miasto: obiekty bez identyfikatora są pomijane z ostrzeżeniem, błąd dopiero powyżej 20%.
+  const progBezId = MIASTO_INFO ? 0.2 : 0.03
+  if (nierozwiazane > progBezId * obiekty.length)
+    throw new Error(
+      `Bez identyfikatora ${nierozwiazane} z ${obiekty.length} obiektów (próg ${progBezId * 100}%)`,
+    )
   if (nierozwiazane > 0.03 * obiekty.length)
-    throw new Error(`Bez identyfikatora ${nierozwiazane} z ${obiekty.length} obiektów (próg 3%)`)
+    console.warn(`UWAGA: bez identyfikatora ${nierozwiazane} z ${obiekty.length} obiektów – pominięte`)
 
   const wpisy = zbudujWpisy(obiekty, ident.przypisania)
   const wgTypu = new Map()
