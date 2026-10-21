@@ -31,12 +31,20 @@
 // dopasowujemy miejscowość, ulicę i numer z NFZ do punktów adresowych z adresy.json (MSIP, PRG).
 // Poradnie spoza 14 gmin z adresy.json nie mają tam punktów i nie wchodzą do wskaźnika.
 //
+// Tryb miasta (ADRESCORE_MIASTO=<slug>): klucza z-dykty nie wymaga. Dane idą wprost z publicznego
+// API NFZ (bez klucza) dla oddziału wojewódzkiego miasta (pole `nfz` w lib/miasto.mjs), po jednym
+// zapytaniu na specjalność (przypadek stabilny); API podaje też współrzędne miejsca świadczenia.
+// Współrzędne bierzemy wprost, a gdy punkt adresowy z adresu NFZ leży od nich dalej niż 1,5 km
+// (błędne geokodowanie), wygrywa adres. Reszta reguł (filtry, mediana, promień 3 km) jest ta sama.
+// Brak wartości (za mało specjalności w promieniu) to null, nigdy zero.
+//
 // Uruchom: node etl/nfz-kolejki.mjs [--odswiez]
 
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { do2180 } from './lib/geo.mjs'
+import { MIASTO_INFO } from './lib/miasto.mjs'
 import { bezOgonkow } from './lib/nazwy.mjs'
 import { indeksPunktow } from './lib/przestrzen.mjs'
 import { CACHE, DANE, dzis, KORZEN, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
@@ -48,6 +56,8 @@ export const MIN_SPECJALNOSCI = 3
 export const PRZYPADEK_STABILNY = 1
 /** Punkty adresowe tej samej ulicy i numeru dalej od siebie nie opisują jednego miejsca. */
 const MAKS_ROZPROSZENIE_M = 150
+/** Współrzędne NFZ dalsze od punktu adresowego z adresu NFZ uznajemy za błędne geokodowanie. */
+const MAKS_ROZBIEZNOSC_WSP_M = 1500
 /** Powyżej tego rozmiaru plik wskaźnika łamie kontrakt (docs/etapy/kontrakt-danych.md). */
 const MAKS_ROZMIAR_B = 2_000_000
 const STRONA = 1000 // limit wierszy na odpowiedź PostgREST (max-rows)
@@ -265,6 +275,19 @@ const odlegloscPlaska = (a, b) => {
   return Math.hypot(ax - bx, ay - by)
 }
 
+/** Współrzędne miejsca z API NFZ (tryb miasta), jeśli leżą w Polsce; inaczej null. */
+function wspolrzedneWiersza(w) {
+  const { lat, lon } = w
+  return Number.isFinite(lat) &&
+    Number.isFinite(lon) &&
+    lat > 48.9 &&
+    lat < 55 &&
+    lon > 14 &&
+    lon < 24.2
+    ? { lat, lon }
+    : null
+}
+
 /** Jedno miejsce, jeśli wszyscy kandydaci leżą blisko pierwszego; inaczej null (niejednoznaczne). */
 function jednoznaczne(kandydaci) {
   const [pierwszy] = kandydaci
@@ -329,6 +352,7 @@ export function zbudujPoradnie(wybrane, indeks) {
     dopasowane: 0,
     wierszyWObszarze: 0,
     wierszyDopasowanych: 0,
+    wierszyZeWspolrzednych: 0,
     tryby: {},
     niedopasowane: [],
   }
@@ -348,21 +372,28 @@ export function zbudujPoradnie(wybrane, indeks) {
       } else if (wynik.brak !== 'poza obszarem')
         bilans.niedopasowane.push(`${w.miejscowosc}, ${w.adres} (${wynik.brak})`)
     }
-    if (wynik.brak !== 'poza obszarem') bilans.wierszyWObszarze++
-    if (!wynik.adres) continue
+    // Współrzędne z API NFZ (tylko tryb miasta; wiersze z-dykty ich nie mają).
+    const wsp = wspolrzedneWiersza(w)
+    const miejsce =
+      wsp && (!wynik.adres || odlegloscPlaska(wsp, wynik.adres) <= MAKS_ROZBIEZNOSC_WSP_M)
+        ? wsp
+        : wynik.adres
+    if (wsp && miejsce === wsp) bilans.wierszyZeWspolrzednych++
+    if (wynik.brak !== 'poza obszarem' || wsp) bilans.wierszyWObszarze++
+    if (!miejsce) continue
     bilans.wierszyDopasowanych++
-    const klucz = `${w.oddzial}|${w.swiadczeniodawca_kod}|${wynik.adres.id}|${w.specjalnosc}`
+    const klucz = `${w.oddzial}|${w.swiadczeniodawca_kod}|${miejsce.id ?? `${miejsce.lat},${miejsce.lon}`}|${w.specjalnosc}`
     const poradnia = poradnie.get(klucz)
     if (poradnia) poradnia.dni.push(w.srednio_dni)
     else {
-      const [x, y] = do2180(wynik.adres.lon, wynik.adres.lat)
+      const [x, y] = do2180(miejsce.lon, miejsce.lat)
       poradnie.set(klucz, {
         klucz,
         specjalnosc: w.specjalnosc,
         x,
         y,
-        lon: wynik.adres.lon,
-        lat: wynik.adres.lat,
+        lon: miejsce.lon,
+        lat: miejsce.lat,
         nazwa: w.swiadczeniodawca,
         adres: `${w.adres}, ${w.miejscowosc}`,
         dni: [w.srednio_dni],
@@ -573,6 +604,80 @@ async function wczytajKolejki(wojewodztwa, { odswiez }) {
   return dane
 }
 
+// ---------- pobieranie wprost z API NFZ (tryb miasta) ----------
+
+const API_KOLEJKI = 'https://api.nfz.gov.pl/app-itl-api/queues'
+/** Fragmenty nazw świadczeń (wyszukiwanie po zawartości) dla 12 specjalności wskaźnika. */
+const SZUKAJ_SWIADCZEN = [
+  'okulist',
+  'otolaryng',
+  'neurolog',
+  'ortoped',
+  'płuc',
+  'endokryn',
+  'urolog',
+  'diabetolog',
+  'dermatolog',
+  'reumatolog',
+  'nefrolog',
+  'gastroenterolog',
+]
+
+async function pobierzJson(url, proby = 4) {
+  for (let i = 1; ; i++) {
+    try {
+      const r = await fetch(url, { signal: AbortSignal.timeout(60_000) })
+      if (!r.ok) throw new Error(`NFZ API ${r.status}: ${url}`)
+      return await r.json()
+    } catch (blad) {
+      if (i === proby) throw blad
+      await new Promise((ok) => setTimeout(ok, 1500 * i))
+    }
+  }
+}
+
+/** Wpis API NFZ → wiersz w formacie `nfz_kolejki` z z-dykty (plus współrzędne miejsca). */
+export function wierszZApi(q, oddzial) {
+  const a = q.attributes ?? {}
+  const dane = a.statistics?.['provider-data'] ?? {}
+  return {
+    id: q.id,
+    swiadczenie: a.benefit,
+    przypadek: a.case,
+    oddzial,
+    swiadczeniodawca_kod: a['provider-code'],
+    swiadczeniodawca: a.provider,
+    miejsce: a.place,
+    miejscowosc: a.locality,
+    adres: a.address,
+    oczekujacych: dane.awaiting ?? null,
+    srednio_dni: dane['average-period'] ?? null,
+    okres: dane.update ?? null,
+    lat: a.latitude ?? null,
+    lon: a.longitude ?? null,
+  }
+}
+
+/** Kolejki przypadku stabilnego z oddziału NFZ miasta, cache w etl/.cache/nfz-kolejki/. */
+async function wczytajKolejkiApi(oddzial, { odswiez }) {
+  const plik = join(CACHE, 'nfz-kolejki', `nfz_api_oddzial${oddzial}.json`)
+  if (!odswiez && existsSync(plik)) return JSON.parse(readFileSync(plik, 'utf8'))
+  const wiersze = new Map()
+  for (const fraza of SZUKAJ_SWIADCZEN) {
+    let url = `${API_KOLEJKI}?page=1&limit=25&format=json&case=${PRZYPADEK_STABILNY}&province=${oddzial}&benefit=${encodeURIComponent(fraza)}&api-version=1.3`
+    while (url) {
+      const odp = await pobierzJson(url)
+      for (const q of odp.data ?? []) wiersze.set(q.id, wierszZApi(q, oddzial))
+      url = odp.links?.next ? new URL(odp.links.next, API_KOLEJKI).href : null
+    }
+    console.log(`  NFZ API, „${fraza}": razem ${wiersze.size} wpisów`)
+  }
+  const dane = { pobrano: dzis(), oddzial, wiersze: [...wiersze.values()] }
+  mkdirSync(join(CACHE, 'nfz-kolejki'), { recursive: true })
+  writeFileSync(plik, JSON.stringify(dane))
+  return dane
+}
+
 // ---------- uruchomienie ----------
 
 const kwantyl = (posortowane, p) => posortowane[Math.floor((posortowane.length - 1) * p)]
@@ -581,15 +686,17 @@ async function main() {
   const start = performance.now()
   const { wersja, adresy } = wczytajAdresy()
   const wojewodztwa = [...new Set(adresy.map((a) => a.teryt.slice(0, 2)))].sort()
-  const { pobrano, wiersze } = await wczytajKolejki(wojewodztwa, {
-    odswiez: process.argv.includes('--odswiez'),
-  })
+  const odswiez = process.argv.includes('--odswiez')
+  const { pobrano, wiersze } = MIASTO_INFO
+    ? await wczytajKolejkiApi(MIASTO_INFO.nfz, { odswiez })
+    : await wczytajKolejki(wojewodztwa, { odswiez })
 
   const { wybrane, bilans } = wybierzWiersze(wiersze)
   console.log(
-    `NFZ (z-dykty): ${bilans.wszystkie} wierszy, okres ${bilans.okres}, po filtrach ${bilans.wybrane} (przypadek pilny ${bilans.innyPrzypadek}, pominięte grupy ${bilans.pominieteGrupy}, nie poradnie ${bilans.nieporadnia}, dzieci i ciąża ${bilans.innaPopulacja}, bez czasu ${bilans.bezCzasu}, starszy okres ${bilans.starszyOkres})`,
+    `NFZ (${MIASTO_INFO ? 'API' : 'z-dykty'}): ${bilans.wszystkie} wierszy, okres ${bilans.okres}, po filtrach ${bilans.wybrane} (przypadek pilny ${bilans.innyPrzypadek}, pominięte grupy ${bilans.pominieteGrupy}, nie poradnie ${bilans.nieporadnia}, dzieci i ciąża ${bilans.innaPopulacja}, bez czasu ${bilans.bezCzasu}, starszy okres ${bilans.starszyOkres})`,
   )
-  if (bilans.nieznaneGrupy.size)
+  // W trybie miasta wyszukiwanie po fragmencie nazwy łapie też oddziały szpitalne – to oczekiwane.
+  if (bilans.nieznaneGrupy.size && !MIASTO_INFO)
     console.warn(
       `UWAGA: nowe grupy świadczeń w z-dykty, nie ujęte we wskaźniku: ${[...bilans.nieznaneGrupy.keys()].join('; ')}`,
     )
@@ -609,7 +716,13 @@ async function main() {
   console.log(
     `Poradnie z położeniem: ${poradnie.length} (specjalność × świadczeniodawca × punkt adresowy), ${new Set(poradnie.map((p) => `${p.lon}|${p.lat}`)).size} różnych punktów`,
   )
-  if (geo.wObszarze < 20 || geo.dopasowane / geo.wObszarze < 0.8)
+  if (MIASTO_INFO) {
+    console.log(
+      `Tryb miasta: ${geo.wierszyZeWspolrzednych} wierszy z położeniem ze współrzędnych NFZ, reszta z adresu`,
+    )
+    if (geo.wierszyDopasowanych < 100)
+      throw new Error('Tryb miasta: za mało poradni z położeniem (< 100 wierszy)')
+  } else if (geo.wObszarze < 20 || geo.dopasowane / geo.wObszarze < 0.8)
     throw new Error('Dopasowanie adresów poniżej 80%: zmienił się format adresów NFZ?')
 
   const wynik = policzWartosci(adresy, poradnie)
@@ -640,13 +753,16 @@ async function main() {
   const { etykiety, slownik } = etykietyKolejek(wynik)
   const adresyZrodla = JSON.parse(readFileSync(join(DANE, 'adresy.json'), 'utf8')).zrodla
   const km = `${PROMIEN_M / 1000} km`
+  const polozenie = MIASTO_INFO
+    ? `Położenie poradni: współrzędne z API NFZ (${geo.wierszyZeWspolrzednych} z ${geo.wierszyDopasowanych} wpisów), a przy rozbieżności z adresem ponad 1,5 km i dla wpisów bez współrzędnych punkty adresowe PRG; poradnie z całego oddziału wojewódzkiego NFZ, więc liczą się też te tuż za granicą miasta.`
+    : `Położenie poradni ustalono z adresu w NFZ i punktów adresowych MSIP/PRG (${procent(geo.dopasowane, geo.wObszarze).replace('.', ',')} miejsc w obszarze mapy); poradnie poza 14 gminami obszaru nie wchodzą do wskaźnika.`
   const sciezka = join(DANE, 'wskazniki', `${ID}.json`)
   zapiszWskaznik(
     {
       id: ID,
       kategoria: 'kontekst',
       nazwa: 'Czas oczekiwania do specjalisty NFZ w promieniu 3 km',
-      opis: `Mediana czasu oczekiwania (dni) na pierwszą wizytę, jaki podają poradnie specjalistyczne NFZ w promieniu ${km} w linii prostej (stan: ${bilans.okres}). Dla każdej z ${SPECJALNOSCI.size} specjalności (okulistyka, laryngologia, neurologia, ortopedia, pulmonologia, endokrynologia, urologia, diabetologia, dermatologia, reumatologia, nefrologia, gastroenterologia) bierzemy medianę z poradni, a wynik to mediana tych specjalności; potrzeba co najmniej ${MIN_SPECJALNOSCI} specjalności, inaczej brak wartości. Tylko przypadek stabilny (zwykłe skierowanie) i poradnie dla dorosłych; bez onkologii, diagnostyki obrazowej i poradni dziecięcych. Czas to średnia dni oczekiwania zgłoszona przez poradnię, nie gwarancja terminu; 0 znaczy, że przyjmują na bieżąco. Wartość zależy od tego, jakie specjalności są w pobliżu, i nie mówi o czasie dojazdu ani o dostępności wolnych terminów. Położenie poradni ustalono z adresu w NFZ i punktów adresowych MSIP/PRG (${procent(geo.dopasowane, geo.wObszarze).replace('.', ',')} miejsc w obszarze mapy); poradnie poza 14 gminami obszaru nie wchodzą do wskaźnika. Brak wartości znaczy za mało poradni z danymi w promieniu, nie brak kolejki.`,
+      opis: `Mediana czasu oczekiwania (dni) na pierwszą wizytę, jaki podają poradnie specjalistyczne NFZ w promieniu ${km} w linii prostej (stan: ${bilans.okres}). Dla każdej z ${SPECJALNOSCI.size} specjalności (okulistyka, laryngologia, neurologia, ortopedia, pulmonologia, endokrynologia, urologia, diabetologia, dermatologia, reumatologia, nefrologia, gastroenterologia) bierzemy medianę z poradni, a wynik to mediana tych specjalności; potrzeba co najmniej ${MIN_SPECJALNOSCI} specjalności, inaczej brak wartości. Tylko przypadek stabilny (zwykłe skierowanie) i poradnie dla dorosłych; bez onkologii, diagnostyki obrazowej i poradni dziecięcych. Czas to średnia dni oczekiwania zgłoszona przez poradnię, nie gwarancja terminu; 0 znaczy, że przyjmują na bieżąco. Wartość zależy od tego, jakie specjalności są w pobliżu, i nie mówi o czasie dojazdu ani o dostępności wolnych terminów. ${polozenie} Brak wartości znaczy za mało poradni z danymi w promieniu, nie brak kolejki.`,
       jednostka: 'dni',
       kierunek: 'mniej-lepiej',
       rozdzielczosc: 'adres',
@@ -654,8 +770,9 @@ async function main() {
       zadanie: ZADANIE,
       zrodla: [
         {
-          nazwa:
-            'Narodowy Fundusz Zdrowia – Informator o Terminach Leczenia (API Terminy Leczenia); przetworzone przez z-dykty.pl (CC BY 4.0)',
+          nazwa: MIASTO_INFO
+            ? 'Narodowy Fundusz Zdrowia – Informator o Terminach Leczenia (API Terminy Leczenia), oddział wojewódzki miasta'
+            : 'Narodowy Fundusz Zdrowia – Informator o Terminach Leczenia (API Terminy Leczenia); przetworzone przez z-dykty.pl (CC BY 4.0)',
           url: ZRODLO_URL,
           licencja: `CC BY 4.0 (${KATALOG_URL}); źródło danych: ${ZRODLO_URL} (wymóg regulaminu API); przetworzono: filtr przypadku stabilnego i poradni dla dorosłych, położenie z adresu, mediana w promieniu ${km}`,
           dataDanych: bilans.okres,

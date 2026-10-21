@@ -3,8 +3,13 @@
 // Ranking z-dykty.pl jest wtórnym opracowaniem rejestrów publicznych. Licencja
 // opracowań CC BY 4.0: https://z-dykty.pl/dane. Metryki pozostają neutralnym
 // kontekstem gminnym i nigdy nie są oceną adresu ani ryzyka konkretnej działki.
+// Tryb miasta: ADRESCORE_MIASTO=<slug> node etl/obwarzanek.mjs – ranking jest ogólnopolski
+// (2479 gmin), więc wystarczy dopasować TERYT gminy miasta z adresy.json. Gmina bez wiersza
+// w rankingu dostaje null (szara kategoria), nigdy zero. Miara powodzi zostaje poza trybem
+// miasta (poza zakresem warstw ogólnopolskich).
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { MIASTO_INFO } from './lib/miasto.mjs'
 import { DANE, dzis, pobierzDoCache, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
 
 export const MIARY = [
@@ -107,8 +112,11 @@ async function main() {
   const { wersja, adresy } = wczytajAdresy()
   const pobrano = dzis()
   const gminy = dopasujGminy(adresy, new Map())
-  if (gminy.size !== 14 || !gminy.has('1261011'))
+  if (MIASTO_INFO) {
+    if (gminy.size !== 1) throw new Error(`Tryb miasta: oczekiwano 1 gminy, jest ${gminy.size}`)
+  } else if (gminy.size !== 14 || !gminy.has('1261011'))
     throw new Error(`Oczekiwano Krakowa i 13 gmin, jest ${gminy.size}`)
+  const zasieg = MIASTO_INFO ? `gminie ${MIASTO_INFO.nazwa}` : '14 gminach'
   const porownanie = {
     wersjaAdresow: wersja,
     opis: 'Wartości dotyczą całej gminy. Nie opisują warunków przy konkretnym adresie ani kierunku zmiany okolicy.',
@@ -125,7 +133,7 @@ async function main() {
   }
   const gminaPoTeryt = new Map(porownanie.gminy.map((g) => [g.teryt, g]))
 
-  for (const m of MIARY) {
+  for (const m of MIARY.filter((x) => !MIASTO_INFO || x.id !== 'gmina_powodz_powierzchnia_pct')) {
     const url = `https://z-dykty.pl/dane/rankingi/${m.slug}/csv`
     const sciezka = await pobierzDoCache(url, `z-dykty-${m.slug}.csv`)
     const ranking = parsujRanking(readFileSync(sciezka, 'utf8'), m.csvJednostka)
@@ -138,14 +146,14 @@ async function main() {
         : null
       if (r) lata.add(r.rok)
     }
-    if (!lata.size) throw new Error(`Brak danych dla 14 gmin: ${m.slug}`)
+    if (!lata.size) throw new Error(`Brak danych dla ${zasieg}: ${m.slug}`)
     const roczniki = [...lata].sort((a, b) => a - b)
     const dataDanych = `${roczniki.length === 1 ? 'rocznik' : 'roczniki'} ${roczniki.join(', ')}`
     zapiszWskaznik(
       {
         id: m.id,
         nazwa: m.nazwa,
-        opis: `${m.opis} Roczniki występujące w 14 gminach: ${roczniki.join(', ')}. Źródło wtórne: z-dykty.pl; szczegół gminy i metoda: https://z-dykty.pl/metodologia`,
+        opis: `${m.opis} Roczniki występujące w ${zasieg}: ${roczniki.join(', ')}. Źródło wtórne: z-dykty.pl; szczegół gminy i metoda: https://z-dykty.pl/metodologia`,
         jednostka: m.jednostka,
         kategoria: 'kontekst',
         kierunek: 'neutralny',
@@ -175,7 +183,8 @@ async function main() {
       `${m.slug}: ${ranking.size} gmin w CSV, ${gminaPoTeryt.size - [...gminaPoTeryt.keys()].filter((t) => ranking.has(t)).length} bez danych w naszym obszarze`,
     )
   }
-  writeFileSync(join(DANE, 'gminy-porownanie.json'), JSON.stringify(porownanie))
+  // Porównanie obwarzanka jest tylko krakowskie.
+  if (!MIASTO_INFO) writeFileSync(join(DANE, 'gminy-porownanie.json'), JSON.stringify(porownanie))
 }
 
 if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href)

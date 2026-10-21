@@ -111,3 +111,10 @@ Skrypt zatrzymuje się, gdy: schemat `nfz_kolejki` się zmienił, pobranie jest 
 którejś z 12 specjalności, dopasowanie adresów spada poniżej 80%, kontrola niezależna (pełny
 przegląd poradni na kuli zamiast rzutu EPSG:2180, 601 adresów, przypadki graniczne ±15 m
 pomijane) wykaże rozbieżność albo plik przekroczy 2 MB.
+
+## Tryb miasta
+
+`ADRESCORE_MIASTO=<slug> node etl/nfz-kolejki.mjs` – bez klucza z-dykty: dane wprost z publicznego API NFZ
+(oddział z pola `nfz` w `lib/miasto.mjs`, przypadek stabilny, 12 zapytań po fragmencie nazwy specjalności).
+Położenie poradni: współrzędne z API; gdy leżą dalej niż 1,5 km od punktu adresowego z adresu NFZ, wygrywa adres.
+Pokrycie 75–92% adresów (reszta: za mało specjalności w 3 km, wtedy `null`, szara kategoria).
