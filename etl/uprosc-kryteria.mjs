@@ -2,63 +2,16 @@
 // Uruchom po odświeżeniu etl/codziennosc, inwestycje/obwarzanek, halas/obwarzanek i powodz.
 import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { DANE, zapiszWskaznik } from './lib/wspolne.mjs'
+import { OPCJONALNE, PRZENIESIONE, USUWANE } from './lib/meta-wzorzec.mjs'
+import { DANE, MIASTO, zapiszWskaznik } from './lib/wspolne.mjs'
+
+export { PRZENIESIONE }
 
 const katalog = join(DANE, 'wskazniki')
 const sciezka = (id) => join(katalog, `${id}.json`)
 const wczytaj = (id) => JSON.parse(readFileSync(sciezka(id), 'utf8'))
 const usun = (id) => {
   if (existsSync(sciezka(id))) unlinkSync(sciezka(id))
-}
-
-// Stare fakty bez jednej kategorii otrzymują grupę tematyczną i kierunek domyślny.
-// Waga startowa 0 zachowuje decyzję użytkownika: po ustawieniu 1–4 każdy z nich liczy się
-// jak zwykła warstwa. Kierunek można odwrócić, szczególnie przy wyborach i demografii.
-export const PRZENIESIONE = {
-  bo_projekty_1km: ['spolecznosc', 'wiecej-lepiej'],
-  cena_m2_mediana: ['spolecznosc', 'mniej-lepiej'],
-  drzewa_100m: ['spokoj', 'wiecej-lepiej'],
-  frekwencja_samorzad_2024: ['spolecznosc', 'wiecej-lepiej'],
-  gestosc_zaludnienia_100m: ['spolecznosc', 'wiecej-lepiej'],
-  gmina_czyste_powietrze_wnioski_100_domow: ['spokoj', 'wiecej-lepiej'],
-  gmina_dlug_pc: ['spolecznosc', 'mniej-lepiej'],
-  gmina_inwestycje_pc: ['spolecznosc', 'wiecej-lepiej'],
-  gmina_koszty_stale_rok: ['spolecznosc', 'mniej-lepiej'],
-  gmina_mpzp_pokrycie_pct: ['spolecznosc', 'wiecej-lepiej'],
-  gmina_pit_na_mieszkanca: ['spolecznosc', 'wiecej-lepiej'],
-  imprezy_obiekty_dni_500m_2025_26: ['spokoj', 'mniej-lepiej'],
-  imprezy_stale_wpisy_500m_2026: ['spokoj', 'mniej-lepiej'],
-  inwestycje_500m: ['spolecznosc', 'wiecej-lepiej'],
-  kapielisko_odleglosc: ['spokoj', 'mniej-lepiej'],
-  ladowarka_ev_odleglosc: ['transport', 'mniej-lepiej'],
-  ludnosc_1km: ['spolecznosc', 'wiecej-lepiej'],
-  miejscowe_zagrozenia_gmina_2025: ['bezpieczenstwo', 'mniej-lepiej'],
-  mpzp_status: ['spolecznosc', 'wiecej-lepiej'],
-  nfz_kolejki_dni: ['codziennosc', 'mniej-lepiej'],
-  obszar_rewitalizacji: ['spolecznosc', 'wiecej-lepiej'],
-  osiadanie_mm_rok: ['bezpieczenstwo', 'wiecej-lepiej'],
-  oswietlenie_100m: ['bezpieczenstwo', 'wiecej-lepiej'],
-  powiat_wynagrodzenie_brutto: ['spolecznosc', 'wiecej-lepiej'],
-  pozary_gmina_2025: ['bezpieczenstwo', 'mniej-lepiej'],
-  przestepstwa_1000_powiat_2025: ['bezpieczenstwo', 'mniej-lepiej'],
-  przetargi_dzielnica: ['spolecznosc', 'wiecej-lepiej'],
-  punkt_schronienia_odleglosc: ['bezpieczenstwo', 'mniej-lepiej'],
-  sejm2023_lista_1: ['spolecznosc', 'wiecej-lepiej'],
-  sejm2023_lista_2: ['spolecznosc', 'wiecej-lepiej'],
-  sejm2023_lista_3: ['spolecznosc', 'wiecej-lepiej'],
-  sejm2023_lista_4: ['spolecznosc', 'wiecej-lepiej'],
-  sejm2023_lista_5: ['spolecznosc', 'wiecej-lepiej'],
-  sejm2023_lista_6: ['spolecznosc', 'wiecej-lepiej'],
-  sejm2023_lista_7: ['spolecznosc', 'wiecej-lepiej'],
-  siec_cieplownicza_odleglosc: ['codziennosc', 'mniej-lepiej'],
-  stacje_bazowe_300m: ['codziennosc', 'wiecej-lepiej'],
-  szkola_podst_wynik_e8: ['codziennosc', 'wiecej-lepiej'],
-  udzial_0_14: ['spolecznosc', 'wiecej-lepiej'],
-  udzial_65plus: ['spolecznosc', 'wiecej-lepiej'],
-  woda_odleglosc: ['spokoj', 'mniej-lepiej'],
-  wykrywalnosc_powiat_2025: ['bezpieczenstwo', 'wiecej-lepiej'],
-  zabytki_300m: ['spolecznosc', 'wiecej-lepiej'],
-  zabytki_rejestr_500m: ['spolecznosc', 'wiecej-lepiej'],
 }
 
 export function polaczRozlaczne(a, b) {
@@ -133,9 +86,26 @@ function rozdzielUslugi() {
   usun('uslugi_15min')
 }
 
+// W miastach hałas z EEA ma id halas_obwarzanek_lden; w Krakowie ta sama miara to halas_ldwn.
+function przeniesHalasMiasta() {
+  if (!existsSync(sciezka('halas_obwarzanek_lden')) || existsSync(sciezka('halas_ldwn'))) return
+  const a = wczytaj('halas_obwarzanek_lden')
+  zapiszWskaznik(
+    { ...a.meta, id: 'halas_ldwn', nazwa: 'Najwyższe pasmo hałasu (LDWN/Lden)', zadanie: 171 },
+    a.wartosci,
+    a.etykiety,
+    a.slownikEtykiet,
+  )
+  usun('halas_obwarzanek_lden')
+}
+
 function przypiszGrupy() {
   for (const [id, [kategoria, kierunek]] of Object.entries(PRZENIESIONE)) {
-    if (!existsSync(sciezka(id))) throw new Error(`Brakuje warstwy do przeniesienia: ${id}`)
+    if (!existsSync(sciezka(id))) {
+      // Kraków ma komplet; miasto może nie mieć części warstw (brak źródła), co nie jest błędem.
+      if (MIASTO || OPCJONALNE.includes(id)) continue
+      throw new Error(`Brakuje warstwy do przeniesienia: ${id}`)
+    }
     const p = wczytaj(id)
     p.meta.kategoria = kategoria
     p.meta.kierunek = kierunek
@@ -145,6 +115,7 @@ function przypiszGrupy() {
 }
 
 export function main() {
+  przeniesHalasMiasta()
   polacz(
     'inwestycje_500m',
     'inwestycje_500m_obwarzanek',
@@ -158,15 +129,10 @@ export function main() {
     'Najwyższe opublikowane pasmo hałasu dzień–wieczór–noc. Kraków: mapa MSIP 2022 (drogi, tory, przemysł); poza Krakowem: mapy strategiczne EEA, rok referencyjny 2021 (drogi, kolej, przemysł, lotniska). To reprezentacja pasma z różnych źródeł, nie dokładny pomiar pod adresem ani sumaryczny hałas. Brak opublikowanego pasma = brak danych.',
   )
   rozdzielUslugi()
-  for (const id of [
-    'bankomat_poczta_odleglosc',
-    'gmina_powodz_powierzchnia_pct',
-    'powodz_1proc',
-    'powodz_02proc',
-  ])
-    usun(id)
+  for (const id of USUWANE) usun(id)
   przypiszGrupy()
   const p = join(DANE, 'gminy-porownanie.json')
+  if (!existsSync(p)) return // katalog miasta nie ma porównania gmin
   const g = JSON.parse(readFileSync(p, 'utf8'))
   g.miary = g.miary.filter((m) => m.id !== 'gmina_powodz_powierzchnia_pct')
   for (const x of g.gminy) delete x.miary.gmina_powodz_powierzchnia_pct

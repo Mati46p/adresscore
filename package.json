@@ -13,7 +13,8 @@
     "lint": "biome check .",
     "format": "biome check --write .",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "verify": "pnpm lint && pnpm typecheck && pnpm build",
+    "test:meta": "node --test etl/meta-wzorzec.test.mjs",
+    "verify": "pnpm lint && pnpm typecheck && pnpm test:meta && pnpm build",
     "db:start": "supabase start",
     "db:push": "supabase db push",
     "zadanie": "node scripts/zadanie.mjs"
