@@ -412,7 +412,9 @@ async function main() {
       `Bez identyfikatora ${nierozwiazane} z ${obiekty.length} obiektów (próg ${progBezId * 100}%)`,
     )
   if (nierozwiazane > 0.03 * obiekty.length)
-    console.warn(`UWAGA: bez identyfikatora ${nierozwiazane} z ${obiekty.length} obiektów – pominięte`)
+    console.warn(
+      `UWAGA: bez identyfikatora ${nierozwiazane} z ${obiekty.length} obiektów – pominięte`,
+    )
 
   const wpisy = zbudujWpisy(obiekty, ident.przypisania)
   const wgTypu = new Map()
