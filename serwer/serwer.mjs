@@ -13,6 +13,10 @@ const KORZEN = resolve(process.env.DIST_DIR ?? 'dist')
 // Duże pliki mapy (polska.pmtiles, 2 GB) leżą na wolumenie poza obrazem: /mapa/<plik> czytamy stąd
 // przed dist/. Bez zmiennej serwer działa jak dotąd.
 const MAPA_DIR = process.env.MAPA_DIR ? resolve(process.env.MAPA_DIR) : null
+// Dane ETL miast (public/dane, GB-y) też leżą poza repo i obrazem (#237): /dane/<plik> czytamy z tego
+// katalogu (wolumen Coolify, np. /data/dane) przed dist/. Układ plików jak w public/dane, razem z
+// manifest.json (składa je scripts/dane-wyslij.mjs). Bez zmiennej serwer działa jak dotąd.
+const DANE_DIR = process.env.DANE_DIR ? resolve(process.env.DANE_DIR) : null
 const PORT = Number(process.env.PORT ?? 3000)
 
 const TYPY = {
@@ -137,6 +141,13 @@ async function obsluz(req, res) {
     MAPA_DIR &&
     sciezka.startsWith('/mapa/') &&
     (await plik(req, res, sciezka.slice('/mapa'.length), MAPA_DIR, sciezka))
+  )
+    return
+  if (
+    czytanie &&
+    DANE_DIR &&
+    sciezka.startsWith('/dane/') &&
+    (await plik(req, res, sciezka.slice('/dane'.length), DANE_DIR, sciezka))
   )
     return
   if (czytanie && (await plik(req, res, sciezka))) return

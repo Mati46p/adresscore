@@ -7,3 +7,5 @@ etl/.cache
 .claude
 specs
 docs
+public/dane
+public/mapa/*.pmtiles
