@@ -3,11 +3,13 @@
 import { execFileSync } from 'node:child_process'
 import { writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import {
   CACHE,
   DANE,
   dzis,
   MIASTO,
+  PYTHON,
   pobierzDoCache,
   wczytajAdresy,
   zapiszWskaznik,
@@ -24,7 +26,8 @@ export function dopasujZdarzenia(adresy, tabela) {
   for (const a of adresy) {
     if (!/^\d{7}$/.test(a.teryt)) throw new Error(`Niepoprawny TERYT adresu: ${a.teryt}`)
     const rekord = tabela[a.teryt.slice(0, 6)]
-    if (rekord && rekord.name !== a.gmina)
+    // Klucz to TERYT; nazwa to tylko kontrola. Źródło KG PSP bywa z uszkodzonym znakiem (U+FFFD), wtedy pomijamy.
+    if (rekord && !rekord.name.includes('\uFFFD') && rekord.name !== a.gmina)
       throw new Error(`Niezgodna nazwa gminy ${a.teryt}: ${a.gmina} vs ${rekord.name}`)
     if (!gminy.has(a.teryt))
       gminy.set(a.teryt, { nazwa: a.gmina, pspTeryt: a.teryt.slice(0, 6), adresow: 0 })
@@ -50,8 +53,8 @@ async function main() {
   const sciezka = await pobierzDoCache(KG_URL, 'kgpsp-tabele-2025.zip')
   const tabela = JSON.parse(
     execFileSync(
-      'python3',
-      [new URL('./pozary-swd.py', import.meta.url).pathname, sciezka, String(ROK)],
+      PYTHON,
+      [fileURLToPath(new URL('./pozary-swd.py', import.meta.url)), sciezka, String(ROK)],
       {
         maxBuffer: 2_000_000,
         encoding: 'utf8',

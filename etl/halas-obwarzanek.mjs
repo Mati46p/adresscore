@@ -22,12 +22,12 @@
 //
 // Surowe kafle PNG trafiają do etl/.cache/halas-eea/<wersja adresów>/. Odświeżenie danych EEA:
 // usuń ten katalog.
-import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import proj4 from 'proj4'
 import { dekodujPngSzary } from './lib/png.mjs'
-import { CACHE, dzis, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
+import { CACHE, DANE, dzis, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
 
 export const BAZA_EEA = 'https://noise.discomap.eea.europa.eu/arcgis/rest/services/noiseStoryMap'
 export const KATALOG_EEA =
@@ -308,7 +308,21 @@ async function main() {
     )
   })
   // Kontrola, że odczyt cokolwiek zmierzył: przy drogach głównych wokół Krakowa to tysiące adresów.
-  if (wyniki[0].klasy.size < 1000)
+  // Zero adresów w konturze drogowym przy pikselach z danymi w bboksie (Olsztyn: kontury tylko
+  // na obwodnicach poza miastem) = mapa END nie obejmuje tego miasta. To brak źródła, nie błąd
+  // odczytu: warstwa nie powstaje (szara kategoria), krok kończy się ostrzeżeniem. Cząstkowa
+  // warstwa z samego przemysłu udawałaby, że hałas drogowy zmierzono. Próg błędu skaluje się z
+  // liczbą adresów, żeby małe miasto nie odpadało przez stałe 1000.
+  const prog = Math.min(1000, Math.floor(poza.length * 0.01))
+  if (wyniki[0].klasy.size === 0) {
+    console.warn(
+      `OSTRZEŻENIE: mapy END nie mają konturów hałasu drogowego przy żadnym z ${poza.length} adresów – warstwa halas_obwarzanek_lden nie powstaje (brak danych, nie zero).`,
+    )
+    const stary = join(DANE, 'wskazniki', 'halas_obwarzanek_lden.json')
+    if (existsSync(stary)) rmSync(stary)
+    return
+  }
+  if (wyniki[0].klasy.size < prog)
     throw new Error('Odczyt hałasu drogowego prawie pusty – sprawdź parametry exportImage')
 
   const probki = wyniki.map(({ klasy }) => new Map([...klasy].map(([n, kod]) => [poza[n].i, kod])))

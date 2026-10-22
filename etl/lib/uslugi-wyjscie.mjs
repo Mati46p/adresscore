@@ -286,6 +286,9 @@ const KLUCZE_PLIKU = [
   'kolumny',
 ]
 
+/** Współrzędne wyjścia są zaokrąglone do 5 miejsc, a bbox miasta ma 6: punkt na krawędzi nie jest „poza". */
+const EPS_WSPOLRZEDNEJ = 1e-5
+
 /**
  * Sprawdza spójność wyniku zanim trafi na dysk: długości kolumn, współrzędne w obszarze, znane bity
  * źródeł, brak nazw przy punktach tylko z CEIDG, strażnik minimalnej liczby punktów branży.
@@ -305,10 +308,10 @@ export function sprawdzWyjscie({ pliki, bbox, minima = {}, katalog = null }) {
       if (
         !Number.isFinite(lon) ||
         !Number.isFinite(lat) ||
-        lat < bbox.minLat ||
-        lat > bbox.maxLat ||
-        lon < bbox.minLon ||
-        lon > bbox.maxLon
+        lat < bbox.minLat - EPS_WSPOLRZEDNEJ ||
+        lat > bbox.maxLat + EPS_WSPOLRZEDNEJ ||
+        lon < bbox.minLon - EPS_WSPOLRZEDNEJ ||
+        lon > bbox.maxLon + EPS_WSPOLRZEDNEJ
       ) {
         bledy.push(`${id}: punkt ${i} poza obszarem (${lon}, ${lat})`)
         break

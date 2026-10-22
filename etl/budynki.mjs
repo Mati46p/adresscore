@@ -5,9 +5,10 @@ import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import proj4 from 'proj4'
 import { MIASTA } from './lib/miasta.mjs'
-import { CACHE, DANE, dzis, MIASTO, pobierzDoCache } from './lib/wspolne.mjs'
+import { CACHE, DANE, dzis, MIASTO, PYTHON, pobierzDoCache } from './lib/wspolne.mjs'
 
 // ADRESCORE_MIASTO: powiat miasta (URL: 2024/<kod województwa>/<TERYT powiatu>.zip, wg GetFeatureInfo WMS GUGiK).
 const M = MIASTO ? MIASTA[MIASTO] : null
@@ -91,11 +92,11 @@ export function zloz(rows) {
 
 async function main() {
   const zipPath = await pobierzDoCache(POBRANIE_URL, `${POWIAT}-lod1-2024.zip`)
-  if (statSync(zipPath).size < (M ? 5_000_000 : 20_000_000)) throw new Error('Niepełny ZIP LoD1')
+  if (statSync(zipPath).size < (M ? 3_000_000 : 20_000_000)) throw new Error('Niepełny ZIP LoD1')
   const ndjsonPath = join(CACHE, `${POWIAT}-lod1-2024.ndjson`)
   execFileSync(
-    'python3',
-    [new URL('./budynki-gml.py', import.meta.url).pathname, zipPath, ndjsonPath],
+    PYTHON,
+    [fileURLToPath(new URL('./budynki-gml.py', import.meta.url)), zipPath, ndjsonPath],
     {
       stdio: 'inherit',
     },

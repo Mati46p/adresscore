@@ -102,9 +102,55 @@ export function urlGetFeatureInfo(x, y, polowaBoku = 3) {
 const TOKENY = /[MmLlHhVvZzCcSsQqTtAa]|-?\d*\.?\d+(?:[eE][-+]?\d+)?/g
 
 /**
- * Atrybut d ścieżki SVG jako pierścienie punktów [x, y] w pikselach. Usługa używa wyłącznie
- * poleceń M, L, H, V (małe i duże) oraz Z; inne polecenie to zmiana formatu i zatrzymuje eksport.
+ * Atrybut d ścieżki SVG jako pierścienie punktów [x, y] w pikselach. Usługa używa poleceń M, L, H, V
+ * (małe i duże) oraz Z; inne polecenie to zmiana formatu i zatrzymuje eksport. Wyjątek: łuki A/a –
+ * usługa rysuje tak okrągłe obiekty punktowe (np. kółko o promieniu 7 px w Katowicach), więc łuk
+ * rozwijamy w łamaną (LUK_KROKI odcinków na łuk).
  */
+const LUK_KROKI = 12
+
+/** Łuk eliptyczny SVG (parametryzacja końcowa, W3C F.6.5) jako punkty pośrednie i końcowy. */
+export function punktyLuku(x1, y1, rx, ry, fi, duzy, sweep, x2, y2) {
+  if (rx === 0 || ry === 0) return [[x2, y2]]
+  const kat = (fi * Math.PI) / 180
+  const c = Math.cos(kat)
+  const s = Math.sin(kat)
+  const dx = (x1 - x2) / 2
+  const dy = (y1 - y2) / 2
+  const x1p = c * dx + s * dy
+  const y1p = -s * dx + c * dy
+  rx = Math.abs(rx)
+  ry = Math.abs(ry)
+  const lambda = x1p ** 2 / rx ** 2 + y1p ** 2 / ry ** 2
+  if (lambda > 1) {
+    rx *= Math.sqrt(lambda)
+    ry *= Math.sqrt(lambda)
+  }
+  const licznik = rx ** 2 * ry ** 2 - rx ** 2 * y1p ** 2 - ry ** 2 * x1p ** 2
+  const mianownik = rx ** 2 * y1p ** 2 + ry ** 2 * x1p ** 2
+  const znak = duzy === sweep ? -1 : 1
+  const wsp = mianownik === 0 ? 0 : znak * Math.sqrt(Math.max(0, licznik / mianownik))
+  const cxp = (wsp * rx * y1p) / ry
+  const cyp = (-wsp * ry * x1p) / rx
+  const cx = c * cxp - s * cyp + (x1 + x2) / 2
+  const cy = s * cxp + c * cyp + (y1 + y2) / 2
+  const kierunek = (ux, uy) => Math.atan2(uy, ux)
+  const t1 = kierunek((x1p - cxp) / rx, (y1p - cyp) / ry)
+  let dt = kierunek((-x1p - cxp) / rx, (-y1p - cyp) / ry) - t1
+  if (!sweep && dt > 0) dt -= 2 * Math.PI
+  else if (sweep && dt < 0) dt += 2 * Math.PI
+  const wynik = []
+  for (let k = 1; k <= LUK_KROKI; k++) {
+    const t = t1 + (dt * k) / LUK_KROKI
+    wynik.push([
+      cx + rx * Math.cos(t) * c - ry * Math.sin(t) * s,
+      cy + rx * Math.cos(t) * s + ry * Math.sin(t) * c,
+    ])
+  }
+  wynik[wynik.length - 1] = [x2, y2]
+  return wynik
+}
+
 export function pierscienieZSciezki(d) {
   const tokeny = d.match(TOKENY) ?? []
   const pierscienie = []
@@ -122,7 +168,7 @@ export function pierscienieZSciezki(d) {
     const t = tokeny[i] ?? ''
     if (/^[A-Za-z]$/.test(t)) {
       i++
-      if (!'MmLlHhVvZz'.includes(t)) throw new Error(`Ścieżka SVG: nieobsługiwane polecenie ${t}`)
+      if (!'MmLlHhVvZzAa'.includes(t)) throw new Error(`Ścieżka SVG: nieobsługiwane polecenie ${t}`)
       polecenie = t
       if (t === 'Z' || t === 'z') {
         if (biezacy) pierscienie.push(biezacy)
@@ -152,6 +198,17 @@ export function pierscienieZSciezki(d) {
     } else if (polecenie === 'V' || polecenie === 'v') {
       const a = nastepna()
       y = polecenie === 'V' ? a : y + a
+    } else if (polecenie === 'A' || polecenie === 'a') {
+      const [rx, ry, fi, duzy, sweep] = [nastepna(), nastepna(), nastepna(), nastepna(), nastepna()]
+      const a = nastepna()
+      const b = nastepna()
+      const x2 = polecenie === 'A' ? a : x + a
+      const y2 = polecenie === 'A' ? b : y + b
+      for (const pt of punktyLuku(x, y, rx, ry, fi, duzy !== 0, sweep !== 0, x2, y2))
+        biezacy.push(pt)
+      x = x2
+      y = y2
+      continue
     } else throw new Error(`Ścieżka SVG: liczby po poleceniu ${polecenie}`)
     biezacy.push([x, y])
   }

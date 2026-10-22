@@ -6,7 +6,7 @@ import { mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { dataRobocza, listaFeedow, odczytajFeed } from './dojazd-gtfs.mjs'
-import { DATA_OBSLUGI_MIASTA } from './lib/gtfs-miasta.mjs'
+import { BRAK_GTFS_MIASTA, DATA_OBSLUGI_MIASTA } from './lib/gtfs-miasta.mjs'
 import { DANE } from './lib/wspolne.mjs'
 
 // Okno: wyjście 05:00–21:00 + 2 h na podróż (ok. 3,9 MB, 0,6 MB gzip). Rozmiar rośnie liniowo
@@ -40,6 +40,10 @@ export function kodujKursy(zdarzenia, mapaPrzystankow) {
 }
 
 export async function generuj(data = dataRobocza(), okno = OKNO_DOMYSLNE) {
+  if (BRAK_GTFS_MIASTA) {
+    console.log('Miasto bez otwartego feedu GTFS: pomijam graf dojazdu.')
+    return
+  }
   const [h0, h1] = okno.split('-').map(Number)
   if (!Number.isInteger(h0) || !Number.isInteger(h1) || h0 < 0 || h1 > 30 || h0 >= h1)
     throw new Error('Okno: HH-HH, np. 6-11')
@@ -48,7 +52,7 @@ export async function generuj(data = dataRobocza(), okno = OKNO_DOMYSLNE) {
   const punkty = []
   const zdarzenia = []
   const zrodla = []
-  for (const { grupa, bufor, zrodlo } of await listaFeedow()) {
+  for (const { grupa, bufor, zrodlo } of await listaFeedow(data)) {
     const feed = odczytajFeed(bufor, grupa, data, punkty.length, { start, koniec })
     punkty.push(...feed.punkty)
     for (const z of feed.zdarzenia) if (z.dep >= start) zdarzenia.push(z)

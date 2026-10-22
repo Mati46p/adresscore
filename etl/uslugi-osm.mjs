@@ -243,15 +243,31 @@ async function pobierz(adresy) {
   return wynik
 }
 
+const ID_Z_REJESTRU = new Set([
+  'sklep_odleglosc',
+  'apteka_odleglosc',
+  'przedszkole_odleglosc',
+  'zlobek_odleglosc',
+  'przychodnia_odleglosc',
+])
+
 export async function generuj() {
   const { adresy } = wczytajAdresy()
   const odpowiedz = await pobierz(adresy)
   const punkty = punktyZOverpass(odpowiedz)
   const dataDanych = odpowiedz.osm3s.timestamp_osm_base.slice(0, 10)
+  let powstalo = 0
   for (const d of DEFINICJE) {
+    // Miasto: te id ma lepsze źródło rejestrowe (krok codziennosc, RPWDL/rejestry), który biegnie wcześniej.
+    if (MIASTO && ID_Z_REJESTRU.has(d.id)) continue
     const lista = punkty.get(d.id)
-    if (lista.length < MIN_PUNKTOW[d.id])
-      throw new Error(`OSM: za mało punktów ${d.id}: ${lista.length}`)
+    if (lista.length < Math.min(MIN_PUNKTOW[d.id], Math.max(1, Math.floor(adresy.length / 1000)))) {
+      if (!MIASTO) throw new Error(`OSM: za mało punktów ${d.id}: ${lista.length}`)
+      // Miasto: kategoria bez dość punktów nie powstaje (szara), reszta liczy się dalej.
+      console.warn(`UWAGA: za mało punktów ${d.id}: ${lista.length} – warstwa pominięta (szara)`)
+      continue
+    }
+    powstalo++
     const indeks = indeksPrzystankow(lista)
     const wyniki = adresy.map((a) => najblizszyPrzystanek(a, lista, indeks))
     const etykiety = wyniki.map((w) => (w ? w.punkt.nazwa || 'Miejsce bez nazwy' : null))
@@ -300,6 +316,7 @@ export async function generuj() {
     )
     console.log(`${d.id}: ${lista.length} punktów OSM`)
   }
+  if (!powstalo) throw new Error('OSM: brak punktów we wszystkich kategoriach (awaria źródła?)')
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) await generuj()

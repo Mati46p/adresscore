@@ -20,13 +20,23 @@ export function naglowekSzukaj(m: Pick<MiastoTekstu, 'wMiescie'>): string {
   return `Znajdź okolicę ${m.wMiescie}`
 }
 
+/** Nazwy z przymiotnikiem żeńskim: reguła „a → ę" daje tu błąd (Ruda Śląskę). */
+const BIERNIK_WYJATKI: Readonly<Record<string, string>> = {
+  'Ruda Śląska': 'Rudę Śląską',
+  'Bielsko-Biała': 'Bielsko-Białą',
+  'Zielona Góra': 'Zieloną Górę',
+  'Dąbrowa Górnicza': 'Dąbrowę Górniczą',
+}
+
 /**
- * Nazwa miasta w bierniku do „Przełącz na …”. Rejestr zna tylko mianownik i miejscownik, a wśród dziesięciu
- * miast zmienia się jedna nazwa (Warszawa → Warszawę): miasta na „-a” dostają „-ę”, reszta zostaje (Łódź,
+ * Nazwa miasta w bierniku do „Przełącz na …”. Rejestr zna tylko mianownik i miejscownik, a miasta na „-a” dostają „-ę”,
+ * poza wyjątkami z przymiotnikiem; reszta zostaje (Łódź,
  * Poznań, Bydgoszcz i Białystok mają biernik równy mianownikowi). Test przechodzi po rejestrze i
  * wymaga wpisu dla każdego miasta, więc dodanie miasta z inną końcówką zapali czerwone światło.
  */
 export function biernikMiasta(nazwa: string): string {
+  const wyjatek = BIERNIK_WYJATKI[nazwa]
+  if (wyjatek) return wyjatek
   return nazwa.endsWith('a') ? `${nazwa.slice(0, -1)}ę` : nazwa
 }
 

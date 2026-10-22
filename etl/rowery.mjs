@@ -556,7 +556,10 @@ async function mainMiasto() {
   console.log(
     `OSM: dróg z tagami ${drogi.length}; linii w ramce ${osm.linie.length} ${JSON.stringify(poRodzaju)}; odrzucone: ${JSON.stringify(osm.statystyka)}`,
   )
-  if (osm.linie.length < 50) throw new Error('OSM: podejrzanie mało linii rowerowych w ramce')
+  // Próg proporcjonalny do miasta: brak linii = awaria odczytu, mało = ostrzeżenie (odległości policzą się z tego, co jest).
+  if (osm.linie.length === 0) throw new Error('OSM: brak linii rowerowych w ramce')
+  if (osm.linie.length < Math.max(5, Math.floor(adresy.length / 1000)))
+    console.warn(`UWAGA: mało linii rowerowych w ramce (${osm.linie.length})`)
   const indeks = new IndeksOdcinkow()
   for (const l of osm.linie) indeks.dodajLinie(l.punkty, l.rodzaj)
   const infra = xy.map(([x, y]) => {

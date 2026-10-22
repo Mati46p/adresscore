@@ -9,7 +9,7 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { do2180, LicznikWielokatow, pierscien, wielokat } from './lib/geo.mjs'
 import { dataPobrania, plikCache, pobierzTrwale } from './lib/pobieranie.mjs'
-import { wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
+import { MIASTO, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
 
 const WFS = 'https://esip.bazaazbestowa.gov.pl/geoserver/wfs/ows'
 const WARSTWA = 'budynki_z_azbestem'
@@ -139,8 +139,14 @@ async function main() {
       w.bbox[1] < y0 - 1000 ||
       w.bbox[3] > y1 + 1000,
   )
-  if (poza.length)
+  // Miasto: pojedyncze duże obrysy wystające poza bbox (WFS zwraca przecinające) to norma;
+  // zamienione osie psułyby większość obrysów, więc błąd dopiero od 5% (Kraków: bez zmian).
+  if (poza.length && (!MIASTO || poza.length > Math.max(1, obiekty.length * 0.05)))
     throw new Error(`${poza.length} obrysów leży poza zapytanym obszarem (osie GML?)`)
+  if (poza.length)
+    console.warn(
+      `UWAGA: ${poza.length}/${obiekty.length} obrysów wystaje poza obszar (duże obrysy)`,
+    )
   console.log(
     `Baza Azbestowa (${dataDanych}): ${obiekty.length} obrysów budynków z azbestem w obszarze`,
   )

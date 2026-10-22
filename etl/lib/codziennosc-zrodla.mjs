@@ -29,7 +29,19 @@ const wBbox = (p) =>
 
 const URL_SIO =
   'https://api.dane.gov.pl/resources/1254769,wykaz-szko-i-placowek-oswiatowych-wg-stanu-bazy-sio-na-30092025/file'
-const URL_ZLOBKI = 'https://api.dane.gov.pl/resources/2713903,rejestr-zobkow-lista-instytucji/file'
+// Id zasobu zmienia się przy każdej aktualizacji rejestru (stary 2713903 zwraca 404, a download_url z API też; działa file_url z /media/), więc aktualny
+// plik CSV bierzemy z listy zasobów zbioru 29751 „Rejestr Żłobków – lista instytucji" (API dane.gov.pl).
+const API_ZASOBY_ZLOBKI = 'https://api.dane.gov.pl/1.4/datasets/29751/resources'
+
+async function urlZlobkow() {
+  const odp = await fetch(API_ZASOBY_ZLOBKI, { headers: { Accept: 'application/json' } })
+  if (!odp.ok) throw new Error(`Rejestr żłobków: lista zasobów → HTTP ${odp.status}`)
+  const csv = (await odp.json()).data.filter((r) => r.attributes.format === 'csv')
+  csv.sort((x, y) => String(y.attributes.modified).localeCompare(String(x.attributes.modified)))
+  const url = csv[0]?.attributes.file_url
+  if (!url) throw new Error('Rejestr żłobków: brak zasobu CSV w zbiorze 29751')
+  return url
+}
 const URL_RPWDL =
   'https://api.dane.gov.pl/resources/70070,podmioty-wykonujace-dziaalnosc-lecznicza-link-do-usugi-umozliwiajacej-pobranie-aktualnych-danych-w-postaci-pliku-csv/file'
 const URL_APTEKI = 'https://rejestry.ezdrowie.gov.pl/api/ra/pharmacies/search'
@@ -103,7 +115,12 @@ export async function przedszkola() {
 // --- Rejestr Żłobków i Klubów Dziecięcych (MRPiPS) -----------------------------------------
 
 export async function zlobki() {
-  const plik = await pobierzDoCache(URL_ZLOBKI, 'zlobki-mrpips.csv')
+  // Dane.gov.pl bywa bez pliku CSV w zasobie (21.10.2026: pusty file_url). Plik krajowy z cache jest ważny,
+  // więc brak linku nie przerywa ETL kolejnego miasta.
+  const cacheZlobkow = join(CACHE, 'zlobki-mrpips.csv')
+  const plik = existsSync(cacheZlobkow)
+    ? cacheZlobkow
+    : await pobierzDoCache(await urlZlobkow(), 'zlobki-mrpips.csv')
   const c = await duckdb()
   const w = (
     await wiersze(

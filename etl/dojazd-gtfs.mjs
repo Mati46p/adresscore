@@ -10,6 +10,7 @@ import { strFromU8, unzipSync } from 'fflate'
 import KDBush from 'kdbush'
 import { csv, odlegloscMetry } from './gtfs-przystanki.mjs'
 import {
+  BRAK_GTFS_MIASTA,
   DATA_OBSLUGI_MIASTA,
   dataDanychFeedu,
   FEEDY_MIASTA,
@@ -318,11 +319,11 @@ export function pobierzGrupe(grupa) {
  * Feedy do liczenia dojazdu: ZTP Kraków (A/M/T) albo – w trybie miasta – feedy z gtfs-miasta.mjs.
  * Każdy element: { grupa, url, bufor, meta, zrodlo(info) } (zrodlo składa wpis do metadanych wskaźnika).
  */
-export async function listaFeedow() {
+export async function listaFeedow(data) {
   if (FEEDY_MIASTA) {
     const wynik = []
     for (const f of FEEDY_MIASTA) {
-      const { bufor, meta } = await wczytajFeedMiasta(f)
+      const { bufor, meta } = await wczytajFeedMiasta(f, data)
       wynik.push({
         grupa: f.grupa,
         url: f.url,
@@ -363,6 +364,10 @@ export async function listaFeedow() {
 }
 
 export async function generuj(data = dataRobocza(), cel = null, opcje = {}) {
+  if (BRAK_GTFS_MIASTA) {
+    console.log('Miasto bez otwartego feedu GTFS: pomijam warstwę (szara kategoria, brak danych).')
+    return
+  }
   const rynek = opcje.rynek === true
   if (rynek && !cel) throw new Error('Rynek wymaga współrzędnych celu')
   if (
@@ -376,7 +381,7 @@ export async function generuj(data = dataRobocza(), cel = null, opcje = {}) {
   const punkty = []
   const zdarzenia = []
   const zrodla = []
-  for (const { grupa, bufor, meta, zrodlo } of await listaFeedow()) {
+  for (const { grupa, bufor, meta, zrodlo } of await listaFeedow(data)) {
     const feed = odczytajFeed(bufor, grupa, data, punkty.length)
     punkty.push(...feed.punkty)
     // push(...tablica) przy milionach zdarzeń (Warszawa) przepełnia stos wywołań.

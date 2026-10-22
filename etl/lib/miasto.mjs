@@ -93,6 +93,166 @@ export const MIASTA = {
     pbf: 'podlaskie',
     centrum: { nazwa: 'Rynek Kościuszki w Białymstoku', lon: 23.1586, lat: 53.1325 },
   },
+  katowice: {
+    nfz: '12',
+    nazwa: 'Katowice',
+    woj: 'śląskie',
+    teryt2: '24',
+    pbf: 'slaskie',
+    centrum: { nazwa: 'Rynek w Katowicach', lon: 19.0222, lat: 50.2597 },
+  },
+  gdynia: {
+    nfz: '11',
+    nazwa: 'Gdynia',
+    woj: 'pomorskie',
+    teryt2: '22',
+    pbf: 'pomorskie',
+    centrum: { nazwa: 'Skwer Kościuszki w Gdyni', lon: 18.5427, lat: 54.5192 },
+  },
+  czestochowa: {
+    nfz: '12',
+    nazwa: 'Częstochowa',
+    woj: 'śląskie',
+    teryt2: '24',
+    pbf: 'slaskie',
+    centrum: { nazwa: 'Plac Biegańskiego w Częstochowie', lon: 19.1143, lat: 50.8119 },
+  },
+  rzeszow: {
+    nfz: '09',
+    nazwa: 'Rzeszów',
+    woj: 'podkarpackie',
+    teryt2: '18',
+    pbf: 'podkarpackie',
+    centrum: { nazwa: 'Rynek w Rzeszowie', lon: 22.005, lat: 50.0375 },
+  },
+  torun: {
+    nfz: '02',
+    nazwa: 'Toruń',
+    woj: 'kujawsko-pomorskie',
+    teryt2: '04',
+    pbf: 'kujawsko_pomorskie',
+    centrum: { nazwa: 'Rynek Staromiejski w Toruniu', lon: 18.6037, lat: 53.0105 },
+  },
+  radom: {
+    nfz: '07',
+    nazwa: 'Radom',
+    woj: 'mazowieckie',
+    teryt2: '14',
+    pbf: 'mazowieckie',
+    centrum: { nazwa: 'Rynek w Radomiu', lon: 21.1433, lat: 51.4028 },
+  },
+  sosnowiec: {
+    nfz: '12',
+    nazwa: 'Sosnowiec',
+    woj: 'śląskie',
+    teryt2: '24',
+    pbf: 'slaskie',
+    centrum: { nazwa: 'Plac Stulecia w Sosnowcu', lon: 19.1274, lat: 50.278 },
+  },
+  kielce: {
+    nfz: '13',
+    nazwa: 'Kielce',
+    woj: 'świętokrzyskie',
+    teryt2: '26',
+    pbf: 'swietokrzyskie',
+    centrum: { nazwa: 'Rynek w Kielcach', lon: 20.6321, lat: 50.8716 },
+  },
+  gliwice: {
+    nfz: '12',
+    nazwa: 'Gliwice',
+    woj: 'śląskie',
+    teryt2: '24',
+    pbf: 'slaskie',
+    centrum: { nazwa: 'Rynek w Gliwicach', lon: 18.6661, lat: 50.294 },
+  },
+  olsztyn: {
+    nfz: '14',
+    nazwa: 'Olsztyn',
+    woj: 'warmińsko-mazurskie',
+    teryt2: '28',
+    pbf: 'warminsko_mazurskie',
+    centrum: { nazwa: 'Wysoka Brama w Olsztynie', lon: 20.4776, lat: 53.7776 },
+  },
+  bielskobiala: {
+    nfz: '12',
+    nazwa: 'Bielsko-Biała',
+    woj: 'śląskie',
+    teryt2: '24',
+    pbf: 'slaskie',
+    centrum: { nazwa: 'Plac Ratuszowy w Bielsku-Białej', lon: 19.051, lat: 49.822 },
+  },
+  zabrze: {
+    nfz: '12',
+    nazwa: 'Zabrze',
+    woj: 'śląskie',
+    teryt2: '24',
+    pbf: 'slaskie',
+    centrum: { nazwa: 'Plac Wolności w Zabrzu', lon: 18.7854, lat: 50.307 },
+  },
+  bytom: {
+    nfz: '12',
+    nazwa: 'Bytom',
+    woj: 'śląskie',
+    teryt2: '24',
+    pbf: 'slaskie',
+    centrum: { nazwa: 'Rynek w Bytomiu', lon: 18.9234, lat: 50.347 },
+  },
+  zielonagora: {
+    nfz: '04',
+    nazwa: 'Zielona Góra',
+    woj: 'lubuskie',
+    teryt2: '08',
+    pbf: 'lubuskie',
+    centrum: { nazwa: 'Stary Rynek w Zielonej Górze', lon: 15.5055, lat: 51.9383 },
+  },
+  rybnik: {
+    nfz: '12',
+    nazwa: 'Rybnik',
+    woj: 'śląskie',
+    teryt2: '24',
+    pbf: 'slaskie',
+    centrum: { nazwa: 'Rynek w Rybniku', lon: 18.542, lat: 50.0955 },
+  },
+  rudaslaska: {
+    nfz: '12',
+    nazwa: 'Ruda Śląska',
+    woj: 'śląskie',
+    teryt2: '24',
+    pbf: 'slaskie',
+    centrum: { nazwa: 'Plac Jana Pawła II w Rudzie Śląskiej', lon: 18.8745, lat: 50.2857 },
+  },
+  opole: {
+    nfz: '08',
+    nazwa: 'Opole',
+    woj: 'opolskie',
+    teryt2: '16',
+    pbf: 'opolskie',
+    centrum: { nazwa: 'Rynek w Opolu', lon: 17.9227, lat: 50.6682 },
+  },
+  tychy: {
+    nfz: '12',
+    nazwa: 'Tychy',
+    woj: 'śląskie',
+    teryt2: '24',
+    pbf: 'slaskie',
+    centrum: { nazwa: 'Rynek w Tychach', lon: 18.9817, lat: 50.1299 },
+  },
+  gorzowwielkopolski: {
+    nfz: '04',
+    nazwa: 'Gorzów Wielkopolski',
+    woj: 'lubuskie',
+    teryt2: '08',
+    pbf: 'lubuskie',
+    centrum: { nazwa: 'Stary Rynek w Gorzowie Wielkopolskim', lon: 15.2401, lat: 52.7312 },
+  },
+  dabrowagornicza: {
+    nfz: '12',
+    nazwa: 'Dąbrowa Górnicza',
+    woj: 'śląskie',
+    teryt2: '24',
+    pbf: 'slaskie',
+    centrum: { nazwa: 'Plac Wolności w Dąbrowie Górniczej', lon: 19.1883, lat: 50.3255 },
+  },
 }
 
 export const MIASTO_INFO = MIASTO ? (MIASTA[MIASTO] ?? null) : null
@@ -102,10 +262,14 @@ if (MIASTO && !MIASTO_INFO) throw new Error(`Nieznane miasto ADRESCORE_MIASTO=${
  * Czy miejscowość z rejestru należy do miasta: „Łódź", „Łódź-Bałuty", „Łódź-Górna, delegatura".
  * Poza trybem miasta zawsze prawda (rejestry Małopolski bierzemy w całości).
  */
-export const wMiescieMiasta = (miejscowosc) =>
-  !MIASTO_INFO ||
-  (miejscowosc ?? '').split(/[-,]/)[0].trim().toLocaleLowerCase('pl') ===
-    MIASTO_INFO.nazwa.toLocaleLowerCase('pl')
+// Cała nazwa albo człon przed „-" / „," (dzielnica: „Kraków-Nowa Huta"). Samo dzielenie po „-" gubiło
+// miasta z myślnikiem w nazwie: „Bielsko-Biała" dawało „bielsko" i rejestry zwracały 0 wpisów (#236).
+export const wMiescieMiasta = (miejscowosc) => {
+  if (!MIASTO_INFO) return true
+  const m = (miejscowosc ?? '').trim().toLocaleLowerCase('pl')
+  const nazwa = MIASTO_INFO.nazwa.toLocaleLowerCase('pl')
+  return m === nazwa || m.split(/[-,]/)[0].trim() === nazwa
+}
 
 /** Prefiks TERYT województwa, dla którego pobieramy rejestry krajowe (Małopolska = 12). */
 export const TERYT_WOJ = MIASTO_INFO ? MIASTO_INFO.teryt2 : '12'

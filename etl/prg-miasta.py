@@ -33,6 +33,26 @@ MIASTA = {
     "0461011": "Bydgoszcz",
     "0663011": "Lublin",
     "2061011": "Białystok",
+    "2469011": "Katowice",
+    "2262011": "Gdynia",
+    "2464011": "Częstochowa",
+    "1863011": "Rzeszów",
+    "0463011": "Toruń",
+    "1463011": "Radom",
+    "2475011": "Sosnowiec",
+    "2661011": "Kielce",
+    "2466011": "Gliwice",
+    "2862011": "Olsztyn",
+    "2461011": "Bielsko-Biała",
+    "2478011": "Zabrze",
+    "2462011": "Bytom",
+    "0862011": "Zielona Góra",
+    "2473011": "Rybnik",
+    "2472011": "Ruda Śląska",
+    "1661011": "Opole",
+    "2477011": "Tychy",
+    "0861011": "Gorzów Wielkopolski",
+    "2465011": "Dąbrowa Górnicza",
 }
 NS = {
     "wfs": "http://www.opengis.net/wfs/2.0",
@@ -132,13 +152,29 @@ def fetch_miasto(teryt):
         json.dumps(
             {"pobrano": fetched, "miasto": nazwa, "teryt": teryt, "wiersze": rows},
             ensure_ascii=False,
-        )
+        ),
+        encoding="utf-8",
     )
     print(f"{nazwa} ({teryt}): {len(rows)}", flush=True)
     return len(rows)
 
 
+def konwertuj_cp1250():
+    """Jednorazowo: pliki zapisane na Windows bez encoding (cp1250) -> UTF-8. Pliki już w UTF-8 pomija."""
+    for plik in sorted(CACHE.glob("[0-9]*.json")):
+        bajty = plik.read_bytes()
+        try:
+            bajty.decode("utf-8")
+            print(f"{plik.name}: już UTF-8")
+        except UnicodeDecodeError:
+            plik.write_text(bajty.decode("cp1250"), encoding="utf-8")
+            print(f"{plik.name}: cp1250 -> UTF-8")
+
+
 def main():
+    if sys.argv[1:] == ["--konwertuj-cp1250"]:
+        konwertuj_cp1250()
+        return
     kody = sys.argv[1:] or list(MIASTA)
     nieznane = [k for k in kody if k not in MIASTA]
     if nieznane:

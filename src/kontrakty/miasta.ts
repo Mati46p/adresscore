@@ -1,4 +1,4 @@
-// Rejestr zbiorów danych aplikacji (#223): Kraków (z obwarzankiem) i 9 kolejnych miast. To jedyne
+// Rejestr zbiorów danych aplikacji (#223): Kraków (z obwarzankiem), 9 miast z #223 i 20 miast z #236. To jedyne
 // miejsce w kodzie z listą miast: link (`mst=`), lista wyboru, ścieżki danych i tło mapy biorą ją
 // stąd, a test `miasta.test.ts` pilnuje zgodności z katalogami w public/dane/miasta. Kontrakt:
 // specs/002-wszystkie-miasta/contracts/miasta.md.
@@ -8,7 +8,7 @@
 /**
  * Slugi w kolejności rejestru, czyli kolejności na liście miast i w ładowaniu tła mapy: Kraków
  * (miasto domyślne), potem malejąco wg liczby adresów (stan 2026-10-07: od 126 566 w Warszawie
- * do 27 192 w Białymstoku). Slug miasta = nazwa katalogu w `public/dane/miasta/`.
+ * do 27 192 w Białymstoku); miasta z #236 dalej, malejąco wg adresów (stan 2026-10-22). Slug miasta = nazwa katalogu w `public/dane/miasta/`.
  *
  * Slug to wyłącznie małe litery bez cyfr i myślników: na tym polegają wyjątek service workera
  * (public/sw.js) i middleware manifestu w vite.config.ts, a test to pilnuje.
@@ -24,6 +24,26 @@ const SLUGI = [
   'lublin',
   'bydgoszcz',
   'bialystok',
+  'czestochowa',
+  'rzeszow',
+  'radom',
+  'bielskobiala',
+  'katowice',
+  'rybnik',
+  'torun',
+  'gdynia',
+  'zielonagora',
+  'gliwice',
+  'kielce',
+  'opole',
+  'sosnowiec',
+  'dabrowagornicza',
+  'zabrze',
+  'tychy',
+  'rudaslaska',
+  'olsztyn',
+  'gorzowwielkopolski',
+  'bytom',
 ] as const
 
 export type SlugMiasta = (typeof SLUGI)[number]
@@ -64,6 +84,34 @@ const DANE: Record<SlugMiasta, DaneMiasta> = {
   lublin: { nazwa: 'Lublin', wMiescie: 'w Lublinie', srodek: [22.552, 51.24] },
   bydgoszcz: { nazwa: 'Bydgoszcz', wMiescie: 'w Bydgoszczy', srodek: [17.981, 53.133] },
   bialystok: { nazwa: 'Białystok', wMiescie: 'w Białymstoku', srodek: [23.179, 53.134] },
+  czestochowa: { nazwa: 'Częstochowa', wMiescie: 'w Częstochowie', srodek: [19.106, 50.81] },
+  rzeszow: { nazwa: 'Rzeszów', wMiescie: 'w Rzeszowie', srodek: [22.003, 50.027] },
+  radom: { nazwa: 'Radom', wMiescie: 'w Radomiu', srodek: [21.152, 51.392] },
+  bielskobiala: { nazwa: 'Bielsko-Biała', wMiescie: 'w Bielsku-Białej', srodek: [19.05, 49.816] },
+  katowice: { nazwa: 'Katowice', wMiescie: 'w Katowicach', srodek: [18.99, 50.229] },
+  rybnik: { nazwa: 'Rybnik', wMiescie: 'w Rybniku', srodek: [18.539, 50.09] },
+  torun: { nazwa: 'Toruń', wMiescie: 'w Toruniu', srodek: [18.612, 53.024] },
+  gdynia: { nazwa: 'Gdynia', wMiescie: 'w Gdyni', srodek: [18.505, 54.5] },
+  zielonagora: { nazwa: 'Zielona Góra', wMiescie: 'w Zielonej Górze', srodek: [15.51, 51.934] },
+  gliwice: { nazwa: 'Gliwice', wMiescie: 'w Gliwicach', srodek: [18.664, 50.299] },
+  kielce: { nazwa: 'Kielce', wMiescie: 'w Kielcach', srodek: [20.623, 50.866] },
+  opole: { nazwa: 'Opole', wMiescie: 'w Opolu', srodek: [17.932, 50.668] },
+  sosnowiec: { nazwa: 'Sosnowiec', wMiescie: 'w Sosnowcu', srodek: [19.167, 50.282] },
+  dabrowagornicza: {
+    nazwa: 'Dąbrowa Górnicza',
+    wMiescie: 'w Dąbrowie Górniczej',
+    srodek: [19.253, 50.338],
+  },
+  zabrze: { nazwa: 'Zabrze', wMiescie: 'w Zabrzu', srodek: [18.783, 50.307] },
+  tychy: { nazwa: 'Tychy', wMiescie: 'w Tychach', srodek: [18.99, 50.121] },
+  rudaslaska: { nazwa: 'Ruda Śląska', wMiescie: 'w Rudzie Śląskiej', srodek: [18.863, 50.266] },
+  olsztyn: { nazwa: 'Olsztyn', wMiescie: 'w Olsztynie', srodek: [20.479, 53.769] },
+  gorzowwielkopolski: {
+    nazwa: 'Gorzów Wielkopolski',
+    wMiescie: 'w Gorzowie Wielkopolskim',
+    srodek: [15.239, 52.736],
+  },
+  bytom: { nazwa: 'Bytom', wMiescie: 'w Bytomiu', srodek: [18.884, 50.356] },
 }
 
 /** Wszystkie zbiory danych, Kraków pierwszy. */

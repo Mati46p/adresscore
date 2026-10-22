@@ -6,7 +6,7 @@ import { join } from 'node:path'
 import { unzipSync } from 'fflate'
 import { latLngToCell } from 'h3-js'
 import proj4 from 'proj4'
-import { CACHE, DANE, dzis, pobierzDoCache, wersjaAdresow } from './lib/wspolne.mjs'
+import { CACHE, DANE, dzis, PYTHON, pobierzDoCache, wersjaAdresow } from './lib/wspolne.mjs'
 
 const MSIP_URL = 'https://msip.um.krakow.pl/Dane/Adresy_JSON.zip'
 const PRG_URL = 'https://mapy.geoportal.gov.pl/wss/ext/wfs/KrajowaIntegracjaNumeracjiAdresowej'
@@ -168,7 +168,7 @@ async function main() {
   const msip = zMsip(geojson)
   const prgCache = join(CACHE, 'prg-obwarzanek.json')
   if (!existsSync(prgCache)) {
-    execFileSync('python3', [join(CACHE, '..', 'prg-wfs.py')], { stdio: 'inherit' })
+    execFileSync(PYTHON, [join(CACHE, '..', 'prg-wfs.py')], { stdio: 'inherit' })
   }
   const plikPrg = JSON.parse(readFileSync(prgCache, 'utf8'))
   const prg = zPrg(plikPrg.wiersze)

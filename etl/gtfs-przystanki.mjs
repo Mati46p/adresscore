@@ -10,6 +10,7 @@ import { promisify } from 'node:util'
 import { strFromU8, unzipSync } from 'fflate'
 import KDBush from 'kdbush'
 import {
+  BRAK_GTFS_MIASTA,
   DATA_OBSLUGI_MIASTA,
   dataDanychFeedu,
   FEEDY_MIASTA,
@@ -332,7 +333,7 @@ async function pobierzGrupe(grupa, dataObslugi, dataSzczyt) {
 
 /** Tryb miasta: feed z etl/.cache/gtfs-miasta (pobierany raz), ten sam kształt wyniku co pobierzGrupe. */
 async function pobierzGrupeMiasta(feed, dataObslugi, dataSzczyt) {
-  const { bufor, meta } = await wczytajFeedMiasta(feed)
+  const { bufor, meta } = await wczytajFeedMiasta(feed, dataObslugi)
   const dane = odczytajDwieDaty(bufor, feed.grupa, dataObslugi, dataSzczyt)
   return {
     ...dane,
@@ -396,7 +397,11 @@ function najblizszaSroda(data) {
 }
 
 export async function generuj() {
-  const dataObslugi = DATA_OBSLUGI_MIASTA ?? dataLokalna()
+  if (BRAK_GTFS_MIASTA) {
+    console.log('Miasto bez otwartego feedu GTFS: pomijam warstwę (szara kategoria, brak danych).')
+    return
+  }
+  const dataObslugi = DATA_OBSLUGI_MIASTA ?? process.env.ADRESCORE_DATA_GTFS ?? dataLokalna()
   const dataSzczyt = najblizszaSroda(dataObslugi)
   const grupy = FEEDY_MIASTA ? FEEDY_MIASTA.map((f) => f.grupa) : GRUPY
   // Kolejno, żeby nie trzymać w pamięci równocześnie trzech dużych stop_times.
