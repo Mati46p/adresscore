@@ -343,24 +343,38 @@
 
 /* Rozwijana lista miast i profili: nagłówek z bieżącym wyborem, lista pod kliknięciem. */
 .panel-rozwijane > summary {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  padding: 6px 12px;
+  border: 1px solid var(--akcent-obrys);
+  border-radius: 999px;
+  background: var(--akcent-jasny);
+  color: var(--akcent);
   cursor: pointer;
   list-style: none;
+}
+.panel-rozwijane > summary:hover {
+  border-color: var(--akcent);
+}
+.panel-rozwijane > summary:focus-visible {
+  outline: 2px solid var(--akcent);
+  outline-offset: 2px;
 }
 .panel-rozwijane > summary::-webkit-details-marker {
   display: none;
 }
 .panel-rozwijane > summary::after {
-  content: "▾";
-  font-size: 0.8em;
+  content: "zmień ▾";
+  font-size: 0.85em;
+  font-weight: 600;
 }
 .panel-rozwijane[open] > summary::after {
-  content: "▴";
+  content: "zwiń ▴";
 }
 .panel-rozwijane > summary > h2 {
   margin: 0;
+  color: inherit;
 }
 .panel-rozwijane[open] > summary {
   margin-bottom: 8px;
