@@ -21,25 +21,30 @@ export function WyborMiasta({ biezace, wczytywane, niedostepne, onWybierz }: Pro
   const tekst = komunikaty.join(' ')
   return (
     <section className="wybor-miasta" aria-labelledby="h-wybor-miasta">
-      <h2 id="h-wybor-miasta" className="etykieta-sekcji">
-        Miasto
-      </h2>
-      {/* Jeden cel pomiaru dla wszystkich przycisków: to jedna czynność (zmiana miasta), a nazwa miasta nie
+      {/* Lista miast zwinięta pod nazwą bieżącego, żeby nie zajmowała panelu. */}
+      <details className="panel-rozwijane">
+        <summary>
+          <h2 id="h-wybor-miasta" className="etykieta-sekcji">
+            Miasto: {MIASTA.find((m) => m.slug === biezace)?.nazwa}
+          </h2>
+        </summary>
+        {/* Jeden cel pomiaru dla wszystkich przycisków: to jedna czynność (zmiana miasta), a nazwa miasta nie
           może trafić do klucza. */}
-      <div className="wybor-miasta__lista">
-        {MIASTA.map((m) => (
-          <button
-            key={m.slug}
-            type="button"
-            className="seg"
-            data-cel="wybierz-miasto"
-            aria-pressed={m.slug === biezace}
-            onClick={() => onWybierz(m.slug)}
-          >
-            {m.nazwa}
-          </button>
-        ))}
-      </div>
+        <div className="wybor-miasta__lista">
+          {MIASTA.map((m) => (
+            <button
+              key={m.slug}
+              type="button"
+              className="seg"
+              data-cel="wybierz-miasto"
+              aria-pressed={m.slug === biezace}
+              onClick={() => onWybierz(m.slug)}
+            >
+              {m.nazwa}
+            </button>
+          ))}
+        </div>
+      </details>
       {/* Region stoi zawsze (czytnik ogłasza zmianę tekstu, a nie pojawienie się elementu), a widzący dostaje
           ten sam tekst w zwykłym akapicie tylko wtedy, gdy jest co powiedzieć. */}
       <span className="sr-only" role="status">

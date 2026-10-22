@@ -152,23 +152,28 @@ export function PanelFiltrow() {
 
       {tryb !== 'biznes' && (
         <section aria-labelledby="h-persona" className="panel-sekcja">
-          <h2 id="h-persona" className="etykieta-sekcji">
-            Profil (ustawia wagi poniżej)
-          </h2>
-          <div className="panel-chipy">
-            {PERSONY.map((p) => (
-              <button
-                key={p.id}
-                type="button"
-                className="seg panel-chip"
-                title={p.opis}
-                aria-pressed={persona === p.id}
-                onClick={() => wybierzPersone(p.id)}
-              >
-                {p.nazwa}
-              </button>
-            ))}
-          </div>
+          {/* Lista profili zwinięta pod nazwą bieżącego, żeby nie zajmowała panelu. */}
+          <details className="panel-rozwijane">
+            <summary>
+              <h2 id="h-persona" className="etykieta-sekcji">
+                Profil: {PERSONY.find((p) => p.id === persona)?.nazwa ?? 'własne ustawienia'}
+              </h2>
+            </summary>
+            <div className="panel-chipy">
+              {PERSONY.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  className="seg panel-chip"
+                  title={p.opis}
+                  aria-pressed={persona === p.id}
+                  onClick={() => wybierzPersone(p.id)}
+                >
+                  {p.nazwa}
+                </button>
+              ))}
+            </div>
+          </details>
           <p className="panel-uwaga" aria-live="polite">
             {persona === 'wlasna'
               ? 'Własne ustawienia – wagi lub kierunki zmienione ręcznie.'
@@ -206,7 +211,7 @@ export function PanelFiltrow() {
 
         {dane.stan === 'ladowanie' && <p className="panel-uwaga">Wczytuję warstwy…</p>}
         {dane.stan === 'blad' && <p className="panel-uwaga">Nie udało się wczytać warstw.</p>}
-        {KOLEJNOSC_KATEGORII.map((kat, i) => {
+        {KOLEJNOSC_KATEGORII.map((kat) => {
           const warstwy = warstwyPanelu.filter(
             (w) => w.meta.kategoria === kat && !czyWarstwaWyborow(w.meta.id),
           )
@@ -232,7 +237,7 @@ export function PanelFiltrow() {
               wybory={wybory}
               wagi={wagi}
               kierunki={kierunki}
-              poczatkowoOtwarta={tryb === 'biznes' || i === 0}
+              poczatkowoOtwarta={tryb === 'biznes'}
             />
           )
         })}

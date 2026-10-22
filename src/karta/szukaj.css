@@ -341,6 +341,31 @@
   gap: 8px;
 }
 
+/* Rozwijana lista miast i profili: nagłówek z bieżącym wyborem, lista pod kliknięciem. */
+.panel-rozwijane > summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  list-style: none;
+}
+.panel-rozwijane > summary::-webkit-details-marker {
+  display: none;
+}
+.panel-rozwijane > summary::after {
+  content: "▾";
+  font-size: 0.8em;
+}
+.panel-rozwijane[open] > summary::after {
+  content: "▴";
+}
+.panel-rozwijane > summary > h2 {
+  margin: 0;
+}
+.panel-rozwijane[open] > summary {
+  margin-bottom: 8px;
+}
+
 .wybor-miasta__lista {
   display: flex;
   flex-wrap: wrap;
