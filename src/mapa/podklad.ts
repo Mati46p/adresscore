@@ -92,6 +92,8 @@ for (const [zrodlo, przedzial] of [['polska', { minzoom: 0, maxzoom: 24 }]] as c
       'all',
       ['any', ['!=', ['get', 'kind'], 'water'], ['has', 'kind_detail']],
       ['!=', ['get', 'kind_detail'], 'river'],
+      // Ten sam błąd jako wielokąt z kind = river (Kosarzewka pod Bychawą).
+      ['!', ['in', ['get', 'kind'], ['literal', ['river', 'stream', 'canal', 'drain', 'ditch']]]],
     ],
     paint: { 'fill-color': '#c5dce8' },
   })
