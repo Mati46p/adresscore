@@ -86,8 +86,13 @@ for (const [zrodlo, przedzial] of [['polska', { minzoom: 0, maxzoom: 24 }]] as c
     'source-layer': 'water',
     // Woda bez podtypu (kind = water, brak kind_detail) to w danych OSM niedomknięte brzegi rzek
     // zamknięte prostą linią: dają klinowate „wody" na przestrzeni kilometrów (np. pod Lublinem).
-    // Rzeki rysuje warstwa liniowa niżej, jeziora i zbiorniki mają podtyp.
-    filter: ['any', ['!=', ['get', 'kind'], 'water'], ['has', 'kind_detail']],
+    // Koryta rzek (kind_detail = river) mają w OSM połamane obrysy i rozlewają się na pola
+    // (Bystrzyca w Lublinie). Rzeki rysuje warstwa liniowa niżej, jeziora i zbiorniki mają podtyp.
+    filter: [
+      'all',
+      ['any', ['!=', ['get', 'kind'], 'water'], ['has', 'kind_detail']],
+      ['!=', ['get', 'kind_detail'], 'river'],
+    ],
     paint: { 'fill-color': '#c5dce8' },
   })
   dodaj('woda', {
@@ -95,9 +100,21 @@ for (const [zrodlo, przedzial] of [['polska', { minzoom: 0, maxzoom: 24 }]] as c
     type: 'line',
     source: zrodlo,
     'source-layer': 'water',
+    // Tylko osie cieków: obrysy wielokątów niosłyby te same połamane brzegi co wypełnienie.
+    filter: ['==', ['geometry-type'], 'LineString'],
     paint: {
       'line-color': '#a6cddd',
-      'line-width': ['interpolate', ['linear'], ['zoom'], 8, 0.7, 15, 2],
+      'line-width': [
+        'interpolate',
+        ['linear'],
+        ['zoom'],
+        8,
+        ['match', ['get', 'kind'], 'river', 1, 0.7],
+        15,
+        ['match', ['get', 'kind'], 'river', 4, 2],
+        18,
+        ['match', ['get', 'kind'], 'river', 10, 4],
+      ],
     },
   })
   dodaj('ulice', {
