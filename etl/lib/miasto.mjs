@@ -262,10 +262,14 @@ if (MIASTO && !MIASTO_INFO) throw new Error(`Nieznane miasto ADRESCORE_MIASTO=${
  * Czy miejscowość z rejestru należy do miasta: „Łódź", „Łódź-Bałuty", „Łódź-Górna, delegatura".
  * Poza trybem miasta zawsze prawda (rejestry Małopolski bierzemy w całości).
  */
-export const wMiescieMiasta = (miejscowosc) =>
-  !MIASTO_INFO ||
-  (miejscowosc ?? '').split(/[-,]/)[0].trim().toLocaleLowerCase('pl') ===
-    MIASTO_INFO.nazwa.toLocaleLowerCase('pl')
+// Cała nazwa albo człon przed „-" / „," (dzielnica: „Kraków-Nowa Huta"). Samo dzielenie po „-" gubiło
+// miasta z myślnikiem w nazwie: „Bielsko-Biała" dawało „bielsko" i rejestry zwracały 0 wpisów (#236).
+export const wMiescieMiasta = (miejscowosc) => {
+  if (!MIASTO_INFO) return true
+  const m = (miejscowosc ?? '').trim().toLocaleLowerCase('pl')
+  const nazwa = MIASTO_INFO.nazwa.toLocaleLowerCase('pl')
+  return m === nazwa || m.split(/[-,]/)[0].trim() === nazwa
+}
 
 /** Prefiks TERYT województwa, dla którego pobieramy rejestry krajowe (Małopolska = 12). */
 export const TERYT_WOJ = MIASTO_INFO ? MIASTO_INFO.teryt2 : '12'

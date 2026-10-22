@@ -401,7 +401,7 @@ export async function generuj() {
     console.log('Miasto bez otwartego feedu GTFS: pomijam warstwę (szara kategoria, brak danych).')
     return
   }
-  const dataObslugi = DATA_OBSLUGI_MIASTA ?? dataLokalna()
+  const dataObslugi = DATA_OBSLUGI_MIASTA ?? process.env.ADRESCORE_DATA_GTFS ?? dataLokalna()
   const dataSzczyt = najblizszaSroda(dataObslugi)
   const grupy = FEEDY_MIASTA ? FEEDY_MIASTA.map((f) => f.grupa) : GRUPY
   // Kolejno, żeby nie trzymać w pamięci równocześnie trzech dużych stop_times.

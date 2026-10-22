@@ -115,7 +115,12 @@ export async function przedszkola() {
 // --- Rejestr Żłobków i Klubów Dziecięcych (MRPiPS) -----------------------------------------
 
 export async function zlobki() {
-  const plik = await pobierzDoCache(await urlZlobkow(), 'zlobki-mrpips.csv')
+  // Dane.gov.pl bywa bez pliku CSV w zasobie (21.10.2026: pusty file_url). Plik krajowy z cache jest ważny,
+  // więc brak linku nie przerywa ETL kolejnego miasta.
+  const cacheZlobkow = join(CACHE, 'zlobki-mrpips.csv')
+  const plik = existsSync(cacheZlobkow)
+    ? cacheZlobkow
+    : await pobierzDoCache(await urlZlobkow(), 'zlobki-mrpips.csv')
   const c = await duckdb()
   const w = (
     await wiersze(

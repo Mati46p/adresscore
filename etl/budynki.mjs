@@ -92,7 +92,7 @@ export function zloz(rows) {
 
 async function main() {
   const zipPath = await pobierzDoCache(POBRANIE_URL, `${POWIAT}-lod1-2024.zip`)
-  if (statSync(zipPath).size < (M ? 5_000_000 : 20_000_000)) throw new Error('Niepełny ZIP LoD1')
+  if (statSync(zipPath).size < (M ? 3_000_000 : 20_000_000)) throw new Error('Niepełny ZIP LoD1')
   const ndjsonPath = join(CACHE, `${POWIAT}-lod1-2024.ndjson`)
   execFileSync(
     PYTHON,
