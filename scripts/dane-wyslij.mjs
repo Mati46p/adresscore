@@ -11,10 +11,19 @@
 // lub czasem modyfikacji (sekundy). Niczego nie kasuje. Manifesty (manifest.json) składamy lokalnie
 // z plików wskaźników, bo obraz ich nie zawiera. Node, nie rsync: rsync nie ma na Windows.
 import { spawn, spawnSync } from 'node:child_process'
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, statSync, writeFileSync } from 'node:fs'
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, relative, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { niezgodnoscKompaktu } from '../src/wynik/kompakt.ts'
 import { slugiMiast, zbudujManifest } from './manifest-danych.mjs'
 
 const HOST = process.env.WDROZ_SSH ?? 'zdykty-prod'
@@ -55,16 +64,29 @@ function przejdz(katalog, baza, wynik = new Map()) {
 }
 
 // Manifesty: te same pliki co w `pnpm dev`, składane do katalogu tymczasowego (nie do public/dane).
+// Przy okazji ta sama kontrola kompaktu co w przeglądarce (#244): miasto z warstwą odświeżoną bez
+// przebudowy kompaktu mapa odrzuca w całości, więc takie dane nie mogą pojechać.
 const staging = mkdtempSync(join(tmpdir(), 'dane-manifesty-'))
+const niespojne = []
 function zapiszManifest(sciezka, katalogWskaznikow) {
   const cel = join(staging, sciezka)
   mkdirSync(join(cel, '..'), { recursive: true })
-  writeFileSync(cel, zbudujManifest(katalogWskaznikow))
+  const manifest = zbudujManifest(katalogWskaznikow)
+  writeFileSync(cel, manifest)
+  const indeks = join(katalogWskaznikow, '..', 'kompakt', 'indeks.json')
+  if (!existsSync(indeks)) return
+  const blad = niezgodnoscKompaktu(JSON.parse(readFileSync(indeks, 'utf8')), JSON.parse(manifest))
+  if (blad) niespojne.push(`${sciezka}: ${blad}`)
 }
 if (existsSync(join(KORZEN, 'wskazniki')))
   zapiszManifest('manifest.json', join(KORZEN, 'wskazniki'))
 for (const slug of slugiMiast(KORZEN))
   zapiszManifest(`miasta/${slug}/manifest.json`, join(KORZEN, 'miasta', slug, 'wskazniki'))
+if (niespojne.length) {
+  console.error(`Kompakt nie zgadza się z warstwami, nic nie jedzie:\n  ${niespojne.join('\n  ')}`)
+  console.error('Przebuduj: ADRESCORE_MIASTO=<slug> node etl/kompakt.mjs (Kraków bez zmiennej)')
+  process.exit(1)
+}
 
 const lokalne = przejdz(KORZEN, KORZEN)
 // Manifest zawsze jedzie (znacznik czasu w treści), więc nie porównujemy go z serwerem.
