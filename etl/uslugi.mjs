@@ -250,7 +250,11 @@ export async function licz({ ceidg = false, budzetCeidg = LIMIT_CEIDG } = {}) {
   // Strażniki minPunktow/minZrodel/minFlag są skalibrowane na Kraków i obwarzanek. W trybie miasta
   // zostaje strażnik 5% (źródło zwróciło coś sensownego), a strażniki źródeł i flag są pomijane.
   const minima = Object.fromEntries(
-    BRANZE.map((b) => [b.id, MIASTO_INFO ? Math.floor(b.minPunktow * 0.05) : b.minPunktow]),
+    BRANZE.map((b) => [
+      b.id,
+      // Gmina wiejska (kilka aptek, nie kilkadziesiąt): strażnik 5% z norm miejskich byłby fałszywym alarmem, zostaje „choć 1".
+      MIASTO_INFO?.wiejska ? 1 : MIASTO_INFO ? Math.floor(b.minPunktow * 0.05) : b.minPunktow,
+    ]),
   )
   const bledy = sprawdzWyjscie({
     pliki,

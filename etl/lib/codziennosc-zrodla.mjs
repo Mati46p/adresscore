@@ -82,7 +82,7 @@ async function wczytajSio() {
   return await wiersze(
     c,
     `select "Typ podmiotu" as typ, "Publiczność" as publicznosc, "Specyfika szkoły" as specyfika,
-            "Nazwa placówki" as nazwa, ${MIASTO_INFO ? `'${sq(MIASTO_INFO.nazwa)}'` : 'Miejscowość'} as miejscowosc, Ulica as ulica,
+            "Nazwa placówki" as nazwa, ${MIASTO_INFO && !MIASTO_INFO.wiejska ? `'${sq(MIASTO_INFO.nazwa)}'` : 'Miejscowość'} as miejscowosc, Ulica as ulica,
             "Numer domu" as nr, "Kod pocztowy" as kod, try_cast("w tym_w oddz_przedszk" as integer) as oddz_przedszk
      from read_xlsx('${sq(plik)}', all_varchar=true)
      where idTerytWojewodztwo = '${TERYT_WOJ}' and "Numer domu" <> ''
@@ -114,6 +114,11 @@ export async function przedszkola() {
 
 // --- Rejestr Żłobków i Klubów Dziecięcych (MRPiPS) -----------------------------------------
 
+// Rejestr żłobków zapisuje miejscowość z rodzajem („Rędziny, wieś", „Rudniki, wieś"), a punkty
+// adresowe PRG (źródło listy wsi gminy) tylko nazwą. Bez odcięcia sufiksu gmina wiejska traciła
+// wszystkie żłobki (Rędziny: 0 z 3 wpisów, wskaźnik pusty u każdego adresu).
+const nazwaMiejscowosci = (m) => (m ?? '').split(',')[0].trim()
+
 export async function zlobki() {
   // Dane.gov.pl bywa bez pliku CSV w zasobie (21.10.2026: pusty file_url). Plik krajowy z cache jest ważny,
   // więc brak linku nie przerywa ETL kolejnego miasta.
@@ -131,7 +136,7 @@ export async function zlobki() {
      where Województwo ilike '${sq(WOJEWODZTWO)}'
        and coalesce("Czy podmiot prowadzący zawiesił działalność instytucji opieki?", '') not ilike 'TAK'`,
     )
-  ).filter((z) => wMiescie(z.miejscowosc))
+  ).filter((z) => wMiescie(nazwaMiejscowosci(z.miejscowosc)))
   const punkty = []
   const bez = []
   for (const z of w) {

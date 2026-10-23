@@ -76,6 +76,7 @@ describe('biernik nazwy miasta', () => {
     olsztyn: 'Olsztyn',
     gorzowwielkopolski: 'Gorzów Wielkopolski',
     bytom: 'Bytom',
+    redziny: 'Rędziny',
   }
 
   it('każde miasto z rejestru ma oczekiwany biernik', () => {

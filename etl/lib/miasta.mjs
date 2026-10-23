@@ -204,7 +204,24 @@ export const MIASTA = {
     bdlNazwa: 'Powiat m. Dąbrowa Górnicza',
     woj: '24',
   },
+  // Gmina wiejska (rodzaj 2) w powiecie częstochowskim: teryt = pełny TERYT gminy, bdl = jednostka gminy
+  // (poziom 6), bdlPowiat = jednostka powiatu (poziom 5). Pozostałe wpisy to miasta na prawach powiatu
+  // (teryt gminy = teryt4 + '011').
+  redziny: {
+    nazwa: 'Rędziny',
+    teryt4: '2404',
+    teryt: '2404152',
+    wiejska: true,
+    bdl: '012414604152',
+    bdlNazwa: 'Rędziny',
+    bdlPowiat: '012414604000',
+    bdlPowiatNazwa: 'Powiat częstochowski',
+    woj: '24',
+  },
 }
+
+/** Pełny TERYT gminy (7 cyfr): z konfiguracji albo powiat + '011' dla miast na prawach powiatu. */
+export const terytGminy = (m) => m.teryt ?? `${m.teryt4}011`
 
 /** Wszystkie powiaty (poziom 5) z BDL by-variable dla roku – strony scalone, bufor w etl/.cache. */
 export async function bdlPowiaty(zmienna, rok, pobierz) {

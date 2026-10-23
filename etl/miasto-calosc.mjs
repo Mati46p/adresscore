@@ -3,6 +3,7 @@
 //   node etl/miasto-calosc.mjs <slug>                 – wszystko (PRG, adresy, warstwy, kompakt)
 //   node etl/miasto-calosc.mjs <slug> --od <krok>     – wznowienie od kroku (nazwa z listy KROKI)
 //   node etl/miasto-calosc.mjs <slug> --tylko <krok>  – jeden krok
+//   node etl/miasto-calosc.mjs <slug> --pomin a,b    – pomiń kroki (np. źródło chwilowo zablokowane)
 //   node etl/miasto-calosc.mjs --lista                – nazwy kroków
 //
 // Kroki wołają skrypty tak jak ręcznie (ADRESCORE_MIASTO=<slug> node etl/<skrypt>.mjs), po kolei,
@@ -13,7 +14,7 @@ import { spawnSync } from 'node:child_process'
 import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { MIASTA } from './lib/miasta.mjs'
+import { MIASTA, terytGminy as terytGminyKonfig } from './lib/miasta.mjs'
 import { MIASTA as USTAWIENIA } from './lib/miasto.mjs'
 import { CACHE, KORZEN } from './lib/wspolne.mjs'
 
@@ -54,6 +55,8 @@ export const KROKI = [
   { nazwa: 'osm-uslugi', skrypt: 'osm-uslugi.mjs' },
   { nazwa: 'osm-uzupelnienie', skrypt: 'osm-uzupelnienie.mjs' },
   { nazwa: 'uslugi', skrypt: 'uslugi.mjs' },
+  { nazwa: 'wies-osm', skrypt: 'wies-osm.mjs', warunek: 'wiejska' }, // policja, sport, liceum, woda (tylko gminy wiejskie)
+  { nazwa: 'stacje-bazowe', skrypt: 'stacje-bazowe.mjs' },
   { nazwa: 'gtfs-przystanki', skrypt: 'gtfs-przystanki.mjs' },
   { nazwa: 'dojazd-gtfs', skrypt: 'dojazd-gtfs.mjs', arg: 'rynek' },
   { nazwa: 'dojazd-gtfs-graf', skrypt: 'dojazd-gtfs-graf.mjs' },
@@ -151,7 +154,8 @@ async function sewik(slug) {
 }
 
 /** Krok uprosc-kryteria działa w trybie miasta dopiero po merge #232; wcześniej jest pomijany (nie psuje danych). */
-function warunekSpelniony(krok) {
+function warunekSpelniony(krok, slug) {
+  if (krok.warunek === 'wiejska') return Boolean(USTAWIENIA[slug]?.wiejska)
   if (krok.warunek !== 'tryb-miasta') return true
   return readFileSync(join(KORZEN, 'etl', krok.skrypt), 'utf8').includes('MIASTO')
 }
@@ -168,20 +172,25 @@ async function main() {
   const wartosc = (flaga) => arg[arg.indexOf(flaga) + 1]
   const od = arg.includes('--od') ? wartosc('--od') : null
   const tylko = arg.includes('--tylko') ? wartosc('--tylko') : null
-  for (const n of [od, tylko].filter(Boolean))
+  const pomin = arg.includes('--pomin') ? wartosc('--pomin').split(',') : []
+  for (const n of [od, tylko, ...pomin].filter(Boolean))
     if (!KROKI.some((k) => k.nazwa === n)) throw new Error(`Nieznany krok: ${n}`)
 
-  const teryt = MIASTA[slug].teryt4 // powiat (4 cyfry); TERYT gminy miasta = powiat + '011'
-  const terytGminy = `${teryt}011`
+  const terytGminy = terytGminyKonfig(MIASTA[slug]) // pełny TERYT gminy: z konfiguracji albo powiat + '011'
   let aktywny = !od
   const czasy = []
   const poczatek = Date.now()
   for (const krok of KROKI) {
     if (od && krok.nazwa === od) aktywny = true
     if (!aktywny || (tylko && krok.nazwa !== tylko)) continue
-    if (!warunekSpelniony(krok)) {
+    if (pomin.includes(krok.nazwa)) {
+      console.log(`
+=== [${slug}] ${krok.nazwa}: pominięty (--pomin) ===`)
+      continue
+    }
+    if (!warunekSpelniony(krok, slug)) {
       console.log(
-        `\n=== [${slug}] ${krok.nazwa}: pominięty (skrypt bez trybu miasta, czeka na #232) ===`,
+        `\n=== [${slug}] ${krok.nazwa}: pominięty (${krok.warunek === 'wiejska' ? 'tylko gminy wiejskie' : 'skrypt bez trybu miasta, czeka na #232'}) ===`,
       )
       continue
     }

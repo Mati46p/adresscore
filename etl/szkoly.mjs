@@ -103,7 +103,8 @@ function norm(s) {
 function miejscowosc(s) {
   // Tryb miasta: SIO podaje dzielnice jako miejscowość (Warszawa: „Mokotów"), a gmina jest już
   // wybrana po TERYT, więc wszystko po stronie SIO i adresów sprowadzamy do nazwy miasta.
-  if (MIASTO_INFO) return norm(MIASTO_INFO.nazwa)
+  // Gmina wiejska ma wiele wsi, więc nazwa miejscowości zostaje (nie zlewamy ich do nazwy gminy).
+  if (MIASTO_INFO && !MIASTO_INFO.wiejska) return norm(MIASTO_INFO.nazwa)
   return norm((s ?? '').replace(/^Kraków-.+$/, 'Kraków'))
 }
 function klucz(miasto, ulica, nr) {

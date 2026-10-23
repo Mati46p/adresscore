@@ -2,7 +2,7 @@
 // Uruchom po etl/obwarzanek.mjs: node etl/zamoznosc.mjs. Surowe odpowiedzi są w etl/.cache/.
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { MIASTA } from './lib/miasta.mjs'
+import { MIASTA, terytGminy } from './lib/miasta.mjs'
 import {
   DANE,
   dzis,
@@ -39,7 +39,8 @@ export const GMINY = {
 // ADRESCORE_MIASTO: miasto na prawach powiatu = jedna gmina (…011) w jednym powiecie (…000); nazwy z BDL nie są sprawdzane.
 const M = MIASTO ? MIASTA[MIASTO] : null
 if (M) {
-  GMINY[`${M.teryt4}011`] = [`${M.bdl.slice(0, -3)}011`, null]
+  // Gmina wiejska: bdl to jednostka gminy (poziom 6), jej powiat liczy się z id.slice(0, -3) + '000'.
+  GMINY[terytGminy(M)] = [M.wiejska ? M.bdl : `${M.bdl.slice(0, -3)}011`, null]
 }
 
 export const POWIATY = {
