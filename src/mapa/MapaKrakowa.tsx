@@ -901,10 +901,11 @@ export function MapaKrakowa({
     }
     if (heksy.size && !kolorZlecony.current) {
       kolorZlecony.current = true
-      // Pierwszy kolor to chwila, gdy MapLibre załadował dane r10 (worker + parsowanie), a `idle`
-      // przychodzi, gdy kafle z tymi danymi się narysują.
+      // Pierwszy kolor to pierwsza klatka po załadowaniu danych r10 (worker + parsowanie). Nie `idle`:
+      // ono czeka też na wszystkie kafle podkładu, co na telefonie przesuwało znacznik (i start
+      // pełnych danych, i tło) o kilka sekund po tym, jak heksy były już widoczne.
       dostawca.kiedyZaladowane(zrodloHeksow(10), () => {
-        mapa.once('idle', () => {
+        mapa.once('render', () => {
           if (mapaRef.current !== mapa) return
           performance.mark('mapa-kolor')
           onPierwszyKolorRef.current?.()
