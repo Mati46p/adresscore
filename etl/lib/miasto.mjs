@@ -253,6 +253,16 @@ export const MIASTA = {
     pbf: 'slaskie',
     centrum: { nazwa: 'Plac Wolności w Dąbrowie Górniczej', lon: 19.1883, lat: 50.3255 },
   },
+  // Gmina wiejska (rodzaj 2): wiele wsi, więc filtry po nazwie miejscowości zastępuje zbiór wsi z PRG.
+  redziny: {
+    nfz: '12',
+    nazwa: 'Rędziny',
+    woj: 'śląskie',
+    teryt2: '24',
+    pbf: 'slaskie',
+    wiejska: true,
+    centrum: { nazwa: 'Urząd Gminy Rędziny', lon: 19.2048, lat: 50.8546 },
+  },
 }
 
 export const MIASTO_INFO = MIASTO ? (MIASTA[MIASTO] ?? null) : null
@@ -267,6 +277,8 @@ if (MIASTO && !MIASTO_INFO) throw new Error(`Nieznane miasto ADRESCORE_MIASTO=${
 export const wMiescieMiasta = (miejscowosc) => {
   if (!MIASTO_INFO) return true
   const m = (miejscowosc ?? '').trim().toLocaleLowerCase('pl')
+  // Gmina wiejska: miejscowości to wsie gminy, czyli te z punktów adresowych PRG (filtr TERYT gminy).
+  if (MIASTO_INFO.wiejska) return miejscowosciGminy().has(m)
   const nazwa = MIASTO_INFO.nazwa.toLocaleLowerCase('pl')
   return m === nazwa || m.split(/[-,]/)[0].trim() === nazwa
 }
@@ -284,6 +296,13 @@ let kolumnyAdresow = null
 const kolumny = () => {
   kolumnyAdresow ??= JSON.parse(readFileSync(join(DANE, 'adresy.json'), 'utf8')).kolumny
   return kolumnyAdresow
+}
+
+let wsieGminy = null
+/** Miejscowości (małe litery) gminy z adresy.json, czyli PRG po TERYT gminy – dla gmin wiejskich. */
+function miejscowosciGminy() {
+  wsieGminy ??= new Set(kolumny().miejscowosc.map((m) => String(m).trim().toLocaleLowerCase('pl')))
+  return wsieGminy
 }
 
 /** TERYT gminy miasta z adresy.json (7 cyfr, z wiodącym zerem, np. „0461011"); null poza trybem miasta. */

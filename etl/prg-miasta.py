@@ -21,7 +21,7 @@ CACHE = ROOT / ".cache" / "prg-miasta"
 SERVICE = (
     "https://mapy.geoportal.gov.pl/wss/ext/wfs/KrajowaIntegracjaNumeracjiAdresowej"
 )
-# Wg liczby ludności (GUS 2024); Kraków ma własny import w etl/adresy.mjs.
+# Wg liczby ludności (GUS 2024); Kraków ma własny import w etl/adresy.mjs. Wyjątek na końcu: gmina wiejska Rędziny.
 MIASTA = {
     "1465011": "Warszawa",
     "1261011": "Kraków",
@@ -53,6 +53,7 @@ MIASTA = {
     "2477011": "Tychy",
     "0861011": "Gorzów Wielkopolski",
     "2465011": "Dąbrowa Górnicza",
+    "2404152": "Rędziny",  # gmina wiejska (rodzaj 2), powiat częstochowski
 }
 NS = {
     "wfs": "http://www.opengis.net/wfs/2.0",

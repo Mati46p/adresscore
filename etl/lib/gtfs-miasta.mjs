@@ -200,6 +200,8 @@ export const GTFS_MIASTA = {
   zielonagora: BRAK_FEEDU,
   radom: BRAK_FEEDU,
   olsztyn: BRAK_FEEDU,
+  // Gmina wiejska pod Częstochową: brak otwartego feedu (PKS, MPK Częstochowa bez GTFS); nigdy nie podstawiamy rozkładu innego miasta.
+  redziny: BRAK_FEEDU,
   szczecin: {
     feedy: [
       {

@@ -44,6 +44,7 @@ const SLUGI = [
   'olsztyn',
   'gorzowwielkopolski',
   'bytom',
+  'redziny',
 ] as const
 
 export type SlugMiasta = (typeof SLUGI)[number]
@@ -112,6 +113,8 @@ const DANE: Record<SlugMiasta, DaneMiasta> = {
     srodek: [15.239, 52.736],
   },
   bytom: { nazwa: 'Bytom', wMiescie: 'w Bytomiu', srodek: [18.884, 50.356] },
+  // Gmina wiejska (#246); środek orientacyjny (Urząd Gminy), do poprawienia na medianę adresów po ETL.
+  redziny: { nazwa: 'Rędziny', wMiescie: 'w Rędzinach', srodek: [19.2, 50.855] },
 }
 
 /** Wszystkie zbiory danych, Kraków pierwszy. */

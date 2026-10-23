@@ -52,7 +52,8 @@ const MAX_M = 30_000 // dalej niż 30 km od jakiegokolwiek obiektu = brak danych
 const MAX_DO_GMINY_M = 1_000 // obiekt liczy się do gminy najbliższego adresu, jeśli ten jest bliżej
 const PROMIEN_NOCNE_M = 300
 const KROK_OBRYSU_M = 25 // punkty wzdłuż obrysu targowiska i wybiegu
-const MIN_OBIEKTOW = 20 // grupa z mniejszą liczbą miejsc w obszarze 14 gmin odpada
+// Gmina wiejska: próg 20 jest miejski (jeden urząd gminy to pełnoprawny wynik), więc wystarczy 1 miejsce.
+const MIN_OBIEKTOW = MIASTO_INFO?.wiejska ? 1 : 20 // grupa z mniejszą liczbą miejsc w obszarze 14 gmin odpada
 const TERYT_KRAKOWA = '1261011'
 const UA = 'adresscore-etl/1.0 (https://github.com/Mati46p/adresscore)'
 

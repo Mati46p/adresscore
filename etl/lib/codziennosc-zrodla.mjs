@@ -82,7 +82,7 @@ async function wczytajSio() {
   return await wiersze(
     c,
     `select "Typ podmiotu" as typ, "Publiczność" as publicznosc, "Specyfika szkoły" as specyfika,
-            "Nazwa placówki" as nazwa, ${MIASTO_INFO ? `'${sq(MIASTO_INFO.nazwa)}'` : 'Miejscowość'} as miejscowosc, Ulica as ulica,
+            "Nazwa placówki" as nazwa, ${MIASTO_INFO && !MIASTO_INFO.wiejska ? `'${sq(MIASTO_INFO.nazwa)}'` : 'Miejscowość'} as miejscowosc, Ulica as ulica,
             "Numer domu" as nr, "Kod pocztowy" as kod, try_cast("w tym_w oddz_przedszk" as integer) as oddz_przedszk
      from read_xlsx('${sq(plik)}', all_varchar=true)
      where idTerytWojewodztwo = '${TERYT_WOJ}' and "Numer domu" <> ''

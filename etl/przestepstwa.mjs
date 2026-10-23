@@ -34,7 +34,11 @@ export const POWIATY = {
 export const POWIATY_MIAST = Object.fromEntries(
   Object.values(MIASTA).map((m) => [
     m.teryt4,
-    { bdl: m.bdl, nazwa: m.bdlNazwa, jednostka: `KMP/KPP ${m.nazwa}` },
+    {
+      bdl: m.bdlPowiat ?? m.bdl,
+      nazwa: m.bdlPowiatNazwa ?? m.bdlNazwa,
+      jednostka: m.wiejska ? `KPP ${m.bdlPowiatNazwa}` : `KMP/KPP ${m.nazwa}`,
+    },
   ]),
 )
 const AKTYWNE = MIASTO ? POWIATY_MIAST : POWIATY

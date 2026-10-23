@@ -4,6 +4,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 
 import { join } from 'node:path'
 import { DuckDBInstance } from '@duckdb/node-api'
 import { indeksPunktow } from './lib/codziennosc-geo.mjs'
+import { MIASTO_INFO, pbfRegionu } from './lib/miasto.mjs'
 import { CACHE, dzis, pobierzDoCache, wczytajAdresy, zapiszWskaznik } from './lib/wspolne.mjs'
 
 const PBF_URL = 'https://download.geofabrik.de/europe/poland/malopolskie-latest.osm.pbf'
@@ -68,16 +69,20 @@ async function wczytajPunkty(pbf, data) {
   ).getRowObjectsJson()
   c.closeSync()
   const punkty = punktyZObiektow(obiekty, wezly)
-  if (punkty.length < 20) throw new Error(`Za mało jednostek straży pożarnej: ${punkty.length}`)
+  if (punkty.length < (MIASTO_INFO ? 1 : 20))
+    throw new Error(`Za mało jednostek straży pożarnej: ${punkty.length}`)
   writeFileSync(cache, JSON.stringify(punkty))
   return punkty
 }
 
 export async function main() {
   const { adresy } = wczytajAdresy()
-  const lokalny = ekstrakt()
-  const plik = lokalny?.plik ?? (await pobierzDoCache(PBF_URL, 'malopolskie.osm.pbf'))
-  const data = lokalny?.data ?? dzis()
+  // Tryb miasta: ekstrakt województwa miasta (wspólny z resztą ETL), nie Małopolska.
+  const region = MIASTO_INFO ? await pbfRegionu() : null
+  const lokalny = region ? null : ekstrakt()
+  const plik =
+    region?.plik ?? lokalny?.plik ?? (await pobierzDoCache(PBF_URL, 'malopolskie.osm.pbf'))
+  const data = region ? `${MIASTO_INFO.pbf}-${region.stan}` : (lokalny?.data ?? dzis())
   const punkty = await wczytajPunkty(plik, data)
   const najblizszy = indeksPunktow(punkty)
   const wartosci = []
@@ -100,11 +105,13 @@ export async function main() {
       zadanie: 171,
       zrodla: [
         {
-          nazwa: 'OpenStreetMap, ekstrakt Geofabrik – małopolskie (amenity=fire_station)',
+          nazwa: MIASTO_INFO
+            ? `OpenStreetMap, ekstrakt województwa (${MIASTO_INFO.woj}), lustro download.openstreetmap.fr (amenity=fire_station)`
+            : 'OpenStreetMap, ekstrakt Geofabrik – małopolskie (amenity=fire_station)',
           url: 'https://download.geofabrik.de/europe/poland/malopolskie.html',
           licencja:
             'ODbL 1.0 – © współtwórcy OpenStreetMap: https://www.openstreetmap.org/copyright',
-          dataDanych: data,
+          dataDanych: region?.stan ?? data,
           pobrano: dzis(),
         },
       ],

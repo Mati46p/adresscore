@@ -39,6 +39,7 @@ export const MIASTA = {
   tychy: ['2477011', 'Tychy'],
   gorzowwielkopolski: ['0861011', 'Gorzów Wielkopolski'],
   dabrowagornicza: ['2465011', 'Dąbrowa Górnicza'],
+  redziny: ['2404152', 'Rędziny'],
 }
 const tekst = (v) => (typeof v === 'string' && v.trim() ? v.trim() : null)
 const zaokr = (x) => Math.round(x * 1e6) / 1e6

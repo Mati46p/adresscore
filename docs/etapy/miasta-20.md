@@ -129,3 +129,14 @@ Wyniki zawsze w `public/dane/miasta/<slug>/`, więc procesy różnych miast się
 Zalecana kolejność dla pozostałych 19 miast: 1) Katowice (gotowe, rozgrzane `slaskie`), 2) po jednym mieście z
 każdego województwa jako rozgrzewka (gdynia/pomorskie, rzeszow, torun, radom, kielce, olsztyn, zielonagora,
 opole), 3) reszta równolegle.
+
+## Gmina wiejska: Rędziny (Refs #246)
+
+Slug `redziny`, TERYT gminy **2404152** (powiat częstochowski 2404, rodzaj 2); 3213 adresów w 7 wsiach (PRG po `ID_GMINY`).
+Uwaga: 2404092 to gmina Lelów, nie Rędziny. BDL gminy 012414604152, powiatu 012414604000.
+
+- Konfiguracja: pole `teryt` (pełny TERYT) i `wiejska: true` w `etl/lib/miasta.mjs`; `terytGminy(m)` daje `teryt` albo `teryt4 + '011'`.
+- Gmina wiejska: `wMiescieMiasta` przyjmuje wsie z adresów PRG gminy (nie jedną nazwę miejscowości); SIO/szkoły zachowują nazwę wsi; strażniki liczności usług i próg `osm-uzupelnienie` zeszły do 1.
+- `--pomin a,b` w `miasto-calosc.mjs` pomija kroki. Pominięte dla Rędzin: `seveso`, `prtr` (inspire.gios.gov.pl zwraca 403 dla całego hosta), `uprosc-kryteria` (jak dla miast, czeka na #232).
+- Brak GTFS (wpis `BRAK_FEEDU`): bez `przystanek_odleglosc`, `kursy_szczyt_h`, `rynek_czas_min`. Bez `targowisko_odleglosc` (0 miejsc w OSM) i bez latarni (`bezpieczenstwo.mjs`: OSM ma ich za mało na wsi, wynik byłby mylący).
+- Budynki LoD1 pobierane dla całego powiatu 2404 (98 tys. budynków), nie tylko gminy.
