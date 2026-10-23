@@ -488,6 +488,8 @@ export function MapaKrakowa({
   const onPierwszyKolorRef = useRef(onPierwszyKolor)
   // Pierwszy niepusty zbiór heksów już zlecił czekanie na `idle`: wywołanie następuje raz.
   const kolorZlecony = useRef(false)
+  // Pierwszy kolor się narysował: dopiero wtedy ruszają tło i mgła (worker kanału tła jest wstrzymany).
+  const kolorGotowy = useRef(false)
   // Worker geometrii (poligony heksów jako URL dla mapy, mgła) – jeden na mapę, życie razem z nią.
   const dostawcaRef = useRef<DostawcaGeoJson | null>(null)
   const tloRef = useRef(tlo)
@@ -769,6 +771,7 @@ export function MapaKrakowa({
       kadrZastosowanyRef.current = null
       kadrDanychRef.current = false
       kolorZlecony.current = false
+      kolorGotowy.current = false
       anulujMgle()
       dostawcaRef.current?.zniszcz()
       dostawcaRef.current = null
@@ -905,6 +908,10 @@ export function MapaKrakowa({
           if (mapaRef.current !== mapa) return
           performance.mark('mapa-kolor')
           onPierwszyKolorRef.current?.()
+          // Tło i mgła nie ścigają się z heksami bieżącego miasta o wątek; teraz mogą ruszyć.
+          kolorGotowy.current = true
+          dostawca.otworzTlo()
+          zaplanujZastosowanie()
         })
       })
     }
@@ -946,7 +953,17 @@ export function MapaKrakowa({
     if (!takieSameKluczeTla(stara, wartosci)) {
       // Poziom o niezmienionych kluczach zachowuje poligony, więc zlecenie do workera i `setData`
       // idą tylko do źródeł, które się zmieniły.
-      const nowa = zbudujGeometrieTla(wartosci[8].keys(), wartosci[9].keys())
+      const pelna = zbudujGeometrieTla(wartosci[8].keys(), wartosci[9].keys())
+      // Przed pierwszym kolorem poziom niewidoczny przy tym zoomie w ogóle nie idzie do workera: jego
+      // klucze zostają stare, więc po kolorze (`zaplanujZastosowanie`) wyjdzie jako zmiana.
+      const nowa: GeometriaTla = kolorGotowy.current
+        ? pelna
+        : {
+            klucze: {
+              8: poziomy.includes(8) ? pelna.klucze[8] : stara.klucze[8],
+              9: poziomy.includes(9) ? pelna.klucze[9] : stara.klucze[9],
+            },
+          }
       geometriaTlaRef.current = nowa
       for (const { res } of POZIOMY_TLA) {
         if (rowneKlucze(stara.klucze[res], nowa.klucze[res])) continue

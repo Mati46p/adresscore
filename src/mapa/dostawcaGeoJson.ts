@@ -5,14 +5,42 @@
 import type { GeoJSONSource, Map as MapLibre, MapSourceDataEvent } from 'maplibre-gl'
 import { kolekcjaZWartosciami, type Otoczka, zbudujOtoczke } from './geometria.ts'
 import type { DoWorkera, ZWorkera } from './geometriaWorker.ts'
+import { KolejkaZlecen } from './kolejkaZlecen.ts'
 
 interface ZlecenieHeksow {
   klucze: string[]
   w: Float64Array
 }
 
+/**
+ * Dwa workery, bo jeden liczył zlecenia szeregowo: heksy bieżącego miasta (r10) czekały za tłem 24
+ * miast (setki tysięcy `cellToBoundary` + `JSON.stringify`) i mgłą, a pierwszy kolor padał po 11,8 s
+ * przy 1,65 s do załadowania kompaktu. Kanał 0 to wyłącznie bieżące miasto, kanał 1 tło i mgła, i
+ * rusza dopiero po `otworzTlo()` (pierwszy kolor). Priorytet w kanale: r10 < r9 < r8 < tło < mgła.
+ */
+const KANAL_MIASTA = 0
+const KANAL_TLA = 1
+const PRIORYTET_MGLY = 5
+const PRIORYTETY: Record<string, number> = {
+  'heksy-r10': 0,
+  'heksy-r9': 1,
+  'heksy-r8': 2,
+  'tlo-r9': 3,
+  'tlo-r8': 4,
+}
+const priorytetZrodla = (zrodlo: string) => PRIORYTETY[zrodlo] ?? 3
+const kanalZrodla = (zrodlo: string) => (zrodlo.startsWith('heksy-') ? KANAL_MIASTA : KANAL_TLA)
+
+/** Po tym czasie tło rusza także bez pierwszego koloru bieżącego miasta. */
+const ZAPAS_OTWARCIA_TLA_MS = 8000
+
 export class DostawcaGeoJson {
-  private worker: Worker | null = null
+  private readonly workery: (Worker | null)[] = [null, null]
+  private readonly kolejki = [new KolejkaZlecen<DoWorkera>(), new KolejkaZlecen<DoWorkera>()]
+  private readonly zajete = [false, false]
+  private tloOtwarte = false
+  /** Zbiór r8 mgły, której wynik jeszcze nie wrócił (zapas, gdy worker padnie). */
+  private mglaR8: string[] | null = null
   private blad = false
   private zniszczony = false
   /** Numer ostatniego zlecenia heksów na źródło – wynik o innym numerze jest już nieaktualny. */
@@ -31,6 +59,8 @@ export class DostawcaGeoJson {
 
   constructor(private readonly mapa: MapLibre) {
     mapa.on('sourcedata', this.nasluch)
+    // Zapas: miasto bez heksów (albo zerwany pierwszy kolor) nie może wstrzymać tła i mgły na zawsze.
+    setTimeout(() => this.otworzTlo(), ZAPAS_OTWARCIA_TLA_MS)
   }
 
   /** Czy dla źródła jest zlecenie, którego dane jeszcze nie zostały załadowane przez mapę. */
@@ -54,22 +84,31 @@ export class DostawcaGeoJson {
     this.zlecenia.set(zrodlo, id)
     this.poZaladowaniu.set(zrodlo, [...(this.poZaladowaniu.get(zrodlo) ?? []), fn])
     const zlecenie = { klucze, w }
-    const worker = this.zapewnijWorkera()
-    if (!worker) return this.zastosujSynchronicznie(zrodlo, zlecenie)
+    if (!this.mozeWorker()) return this.zastosujSynchronicznie(zrodlo, zlecenie)
     this.wTrakcie.set(zrodlo, zlecenie)
     const wiadomosc: DoWorkera = { rodzaj: 'heksy', id, zrodlo, klucze, w }
+    // Zlecenie tego samego źródła zastępuje oczekujące (worker go nie zaczął, więc nie liczy starego).
     // Bez przekazania bufora: kopia ok. 200 KB jest tania, a zlecenie zostaje w `wTrakcie` na zapas.
-    worker.postMessage(wiadomosc)
+    const k = kanalZrodla(zrodlo)
+    this.kolejki[k]?.ustaw(zrodlo, priorytetZrodla(zrodlo), wiadomosc)
+    this.pompuj(k)
+  }
+
+  /** Odblokowuje kanał tła i mgły – wołać po pierwszym kolorze bieżącego miasta. Idempotentne. */
+  otworzTlo() {
+    if (this.tloOtwarte) return
+    this.tloOtwarte = true
+    this.pompuj(KANAL_TLA)
   }
 
   /** Mgła z r8: worker, a bez niego wynik od ręki z wątku głównego. `fn` dostaje tylko aktualny wynik. */
   mgla(r8: string[], fn: (o: Otoczka) => void) {
     this.obslugaMgly = fn
     const id = ++this.nrMgly
-    const worker = this.zapewnijWorkera()
-    if (!worker) return fn(zbudujOtoczke(r8))
-    const wiadomosc: DoWorkera = { rodzaj: 'mgla', id, r8 }
-    worker.postMessage(wiadomosc)
+    if (!this.mozeWorker()) return fn(zbudujOtoczke(r8))
+    this.mglaR8 = r8
+    this.kolejki[KANAL_TLA]?.ustaw('mgla', PRIORYTET_MGLY, { rodzaj: 'mgla', id, r8 })
+    this.pompuj(KANAL_TLA)
   }
 
   /** Unieważnia oczekującą mgłę (wynik z workera zostanie odrzucony). */
@@ -80,8 +119,7 @@ export class DostawcaGeoJson {
   zniszcz() {
     this.zniszczony = true
     this.mapa.off('sourcedata', this.nasluch)
-    this.worker?.terminate()
-    this.worker = null
+    this.zatrzymajWorkery()
     for (const lista of this.urle.values()) for (const u of lista) URL.revokeObjectURL(u)
     this.urle.clear()
     this.poZaladowaniu.clear()
@@ -89,27 +127,48 @@ export class DostawcaGeoJson {
     this.zastosowane.clear()
   }
 
-  private zapewnijWorkera(): Worker | null {
-    if (this.worker) return this.worker
-    if (this.blad || this.zniszczony || typeof Worker === 'undefined') return null
-    try {
-      const worker = new Worker(new URL('./geometriaWorker.ts', import.meta.url), {
-        type: 'module',
-      })
-      worker.onmessage = (e: MessageEvent<ZWorkera>) => this.przyWyniku(e.data)
-      worker.onerror = () => this.przyBledzie()
-      this.worker = worker
-    } catch {
-      this.blad = true
+  private mozeWorker(): boolean {
+    return !this.blad && !this.zniszczony && typeof Worker !== 'undefined'
+  }
+
+  private zatrzymajWorkery() {
+    for (const w of this.workery) w?.terminate()
+    this.workery.fill(null)
+    for (const k of this.kolejki) while (k.nastepne());
+  }
+
+  /** Wysyła następne zlecenie kanału, gdy worker jest wolny (kanał tła czeka na pierwszy kolor). */
+  private pompuj(k: number) {
+    if (this.zajete[k] || this.zniszczony || (k === KANAL_TLA && !this.tloOtwarte)) return
+    const nastepne = this.kolejki[k]?.nastepne()
+    if (!nastepne) return
+    let worker = this.workery[k] ?? null
+    if (!worker) {
+      try {
+        worker = new Worker(new URL('./geometriaWorker.ts', import.meta.url), { type: 'module' })
+        worker.onmessage = (e: MessageEvent<ZWorkera>) => {
+          this.zajete[k] = false
+          this.przyWyniku(e.data)
+          this.pompuj(k)
+        }
+        worker.onerror = () => this.przyBledzie()
+        this.workery[k] = worker
+      } catch {
+        return this.przyBledzie()
+      }
     }
-    return this.worker
+    this.zajete[k] = true
+    worker.postMessage(nastepne.zlecenie)
   }
 
   private przyWyniku(odp: ZWorkera) {
     if (this.zniszczony) return
     if (odp.rodzaj === 'mgla') {
       // Wynik starszy niż ostatnie zlecenie odpowiada już nieaktualnemu zbiorowi miast.
-      if (odp.id === this.nrMgly) this.obslugaMgly?.(odp.otoczka)
+      if (odp.id === this.nrMgly) {
+        this.mglaR8 = null
+        this.obslugaMgly?.(odp.otoczka)
+      }
       return
     }
     if (odp.id !== this.zlecenia.get(odp.zrodlo)) return
@@ -125,11 +184,14 @@ export class DostawcaGeoJson {
   /** Worker nie wstał albo padł: to, co zlecone, liczy się synchronicznie na wątku głównym. */
   private przyBledzie() {
     this.blad = true
-    this.worker?.terminate()
-    this.worker = null
+    this.zatrzymajWorkery()
+    this.zajete.fill(false)
     for (const [zrodlo, zlecenie] of [...this.wTrakcie])
       this.zastosujSynchronicznie(zrodlo, zlecenie)
-    // Mgła czekająca w workerze: zapas przyjdzie przy następnym zleceniu (debounce w MapaKrakowa).
+    // Mgła czekająca w workerze albo w kolejce: zapas na wątku głównym.
+    const r8 = this.mglaR8
+    this.mglaR8 = null
+    if (r8) this.obslugaMgly?.(zbudujOtoczke(r8))
   }
 
   private zastosujSynchronicznie(zrodlo: string, z: ZlecenieHeksow) {
