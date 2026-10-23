@@ -154,7 +154,7 @@ function pelnePrzeliczenie(m: Miasto, obiekty: readonly Obiekt[]) {
     const moje = obiekty.filter((o) => definicjaObiektu(o.typ).warstwy.includes(w.meta.id))
     if (moje.length === 0) return w
     const wartosci = w.wartosci.map((v, i) => {
-      if (v === null) return null
+      if (Number.isNaN(v)) return Number.NaN
       const a = m.adresy[i] as AdresSym
       return Math.min(v, ...moje.map((o) => odleglosc(o.lon, o.lat, a.lon, a.lat)))
     })
@@ -253,7 +253,7 @@ describe('symulacja – przyrost zgodny z pełnym przeliczeniem (#96)', () => {
       for (let i = 0; i < m.adresy.length; i++) {
         const a = stara.wartosci[i]
         const n = w.wartosci[i]
-        if (a === null || n === null || a === n) continue
+        if (Number.isNaN(a) || Number.isNaN(n) || a === n) continue
         // Poza zasięgiem warstwy zmiana pomiaru niczego nie rusza (próg i koniec skali niżej).
         const ws = b.warstwy[w.meta.id]
         if (ws && (n as number) <= ws.zasiegM) zmienioneAdresy.add(i)
@@ -266,12 +266,12 @@ describe('symulacja – przyrost zgodny z pełnym przeliczeniem (#96)', () => {
 
   it('adres z brakiem danych zostaje bez danych', () => {
     const przystanek = m.wskazniki[0] as WskaznikPrzygotowany
-    const zNullem = m.adresy.findIndex((_, i) => przystanek.wartosci[i] === null)
+    const zNullem = m.adresy.findIndex((_, i) => Number.isNaN(przystanek.wartosci[i]))
     assert.ok(zNullem >= 0)
     const a = m.adresy[zNullem] as AdresSym
     const tuz = symuluj(b, [{ typ: 'przystanek', lon: a.lon, lat: a.lat }])
     const nowa = pelnePrzeliczenie(m, [{ typ: 'przystanek', lon: a.lon, lat: a.lat }]).nowe[0]
-    assert.equal(nowa?.wartosci[zNullem], null)
+    assert.ok(Number.isNaN(nowa?.wartosci[zNullem]))
     // Brak danych liczy się w szarej grupie heksu, nie w „bez luki”.
     const h = tuz.heksy.get(a.h3)
     assert.ok(h)

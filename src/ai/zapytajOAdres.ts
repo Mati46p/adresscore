@@ -45,7 +45,7 @@ export const POLECENIE =
 /** Warstwa z danymi pod adresami – podzbiór `WskaznikPrzygotowany` z src/wynik/silnik.ts. */
 export interface WarstwaDanych {
   meta: WskaznikMeta
-  wartosci: readonly (number | null)[]
+  wartosci: ArrayLike<number | null>
   etykiety?: readonly (string | null)[]
   /** Powód, gdy plik warstwy się nie wczytał. */
   niedostepny?: string
