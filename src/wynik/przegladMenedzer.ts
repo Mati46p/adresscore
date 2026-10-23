@@ -201,6 +201,9 @@ export function utworzMenedzerPrzegladu(d: ZaleznosciMenedzera) {
   let biezace: SlugMiasta | null = null
   let potrzeby: Potrzeby = new Map()
   let tloOtwarte = false
+  // Bramka tła (#250): kompakty pozostałych miast nie ruszają, dopóki widok jej nie otworzy (pierwszy kolor
+  // mapy, oddalenie kamery, „Wszystkie miasta”, zapas czasowy). Bieżące miasto ładuje się bez bramki.
+  let bramkaTla = false
   let zameldowano = false
   const ladowanie = new Map<SlugMiasta, Promise<void>>()
   const wTrakcie = new Set<string>()
@@ -234,9 +237,9 @@ export function utworzMenedzerPrzegladu(d: ZaleznosciMenedzera) {
     return ids !== undefined && brakujaceWarstwy(wpis, ids).length === 0
   }
 
-  /** Otwiera tło po pierwszym kolorze bieżącego miasta i raz melduje, że wszystko jest na miejscu. */
+  /** Otwiera tło po pierwszym kolorze bieżącego miasta (i otwartej bramce) i raz melduje, że wszystko jest na miejscu. */
   function sprawdz() {
-    if (!tloOtwarte && biezace !== null && ustabilizowane(biezace)) {
+    if (!tloOtwarte && bramkaTla && biezace !== null && ustabilizowane(biezace)) {
       tloOtwarte = true
       for (const slug of d.miasta) zapewnijMiasto(slug)
     }
@@ -366,6 +369,16 @@ export function utworzMenedzerPrzegladu(d: ZaleznosciMenedzera) {
       zapewnijMiasto(nowe, zmianaMiasta)
       if (zmianaMiasta) kolejka.pompuj()
       for (const [slug, ids] of nowePotrzeby) for (const id of ids) zamowWarstwe(slug, id)
+      sprawdz()
+    },
+
+    /**
+     * Otwiera bramkę tła: od teraz, gdy bieżące miasto ma pierwszy kolor, ruszają pozostałe miasta.
+     * Idempotentne; wołane przez widok (pierwszy kolor mapy, oddalenie, „Wszystkie miasta”, zapas czasowy).
+     */
+    otworzTlo() {
+      if (bramkaTla) return
+      bramkaTla = true
       sprawdz()
     },
 

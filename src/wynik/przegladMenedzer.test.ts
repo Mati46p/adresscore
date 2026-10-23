@@ -150,6 +150,8 @@ interface Opcje {
   /** Podmienia manifest miasta (np. rozjechany z kompaktem). */
   manifest?: (slug: SlugMiasta, manifest: Manifest) => Manifest
   r10?: boolean
+  /** Bramka tła zostaje zamknięta (domyślnie `otworz` otwiera ją od razu, jak pierwszy kolor mapy). */
+  zamknijBramke?: boolean
 }
 
 const slugZAdresu = (url: string): SlugMiasta =>
@@ -288,6 +290,7 @@ type Srodowisko = Awaited<ReturnType<typeof srodowisko>>
 /** Strona się otwiera: widok zgłasza bieżące miasto (domyślnie Kraków). */
 async function otworz(opcje?: Opcje): Promise<Srodowisko> {
   const t = await srodowisko(opcje)
+  if (!opcje?.zamknijBramke) t.menedzer.otworzTlo()
   t.odswiez()
   return t
 }
@@ -304,6 +307,22 @@ describe('menedżer przeglądu: kolejność i limit pobrań', { timeout: 60_000 
     // Miasto jest ogłoszone, ale warstwy profilu dopiero idą (widok zgłosił je po ogłoszeniu).
     assert.deepEqual(startyTla(t), [], 'żadne pobranie spoza Krakowa przed jego pierwszym kolorem')
     await t.doSpokoju()
+  })
+
+  it('bramka tła zamknięta: Kraków ładuje się w całości, pozostałe miasta nie ruszają, po otwarciu idą po 3', async () => {
+    const t = await otworz({ zamknijBramke: true })
+    // Poza bieżącym miastem nic nie ma prawa wystartować, nawet gdy Kraków ma już pierwszy kolor.
+    await czekajNa(() => t.wpis('krakow')?.stan === 'gotowe', 'Kraków gotowy')
+    for (let i = 0; i < 2000; i++) await obieg()
+    assert.deepEqual(startyTla(t), [], 'tło nie rusza za zamkniętą bramką')
+    assert.equal(t.dziennik.ustabilizowano, 0)
+    t.menedzer.otworzTlo()
+    t.menedzer.otworzTlo() // idempotentne
+    await t.doSpokoju()
+    assert.ok(startyTla(t).length > 0, 'po otwarciu bramki tło ruszyło')
+    assert.equal(t.dziennik.maxTla, 3)
+    assert.equal(t.dziennik.ustabilizowano, 1, 'komplet zameldowany raz')
+    for (const m of MIASTA) assert.equal(t.wpis(m.slug)?.stan, 'gotowe', m.slug)
   })
 
   it('tło startuje dopiero po ostatniej warstwie profilu Krakowa i idzie po najwyżej 3 naraz', async () => {

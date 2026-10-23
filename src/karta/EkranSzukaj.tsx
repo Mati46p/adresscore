@@ -1,23 +1,16 @@
-import {
-  type CSSProperties,
-  lazy,
-  Suspense,
-  useEffect,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from 'react'
+import { type CSSProperties, lazy, Suspense, useRef, useState, useSyncExternalStore } from 'react'
 import { PoleOpiszSiebie } from '@/ai/PoleOpiszSiebie'
 import { miasto as miastoZRejestru, type SlugMiasta } from '@/kontrakty'
 import { MEDIA_ARKUSZA } from '@/lib/punktyLamania'
 import { kadrZapasowyMiasta, WIDOK_MIAST } from '@/mapa/lot'
 import { type OkolicaNaMapie, okolicaNaMapie } from '@/mapa/okolica/granice'
 import { wczytajGraniceOkolic } from '@/mapa/okolica/wczytajGranice'
+import { ZOOM_PODPISU_MIASTA } from '@/mapa/tlo'
 import { pozwolNaPelneDane, useDane } from '@/wynik/dane'
 import { useMiasto, useTylkoKrakow } from '@/wynik/miastoDanych'
 import { miejsceAdresu, miejsceOkolicy } from '@/wynik/miejsceAdresu'
 import { BIZNESY, PERSONY, TRYBY, warstwyBiznesu } from '@/wynik/persony'
-import { usePrzeglad } from '@/wynik/przeglad'
+import { otworzTloPrzegladu, usePrzeglad } from '@/wynik/przeglad'
 import { rankingUlic } from '@/wynik/rankingUlic'
 import { zamknijSasiadow } from '@/wynik/sasiedziStan'
 import { kierunekEfektywny } from '@/wynik/silnik'
@@ -32,7 +25,7 @@ import {
   usunZPorownania,
   wybierzAdres,
 } from '@/wynik/stan'
-import { czytajHash, MAKS_POROWNANIE } from '@/wynik/url'
+import { MAKS_POROWNANIE } from '@/wynik/url'
 import { usePropsSasiadowMapy } from '@/wynik/useSasiedzi'
 import { useWyniki } from '@/wynik/useWyniki'
 import { opisAdresu } from './adres'
@@ -42,7 +35,6 @@ import { MiniKarta } from './MiniKarta'
 import {
   biernikMiasta,
   decyzjaKamery,
-  linkWskazujeMiejsce,
   naglowekSzukaj,
   ogloszenieZmianyMiasta,
   ostrzezenieOPrzelaczeniu,
@@ -67,6 +59,8 @@ const MapaKrakowa = lazy(async () => ({ default: (await chunkMapy).MapaKrakowa }
 
 /** Pełne dane startują, gdy przeglądarka ma chwilę wolnego czasu (Safari bez `requestIdleCallback`: 200 ms). */
 function pozwolPoCichu() {
+  // Pierwszy kolor mapy otwiera też bramkę tła (#250): pozostałe miasta ruszają dopiero teraz.
+  otworzTloPrzegladu()
   if (typeof requestIdleCallback === 'function')
     requestIdleCallback(pozwolNaPelneDane, { timeout: 1500 })
   else setTimeout(pozwolNaPelneDane, 200)
@@ -74,17 +68,6 @@ function pozwolPoCichu() {
 
 // Stała, bo nowa pusta mapa przy każdym renderze wymuszałaby przemalowanie warstwy heksów.
 const BRAK_HEKSOW: ReadonlyMap<string, number | null> = new Map()
-
-// Czy aplikację otwarto linkiem, który wskazuje miasto albo adres (FR-012)? Czytane raz, przy wczytaniu
-// modułu: stan zna wtedy miasto z linku, ale po pierwszym kliku to samo pytanie zadane stanowi dałoby
-// już inną odpowiedź. Taki link startuje przy swoim miejscu, a bez niego mapa pokazuje wszystkie miasta.
-const START_Z_MIEJSCEM = linkWskazujeMiejsce(
-  czytajHash(window.location.hash, window.location.search),
-  window.location.pathname,
-)
-// Widok wszystkich miast należy do pierwszego wejścia na ten ekran w sesji. Powrót z innego ekranu
-// (katalog, porównanie) ma zostać przy bieżącym mieście, a nie cofnąć użytkownika do widoku kraju.
-let widokWszystkichMiastPokazany = false
 
 /**
  * Po zmianie miasta z listy albo kliku kamera dostaje chwilę spokoju (ms): ruch, który przerywa lot do
@@ -149,14 +132,6 @@ export function EkranSzukaj() {
   const wyborOkolicy = useRef(0)
   const ostatniZoom = useRef(0)
   const spokojDo = useRef(0)
-  // Kadr startowy (D4): widok wszystkich miast – tylko przy pierwszym wejściu bez linku z miejscem. Stały
-  // przez życie ekranu (mapa pamięta go od pierwszej klatki), więc `useState`, a nie wartość z renderu.
-  const [kadrStartowy] = useState(() =>
-    START_Z_MIEJSCEM || widokWszystkichMiastPokazany ? null : WIDOK_MIAST,
-  )
-  useEffect(() => {
-    widokWszystkichMiastPokazany = true
-  }, [])
   // Wszystko, co należało do poprzedniego miasta, znika razem z nim (stan ekranu, jak wybór w stanie
   // aplikacji): okolica i komunikaty z wyszukiwarki (jej dane ma tylko Kraków), propozycja przełączenia
   // i cel przelotu, który powstał dla innego miasta. Wzorzec jak w Naglowek: stan pochodny bez efektu.
@@ -227,6 +202,17 @@ export function EkranSzukaj() {
     if (jestArkusz) setStanArkusza('polowa')
   }
 
+  // „Wszystkie miasta”: przelot do kadru wszystkich miast (bez animacji przy prefers-reduced-motion – dba o to
+  // `lec`) i otwarcie bramki tła. Nowy obiekt celu = nowy przelot także przy drugim kliku.
+  function pokazWszystkieMiasta() {
+    otworzTloPrzegladu()
+    setPropozycja(null)
+    setCel({
+      miasto: miasto.slug,
+      naMapie: { id: 'wszystkie-miasta', granice: WIDOK_MIAST, obrys: null },
+    })
+  }
+
   function wyczyscOkolice(zKlawiatury: boolean) {
     wyborOkolicy.current++
     setOkolica(null)
@@ -267,6 +253,8 @@ export function EkranSzukaj() {
   // gdy nie ma wybranego adresu ani porównania – inaczej tylko propozycja (D5, FR-006c).
   function naWidok(lon: number, lat: number, zoom: number) {
     ostatniZoom.current = zoom
+    // Oddalenie do zoomu, przy którym widać inne miasta, otwiera bramkę tła (#250): ich dane są już potrzebne.
+    if (zoom < ZOOM_PODPISU_MIASTA) otworzTloPrzegladu()
     if (performance.now() < spokojDo.current) return
     const maWybor = wybrany !== null || porownanie.length > 0
     const decyzja = decyzjaKamery({
@@ -368,6 +356,7 @@ export function EkranSzukaj() {
           .filter((m) => m.stan === 'brak')
           .map((m) => miastoZRejestru(m.slug).nazwa)}
         onWybierz={(slug) => zmienMiasto(slug, { lot: true })}
+        onWszystkie={pokazWszystkieMiasta}
       />
     </div>
   )
@@ -540,7 +529,6 @@ export function EkranSzukaj() {
               // dojdą) znaczy „mapa wszystkich miast”: zmienia podpis mgły i legendę.
               tlo={przeglad.tlo}
               miasto={miasto.slug}
-              kadrStartowy={kadrStartowy}
               wykluczone={wyniki?.wykluczoneHeksy}
               sasiedzi={sasiedzi}
               okolica={cel?.naMapie ?? null}

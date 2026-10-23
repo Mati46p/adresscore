@@ -380,8 +380,14 @@ liczone z kompaktów tym samym silnikiem i tymi samymi wagami (FR-003). `usePrze
 `EkranSzukaj` składa to tak:
 - `heksy = wyniki?.heksy ?? przeglad.biezaceR10 ?? BRAK`, `tlo = przeglad.tlo` zawsze (sama obecność propa zmienia
   podpis mgły i legendę), `miasto={biezace}` na każdej mapie, także na ekranach Miasto, Symulator i Biznes.
-- Kadr startowy (`kadrStartowy`): widok wszystkich miast (`WIDOK_MIAST`) tylko przy pierwszym wejściu na ekran w sesji i bez
-  linku z miastem albo adresem (`linkWskazujeMiejsce`, FR-012); potem mapa zostaje przy bieżącym mieście.
+- Kadr startowy: od decyzji #250 (2026-10-23) mapa startuje na kadrze bieżącego miasta (z linku albo stanu, domyślnie
+  Kraków), a `kadrStartowy` zostaje pusty. Wcześniej (D4 / FR-012) pierwsze wejście w sesji bez linku z miejscem pokazywało
+  `WIDOK_MIAST` (wszystkie miasta), co ciągnęło kompakty ponad 20 miast już na starcie; pomiar produkcji (wolne 4G, CPU ×4)
+  dał pierwszy kolor po 21,5 s. Widok wszystkich miast jest teraz pod przyciskiem „Wszystkie miasta” w `WyborMiasta`
+  (`data-cel="wszystkie-miasta"`); tryb `?pokaz` (intro Polska → adres) bez zmian.
+- Bramka tła (`otworzTlo` w menedżerze, `otworzTloPrzegladu` w `przeglad.ts`): bieżące miasto ładuje się od razu, pozostałe
+  dopiero po otwarciu bramki, i to po jego pierwszym kolorze. Bramkę otwiera pierwszy kolor mapy (`onPierwszyKolor`),
+  oddalenie kamery poniżej `ZOOM_PODPISU_MIASTA`, klik „Wszystkie miasta” albo zapas 8 s – co nastąpi pierwsze.
 - Zmiana miasta (`WyborMiasta` – lista, klik w heks innego miasta, kamera): lot do obrysu miasta idzie kanałem `okolica`
   mapy (nowy obiekt = nowy przelot, także na to samo miasto), bo `granice` reagują na zmianę liczb. Kamera zmienia miasto
   sama dopiero przy zoomie ≥ 11 (`decyzjaKamery`) i tylko bez wybranego adresu i porównania; inaczej pasek „Przełącz na …”

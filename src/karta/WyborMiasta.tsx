@@ -11,9 +11,11 @@ interface Props {
   /** Nazwy miast, których przegląd się nie wczytał (dane chwilowo niedostępne), w kolejności rejestru. */
   niedostepne: readonly string[]
   onWybierz: (slug: SlugMiasta) => void
+  /** Przelot do widoku wszystkich miast (decyzja #250: start jest na kadrze bieżącego miasta). */
+  onWszystkie: () => void
 }
 
-export function WyborMiasta({ biezace, wczytywane, niedostepne, onWybierz }: Props) {
+export function WyborMiasta({ biezace, wczytywane, niedostepne, onWybierz, onWszystkie }: Props) {
   const komunikaty = [
     wczytywane ? `Wczytuję dane: ${wczytywane}…` : null,
     niedostepne.length > 0 ? `Dane chwilowo niedostępne: ${niedostepne.join(', ')}.` : null,
@@ -45,6 +47,14 @@ export function WyborMiasta({ biezace, wczytywane, niedostepne, onWybierz }: Pro
           ))}
         </div>
       </details>
+      <button
+        type="button"
+        className="seg wybor-miasta__wszystkie"
+        data-cel="wszystkie-miasta"
+        onClick={onWszystkie}
+      >
+        Wszystkie miasta
+      </button>
       {/* Region stoi zawsze (czytnik ogłasza zmianę tekstu, a nie pojawienie się elementu), a widzący dostaje
           ten sam tekst w zwykłym akapicie tylko wtedy, gdy jest co powiedzieć. */}
       <span className="sr-only" role="status">
