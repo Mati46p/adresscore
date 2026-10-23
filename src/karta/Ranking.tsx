@@ -1,12 +1,15 @@
+import { useEffect } from 'react'
 import { MIASTO_DOMYSLNE } from '@/kontrakty'
-import { useDane } from '@/wynik/dane'
+import { pozwolNaPelneDane, useDane } from '@/wynik/dane'
 import { useMiasto } from '@/wynik/miastoDanych'
 import { opisZrodelOkolic } from '@/wynik/miejsceAdresu'
 import { rankingUlic } from '@/wynik/rankingUlic'
 import { slugUlicy } from '@/wynik/slug'
 import { dodajDoPorownania, hrefDla, useStan, usunZPorownania } from '@/wynik/stan'
 import { MAKS_POROWNANIE } from '@/wynik/url'
+import { useRankingWstepny } from '@/wynik/useRankingKompakt'
 import { useWyniki } from '@/wynik/useWyniki'
+import { useWynikiMapy } from '@/wynik/useWynikiMapy'
 import { liczba, opisAdresu } from './adres'
 
 /** Poziom koloru plakietki: wysoki / średni / niski wynik (kolory z tokenów, liczba zawsze obok). */
@@ -24,7 +27,60 @@ export function Ranking({ nazwaWarstwy }: { nazwaWarstwy: string }) {
   const wyniki = useWyniki()
   const stan = useStan((s) => s)
   const miasto = useMiasto()
-  if (dane.stan !== 'gotowe' || !wyniki) return <p className="komunikat">Wczytuję dane…</p>
+  const wstepne = useRankingWstepny(5)
+  const wynikiMapy = useWynikiMapy()
+  // Dokładny ranking liczy się na wszystkich adresach, więc otwarcie zakładki otwiera pełne dane (bramka
+  // w `dane.ts`). Do ich dojścia stoi wstępny ranking z heksów kompaktu.
+  useEffect(() => {
+    pozwolNaPelneDane()
+  }, [])
+  if (dane.stan !== 'gotowe' || !wyniki) {
+    if (!wstepne || !wynikiMapy) return <p className="komunikat">Wczytuję dane…</p>
+    return (
+      <section
+        aria-labelledby="h-ranking"
+        className="szukaj-ranking"
+        data-wstepny
+        style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
+      >
+        <h2 id="h-ranking" className="etykieta-sekcji">
+          Najlepiej pasujące ulice {miasto.wMiescie} ·{' '}
+          {wynikiMapy.brakWarstwy ? nazwaWarstwy : wynikiMapy.podpis}
+        </h2>
+        {/* Stały region: czytnik ogłasza przejście od wstępnego do dokładnego rankingu. */}
+        <p role="status" style={{ margin: 0, color: 'var(--tekst-2)' }}>
+          {dane.stan === 'blad'
+            ? 'Wstępny ranking z heksów – nie udało się policzyć dokładnego.'
+            : 'Wstępny ranking z heksów – liczę dokładny…'}
+        </p>
+        {wynikiMapy.brakWarstwy ? (
+          <p style={{ margin: 0, color: 'var(--tekst-2)' }}>
+            Warstwy „{nazwaWarstwy}” nie ma {miasto.wMiescie}, więc nie ułożymy rankingu ulic. Brak
+            danych to nie zero – wybierz „Wynik tej okolicy” albo warstwę z listy nad mapą.
+          </p>
+        ) : wstepne.length === 0 ? (
+          <p style={{ margin: 0, color: 'var(--tekst-2)' }}>Ustaw wagi, żeby policzyć wynik.</p>
+        ) : (
+          <ol className="lista-wynikow">
+            {/* Pozycje przybliżone nie mają prawdziwego sluga ani adresu do porównania: bez linków i przycisku. */}
+            {wstepne.map((ulica) => (
+              <li className="ranking-ulica" key={ulica.slug}>
+                <span className="pozycja-wyniku">
+                  <span className="plakietka-wyniku" data-poziom={poziomWyniku(ulica.wynik)}>
+                    {liczba(ulica.wynik)}
+                  </span>
+                  <span className="ranking-ulica__opis">
+                    <span className="ranking-ulica__nazwa">{ulica.nazwa}</span>
+                    <small>{ulica.miejscowosc}</small>
+                  </span>
+                </span>
+              </li>
+            ))}
+          </ol>
+        )}
+      </section>
+    )
+  }
 
   const najlepsze = rankingUlic(
     dane.adresy,

@@ -2,7 +2,7 @@
 // adresu wybranego na mapie i heksów w porównaniu – nigdy dla wszystkich adresów naraz.
 import { useEffect, useState } from 'react'
 import type { Adres } from '@/kontrakty'
-import { useDane } from '@/wynik/dane'
+import { pozwolNaPelneDane, useDane } from '@/wynik/dane'
 import {
   BUFOR_PRZESIADKI_MIN,
   MAX_DOJSCIE_M,
@@ -62,6 +62,8 @@ export function PanelDojazdu() {
   const miasto = useStan((s) => s.miasto)
   const [cel, setCel] = useState<number | null>(null)
   const [odjazd, setOdjazd] = useState(DOMYSLNY_ODJAZD)
+  // Użytkownik poprosił o wybór celu, więc adresy się pobierają (pełne dane otwiera dopiero ten klik).
+  const [pobieranieAdresow, setPobieranieAdresow] = useState(false)
   const [info, setInfo] = useState<InfoDojazdu | null>(null)
   const [wynik, setWynik] = useState<Wynik>({ stan: 'brak' })
   // Cel to indeks w adresach JEDNEGO miasta, a godziny i źródła rozkładu (info) należą do jego grafu: po
@@ -107,7 +109,44 @@ export function PanelDojazdu() {
     }
   }, [klucz])
 
-  if (!adresy) return null
+  // Cel można wybrać spośród wszystkich adresów, więc to jedyny panel Szukaj, który wymaga pełnych danych.
+  // Do kliknięcia zostają zamknięte (bramka w `dane.ts`): wcześniej nie ma po co pobierać dziesiątek MB.
+  if (!adresy) {
+    return (
+      <section aria-labelledby="h-dojazd-cel" className="panel-sekcja dojazd-cel">
+        <h2 id="h-dojazd-cel" className="etykieta-sekcji">
+          Dojazd do Twojego celu
+        </h2>
+        <p className="panel-uwaga">
+          Wpisz adres celu (praca, szkoła). Policzymy planowy czas komunikacją miejską z adresu
+          wybranego na mapie i z heksów w porównaniu.
+        </p>
+        {dane.stan === 'blad' ? (
+          <p className="panel-uwaga" role="status">
+            Nie udało się wczytać adresów.
+          </p>
+        ) : (
+          <>
+            <button
+              type="button"
+              className="seg"
+              data-cel="dojazd-wybierz-cel"
+              disabled={pobieranieAdresow}
+              onClick={() => {
+                setPobieranieAdresow(true)
+                pozwolNaPelneDane()
+              }}
+            >
+              Wybierz cel
+            </button>
+            <p className="panel-uwaga" role="status">
+              {pobieranieAdresow ? 'Wczytuję adresy…' : ''}
+            </p>
+          </>
+        )}
+      </section>
+    )
+  }
   const godziny = info?.godziny ?? [DOMYSLNY_ODJAZD]
 
   return (

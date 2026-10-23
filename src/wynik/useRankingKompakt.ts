@@ -12,6 +12,7 @@ import { pozycjeZPrzyblizenia, przyblizenieUlic, rankingKompakt } from './rankin
 import type { PozycjaUlicy } from './rankingUlic.ts'
 import type { Skala } from './silnik.ts'
 import { useStan } from './stan.ts'
+import { useSlownikiKafli } from './startKompakt.ts'
 import { useWynikiMapy } from './useWynikiMapy.ts'
 
 export interface RankingKompaktu {
@@ -21,6 +22,17 @@ export interface RankingKompaktu {
    * ani adresu do porównania (`slug` zaczyna się od „~”, `adresDoPorownania` = -1). Ekran nie robi z nich linków.
    */
   przyblizony: boolean
+}
+
+/**
+ * Wstępny ranking ulic z samych heksów (bez kafli): od ręki, gdy dane heksów i wyniki mapy są gotowe.
+ * Pozycje są przybliżone (`slug` z `~`, `adresDoPorownania` -1) – ekran nie robi z nich linków.
+ */
+export function useRankingWstepny(ile = 5): PozycjaUlicy[] | null {
+  const dane = useDaneHeksow()
+  const wyniki = useWynikiMapy()
+  if (dane.stan !== 'gotowe' || !wyniki) return null
+  return pozycjeZPrzyblizenia(przyblizenieUlic(dane.podstawa, wyniki), ile)
 }
 
 /** Ranking ulic z kompaktu; null, gdy dane heksów albo wyniki mapy nie są gotowe (ekran wraca do `useDane()`). */
@@ -38,6 +50,8 @@ export function useRankingKompakt(
   const tryb = useStan((s) => s.tryb)
   const razem = tryb === 'biznes' ? filtry : filtryZBudzetem(filtry, budzet)
   const [ranking, ustaw] = useState<RankingKompaktu | null>(null)
+  // Kafle są w jednej pamięci z kartą adresu, więc powstają z tymi samymi słownikami etykiet.
+  const slowniki = useSlownikiKafli(dane)
 
   useEffect(() => {
     if (dane.stan !== 'gotowe' || !wyniki) {
@@ -58,9 +72,11 @@ export function useRankingKompakt(
       const s = dane.skala(id)
       if (s) skale[id] = s
     }
-    if (Object.keys(skale).length === 0) return () => kontrola.abort()
+    if (Object.keys(skale).length === 0 || (indeks.slowniki && !slowniki)) {
+      return () => kontrola.abort()
+    }
     const baza = bazaDanych(dane.miasto)
-    const skaleKaf = skaleKafli(indeks, skale)
+    const skaleKaf = skaleKafli(indeks, skale, slowniki ?? undefined)
     rankingKompakt({
       podstawa,
       indeks,
@@ -83,7 +99,7 @@ export function useRankingKompakt(
       },
     )
     return () => kontrola.abort()
-  }, [dane, wyniki, wagi, kierunki, warstwa, razem, ile, okolice])
+  }, [dane, wyniki, wagi, kierunki, warstwa, razem, ile, okolice, slowniki])
 
   return ranking
 }

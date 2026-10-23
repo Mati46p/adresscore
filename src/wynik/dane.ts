@@ -60,23 +60,21 @@ async function wczytajWszystko(slug: SlugMiasta, signal?: AbortSignal): Promise<
   return { ...wynik, adresy }
 }
 
-/**
- * Zapas bramki: po tylu ms od startu strony pełne dane ruszają, nawet gdy mapa nie dała sygnału (np. brak
- * WebGL). Sygnałem ma być pierwszy kolor, nie zegar: przy 4 s wolny telefon (pomiar produkcji, 4G 1,6 Mb/s)
- * otwierał bramkę przed kolorem i 50 MB danych zabierało łącze heksom – pierwszy kolor 33 s zamiast kilku.
- */
-const ZAPAS_BRAMKI_MS = 20_000
-
-// Bramka zamknięta (A4): pełne dane nie konkurują z mapą o sieć i CPU, dopóki mapa się nie pokoloruje.
+// Bramka zamknięta (A4, #247): pełne dane (adresy.json, wskazniki/*.json, kilkadziesiąt MB) otwiera dopiero
+// to, co ich naprawdę potrzebuje – zakładka Ranking, ekran spoza Szukaj, panel wyboru celu dojazdu, stary
+// kompakt bez rozszerzeń. Zapasu czasowego nie ma celowo: Szukaj liczy mapę, filtry, kartę adresu i
+// wstępny ranking z kompaktu i kafli, więc zegar otwierałby 50 MB bez powodu (na 4G zabierały łącze
+// heksom). Zapasem jest awaria mapy (WebGL, styl): `MapaKrakowa` zgłasza ją, a Szukaj otwiera bramkę.
 const pamiec = utworzPamiecDanych(
   wczytajWszystko,
   { pobierzStan, podlaczDane, subskrybuj: subskrybujStan },
-  { bramkaZamknieta: true, zapasMs: ZAPAS_BRAMKI_MS },
+  { bramkaZamknieta: true },
 )
 
 /**
  * Pozwala na pobranie pełnych danych (do wywołania `useDane()` zwraca `ladowanie` bez startu). Idempotentne;
- * woła ją ekran Szukaj po pierwszym pokolorowaniu mapy, a pozostałe ekrany przy wejściu.
+ * woła ją Szukaj tylko na żądanie użytkownika (Ranking, wybór celu dojazdu) albo przy awarii mapy,
+ * a pozostałe ekrany przy wejściu.
  */
 export const pozwolNaPelneDane = pamiec.pozwolNaPelneDane
 

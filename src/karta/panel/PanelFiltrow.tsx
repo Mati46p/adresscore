@@ -7,7 +7,6 @@ import {
   KOLEJNOSC_KATEGORII,
   kierunekEfektywny,
   WAGA_MAX,
-  type WskaznikPrzygotowany,
   wagaUzytkownika,
 } from '@/wynik/silnik'
 import {
@@ -20,10 +19,16 @@ import {
   ustawWage,
   wybierzPersone,
 } from '@/wynik/stan'
+import { useMetaWarstw } from '@/wynik/startKompakt'
 import './panel.css'
 import { czyWarstwaWyborow } from '@/wynik/wybory'
 import { etykietaKierunku, kierunkiWarstwy } from './preferencje'
 import { WybierakKomitetu } from './WybierakKomitetu'
+
+/** Panel czyta z warstwy tylko `meta`, więc wystarczy manifest kompaktu (Szukaj bez pełnych danych). */
+interface WarstwaPanelu {
+  meta: WskaznikMeta
+}
 
 const SEGMENTY_WAGI = Array.from({ length: WAGA_MAX + 1 }, (_, n) => n)
 
@@ -70,7 +75,11 @@ export function PanelFiltrow() {
     if (persona !== 'wlasna') ostatniaPersona = persona
   }, [persona])
 
-  const wskazniki = dane.stan === 'gotowe' ? dane.wskazniki : []
+  // Pełne dane, a bez nich manifest kompaktu: lista warstw jest ta sama, panel działa od pierwszego koloru.
+  const metaKompaktu = useMetaWarstw()
+  const wskazniki: readonly WarstwaPanelu[] =
+    dane.stan === 'gotowe' ? dane.wskazniki : (metaKompaktu ?? []).map((meta) => ({ meta }))
+  const warstwyGotowe = dane.stan === 'gotowe' || metaKompaktu !== null
   const warstwyPanelu =
     tryb === 'biznes'
       ? wskazniki.filter((w) =>
@@ -209,8 +218,12 @@ export function PanelFiltrow() {
           </div>
         )}
 
-        {dane.stan === 'ladowanie' && <p className="panel-uwaga">Wczytuję warstwy…</p>}
-        {dane.stan === 'blad' && <p className="panel-uwaga">Nie udało się wczytać warstw.</p>}
+        {!warstwyGotowe && dane.stan === 'ladowanie' && (
+          <p className="panel-uwaga">Wczytuję warstwy…</p>
+        )}
+        {!warstwyGotowe && dane.stan === 'blad' && (
+          <p className="panel-uwaga">Nie udało się wczytać warstw.</p>
+        )}
         {KOLEJNOSC_KATEGORII.map((kat) => {
           const warstwy = warstwyPanelu.filter(
             (w) => w.meta.kategoria === kat && !czyWarstwaWyborow(w.meta.id),
@@ -274,14 +287,14 @@ export function PanelFiltrow() {
 
 interface GrupaProps {
   kategoria: KategoriaId
-  warstwy: readonly WskaznikPrzygotowany[]
+  warstwy: readonly WarstwaPanelu[]
   wagi: Readonly<Record<string, number>>
   kierunki: Readonly<Record<string, KierunekOceny>>
   poczatkowoOtwarta: boolean
   /** Warstwa wyborów: liczona razem z grupą (waga i suma), komitet wybierany w miejscu. */
   wybory?: {
-    komitet: WskaznikPrzygotowany
-    komitety: readonly WskaznikPrzygotowany[]
+    komitet: WarstwaPanelu
+    komitety: readonly WarstwaPanelu[]
   }
 }
 
@@ -355,7 +368,7 @@ function Warstwa({
   wagi,
   kierunki,
 }: {
-  w: WskaznikPrzygotowany
+  w: WarstwaPanelu
   wagi: Readonly<Record<string, number>>
   kierunki: Readonly<Record<string, KierunekOceny>>
 }) {

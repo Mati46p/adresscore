@@ -45,10 +45,14 @@ export interface SkaleKafli {
 }
 
 /** Skale kafli z indeksu i pliku `skale.<skrót>.json` (ten sam, który czyta pełna ścieżka). */
-export function skaleKafli(indeks: IndeksKompaktu, skale: Record<string, Skala>): SkaleKafli {
+export function skaleKafli(
+  indeks: IndeksKompaktu,
+  skale: Record<string, Skala>,
+  slowniki?: SkaleKafli['slowniki'],
+): SkaleKafli {
   const meta: Record<string, WskaznikMeta> = {}
   for (const [id, w] of Object.entries(indeks.wskazniki)) meta[id] = w.meta
-  return { skale, meta }
+  return slowniki ? { skale, meta, slowniki } : { skale, meta }
 }
 
 export interface OpcjeKafla {
@@ -316,6 +320,22 @@ export function useKafel(
   const k = kafelZPamieci(baza, wpis)
   if (!k) wczytajKafel(baza, wpis, skale).catch(() => {})
   return k
+}
+
+/** Kafel z adresem o pozycji `i` (w pamięci) albo null; odświeża się, gdy kafel dojdzie. */
+export function useKafelAdresu(i: number | null): KafelGotowy | null {
+  useSyncExternalStore(subskrybuj, migawka, migawka)
+  return i === null ? null : (poI.get(i) ?? null)
+}
+
+/** Adresy o pozycjach `is`, których kafle są w pamięci (kolejność jak w `is`; reszta odpada). */
+export function useAdresyKompakt(is: readonly number[]): Adres[] {
+  useSyncExternalStore(subskrybuj, migawka, migawka)
+  return is.flatMap((i) => {
+    const k = poI.get(i)
+    const a = k ? k.adresy[k.pozycje.get(i) as number] : undefined
+    return a ? [a] : []
+  })
 }
 
 /** Adres o pozycji `i`, jeśli jego kafel jest już w pamięci; inaczej null. */

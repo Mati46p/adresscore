@@ -174,6 +174,12 @@ let oczekujacyKlik: { lon: number; lat: number } | null = null
  * aplikacji (`ustawMiasto`) linku nie niesie, więc `podlaczDane` bierze wtedy profil ze stanu.
  */
 let oczekujacyUrl: StanUrl | null = null
+/**
+ * Profil z `oczekujacyUrl` został już zastosowany (`podlaczMeta` z manifestu kompaktu), a link wciąż czeka
+ * na słownik albo pełne dane. Bez tej flagi `podlaczDane` policzyłoby profil z linku od nowa i cofnęło wagi,
+ * które użytkownik zmienił na Szukaj bez pełnych danych (to okno trwa całą sesję, nie kilka sekund).
+ */
+let profilZLinkuZastosowany = false
 let odczytujemyHistorie = false
 type UstawieniaTrybu = Pick<StanAplikacji, 'persona' | 'wagi' | 'kierunki' | 'filtry'>
 /** Tryb mieszkańca to każdy poza `biznes`: kupuje albo wynajmuje. */
@@ -609,7 +615,12 @@ export function podlaczDane(
 ) {
   ustawSlownik(resolverZPelnychId(ids), adresy)
   const url = pobierzOczekujacyUrl()
-  zmien({ ...latkaMeta(wskazniki, url), ...latkaSlownika(url, adresy) })
+  const profilJuzJest = profilZLinkuZastosowany
+  profilZLinkuZastosowany = false
+  zmien({
+    ...latkaMeta(wskazniki, profilJuzJest ? null : url),
+    ...latkaSlownika(url, adresy),
+  })
 }
 
 /** Resolver z kolumny `id` pełnych danych: indeks = pozycja w adresy.json. */
@@ -733,7 +744,20 @@ function latkaSlownika(url: StanUrl | null, adresy: readonly Adres[]): Partial<S
  * zostaje w `oczekujacyUrl` do `podlaczSlownik` – nic się nie gubi.
  */
 export function podlaczMeta(wskazniki: readonly MetaWag[]) {
-  zmien(latkaMeta(wskazniki, podgladOczekujacegoUrl()))
+  const url = podgladOczekujacegoUrl()
+  if (url) profilZLinkuZastosowany = true
+  zmien(latkaMeta(wskazniki, url))
+}
+
+/**
+ * Czy link, z którym weszliśmy (albo który wklejono przed danymi), niesie id adresu lub porównania, więc
+ * czeka na słownik. Ekran bez pełnych danych (Etap B) ładuje wtedy `id.bin`, a bez takiego linku nie.
+ */
+export function linkCzekaNaSlownik(): boolean {
+  const url = podgladOczekujacegoUrl()
+  return (
+    url !== null && (url.idAdresu !== null || url.porownanie.length > 0 || url.ekran === 'okolica')
+  )
 }
 
 /**
@@ -743,7 +767,17 @@ export function podlaczMeta(wskazniki: readonly MetaWag[]) {
  */
 export function podlaczSlownik(resolver: ResolverId, adresy: readonly Adres[] = []) {
   ustawSlownik(resolver, adresy)
-  zmien(latkaSlownika(pobierzOczekujacyUrl(), adresy))
+  const url = pobierzOczekujacyUrl()
+  // Słownik z kompaktu ładuje się też dlatego, że użytkownik wybrał adres albo zmienił profil, a link
+  // startowy nie niósł żadnych id. Wtedy nie ma czego rozwiązywać, a odczyt linku cofnąłby filtry
+  // i porównanie zbudowane w międzyczasie (`filtry: []`, `porownanie` z linku).
+  const bezId =
+    adresy.length === 0 &&
+    url !== null &&
+    url.idAdresu === null &&
+    url.porownanie.length === 0 &&
+    url.ekran !== 'okolica'
+  zmien(latkaSlownika(bezId ? null : url, adresy))
 }
 
 // ── Synchronizacja z URL ─────────────────────────────────────────────────────────────────
@@ -963,6 +997,7 @@ function zapiszDoUrl(poprzedni: StanAplikacji) {
  */
 export function wczytajLinkStartowy(startowy: StanUrl) {
   oczekujacyUrl = startowy
+  profilZLinkuZastosowany = false
   stan = { ...stan, ekran: startowy.ekran }
   if (startowy.persona) stan = { ...stan, persona: startowy.persona }
   // Tryb biznes należy tylko do ekranu Biznes: `t=biznes` w innym linku (stary link, zapis sesji) nie
@@ -985,6 +1020,7 @@ export function wczytajLinkStartowy(startowy: StanUrl) {
  */
 export function zastosujUrlPrzedDanymi(url: StanUrl) {
   oczekujacyUrl = url
+  profilZLinkuZastosowany = false
   odczytujemyHistorie = true
   try {
     zmien({ ...miastoZLinku(url), ekran: url.ekran, ...zUrlBezSlownika(url) })
