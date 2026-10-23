@@ -12,7 +12,7 @@
 // - Adres bez okolicy (null w `okolice.json`) idzie do osobnej szarej okolicy `brak`, nie znika:
 //   suma okolic ma się równać liczbie w nagłówku.
 import type { Adres, PlikOkolic, WskaznikMeta } from '../kontrakty/index.ts'
-import type { GrupyHeksow, WskaznikPrzygotowany } from './silnik.ts'
+import type { GrupyHeksow, WskaznikWartosci } from './silnik.ts'
 
 /** Podpis jednostki liczenia. Zmienić na „mieszkańcy” dopiero z #74 (zameldowania) albo #40 (GUS). */
 export const JEDNOSTKA_LUKI = 'adresy'
@@ -300,7 +300,7 @@ function zamknij(l: Licznik): LiczbyLuki {
  * albo gmina (`okolicaAdresu`). Kolejność `adresy` musi być kolejnością z adresy.json.
  */
 export function policzLuki(
-  wskaznik: Pick<WskaznikPrzygotowany, 'meta' | 'wartosci' | 'niedostepny'>,
+  wskaznik: Pick<WskaznikWartosci, 'meta' | 'wartosci' | 'niedostepny'>,
   adresy: readonly Pick<Adres, 'dzielnica' | 'gmina' | 'h3'>[],
   grupy?: GrupyHeksow,
   okolice?: PlikOkolic | null,

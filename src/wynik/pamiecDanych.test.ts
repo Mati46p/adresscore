@@ -105,6 +105,30 @@ async function krakowGotowy(opcje?: OpcjeLadowania) {
 
 // Limit na test: gdy logika się zepsuje, ładowanie, na które czeka test, nie przyjdzie nigdy – test ma
 // wtedy zawieść, a nie wisieć.
+describe('bramka pełnych danych', { timeout: 5000 }, () => {
+  it('bez zwolnienia nie ładuje, po zwolnieniu jedno ładowanie (idempotentnie)', async () => {
+    const s = await swiezyStan()
+    const ladowanie = sterowaneLadowanie()
+    const pamiec = utworzPamiecDanych(ladowanie.wczytaj, s, { bramkaZamknieta: true })
+    pamiec.subskrybuj(() => {})
+    assert.deepEqual(ladowanie.wywolania, [])
+    assert.equal(pamiec.stanBiezacego().stan, 'ladowanie')
+    pamiec.pozwolNaPelneDane()
+    pamiec.pozwolNaPelneDane()
+    assert.deepEqual(ladowanie.wywolania, ['krakow'])
+  })
+
+  it('zapas czasowy otwiera bramkę sam', async () => {
+    const s = await swiezyStan()
+    const ladowanie = sterowaneLadowanie()
+    const pamiec = utworzPamiecDanych(ladowanie.wczytaj, s, { bramkaZamknieta: true, zapasMs: 20 })
+    pamiec.subskrybuj(() => {})
+    assert.deepEqual(ladowanie.wywolania, [])
+    await new Promise((r) => setTimeout(r, 80))
+    assert.deepEqual(ladowanie.wywolania, ['krakow'])
+  })
+})
+
 describe('pamięć danych per miasto', { timeout: 5000 }, () => {
   it('ładuje bieżące miasto raz, podpina jego słownik w stanie i oddaje dane', async () => {
     const { s, ladowanie, pamiec } = await start()

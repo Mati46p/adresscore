@@ -15,6 +15,8 @@ export interface PlikKompaktu {
 export interface KafelKompaktu {
   /** Heks H3 kafla (rozdzielczość `resKafla`). */
   h3: string
+  /** Rozdzielczość kafla: 7, a 8 dla dzieci gęstego r7 (brak pola w starym kompakcie = 7). */
+  res?: number
   /** Pierwszy indeks adresu w kaflu (indeksy kompaktu są ciągłe w kaflu). */
   od: number
   n: number
@@ -48,6 +50,17 @@ export interface IndeksKompaktu {
   /** Warstwy policzone dla innej wersji adresów: id → ich wersjaAdresow. */
   pominiete: Record<string, string>
   kafle: KafelKompaktu[]
+  /** Dodatki formatu 2: 'i' (kolumna `i` w kaflach), 'r8' (kafle r8), 'okolice' (plik boczny). */
+  rozszerzenia?: string[]
+  /** Prostokąty okolic; tylko Kraków. */
+  okolice?: PlikKompaktu
+}
+
+/** Plik boczny okolice.<skrót>.json: id okolicy → ramka [[zachód, południe], [wschód, północ]]. */
+export interface PlikOkolicKompaktu {
+  format: number
+  wersjaAdresow: string
+  okolice: Record<string, { prostokat: [[number, number], [number, number]]; n: number }>
 }
 
 /** Plik kafla kafle/<h3>.<skrót>.json.gz – JSON spakowany gzipem. */
@@ -69,6 +82,8 @@ export interface PlikKafla {
     lon: number[]
     lat: number[]
     h3: string[]
+    /** Pozycja adresu w adresy.json; brak w kaflach sprzed rozszerzenia 'i'. */
+    i?: number[]
   }
   wartosci: Record<string, (number | null)[]>
   etykiety: Record<string, (string | null)[]>

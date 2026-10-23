@@ -65,6 +65,16 @@ interface WpisMiasta {
   kontroler: AbortController
 }
 
+export interface OpcjePamieci {
+  /**
+   * Bramka pełnych danych (A4 „Szybki start”): `true` = subskrypcja (`useDane`) nie startuje ładowania,
+   * dopóki nie zawoła się `pozwolNaPelneDane` albo nie minie `zapasMs`. Domyślnie otwarta.
+   */
+  bramkaZamknieta?: boolean
+  /** Po tylu ms od utworzenia pamięci bramka otwiera się sama (mapa mogła nigdy nie dać sygnału). */
+  zapasMs?: number
+}
+
 /**
  * `wczytaj` ładuje pełne dane miasta. Przerwanie `signal` ma odrzucić jego obietnicę (jak `fetch`),
  * a pobieranie powinno stanąć, a nie dobiec do końca.
@@ -72,6 +82,7 @@ interface WpisMiasta {
 export function utworzPamiecDanych(
   wczytaj: (slug: SlugMiasta, signal: AbortSignal) => Promise<Dane>,
   aplikacja: StanDlaPamieci,
+  opcje: OpcjePamieci = {},
 ) {
   const LADOWANIE: StanDanych = { stan: 'ladowanie' }
   // Kolejność wstawiania = kolejność ostatniego użycia (`zaladujDane` przesuwa miasto na koniec).
@@ -80,6 +91,7 @@ export function utworzPamiecDanych(
   /** Słuchacze, którzy potrzebują pełnych danych (`subskrybuj`), w odróżnieniu od samych obserwatorów. */
   const ladujacy = new Set<() => void>()
   let obserwujemyMiasto = false
+  let bramkaOtwarta = !opcje.bramkaZamknieta
 
   function powiadom() {
     for (const f of sluchacze) f()
@@ -179,7 +191,7 @@ export function utworzPamiecDanych(
     // Błąd nie zostaje na całą sesję: ponowny wybór miasta ładuje je od nowa.
     if (wpisy.get(slug)?.stan.stan === 'blad') wpisy.delete(slug)
     // Bez ekranu, który potrzebuje pełnych danych (np. sam katalog), zmiana miasta niczego nie pobiera.
-    if (ladujacy.size > 0) void zaladujDane(slug)
+    if (ladujacy.size > 0 && bramkaOtwarta) void zaladujDane(slug)
     const s = stanMiasta(slug)
     if (s.stan === 'gotowe') podlaczGotowe(s)
     powiadom()
@@ -207,7 +219,7 @@ export function utworzPamiecDanych(
     sluchacze.add(f)
     ladujacy.add(f)
     obserwujMiasto()
-    void zaladujDane()
+    if (bramkaOtwarta) void zaladujDane()
     return () => {
       sluchacze.delete(f)
       ladujacy.delete(f)
@@ -224,6 +236,17 @@ export function utworzPamiecDanych(
     return () => sluchacze.delete(f)
   }
 
+  /**
+   * Otwiera bramkę pełnych danych: start ładowania bieżącego miasta, jeśli ktoś już na nie czeka.
+   * Idempotentne – kolejne wywołania nic nie robią.
+   */
+  function pozwolNaPelneDane() {
+    if (bramkaOtwarta) return
+    bramkaOtwarta = true
+    if (ladujacy.size > 0) void zaladujDane()
+  }
+  if (!bramkaOtwarta && opcje.zapasMs !== undefined) setTimeout(pozwolNaPelneDane, opcje.zapasMs)
+
   /** Stan danych bieżącego miasta (dla `useSyncExternalStore`: czysty odczyt, bez ładowania). */
   function stanBiezacego(): StanDanych {
     return stanMiasta(aplikacja.pobierzStan().miasto)
@@ -235,5 +258,13 @@ export function utworzPamiecDanych(
     return s.stan === 'gotowe' ? s : null
   }
 
-  return { zaladujDane, stanMiasta, stanBiezacego, daneJesliGotowe, subskrybuj, obserwuj }
+  return {
+    zaladujDane,
+    stanMiasta,
+    stanBiezacego,
+    daneJesliGotowe,
+    subskrybuj,
+    obserwuj,
+    pozwolNaPelneDane,
+  }
 }

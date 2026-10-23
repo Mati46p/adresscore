@@ -2,7 +2,7 @@
 // To nie jest kara w wyniku: wynik adresu i wyniki pozostałych adresów zostają bez zmian
 // (filtr tylko maskuje adres, nie rusza wag ani ocen). Funkcje są czyste i działają na samych
 // typach z silnika, więc testy idą na gołym `node --test`.
-import type { GrupyHeksow, WskaznikPrzygotowany } from './silnik.ts'
+import type { GrupyHeksow, WskaznikWartosci } from './silnik.ts'
 
 /** `rowne-zero` = wartość musi wynosić 0 (np. adres poza strefą zalewową). */
 export type Warunek = 'max' | 'min' | 'rowne-zero'
@@ -45,7 +45,7 @@ export interface Wykluczenia {
  * jest pomijany (nie wyklucza nikogo), ale zostaje w stanie – zadziała, gdy warstwa się pojawi.
  */
 export function policzWykluczenia(
-  wskazniki: readonly Pick<WskaznikPrzygotowany, 'meta' | 'wartosci'>[],
+  wskazniki: readonly Pick<WskaznikWartosci, 'meta' | 'wartosci'>[],
   filtry: readonly TwardyFiltr[],
   liczbaAdresow: number,
 ): Wykluczenia {

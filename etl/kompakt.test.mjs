@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { test } from 'node:test'
-import { latLngToCell } from 'h3-js'
+import { cellToParent, latLngToCell } from 'h3-js'
 import { wynikiHeksow } from '../src/wynik/heksy.ts'
 import {
   listaHeksow,
@@ -10,7 +10,7 @@ import {
   rozpakuj,
   sekcja,
 } from '../src/wynik/kompakt.ts'
-import { zbudujKompakt } from './kompakt.mjs'
+import { MAKS_KAFEL, zbudujKompakt } from './kompakt.mjs'
 import { maStalyNaglowek } from './lib/gzip.mjs'
 
 const komorki = [latLngToCell(50.061, 19.937, 10), latLngToCell(50.062, 19.939, 10)]
@@ -102,6 +102,87 @@ test('kompakt zachowuje heksy i wyłącza obszar, gdzie warstwy z danymi niosą 
   assert.ok(Number.isFinite(wynik.wartosc[ids.indexOf(komorki[1])]))
   // Równe wagi: połowa wagi ma dane (np. warstwa tylko-Kraków poza Krakowem) → heks zostaje (#148).
   assert.ok(Number.isFinite(policz(1).wartosc[ids.indexOf(komorki[0])]))
+})
+
+test('kafel niesie kolumnę i zgodną z kolejnością adresy.json', async () => {
+  const { indeks, pliki, kolejnosc } = zbudujKompakt(adresy, warstwy)
+  assert.deepEqual(indeks.rozszerzenia, ['i', 'r8', 'okolice'])
+  const zebrane = []
+  for (const wpis of indeks.kafle) {
+    const kafel = await odczytajKafel(pliki.get(wpis.plik))
+    assert.equal(wpis.res, 7)
+    assert.equal(kafel.kolumny.i.length, kafel.n)
+    kafel.kolumny.i.forEach((pozycja, j) => {
+      assert.equal(kafel.kolumny.id[j], adresy.kolumny.id[pozycja])
+      assert.equal(kafel.wartosci.pelna[j], warstwy[0].wartosci[pozycja])
+      zebrane[wpis.od + j] = pozycja
+    })
+  }
+  assert.deepEqual(zebrane, kolejnosc)
+})
+
+test('gęsty kafel r7 dzieli się na dzieci r8 o ciągłych zakresach', async () => {
+  const r7 = cellToParent(komorki[0], 7)
+  const punkty = []
+  for (let a = -30; a <= 30; a++)
+    for (let b = -30; b <= 30; b++) {
+      const lat = 50.061 + a * 0.0006
+      const lon = 19.937 + b * 0.0009
+      if (cellToParent(latLngToCell(lat, lon, 10), 7) === r7) punkty.push([lon, lat])
+    }
+  const n = MAKS_KAFEL + 200
+  const wiele = Array.from({ length: n }, (_, i) => punkty[i % punkty.length])
+  const kolumny = {
+    id: wiele.map((_, i) => `msip-${i + 1}`),
+    miejscowosc: wiele.map(() => 'Kraków'),
+    ulica: wiele.map((_, i) => `U${i % 7}`),
+    nr: wiele.map((_, i) => String(i)),
+    kod: wiele.map(() => '31-001'),
+    dzielnica: wiele.map(() => 'I'),
+    gmina: wiele.map(() => 'Kraków'),
+    teryt: wiele.map(() => '1261011'),
+    lon: wiele.map((p) => p[0]),
+    lat: wiele.map((p) => p[1]),
+    h3: wiele.map((p) => latLngToCell(p[1], p[0], 10)),
+  }
+  const gesty = { wersja: 'gesty-1', zrodla: [], kolumny }
+  const { indeks, pliki } = zbudujKompakt(gesty, [])
+  assert.ok(indeks.kafle.length > 1)
+  assert.ok(indeks.kafle.every((x) => x.res === 8 && x.n <= n))
+  let oczekiwany = 0
+  const pozycje = new Set()
+  for (const wpis of indeks.kafle) {
+    assert.equal(wpis.od, oczekiwany)
+    oczekiwany += wpis.n
+    const kafel = await odczytajKafel(pliki.get(wpis.plik))
+    assert.equal(kafel.n, wpis.n)
+    for (const h of kafel.kolumny.h3) assert.equal(cellToParent(h, 8), wpis.h3)
+    for (const i of kafel.kolumny.i) pozycje.add(i)
+  }
+  assert.equal(oczekiwany, n)
+  assert.equal(pozycje.size, n)
+})
+
+test('okolice: prostokąt i liczba adresów z adresów okolicy', () => {
+  const okolice = {
+    wersjaAdresow: adresy.wersja,
+    idOkolic: ['sim-1', 'sim-2'],
+    kolumny: { okolica: [0, 0, 1] },
+  }
+  const { indeks, pliki } = zbudujKompakt(adresy, warstwy, okolice)
+  const plik = JSON.parse(pliki.get(indeks.okolice.plik).toString('utf8'))
+  assert.deepEqual(plik.okolice['sim-1'], {
+    prostokat: [
+      [19.937, 50.061],
+      [19.937, 50.061],
+    ],
+    n: 2,
+  })
+  assert.deepEqual(plik.okolice['sim-2'].prostokat, [
+    [19.939, 50.062],
+    [19.939, 50.062],
+  ])
+  assert.equal(zbudujKompakt(adresy, warstwy).indeks.okolice, undefined)
 })
 
 test('każdy plik gzip kompaktu ma nagłówek niezależny od systemu (#179)', () => {

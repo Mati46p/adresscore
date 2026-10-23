@@ -118,7 +118,7 @@ export function percentyl(posortowane: ArrayLike<number>, p: number): number {
   return a + (b - a) * (poz - d)
 }
 
-function posortowaneLiczby(wartosci: readonly (number | null)[], zakres?: [number, number]) {
+function posortowaneLiczby(wartosci: ArrayLike<number | null>, zakres?: [number, number]) {
   // Wołane raz na warstwę przy starcie na ~176 tys. adresów: tablica typowana z góry zamiast
   // push do number[] i kopii w Float64Array.from – to był najdroższy kawałek startu.
   const liczby = new Float64Array(wartosci.length)
@@ -201,7 +201,7 @@ function skalaLiniowa(meta: WskaznikMeta, posortowane: () => Float64Array): Skal
 
 const JEDNOSTKI_ADMINISTRACYJNE: readonly WskaznikMeta['rozdzielczosc'][] = ['gmina', 'powiat']
 
-export function zbudujSkale(meta: WskaznikMeta, wartosci: readonly (number | null)[]): Skala {
+export function zbudujSkale(meta: WskaznikMeta, wartosci: ArrayLike<number | null>): Skala {
   if (meta.norma) return skalaLiniowa(meta, () => posortowaneLiczby(wartosci))
   const liczby = posortowaneLiczby(wartosci, meta.zakres)
   if (liczby.length === 0) return { od: Number.NaN, do: Number.NaN, norma: null, zrodlo: 'brak' }
@@ -281,12 +281,31 @@ export function ocenWartosc(
 
 export interface WskaznikPrzygotowany {
   meta: WskaznikMeta
-  wartosci: readonly (number | null)[]
+  /** Surowe pomiary; `NaN` = brak danych (dawny `null`). Float64, bo `skalaPasuje` porównuje dokładnie. */
+  wartosci: Float64Array
   etykiety?: readonly (string | null)[]
   slownikEtykiet?: Readonly<Record<string, string>>
   skala: Skala
   /** Powód, gdy plik warstwy się nie wczytał; wtedy każdy adres ma brak danych. */
   niedostepny?: string
+}
+
+/**
+ * Wskaźnik z dowolnym zapisem wartości (tablica z pliku albo Float64Array): dla funkcji, które
+ * tylko czytają `wartosci[i]` i same traktują null/NaN jako brak danych (luki, filtry).
+ */
+export type WskaznikWartosci = Omit<WskaznikPrzygotowany, 'wartosci'> & {
+  wartosci: ArrayLike<number | null>
+}
+
+/** Wartości z pliku (null = brak) do tablicy typowanej; brak danych to NaN, nigdy 0. */
+export function naFloat64(wartosci: ArrayLike<number | null>): Float64Array {
+  const wynik = new Float64Array(wartosci.length)
+  for (let i = 0; i < wartosci.length; i++) {
+    const w = wartosci[i]
+    wynik[i] = w === null || w === undefined ? Number.NaN : w
+  }
+  return wynik
 }
 
 export function przygotujWskaznik(plik: PlikWskaznika): WskaznikPrzygotowany {
@@ -302,15 +321,16 @@ export function przygotujWskaznikZeSkala(
   plik: PlikWskaznika,
   gotowa?: { skala: Skala; zDanymi: number },
 ): WskaznikPrzygotowany {
+  const wartosci = naFloat64(plik.wartosci)
   return {
     meta: plik.meta,
-    wartosci: plik.wartosci,
+    wartosci,
     etykiety: plik.etykiety,
     slownikEtykiet: plik.slownikEtykiet,
     skala:
-      gotowa && skalaPasuje(plik.meta, plik.wartosci, gotowa.skala, gotowa.zDanymi)
+      gotowa && skalaPasuje(plik.meta, wartosci, gotowa.skala, gotowa.zDanymi)
         ? gotowa.skala
-        : zbudujSkale(plik.meta, plik.wartosci),
+        : zbudujSkale(plik.meta, wartosci),
   }
 }
 
@@ -321,7 +341,7 @@ export function przygotujWskaznikZeSkala(
  */
 export function skalaPasuje(
   meta: WskaznikMeta,
-  wartosci: readonly (number | null)[],
+  wartosci: ArrayLike<number | null>,
   skala: Skala,
   zDanymi: number,
 ): boolean {
@@ -356,7 +376,7 @@ export function wskaznikNiedostepny(
   liczbaAdresow: number,
   powod: string,
 ): WskaznikPrzygotowany {
-  const wartosci: (number | null)[] = new Array(liczbaAdresow).fill(null)
+  const wartosci = new Float64Array(liczbaAdresow).fill(Number.NaN)
   return { meta, wartosci, skala: zbudujSkale(meta, wartosci), niedostepny: powod }
 }
 
@@ -443,7 +463,8 @@ export function wynikAdresu(
   const surowe = wskazniki.map((w) => {
     const wu = wagaUzytkownika(wagi, w.meta.id)
     const kierunek = kierunekEfektywny(w.meta, kierunki)
-    const wartosc = w.wartosci[i] ?? null
+    const surowa = w.wartosci[i]
+    const wartosc = surowa === undefined || Number.isNaN(surowa) ? null : surowa
     const ocena = kierunek ? ocenyWskaznika(w, kierunek)[i] : Number.NaN
     const liczona = kierunek !== null && wu > 0
     const maDane = ocena !== undefined && !Number.isNaN(ocena)

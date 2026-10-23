@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useRef } from 'react'
 import { Pokaz3D, parametrPokazu } from '@/miasto3d/Pokaz3D'
-import { useDaneJesliSa } from '@/wynik/dane'
+import { pozwolNaPelneDane, useDaneJesliSa } from '@/wynik/dane'
 import { useMiasto } from '@/wynik/miastoDanych'
 import { hrefAdresu } from '@/wynik/slug'
 import { useStan } from '@/wynik/stan'
@@ -37,6 +37,12 @@ export function Aplikacja() {
   // Link do prezentacji: pełny ekran 3D zamiast powłoki (#130).
   const pokaz = parametrPokazu()
   const ekran = useStan((s) => s.ekran)
+  // Bramka pełnych danych (A4): Szukaj zwalnia ją sam po pierwszym kolorze mapy, a katalog i panel ich nie
+  // pobierają. Pozostałe ekrany i prezentacja 3D (`?pokaz`) potrzebują danych od razu, więc otwierają bramkę
+  // przy wejściu – inaczej czekałyby na zapas czasowy.
+  useEffect(() => {
+    if (pokaz !== null || !['szukaj', 'katalog', 'panel'].includes(ekran)) pozwolNaPelneDane()
+  }, [pokaz, ekran])
   if (pokaz !== null) return <Pokaz3D id={pokaz} />
   // Panel admina (#/panel) żyje poza powłoką, jak prezentacja 3D: bez nagłówka mapy, bez tytułu i
   // canonicala serwisu (panel ma własny tytuł i noindex) i bez `useDane()`, które pobrałoby ~70 tys.
