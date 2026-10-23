@@ -130,7 +130,7 @@ function Lista({
   pozycje: Wplyw[]
   wariant: 'plus' | 'minus'
 }) {
-  if (pozycje.length === 0) return <div />
+  if (pozycje.length === 0) return null
   return (
     <div className="mini-karta__lista">
       <span className="mini-karta__tytul">{tytul}</span>

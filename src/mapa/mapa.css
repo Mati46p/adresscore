@@ -44,6 +44,46 @@
   font-variant-numeric: tabular-nums;
   font-weight: 600;
 }
+/* Przycisk ikonowy pokazuje się tylko na telefonie; na większych ekranach panel jest zawsze widoczny. */
+.mapa-ustawienia__przycisk {
+  display: none;
+}
+.mapa-ustawienia__panel {
+  display: contents;
+}
+.mapa-ustawienia__przelacznik {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--cel-dotyku);
+  padding: 0 10px;
+  border: 1px solid var(--ramka-pola);
+  border-radius: 7px;
+  background: var(--powierzchnia);
+  color: var(--tekst);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mapa-ustawienia__przelacznik:focus-visible {
+  outline: 3px solid var(--akcent);
+  outline-offset: 2px;
+}
+.mapa-ustawienia__znacznik {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--ramka-pola);
+  border-radius: 4px;
+}
+.mapa-ustawienia__przelacznik[aria-pressed="true"] {
+  border-color: var(--akcent-obrys);
+  background: var(--akcent-jasny);
+}
+.mapa-ustawienia__przelacznik[aria-pressed="true"] .mapa-ustawienia__znacznik {
+  border-color: var(--akcent);
+  background: var(--akcent);
+}
 .mapa-ustawienia__warstwy {
   position: relative;
 }
@@ -208,11 +248,63 @@
 @media (max-width: 639.98px) /* bp-m */ {
   .mapa-ustawienia {
     top: 8px;
-    left: 8px;
-    max-width: calc(100% - 16px);
+    right: 8px;
+    left: auto;
+    max-width: none;
+    padding: 0;
+    border: 0;
+    background: none;
+    box-shadow: none;
+  }
+  .mapa-ustawienia__przycisk {
+    display: grid;
+    width: var(--cel-dotyku);
+    height: var(--cel-dotyku);
+    place-items: center;
+    padding: 0;
+    border: 1px solid var(--ramka);
+    border-radius: 50%;
+    background: var(--powierzchnia);
+    box-shadow: 0 2px 8px rgb(24 32 43 / 0.1);
+    color: var(--tekst);
+    cursor: pointer;
+  }
+  .mapa-ustawienia__przycisk:focus-visible {
+    outline: 3px solid var(--akcent);
+    outline-offset: 2px;
+  }
+  .mapa-ustawienia__przycisk[aria-expanded="true"] {
+    border-color: var(--akcent-obrys);
+    background: var(--akcent-jasny);
+    color: var(--akcent);
+  }
+  /* Rozwijany panel: suwak krycia i przełączniki podkładu pod przyciskiem, do prawej krawędzi. */
+  .mapa-ustawienia__panel {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    display: none;
+    flex-direction: column;
+    gap: 6px;
+    width: min(300px, calc(100vw - 16px));
+    padding: 10px;
+    border: 1px solid var(--ramka);
+    border-radius: 10px;
+    background: var(--powierzchnia);
+    box-shadow: 0 4px 16px rgb(24 32 43 / 0.15);
+  }
+  .mapa-ustawienia__panel[data-otwarte] {
+    display: flex;
   }
   .mapa-ustawienia__suwak {
-    width: 120px;
+    width: 100%;
+  }
+  .mapa-ustawienia__warstwy-lista {
+    position: static;
+    margin-top: 6px;
+    padding: 0;
+    border: 0;
+    box-shadow: none;
   }
   .mapa-legenda {
     min-width: 0;
@@ -223,22 +315,41 @@
   .mapa-legenda__tytul {
     font-size: 12px;
   }
-  /* Podpis „poza obsługiwanymi miastami – brak danych" ma 41 znaków: na telefonie zawija się do
-     dwóch wierszy zamiast wychodzić poza mapę. */
   .mapa-krakowa .maplibregl-ctrl-zoom-in,
   .mapa-krakowa .maplibregl-ctrl-zoom-out {
     display: none;
   }
+  /* Zwinięta atrybucja to sam okrągły przycisk „i” 44 px, bez białego pola wokół. */
   .mapa-krakowa .maplibregl-ctrl-attrib.maplibregl-compact {
-    min-height: 44px;
+    min-width: var(--cel-dotyku);
+    min-height: var(--cel-dotyku);
+  }
+  .mapa-krakowa .maplibregl-ctrl-attrib.maplibregl-compact:not(.maplibregl-compact-show) {
+    background: transparent;
+    box-shadow: none;
+  }
+  .mapa-krakowa .maplibregl-ctrl-attrib.maplibregl-compact-show {
+    padding-right: calc(var(--cel-dotyku) + 4px);
+  }
+  .mapa-krakowa .maplibregl-ctrl-attrib-button {
+    top: auto;
+    right: 0;
+    bottom: 0;
+    width: var(--cel-dotyku);
+    height: var(--cel-dotyku);
+    border-radius: 50%;
+    background-color: var(--powierzchnia);
+    box-shadow: 0 2px 8px rgb(24 32 43 / 0.15);
   }
   .mapa-zrodla-miasta {
     display: none;
   }
+}
+
+/* Podpis mgły pod 1024 px wychodzi spod pigułek warstw; legenda niesie tę samą informację. */
+@media (max-width: 1023.98px) /* bp-l */ {
   .mapa-mgla-podpis {
-    max-width: 200px;
-    white-space: normal;
-    text-align: center;
+    display: none;
   }
 }
 

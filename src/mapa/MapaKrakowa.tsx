@@ -448,6 +448,8 @@ export function MapaKrakowa({
   const [gotowa, setGotowa] = useState(false)
   const [legenda, setLegenda] = useState<HTMLElement | null>(null)
   const [krycieHeksow, setKrycieHeksow] = useState(100)
+  // Telefon: panel ustawień jest zwinięty do przycisku; na większych ekranach CSS pokazuje go zawsze.
+  const [ustawieniaOtwarte, setUstawieniaOtwarte] = useState(false)
   // Legenda: rozwinięta od szerokości arkusza w górę, na telefonie i tablecie zwinięta do paska.
   const [legendaRozwinieta, setLegendaRozwinieta] = useState(
     () => !window.matchMedia(MEDIA_ARKUSZA).matches,
@@ -1102,43 +1104,72 @@ export function MapaKrakowa({
       />
       {etap === 'miasto' && (
         <div className="mapa-ustawienia" role="group" aria-label="Ustawienia mapy">
-          <label htmlFor={idKrycia}>Krycie heksów</label>
-          <input
-            id={idKrycia}
-            className="mapa-ustawienia__suwak"
-            type="range"
-            min="0"
-            max="100"
-            step="5"
-            value={krycieHeksow}
-            aria-valuetext={`${krycieHeksow}% krycia heksów`}
-            onChange={(e) => setKrycieHeksow(Number(e.currentTarget.value))}
-          />
-          <output htmlFor={idKrycia} className="mapa-ustawienia__wartosc">
-            {krycieHeksow}%
-          </output>
-          <details className="mapa-ustawienia__warstwy">
-            <summary title="Warstwy podkładu">Warstwy</summary>
-            <div className="mapa-ustawienia__warstwy-lista">
-              {GRUPY_PODKLADU.map(({ id, etykieta }) => (
-                <button
-                  key={id}
-                  type="button"
-                  className="mapa-ustawienia__przelacznik"
-                  aria-pressed={grupyPodkladu[id]}
-                  onClick={() =>
-                    setGrupyPodkladu((aktualne) => ({
-                      ...aktualne,
-                      [id]: !aktualne[id],
-                    }))
-                  }
-                >
-                  <span className="mapa-ustawienia__znacznik" aria-hidden="true" />
-                  {etykieta}
-                </button>
-              ))}
-            </div>
-          </details>
+          <button
+            type="button"
+            className="mapa-ustawienia__przycisk"
+            aria-label="Ustawienia mapy"
+            aria-expanded={ustawieniaOtwarte}
+            aria-controls={`${idKrycia}-panel`}
+            onClick={() => setUstawieniaOtwarte((o) => !o)}
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              aria-hidden="true"
+            >
+              <path d="M4 7h10M18 7h2M4 17h2M10 17h10" />
+              <circle cx="16" cy="7" r="2" />
+              <circle cx="8" cy="17" r="2" />
+            </svg>
+          </button>
+          <div
+            id={`${idKrycia}-panel`}
+            className="mapa-ustawienia__panel"
+            data-otwarte={ustawieniaOtwarte || undefined}
+          >
+            <label htmlFor={idKrycia}>Krycie heksów</label>
+            <input
+              id={idKrycia}
+              className="mapa-ustawienia__suwak"
+              type="range"
+              min="0"
+              max="100"
+              step="5"
+              value={krycieHeksow}
+              aria-valuetext={`${krycieHeksow}% krycia heksów`}
+              onChange={(e) => setKrycieHeksow(Number(e.currentTarget.value))}
+            />
+            <output htmlFor={idKrycia} className="mapa-ustawienia__wartosc">
+              {krycieHeksow}%
+            </output>
+            <details className="mapa-ustawienia__warstwy">
+              <summary title="Warstwy podkładu">Warstwy</summary>
+              <div className="mapa-ustawienia__warstwy-lista">
+                {GRUPY_PODKLADU.map(({ id, etykieta }) => (
+                  <button
+                    key={id}
+                    type="button"
+                    className="mapa-ustawienia__przelacznik"
+                    aria-pressed={grupyPodkladu[id]}
+                    onClick={() =>
+                      setGrupyPodkladu((aktualne) => ({
+                        ...aktualne,
+                        [id]: !aktualne[id],
+                      }))
+                    }
+                  >
+                    <span className="mapa-ustawienia__znacznik" aria-hidden="true" />
+                    {etykieta}
+                  </button>
+                ))}
+              </div>
+            </details>
+          </div>
         </div>
       )}
       {widok3d &&
