@@ -43,6 +43,7 @@ export class DostawcaGeoJson {
   private mglaR8: string[] | null = null
   private blad = false
   private zniszczony = false
+  private zapasTla: ReturnType<typeof setTimeout> | undefined
   /** Numer ostatniego zlecenia heksów na źródło – wynik o innym numerze jest już nieaktualny. */
   private readonly zlecenia = new Map<string, number>()
   /** Zlecenie, którego wynik jeszcze nie wrócił z workera (zapas, gdy worker padnie). */
@@ -60,7 +61,7 @@ export class DostawcaGeoJson {
   constructor(private readonly mapa: MapLibre) {
     mapa.on('sourcedata', this.nasluch)
     // Zapas: miasto bez heksów (albo zerwany pierwszy kolor) nie może wstrzymać tła i mgły na zawsze.
-    setTimeout(() => this.otworzTlo(), ZAPAS_OTWARCIA_TLA_MS)
+    this.zapasTla = setTimeout(() => this.otworzTlo(), ZAPAS_OTWARCIA_TLA_MS)
   }
 
   /** Czy dla źródła jest zlecenie, którego dane jeszcze nie zostały załadowane przez mapę. */
@@ -114,10 +115,14 @@ export class DostawcaGeoJson {
   /** Unieważnia oczekującą mgłę (wynik z workera zostanie odrzucony). */
   anulujMgle() {
     this.nrMgly++
+    // Bez tego awaria workera policzyłaby anulowaną mgłę synchronicznie i nałożyła ją na mapę.
+    this.mglaR8 = null
+    this.kolejki[KANAL_TLA]?.usun('mgla')
   }
 
   zniszcz() {
     this.zniszczony = true
+    clearTimeout(this.zapasTla)
     this.mapa.off('sourcedata', this.nasluch)
     this.zatrzymajWorkery()
     for (const lista of this.urle.values()) for (const u of lista) URL.revokeObjectURL(u)

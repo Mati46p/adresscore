@@ -32,7 +32,7 @@ const SKORUPA = ['/', '/index.html']
 // tego test rejestru miast.
 const ZAWSZE_Z_SIECI = /^\/dane\/(miasta\/[a-z]+\/)?(kompakt\/indeks|manifest)\.json$/
 // Plik kompaktu z hashem treści w nazwie – niezmienny, więc bez odświeżania w tle.
-const KOMPAKT_Z_HASHEM = /\/kompakt\/[^/]+\.[0-9a-f]{10}\.(bin|json|json\.gz)$/
+const KOMPAKT_Z_HASHEM = /\/kompakt\/.+\.[0-9a-f]{10}\.(bin|json|json\.gz)$/
 
 self.addEventListener('install', (e) => {
   e.waitUntil(

@@ -26,6 +26,11 @@ export class KolejkaZlecen<T> {
     return wpis && { klucz: najlepszy, zlecenie: wpis.zlecenie }
   }
 
+  /** Zdejmuje oczekujące zlecenie o kluczu (bez skutku, gdy go nie ma). */
+  usun(klucz: string) {
+    this.wpisy.delete(klucz)
+  }
+
   get rozmiar() {
     return this.wpisy.size
   }
