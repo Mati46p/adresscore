@@ -54,6 +54,8 @@ export interface IndeksKompaktu {
   rozszerzenia?: string[]
   /** Prostokąty okolic; tylko Kraków. */
   okolice?: PlikKompaktu
+  /** slowniki.<skrót>.json: id warstwy → słownik etykiet (kafle niosą tylko kody). */
+  slowniki?: PlikKompaktu
 }
 
 /** Plik boczny okolice.<skrót>.json: id okolicy → ramka [[zachód, południe], [wschód, północ]]. */
@@ -223,6 +225,12 @@ export function listaHeksow(r: Rozpakowany, nazwa: string): string[] {
 }
 
 const HEX = Array.from({ length: 256 }, (_, b) => b.toString(16).padStart(2, '0'))
+
+/** Pozycja w adresy.json dla każdego indeksu kompaktu (sekcja `kolejnosc` w id.bin); stary plik – null. */
+export function kolejnoscId(r: Rozpakowany): Uint32Array | null {
+  if (!r.naglowek.sekcje.some((s) => s.nazwa === 'kolejnosc')) return null
+  return sekcja(r, 'kolejnosc') as Uint32Array
+}
 
 export function dekodujId(r: Rozpakowany): string[] {
   const k = kolumna(r, 'id', 'id')

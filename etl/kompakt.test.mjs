@@ -4,6 +4,7 @@ import { test } from 'node:test'
 import { cellToParent, latLngToCell } from 'h3-js'
 import { wynikiHeksow } from '../src/wynik/heksy.ts'
 import {
+  kolejnoscId,
   listaHeksow,
   niezgodnoscKompaktu,
   odczytajKafel,
@@ -102,6 +103,22 @@ test('kompakt zachowuje heksy i wyłącza obszar, gdzie warstwy z danymi niosą 
   assert.ok(Number.isFinite(wynik.wartosc[ids.indexOf(komorki[1])]))
   // Równe wagi: połowa wagi ma dane (np. warstwa tylko-Kraków poza Krakowem) → heks zostaje (#148).
   assert.ok(Number.isFinite(policz(1).wartosc[ids.indexOf(komorki[0])]))
+})
+
+test('id.bin niesie kolejność kompaktu → pozycja w adresy.json', async () => {
+  const { indeks, pliki, kolejnosc } = zbudujKompakt(adresy, warstwy)
+  const r = await rozpakuj(pliki.get(indeks.id.plik))
+  assert.deepEqual([...(kolejnoscId(r) ?? [])], kolejnosc)
+})
+
+test('słowniki etykiet trafiają do pliku bocznego', () => {
+  const zSlownikiem = warstwy.map((w, j) =>
+    j === 0 ? { ...w, slownikEtykiet: { a1: 'Szkoła nr 1' } } : w,
+  )
+  const { indeks, pliki } = zbudujKompakt(adresy, zSlownikiem)
+  assert.ok(indeks.slowniki)
+  const slowniki = JSON.parse(Buffer.from(pliki.get(indeks.slowniki.plik)).toString('utf8'))
+  assert.deepEqual(slowniki[zSlownikiem[0].meta.id], { a1: 'Szkoła nr 1' })
 })
 
 test('kafel niesie kolumnę i zgodną z kolejnością adresy.json', async () => {

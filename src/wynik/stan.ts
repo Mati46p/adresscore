@@ -129,8 +129,18 @@ let stan: StanAplikacji = {
 const sluchacze = new Set<() => void>()
 
 // Słownik id ↔ indeks dostajemy dopiero po wczytaniu adresów. Do tego czasu id z URL czekają.
-let idAdresow: readonly string[] | null = null
-let indeksPoId = new Map<string, number>()
+/**
+ * Rozwiązywanie id adresu ↔ indeks. Pełne dane budują je z kolumny `id` (`resolverZPelnychId`), ekran bez
+ * pełnych danych (Etap B) z `id.bin` kompaktu (`resolverZId`). `wszystkieId` (pełna lista w kolejności
+ * indeksów) jest opcjonalne: potrzebuje go tylko wejście ze ścieżki `/adres/<slug>` (skrót id).
+ */
+export interface ResolverId {
+  indeksDlaId(id: string): number | null
+  idDlaIndeksu(i: number): string | null
+  wszystkieId?: readonly string[]
+}
+
+let slownik: ResolverId | null = null
 // Hash i slug liczone leniwie: dla ~176 tys. adresów to ~0,7 s procesora przy starcie, a potrzebne
 // są tylko przy wejściu z linku /adres/… i przy zapisie ścieżki wybranego adresu.
 let indeksPoHash: Map<string, number> | null = null
@@ -271,7 +281,7 @@ export function subskrybuj(sluchacz: () => void): () => void {
 function zmien(latka: Partial<StanAplikacji>) {
   const poprzedni = stan
   stan = zgodnyZTrybem(poprzedni, { ...stan, ...latka })
-  if (idAdresow) zapiszPreferencje(doUrl(stan))
+  if (slownik) zapiszPreferencje(doUrl(stan))
   zapiszDoUrl(poprzedni)
   for (const s of sluchacze) s()
 }
@@ -572,11 +582,11 @@ function miastoZLinku(url: StanUrl): Partial<StanAplikacji> {
 
 /** Id adresu pod indeksem – do linków `#/adres/<id>`. */
 export function idAdresu(i: number | null): string | null {
-  return i === null ? null : (idAdresow?.[i] ?? null)
+  return i === null ? null : (slownik?.idDlaIndeksu(i) ?? null)
 }
 
 export function indeksAdresu(id: string | null): number | null {
-  return id === null ? null : (indeksPoId.get(id) ?? null)
+  return id === null ? null : (slownik?.indeksDlaId(id) ?? null)
 }
 
 /**
@@ -597,20 +607,80 @@ export function podlaczDane(
   wskazniki: readonly MetaWag[],
   adresy: readonly Adres[],
 ) {
-  idAdresow = ids
-  indeksPoId = new Map(ids.map((id, i) => [id, i]))
+  ustawSlownik(resolverZPelnychId(ids), adresy)
+  const url = pobierzOczekujacyUrl()
+  zmien({ ...latkaMeta(wskazniki, url), ...latkaSlownika(url, adresy) })
+}
+
+/** Resolver z kolumny `id` pełnych danych: indeks = pozycja w adresy.json. */
+function resolverZPelnychId(ids: readonly string[]): ResolverId {
+  const poId = new Map(ids.map((id, i) => [id, i]))
+  return {
+    indeksDlaId: (id) => poId.get(id) ?? null,
+    idDlaIndeksu: (i) => ids[i] ?? null,
+    wszystkieId: ids,
+  }
+}
+
+/**
+ * Resolver z samych id kompaktu (`id.bin` po `dekodujId`), bez pełnych adresów. `id.bin` jest w
+ * kolejności KOMPAKTU, a `wybrany`/`porownanie` to indeksy w adresy.json (`etl/kompakt.mjs`:
+ * `kolejnosc[j]` = indeks w adresy.json adresu o indeksie j w kompakcie, kolumna `i` kafli). Bez
+ * `kolejnosc` pozycja w `id.bin` jest indeksem wyniku; z nią indeks przechodzi przez tę tablicę
+ * w obie strony.
+ */
+export function resolverZId(
+  dekodowaneId: readonly string[],
+  kolejnosc?: ArrayLike<number>,
+): ResolverId {
+  const poId = new Map(dekodowaneId.map((id, j) => [id, kolejnosc ? (kolejnosc[j] as number) : j]))
+  let odwrotna: Map<number, number> | null = null
+  const pozycja = (i: number): number | undefined => {
+    if (!kolejnosc) return i
+    if (!odwrotna) {
+      odwrotna = new Map()
+      for (let j = 0; j < dekodowaneId.length; j++) odwrotna.set(kolejnosc[j] as number, j)
+    }
+    return odwrotna.get(i)
+  }
+  return {
+    indeksDlaId: (id) => poId.get(id) ?? null,
+    idDlaIndeksu: (i) => {
+      const j = pozycja(i)
+      return j === undefined ? null : (dekodowaneId[j] ?? null)
+    },
+  }
+}
+
+/** Link czekający na dane (zużywany raz); w przeglądarce czytany od nowa, by objąć zmiany hasha. */
+function pobierzOczekujacyUrl(): StanUrl | null {
+  const url = podgladOczekujacegoUrl()
+  oczekujacyUrl = null
+  return url
+}
+
+function podgladOczekujacegoUrl(): StanUrl | null {
+  return typeof window === 'undefined' ? oczekujacyUrl : oczekujacyUrl ? czytajBiezacyUrl() : null
+}
+
+function ustawSlownik(resolver: ResolverId, adresy: readonly Adres[]) {
+  slownik = resolver
   indeksPoHash = null
   adresyStanu = adresy
   miastoSlownika = stan.miasto
+}
+
+/**
+ * Część zależna wyłącznie od manifestu: meta warstw → wagi i kierunki persony (profil z linku albo ze
+ * stanu).
+ */
+function latkaMeta(wskazniki: readonly MetaWag[], url: StanUrl | null): Partial<StanAplikacji> {
   for (const m of wskazniki) znaneMeta.set(m.id, m)
   // Link czeka na dane tylko po starcie i po zmianie hasha przed wczytaniem (`oczekujacyUrl`): niesie
   // profil (persona, ustawienia) i id adresów. Zmiana miasta z aplikacji (`ustawMiasto`) linku nie
   // niesie, a adres w pasku jest wtedy odbiciem stanu – stan ma pełniejszy profil niż `u=` (link
   // przyjmuje do 100 wag, a Kraków ma 127 warstw). Bierzemy go więc ze stanu: zmiana miasta nie
   // może cofnąć wag, które użytkownik ustawił.
-  const url =
-    typeof window === 'undefined' ? oczekujacyUrl : oczekujacyUrl ? czytajBiezacyUrl() : null
-  oczekujacyUrl = null
   const persona: PersonaId | 'wlasna' = url
     ? url.ustawienia
       ? 'wlasna'
@@ -630,10 +700,20 @@ export function podlaczDane(
   // Profil z linku liczy się od nowa dla wszystkich znanych warstw (link jest źródłem prawdy), a profil
   // ze stanu wygrywa z wagami domyślnymi: wagi, które użytkownik już ma, zostają, a warstwy nowego
   // miasta dostają wagę z persony.
-  const wagi = url ? policzone.wagi : { ...policzone.wagi, ...stan.wagi }
-  const kierunki = url ? policzone.kierunki : { ...policzone.kierunki, ...stan.kierunki }
-  const klik = oczekujacyKlik
-  oczekujacyKlik = null
+  return {
+    persona,
+    tryb,
+    biznes,
+    wagi: url ? policzone.wagi : { ...policzone.wagi, ...stan.wagi },
+    kierunki: url ? policzone.kierunki : { ...policzone.kierunki, ...stan.kierunki },
+  }
+}
+
+/** Część zależna od słownika: id adresu i porównanie z linku oraz klik w heks innego miasta. */
+function latkaSlownika(url: StanUrl | null, adresy: readonly Adres[]): Partial<StanAplikacji> {
+  // Bez adresów (słownik z kompaktu) klik czeka na pełne dane miasta.
+  const klik = adresy.length > 0 ? oczekujacyKlik : null
+  if (klik) oczekujacyKlik = null
   const zKlikniecia = klik
     ? (adresWKliknietymHeksie(adresy, klik.lon, klik.lat).adres?.i ?? null)
     : null
@@ -641,16 +721,29 @@ export function podlaczDane(
   // i filtry Biznesu, obiekty symulatora i ekran stan dostał przy starcie albo od zmiany użytkownika
   // w trakcie ładowania – ponowne czytanie linku cofnęłoby tę zmianę (#108), bo przed wczytaniem
   // adresów `zapiszDoUrl` nie zdążył jej tam zapisać.
-  zmien({
-    persona,
-    tryb,
-    biznes,
-    wagi,
-    kierunki,
+  return {
     ...(url ? zUrlPoWczytaniuAdresow(url) : {}),
     // Klik w heks innego miasta wybiera adres po wczytaniu jego danych (nowszy niż adres z linku).
     ...(zKlikniecia === null ? {} : { wybrany: zKlikniecia }),
-  })
+  }
+}
+
+/**
+ * Etap B (Szukaj bez pełnych danych): wszystko, co zależy wyłącznie od manifestu. Link z id adresu
+ * zostaje w `oczekujacyUrl` do `podlaczSlownik` – nic się nie gubi.
+ */
+export function podlaczMeta(wskazniki: readonly MetaWag[]) {
+  zmien(latkaMeta(wskazniki, podgladOczekujacegoUrl()))
+}
+
+/**
+ * Podpina słownik id ↔ indeks (z kompaktu albo z pełnych danych) i rozwiązuje to, co czekało: id
+ * adresu i porównanie z linku zamieniają się na indeksy. `adresy` opcjonalne – bez nich klik w heks
+ * i ścieżka `/adres/<slug>` nie mają skąd wziąć adresu.
+ */
+export function podlaczSlownik(resolver: ResolverId, adresy: readonly Adres[] = []) {
+  ustawSlownik(resolver, adresy)
+  zmien(latkaSlownika(pobierzOczekujacyUrl(), adresy))
 }
 
 // ── Synchronizacja z URL ─────────────────────────────────────────────────────────────────
@@ -662,7 +755,7 @@ function zUrlZeSlownikiem(url: StanUrl): Partial<StanAplikacji> {
     // Nieznany adres w linku → wracamy do wyszukiwania zamiast pustej karty.
     ekran: url.ekran === 'okolica' && wybrany === null ? 'szukaj' : url.ekran,
     wybrany: url.ekran === 'okolica' ? wybrany : stan.wybrany,
-    porownanie: url.porownanie.map((id) => indeksPoId.get(id)).filter((i) => i !== undefined),
+    porownanie: url.porownanie.map((id) => indeksAdresu(id)).filter((i) => i !== null),
   }
 }
 
@@ -765,13 +858,14 @@ function czytajBiezacyUrl(): StanUrl {
     // Ścieżka /adres/<slug> to strona SEO, a te powstają z adresów Krakowa (FR-015): rozwiązujemy ją
     // wyłącznie na słowniku Krakowa. Słownik innego miasta nie zna tego adresu, a gdyby znał z
     // przypadku skrótu, otworzyłby cudzy adres.
-    if (hash && !indeksPoHash && idAdresow && miastoSlownika === MIASTO_DOMYSLNE)
-      indeksPoHash = new Map(idAdresow.map((id, i) => [hashAdresu(id), i]))
+    const wszystkie = slownik?.wszystkieId
+    if (hash && !indeksPoHash && wszystkie && miastoSlownika === MIASTO_DOMYSLNE)
+      indeksPoHash = new Map(wszystkie.map((id, i) => [hashAdresu(id), i]))
     const indeks = hash ? indeksPoHash?.get(hash) : undefined
     return {
       ...url,
       ekran: 'okolica',
-      idAdresu: indeks === undefined ? null : (idAdresow?.[indeks] ?? null),
+      idAdresu: indeks === undefined ? null : (slownik?.idDlaIndeksu(indeks) ?? null),
     }
   }
   return url
@@ -831,7 +925,7 @@ function zapiszDoUrl(poprzedni: StanAplikacji) {
   // `replaceState` na `/#/panel` (bez query), skasował kod przed wymianą i logowanie kończyłoby się
   // cichą porażką, szczególnie gdy dostawca obetnie fragment adresu powrotu.
   if (stan.ekran === 'panel') return
-  if (!idAdresow) return zapiszParametryEkranuPrzedDanymi(poprzedni)
+  if (!slownik) return zapiszParametryEkranuPrzedDanymi(poprzedni)
   // Indeksowalne ścieżki (/katalog/<ulica>, /metoda) to strony Krakowa i nie niosą `mst=`: zostają
   // tylko, gdy miasto było i jest Krakowem. Zmiana miasta przepisuje adres na hash z `mst=`.
   const wKrakowie = stan.miasto === MIASTO_DOMYSLNE && poprzedni.miasto === MIASTO_DOMYSLNE
@@ -904,11 +998,7 @@ export function zastosujZmianeUrl(url: StanUrl) {
   // Pełny odczyt wymaga słownika adresów miasta Z LINKU i tego miasta jako bieżącego. Inaczej (inne
   // miasto w linku albo dane bieżącego miasta jeszcze się wczytują po `ustawMiasto`) link czeka na
   // dane jak przed pierwszym wczytaniem: stary słownik rozwiązałby id na adresach innego miasta.
-  if (
-    !idAdresow ||
-    miastoSlownika !== stan.miasto ||
-    (url.miasto ?? MIASTO_DOMYSLNE) !== stan.miasto
-  )
+  if (!slownik || miastoSlownika !== stan.miasto || (url.miasto ?? MIASTO_DOMYSLNE) !== stan.miasto)
     return zastosujUrlPrzedDanymi(url)
   const latka: Partial<StanAplikacji> = zUrl(url)
   const persona = url.ustawienia ? 'wlasna' : (url.persona ?? PERSONA_DOMYSLNA)

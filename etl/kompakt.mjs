@@ -500,13 +500,23 @@ export function zbudujKompakt(plikAdresow, plikiWskaznikow, okolice = null) {
       ]),
     ),
   )
-  const plikId = dodajBin('id', { n, wersja }, { id: kolumnaId(wgKolejnosci(k.id)) })
+  // `kolejnosc` (pozycja w adresy.json dla każdego indeksu kompaktu): stan i linki trzymają pozycje
+  // z adresy.json, a bez pełnych adresów nie da się ich inaczej odwzorować na id i kafle (#247).
+  const plikId = dodajBin(
+    'id',
+    { n, wersja },
+    {
+      id: kolumnaId(wgKolejnosci(k.id)),
+      kolejnosc: { sekcje: { kolejnosc: Uint32Array.from(kolejnosc) } },
+    },
+  )
 
   // Wersja kompaktu: adresy + treść każdej warstwy. Zmiana czegokolwiek = nowa wersja.
   const h = createHash('sha256').update(wersja)
   for (const w of zgodne) h.update(skrot(JSON.stringify(w)))
   const wskazniki = {}
   const skale = {}
+  const slowniki = {}
   przygotowane.forEach((w, j) => {
     let zDanymi = 0
     for (const v of w.wartosci) if (v !== null && v === v) zDanymi++
@@ -518,10 +528,15 @@ export function zbudujKompakt(plikAdresow, plikiWskaznikow, okolice = null) {
       filtr: plikiFiltrow[w.meta.id],
     }
     skale[w.meta.id] = w.skala
+    if (zgodne[j].slownikEtykiet) slowniki[w.meta.id] = zgodne[j].slownikEtykiet
   })
   // Skale osobno: karta potrzebuje ich dopiero z pierwszym kaflem, a skala percentylowa
   // może nieść tablicę progów, która nie powinna obciążać startu.
   const plikSkal = dodaj('skale', Buffer.from(JSON.stringify(skale)), 'json')
+  // Słowniki etykiet (kafle niosą tylko kody): bez nich karta z kafla pokazałaby „u11” zamiast nazwy.
+  const plikSlownikow = Object.keys(slowniki).length
+    ? dodaj('slowniki', Buffer.from(JSON.stringify(slowniki)), 'json')
+    : null
   const indeks = {
     format: FORMAT,
     wersja: h.digest('hex').slice(0, 12),
@@ -534,6 +549,7 @@ export function zbudujKompakt(plikAdresow, plikiWskaznikow, okolice = null) {
     // kolumnę `i`, mogą być r8, a okolice są w pliku bocznym – i startuje z kompaktu.
     rozszerzenia: ['i', 'r8', 'okolice'],
     ...(plikOkolic ? { okolice: plikOkolic } : {}),
+    ...(plikSlownikow ? { slowniki: plikSlownikow } : {}),
     heksy: plikHeksow,
     skale: plikSkal,
     szukaj: plikSzukaj,
