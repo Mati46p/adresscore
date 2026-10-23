@@ -39,6 +39,8 @@ import { gzipDeterministyczny } from './lib/gzip.mjs'
 export const FORMAT = 2
 /** Rozdzielczość kafla adresów: r7 to ok. 450 adresów (najwyżej ~2700) w Krakowie. */
 export const RES_KAFLA = 7
+/** Kafel r7 z większą liczbą adresów dzielimy na dzieci r8 (cel: kafel poniżej ok. 100 kB gzip). */
+export const MAKS_KAFEL = 1500
 /** Ocena heksu w u8: 0–100, 255 = brak danych. Pół punktu kosztowało 20% więcej bajtów. */
 export const SKALA_OCENY = 1
 /** Udział adresów z danymi w u8: 0–200 = udział × 200. */
@@ -270,7 +272,7 @@ const porownajPl = new Intl.Collator('pl', { numeric: true }).compare
  * Nazwa pliku niesie skrót treści, więc te same JSON-y dają te same bajty i nazwy.
  * `kolejnosc[j]` = indeks w adresy.json adresu, który w kompakcie ma indeks j.
  */
-export function zbudujKompakt(plikAdresow, plikiWskaznikow) {
+export function zbudujKompakt(plikAdresow, plikiWskaznikow, okolice = null) {
   const k = plikAdresow.kolumny
   const n = k.id.length
   const pliki = new Map()
@@ -392,16 +394,19 @@ export function zbudujKompakt(plikAdresow, plikiWskaznikow) {
     )
   })
 
-  // Kafle r7: ciągłe zakresy adresów (dzięki sortowaniu heksów).
+  // Kafle: ciągłe zakresy adresów (dzięki sortowaniu heksów). Heks r7 ma zwykle ok. 450 adresów,
+  // ale w gęstej zabudowie ponad 2000 (kafel ~200 kB gzip), więc taki r7 dzielimy na dzieci r8.
+  // Dzieci r8 są ciągłe w kolejności kompaktu z tego samego powodu co r7: indeks H3 trzyma
+  // rodzica w górnych bitach, więc sortowanie po r10 zagnieżdża r7 → r8 → r10 bez zmiany klucza.
   const kafle = []
-  let od = 0
-  while (od < n) {
-    const klucz = cellToParent(heksy[grupa10[od]], RES_KAFLA)
-    let doo = od
-    while (doo < n && cellToParent(heksy[grupa10[doo]], RES_KAFLA) === klucz) doo++
+  const dodajKafel = (od, doo, res) => {
+    const klucz = cellToParent(heksy[grupa10[od]], res)
     const zakres = kolejnosc.slice(od, doo)
     const kolumny = {}
     for (const nazwa of Object.keys(k)) kolumny[nazwa] = zakres.map((i) => k[nazwa][i] ?? null)
+    // `i` = pozycja adresu w adresy.json (kolejność kompaktu jest inna): pozwala dolać dane
+    // kafla do tablic zbudowanych z pełnego pliku bez przeszukiwania po id.
+    kolumny.i = zakres
     const wartosci = {}
     const etykiety = {}
     for (const w of zgodne) {
@@ -425,8 +430,64 @@ export function zbudujKompakt(plikAdresow, plikiWskaznikow) {
       gzipDeterministyczny(Buffer.from(JSON.stringify(tresc))),
       'json.gz',
     )
-    kafle.push({ h3: klucz, od, n: doo - od, plik: plik.plik })
-    od = doo
+    kafle.push({ h3: klucz, res, od, n: doo - od, plik: plik.plik })
+  }
+  const koniecGrupy = (od, res) => {
+    const klucz = cellToParent(heksy[grupa10[od]], res)
+    let doo = od
+    while (doo < n && cellToParent(heksy[grupa10[doo]], res) === klucz) doo++
+    return doo
+  }
+  for (let od = 0, doo; od < n; od = doo) {
+    doo = koniecGrupy(od, RES_KAFLA)
+    if (doo - od <= MAKS_KAFEL) {
+      dodajKafel(od, doo, RES_KAFLA)
+      continue
+    }
+    for (let o = od, d; o < doo; o = d) {
+      d = koniecGrupy(o, RES_KAFLA + 1)
+      dodajKafel(o, d, RES_KAFLA + 1)
+    }
+  }
+
+  // Okolice: prostokąt [[zachód, południe], [wschód, północ]] i liczba adresów każdej okolicy.
+  // Tak samo jak graniceOkolicy (src/mapa/luki): adresy bez położenia (0,0) pomijamy. Minimalny
+  // bok (MIN_BOK) dokłada aplikacja, bo to decyzja kamery, nie danych.
+  let plikOkolic = null
+  if (okolice) {
+    const ramki = {}
+    okolice.kolumny.okolica.forEach((p, i) => {
+      if (p === null || p === undefined) return
+      const lon = k.lon[i]
+      const lat = k.lat[i]
+      if (!Number.isFinite(lon) || !Number.isFinite(lat) || (lon === 0 && lat === 0)) return
+      const id = okolice.idOkolic[p]
+      const r = ramki[id]
+      if (!r)
+        ramki[id] = {
+          prostokat: [
+            [lon, lat],
+            [lon, lat],
+          ],
+          n: 1,
+        }
+      else {
+        const [[z, s], [w, pn]] = r.prostokat
+        r.prostokat = [
+          [Math.min(z, lon), Math.min(s, lat)],
+          [Math.max(w, lon), Math.max(pn, lat)],
+        ]
+        r.n++
+      }
+    })
+    const posortowane = Object.fromEntries(
+      Object.entries(ramki).sort(([a], [b]) => (a < b ? -1 : 1)),
+    )
+    plikOkolic = dodaj(
+      'okolice',
+      Buffer.from(JSON.stringify({ format: FORMAT, wersjaAdresow: wersja, okolice: posortowane })),
+      'json',
+    )
   }
 
   const plikSzukaj = dodajBin(
@@ -469,6 +530,10 @@ export function zbudujKompakt(plikAdresow, plikiWskaznikow) {
     zrodla: plikAdresow.zrodla,
     ...(plikAdresow.atrapa ? { atrapa: true } : {}),
     resKafla: RES_KAFLA,
+    // Dodatki formatu 2 (addytywne): stary kod je ignoruje, nowy po nich pozna, że kafle niosą
+    // kolumnę `i`, mogą być r8, a okolice są w pliku bocznym – i startuje z kompaktu.
+    rozszerzenia: ['i', 'r8', 'okolice'],
+    ...(plikOkolic ? { okolice: plikOkolic } : {}),
     heksy: plikHeksow,
     skale: plikSkal,
     szukaj: plikSzukaj,
@@ -486,14 +551,30 @@ const KORZEN = join(dirname(fileURLToPath(import.meta.url)), '..')
 // ADRESCORE_MIASTO=<slug> → public/dane/miasta/<slug> (jak w lib/wspolne.mjs)
 const MIASTO = process.env.ADRESCORE_MIASTO || null
 const DANE = join(KORZEN, 'public', 'dane', ...(MIASTO ? ['miasta', MIASTO] : []))
-const KOMPAKT = join(DANE, 'kompakt')
+// ADRESCORE_KOMPAKT_WYJSCIE=<katalog> – zapis do osobnego katalogu bazowego (test na kopii, bez
+// ruszania wspólnych danych); wejście zostaje jak zawsze w public/dane.
+const WYJSCIE = process.env.ADRESCORE_KOMPAKT_WYJSCIE || null
+const KOMPAKT = WYJSCIE
+  ? join(WYJSCIE, ...(MIASTO ? ['miasta', MIASTO] : []), 'kompakt')
+  : join(DANE, 'kompakt')
 
 export function wczytajZrodla(dane = DANE) {
   const plikAdresow = JSON.parse(readFileSync(join(dane, 'adresy.json'), 'utf8'))
   const katalog = join(dane, 'wskazniki')
   const pliki = existsSync(katalog) ? readdirSync(katalog).filter((p) => p.endsWith('.json')) : []
   const wskazniki = pliki.map((p) => JSON.parse(readFileSync(join(katalog, p), 'utf8')))
-  return { plikAdresow, wskazniki }
+  // Okolice tylko Krakowa; plik z innej wersji adresów albo o złej długości pomijamy jak aplikacja.
+  const sciezkaOkolic = join(dane, 'okolice.json')
+  let okolice = null
+  if (existsSync(sciezkaOkolic)) {
+    const o = JSON.parse(readFileSync(sciezkaOkolic, 'utf8'))
+    if (
+      o.wersjaAdresow === plikAdresow.wersja &&
+      o.kolumny.okolica.length === plikAdresow.kolumny.id.length
+    )
+      okolice = o
+  }
+  return { plikAdresow, wskazniki, okolice }
 }
 
 function plikiNaDysku(katalog) {
@@ -505,8 +586,8 @@ function plikiNaDysku(katalog) {
 
 function main() {
   const t0 = performance.now()
-  const { plikAdresow, wskazniki } = wczytajZrodla()
-  const { indeks, pliki } = zbudujKompakt(plikAdresow, wskazniki)
+  const { plikAdresow, wskazniki, okolice } = wczytajZrodla()
+  const { indeks, pliki } = zbudujKompakt(plikAdresow, wskazniki, okolice)
   const indeksJson = `${JSON.stringify(indeks)}\n`
   const sciezkaIndeksu = join(KOMPAKT, 'indeks.json')
 
@@ -534,6 +615,7 @@ function main() {
   const kb = (b) => `${(b / 1024).toFixed(0)} KB`
   const gz = (b) => gzipDeterministyczny(b).length
   const kafleGz = indeks.kafle.map((x) => pliki.get(x.plik).length)
+  const r8 = indeks.kafle.filter((x) => x.res === 8).length
   const warstwy = Object.values(indeks.wskazniki).map((w) => w.heksy.bajty)
   const sumaW = warstwy.reduce((a, b) => a + b, 0)
   const srW = sumaW / Math.max(1, warstwy.length)
@@ -541,7 +623,7 @@ function main() {
   console.log(
     `kompakt ${indeks.wersja}: heksy ${kb(indeks.heksy.bajty)} + indeks ${kb(gz(Buffer.from(indeksJson)))} gzip, ` +
       `warstwa śr. ${kb(srW)} (razem ${kb(sumaW)}, ${warstwy.length} warstw); ` +
-      `${indeks.kafle.length} kafli, śr. ${kb(sr)} gzip (max ${kb(Math.max(...kafleGz))}); ` +
+      `${indeks.kafle.length} kafli (r8: ${r8}), okolice ${indeks.okolice ? kb(indeks.okolice.bajty) : '–'}, śr. ${kb(sr)} gzip (max ${kb(Math.max(...kafleGz))}); ` +
       `szukaj ${kb(indeks.szukaj.bajty)}, id ${kb(indeks.id.bajty)} (${(performance.now() - t0).toFixed(0)} ms)`,
   )
 }

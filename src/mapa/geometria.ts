@@ -1,4 +1,5 @@
 import { cellsToMultiPolygon, cellToBoundary, cellToParent } from 'h3-js'
+import { W_BRAK } from './wykluczenie.ts'
 
 // Czyste funkcje bez DOM i bez MapLibre – testy na gołym `node --test` (geometria.test.ts).
 
@@ -53,7 +54,7 @@ export interface Otoczka {
 
 export interface Geometria extends Otoczka {
   klucze: ReadonlySet<string>
-  /** Rozdzielczość → poligony heksów (właściwość h3 = id do feature-state). */
+  /** Rozdzielczość → poligony heksów (właściwość h3 = id do feature-state; wartości `w` dochodzą z `zWartosciami`). */
   zrodla: Record<Rozdzielczosc, FeatureCollection<Polygon, { h3: string }>>
   /** Rodzic r8/r9 → jego heksy r10 z danymi; do średniej przy oddaleniu. */
   dzieci: Record<8 | 9, Map<string, string[]>>
@@ -84,6 +85,43 @@ function kolekcja(h3: Iterable<string>): FeatureCollection<Polygon, { h3: string
     })
   }
   return { type: 'FeatureCollection', features }
+}
+
+/**
+ * Powyżej tylu różnic wartości na źródło taniej przebudować właściwości `w` i wysłać jedno `setData`
+ * (parsowanie i kafelkowanie idą do workera MapLibre), niż wołać `setFeatureState` dla każdego heksu:
+ * każde takie wywołanie to ok. 70 µs na desktopie (×4 na telefonie), a jedno `setData` 23 tys. heksów
+ * wychodzi na wątku głównym na kilkadziesiąt ms. Przecięcie leży w okolicy 2000 różnic.
+ */
+export const PROG_PRZEBUDOWY_WARTOSCI = 2000
+
+/**
+ * Kopia kolekcji z wartością `w` (stan heksu: wynik, `W_BRAK` albo `W_WYKLUCZONY`) w każdej
+ * właściwości. Geometria jest ta sama (te same obiekty), więc h3 nie liczy się od nowa. Heks bez wpisu
+ * dostaje `W_BRAK`; zero zostaje zerem, bo jest najniższym wynikiem, nie brakiem.
+ */
+export function zWartosciami(
+  kol: FeatureCollection<Polygon, { h3: string }>,
+  stany: ReadonlyMap<string, number>,
+): FeatureCollection<Polygon, { h3: string; w: number }> {
+  return {
+    type: 'FeatureCollection',
+    features: kol.features.map((f) => ({
+      type: 'Feature',
+      properties: { h3: f.properties.h3, w: stany.get(f.properties.h3) ?? W_BRAK },
+      geometry: f.geometry,
+    })),
+  }
+}
+
+/** Wpisy `docelowe`, których wartość różni się od już wysłanej (albo jeszcze nie była wysłana). */
+export function roznice(
+  docelowe: ReadonlyMap<string, number>,
+  wyslane: ReadonlyMap<string, number>,
+): [string, number][] {
+  const wynik: [string, number][] = []
+  for (const [h, v] of docelowe) if (wyslane.get(h) !== v) wynik.push([h, v])
+  return wynik
 }
 
 /**

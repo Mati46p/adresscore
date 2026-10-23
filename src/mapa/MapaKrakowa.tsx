@@ -39,17 +39,21 @@ import { useEtykietyZrodel } from '@/mapa/etykietyZrodel'
 import {
   type Geometria,
   type GeometriaTla,
+  type Otoczka,
   POZIOMY,
   POZIOMY_TLA,
+  PROG_PRZEBUDOWY_WARTOSCI,
   poziomyTlaDoOdswiezenia,
   type Ramka,
   type RozdzielczoscTla,
+  roznice,
   sredniaDzieci,
   takieSameKlucze,
   takieSameKluczeTla,
   zbudujGeometrie,
   zbudujGeometrieTla,
   zbudujOtoczke,
+  zWartosciami,
 } from '@/mapa/geometria'
 import {
   dodajWarstwyLotu,
@@ -65,6 +69,7 @@ import {
   ZOOM_MIASTA,
   zapamietajLotStartowy,
 } from '@/mapa/lot'
+import type { DoWorkeraMgly, ZWorkeraMgly } from '@/mapa/mglaWorker'
 import type { OkolicaNaMapie } from '@/mapa/okolica/granice'
 import { useObrysOkolicy } from '@/mapa/okolica/ObrysOkolicy'
 import {
@@ -165,6 +170,12 @@ export interface MapaKrakowaProps {
    * działają jak dotąd.
    */
   onWidok?: (lon: number, lat: number, zoom: number) => void
+  /**
+   * Wywoływany raz: po pierwszym zastosowaniu niepustego zbioru heksów i najbliższym zdarzeniu `idle`
+   * mapy, czyli gdy pierwsze kolory są już narysowane. W tym samym miejscu mapa robi
+   * `performance.mark('mapa-kolor')`.
+   */
+  onPierwszyKolor?: () => void
   /** Budynki 3D przy dużym zoomie albo przy wybranym adresie (mapa główna). */
   widok3d?: boolean
   /**
@@ -217,14 +228,18 @@ const ZOOM_3D = 16
 /** Środek okolicy 3D przesuwa się za widokiem, gdy ten odjedzie dalej niż tyle metrów. */
 const PRZESUNIECIE_3D_M = 300
 
-// Brak danych trzymamy w feature-state jako -1, bo stan nie odróżnia null od nieustawionego.
-const WARTOSC: ExpressionSpecification = ['coalesce', ['feature-state', 'w'], -1]
+// Wartość heksu to stan `w` (-1 = brak danych, -2 = wykluczony), bo ani stan, ani właściwość nie
+// odróżniają null od nieustawionego. Feature-state ma pierwszeństwo, właściwość `w` jest bazą:
+// duże zmiany idą hurtem we właściwościach (jedno setData), drobne przez setFeatureState.
+const WARTOSC: ExpressionSpecification = ['coalesce', ['feature-state', 'w'], ['get', 'w'], -1]
 const BRAK = jestBrakiem(WARTOSC)
 const WYKLUCZONY = jestWykluczony(WARTOSC)
 const zrodloHeksow = (res: number) => `heksy-r${res}`
 const zrodloTla = (res: RozdzielczoscTla) => `tlo-r${res}`
 const BLYSK: ExpressionSpecification = ['boolean', ['feature-state', 'blysk'], false]
 const CZAS_BLYSKU_MS = 1500
+/** Zwłoka przed zleceniem mgły workerowi: tło kolejnych miast dochodzi seriami, po kilka naraz. */
+const MGLA_DEBOUNCE_MS = 300
 const SZRAFURA = 'szrafura-braku'
 /** Czas, po którym znika dymek tła otwarty kliknięciem: na dotyku nie ma `mouseleave`, który by go zdjął. */
 const CZAS_DYMKU_TLA_MS = 3500
@@ -304,7 +319,7 @@ function dodajWarstwyHeksow(
     },
   })
   // Filtr nie widzi feature-state, więc szrafura leży na wszystkich heksach,
-  // a widać ją tylko tam, gdzie krycie z feature-state mówi „brak danych".
+  // a widać ją tylko tam, gdzie krycie z wartości `w` mówi „brak danych".
   mapa.addLayer({
     id: `${id}-szrafura`,
     type: 'fill',
@@ -350,11 +365,46 @@ function dodajWarstwyHeksow(
   })
 }
 
-/** Wartości feature-state wysłane już do mapy, per rozdzielczość: h3 → w (-1 = brak). */
+/** Wartości `w` widoczne już na mapie (właściwość albo feature-state), per rozdzielczość: h3 → w (-1 = brak). */
 type Wyslane = Record<8 | 9 | 10, Map<string, number>>
 const pusteWyslane = (): Wyslane => ({ 8: new Map(), 9: new Map(), 10: new Map() })
 type WyslaneTla = Record<RozdzielczoscTla, Map<string, number>>
 const pusteWyslaneTla = (): WyslaneTla => ({ 8: new Map(), 9: new Map() })
+
+/** Stany `w` wszystkich heksów mapy wartości (brak danych → W_BRAK, nigdy 0). */
+function naStany(wartosci: ReadonlyMap<string, number | null>): Map<string, number> {
+  const stany = new Map<string, number>()
+  for (const [h, w] of wartosci) stany.set(h, stanHeksu(w))
+  return stany
+}
+
+/**
+ * Dostarcza mapie wartości `w` jednego źródła i zapisuje je w `wyslane`. Po zmianie geometrii
+ * (`przebuduj`) albo gdy różnic jest więcej niż PROG_PRZEBUDOWY_WARTOSCI: właściwości `w` w nowych
+ * obiektach feature (ta sama geometria), jedno `setData` i czyszczenie feature-state, które inaczej
+ * przesłaniałoby nową bazę. Poniżej progu: `setFeatureState` tylko dla zmienionych heksów.
+ */
+function wyslijWartosci(
+  mapa: MapaLibre,
+  zrodlo: string,
+  kolekcja: Parameters<typeof zWartosciami>[0],
+  docelowe: ReadonlyMap<string, number>,
+  wyslane: Map<string, number>,
+  przebuduj: boolean,
+) {
+  const zmiany = przebuduj ? [] : roznice(docelowe, wyslane)
+  if (przebuduj || zmiany.length > PROG_PRZEBUDOWY_WARTOSCI) {
+    mapa.getSource<GeoJSONSource>(zrodlo)?.setData(zWartosciami(kolekcja, docelowe))
+    mapa.removeFeatureState({ source: zrodlo })
+    wyslane.clear()
+    for (const [h, v] of docelowe) wyslane.set(h, v)
+    return
+  }
+  for (const [h, v] of zmiany) {
+    wyslane.set(h, v)
+    mapa.setFeatureState({ source: zrodlo, id: h }, { w: v })
+  }
+}
 
 function podpisHeksu(w: number | null | undefined, res: number): string {
   if (w === W_WYKLUCZONY) return res === 10 ? 'wykluczony filtrem' : 'wykluczony filtrem (okolica)'
@@ -407,6 +457,7 @@ export function MapaKrakowa({
   obiekty,
   wyroznione,
   onWidok,
+  onPierwszyKolor,
   widok3d = false,
   tlo,
   kadrStartowy,
@@ -425,6 +476,9 @@ export function MapaKrakowa({
   const wartoscRodzicaRef = useRef(wartoscRodzica)
   const graniceRef = useRef(granice)
   const onWidokRef = useRef(onWidok)
+  const onPierwszyKolorRef = useRef(onPierwszyKolor)
+  // Pierwszy niepusty zbiór heksów już zlecił czekanie na `idle`: wywołanie następuje raz.
+  const kolorZlecony = useRef(false)
   const tloRef = useRef(tlo)
   const kadrStartowyRef = useRef(kadrStartowy)
   const slugMiastaRef = useRef(slugMiasta)
@@ -480,6 +534,7 @@ export function MapaKrakowa({
     wartoscRodzicaRef.current = wartoscRodzica
     graniceRef.current = granice
     onWidokRef.current = onWidok
+    onPierwszyKolorRef.current = onPierwszyKolor
     tloRef.current = tlo
     kadrStartowyRef.current = kadrStartowy
     slugMiastaRef.current = slugMiasta
@@ -552,7 +607,10 @@ export function MapaKrakowa({
             const dzieci = res === 10 ? [h] : (geometriaRef.current?.dzieci[res].get(h) ?? [])
             tekst = opis(dzieci, res)
           } else {
-            const w = mapa.getFeatureState({ source: id, id: f.id }).w as number | undefined
+            // Stan (drobne zmiany) przesłania właściwość `w` (baza z ostatniej przebudowy).
+            const w = (mapa.getFeatureState({ source: id, id: f.id }).w ?? f.properties?.w) as
+              | number
+              | undefined
             tekst = podpisHeksu(w, res)
           }
           dymek.setLngLat(e.lngLat).setText(tekst).addTo(mapa)
@@ -581,7 +639,9 @@ export function MapaKrakowa({
           if (f?.id === undefined) return
           const nazwa = tloRef.current?.miastoHeksu(String(f.id)) ?? null
           if (nazwa === null) return void dymek.remove()
-          const w = mapa.getFeatureState({ source: id, id: f.id }).w as number | undefined
+          const w = (mapa.getFeatureState({ source: id, id: f.id }).w ?? f.properties?.w) as
+            | number
+            | undefined
           dymek.setLngLat(e.lngLat).setText(podpisHeksuTla(nazwa, w)).addTo(mapa)
         }
         mapa.on('mousemove', id, (e: MapLayerMouseEvent) => {
@@ -696,6 +756,10 @@ export function MapaKrakowa({
       kadrRuszonyRef.current = false
       kadrZastosowanyRef.current = null
       kadrDanychRef.current = false
+      kolorZlecony.current = false
+      anulujMgle()
+      mglaRef.current.worker?.terminate()
+      mglaRef.current.worker = null
       if (dymekTlaRef.current !== null) clearTimeout(dymekTlaRef.current)
       dymekTlaRef.current = null
       znacznikRef.current = null
@@ -715,6 +779,13 @@ export function MapaKrakowa({
   const najnowszeTloRef = useRef(tlo ?? BRAK_TLA)
   const klatkaRef = useRef<number | null>(null)
   const wyslaneRef = useRef<Wyslane>(pusteWyslane())
+  // Mgła z sumy r8 wszystkich miast liczy się w workerze; `zlecenie` odróżnia wynik aktualny od starego.
+  const mglaRef = useRef<{
+    worker: Worker | null
+    blad: boolean
+    zlecenie: number
+    timer: number | null
+  }>({ worker: null, blad: false, zlecenie: 0, timer: null })
 
   useEffect(() => {
     najnowszeRef.current = heksy
@@ -782,31 +853,48 @@ export function MapaKrakowa({
       zmieniona = true
       g = zbudujGeometrie(heksy.keys())
       geometriaRef.current = g
-      wyslaneRef.current = pusteWyslane()
-      for (const { res } of POZIOMY) {
-        const zrodlo = mapa.getSource<GeoJSONSource>(zrodloHeksow(res))
-        zrodlo?.setData(g.zrodla[res])
-        mapa.removeFeatureState({ source: zrodloHeksow(res) })
-      }
-      // Pierwszy niepusty zbiór decyduje o kadrze. Pierwszy w ogóle bywa pusty (mapa wstaje, zanim
-      // dojdą dane), a wtedy kadr po obrysie danych nigdy by nie nastąpił.
-      if (heksy.size && !kadrDanychRef.current) {
-        kadrDanychRef.current = true
-        if (!wybranyRef.current && !graniceRef.current) kadrujPoDanych(mapa, g.granice)
-      }
     }
-    const wyslane = wyslaneRef.current
-    const wyslij = (res: 8 | 9 | 10, h: string, w: number | null | undefined) => {
-      const v = stanHeksu(w)
-      if (wyslane[res].get(h) === v) return
-      wyslane[res].set(h, v)
-      mapa.setFeatureState({ source: zrodloHeksow(res), id: h }, { w: v })
+    // Wartości r10 oraz rodziców r8/r9 (średnia dzieci albo `wartoscRodzica`).
+    const stany: Record<8 | 9 | 10, Map<string, number>> = {
+      8: new Map(),
+      9: new Map(),
+      10: new Map(),
     }
-    for (const [h, w] of heksy) wyslij(10, h, wykluczone.has(h) ? W_WYKLUCZONY : w)
+    for (const [h, w] of heksy) stany[10].set(h, stanHeksu(wykluczone.has(h) ? W_WYKLUCZONY : w))
     const rodzic = wartoscRodzicaRef.current ?? ((dzieci) => sredniaDzieci(dzieci, heksy))
     for (const res of [8, 9] as const) {
       for (const [h, dzieci] of g.dzieci[res])
-        wyslij(res, h, wszystkieWykluczone(dzieci, wykluczone) ? W_WYKLUCZONY : rodzic(dzieci))
+        stany[res].set(
+          h,
+          stanHeksu(wszystkieWykluczone(dzieci, wykluczone) ? W_WYKLUCZONY : rodzic(dzieci)),
+        )
+    }
+    // Nowa geometria wchodzi razem z wartościami we właściwościach: jedno setData na źródło, bez
+    // dziesiątek tysięcy setFeatureState (profil: 5 s na wątku głównym).
+    for (const { res } of POZIOMY) {
+      wyslijWartosci(
+        mapa,
+        zrodloHeksow(res),
+        g.zrodla[res],
+        stany[res],
+        wyslaneRef.current[res],
+        zmieniona,
+      )
+    }
+    if (zmieniona && heksy.size && !kadrDanychRef.current) {
+      // Pierwszy niepusty zbiór decyduje o kadrze. Pierwszy w ogóle bywa pusty (mapa wstaje, zanim
+      // dojdą dane), a wtedy kadr po obrysie danych nigdy by nie nastąpił.
+      kadrDanychRef.current = true
+      if (!wybranyRef.current && !graniceRef.current) kadrujPoDanych(mapa, g.granice)
+    }
+    if (heksy.size && !kolorZlecony.current) {
+      kolorZlecony.current = true
+      // Kolory są już u mapy; `idle` przychodzi, gdy kafle z tymi danymi się narysują.
+      mapa.once('idle', () => {
+        if (mapaRef.current !== mapa) return
+        performance.mark('mapa-kolor')
+        onPierwszyKolorRef.current?.()
+      })
     }
     return zmieniona
   }
@@ -828,8 +916,9 @@ export function MapaKrakowa({
    *
    * Odświeża tylko poziomy, które są widoczne przy tym zoomie (poziomyTlaDoOdswiezenia): tło ma
    * ok. 20 tys. heksów, więc przy zoomie ulicznym, gdzie nikt go nie widzi, suwak wag nie ma płacić
-   * za nie setFeatureState. Poziom, który wraca w zakres, dostaje zaległe wartości (różnica względem
-   * `wyslaneTloRef`), a nie pełny przelot po wszystkich heksach.
+   * za nie zmian wartości. Nowa geometria niesie wartości we właściwościach także na poziomie
+   * niewidocznym (to samo setData), a poziom, który wraca w zakres, dostaje zaległe wartości (różnica
+   * względem `wyslaneTloRef`: drobna przez setFeatureState, duża przez przebudowę właściwości).
    */
   function zastosujTlo(mapa: MapaLibre, tlo: TloMapy): boolean {
     const poziomy = poziomyTlaDoOdswiezenia(mapa.getZoom())
@@ -839,6 +928,7 @@ export function MapaKrakowa({
     const wartosci = { 8: tlo.heksy[8], 9: r9TlaWlaczoneRef.current ? tlo.heksy[9] : BRAK_WARTOSCI }
     const stara = geometriaTlaRef.current
     let zmienionyR8 = false
+    const juzWyslane = new Set<RozdzielczoscTla>()
     if (!takieSameKluczeTla(stara, wartosci)) {
       // Poziom o niezmienionych kluczach zachowuje poligony (ta sama kolekcja), więc `setData`
       // idzie tylko do źródeł, które się zmieniły.
@@ -846,38 +936,106 @@ export function MapaKrakowa({
       geometriaTlaRef.current = nowa
       for (const { res } of POZIOMY_TLA) {
         if (nowa.zrodla[res] === stara.zrodla[res]) continue
-        mapa.getSource<GeoJSONSource>(zrodloTla(res))?.setData(nowa.zrodla[res])
-        mapa.removeFeatureState({ source: zrodloTla(res) })
-        wyslaneTloRef.current[res] = new Map()
+        wyslijWartosci(
+          mapa,
+          zrodloTla(res),
+          nowa.zrodla[res],
+          naStany(wartosci[res]),
+          wyslaneTloRef.current[res],
+          true,
+        )
+        juzWyslane.add(res)
       }
       zmienionyR8 = nowa.zrodla[8] !== stara.zrodla[8]
     }
     for (const res of poziomy) {
-      const wyslane = wyslaneTloRef.current[res]
-      for (const [h, w] of tlo.heksy[res]) {
-        const v = stanHeksu(w)
-        if (wyslane.get(h) === v) continue
-        wyslane.set(h, v)
-        mapa.setFeatureState({ source: zrodloTla(res), id: h }, { w: v })
-      }
+      if (juzWyslane.has(res)) continue
+      wyslijWartosci(
+        mapa,
+        zrodloTla(res),
+        geometriaTlaRef.current.zrodla[res],
+        naStany(tlo.heksy[res]),
+        wyslaneTloRef.current[res],
+        false,
+      )
     }
     return zmienionyR8
   }
 
   /**
    * Mgła i obrys z sumy r8 bieżącego miasta i tła: dziury w mgle obejmują wszystkie miasta z danymi.
-   * Bez tła mgła bieżącego miasta jest już policzona razem z jego geometrią.
+   * Bez tła mgła bieżącego miasta jest już policzona razem z jego geometrią (od ręki). Z tłem suma
+   * r8 wszystkich miast to kilka sekund `cellsToMultiPolygon`, więc liczy ją worker, a zlecenie
+   * czeka MGLA_DEBOUNCE_MS: kolejne miasta dochodzą seriami i bez tego każde liczyłoby się od nowa.
+   * Do czasu wyniku stoi poprzednia mgła; pierwsza mgła (jeszcze żadnej) to otoczka bieżącego miasta.
    */
   function odswiezMgle(mapa: MapaLibre) {
     const g = geometriaRef.current
     const r8Tla = geometriaTlaRef.current.klucze[8]
-    const otoczka = r8Tla.size
-      ? zbudujOtoczke(g?.dzieci[8].keys() ?? [], r8Tla)
-      : (g ?? zbudujOtoczke())
+    if (!r8Tla.size) {
+      anulujMgle()
+      zastosujOtoczke(mapa, g ?? zbudujOtoczke())
+      return
+    }
+    if (!obszaryRef.current.wszystkie) zastosujOtoczke(mapa, g ?? zbudujOtoczke())
+    const st = mglaRef.current
+    if (st.timer !== null) clearTimeout(st.timer)
+    st.timer = window.setTimeout(() => {
+      st.timer = null
+      zlecMgle(mapa)
+    }, MGLA_DEBOUNCE_MS)
+  }
+
+  function zastosujOtoczke(mapa: MapaLibre, otoczka: Otoczka) {
     mapa.getSource<GeoJSONSource>('mgla')?.setData(otoczka.mgla)
     mapa.getSource<GeoJSONSource>('obrys')?.setData(otoczka.obrys)
-    obszaryRef.current = { biezace: g?.granice ?? null, wszystkie: otoczka.granice }
+    obszaryRef.current = {
+      biezace: geometriaRef.current?.granice ?? null,
+      wszystkie: otoczka.granice,
+    }
     ustawPodpisMgly(mapa)
+  }
+
+  /** Wysyła workerowi najnowszy zbiór r8; bez workera (albo po jego błędzie) liczy na wątku głównym. */
+  function zlecMgle(mapa: MapaLibre) {
+    if (mapaRef.current !== mapa) return
+    const st = mglaRef.current
+    const r8 = [
+      ...(geometriaRef.current?.dzieci[8].keys() ?? []),
+      ...geometriaTlaRef.current.klucze[8],
+    ]
+    const id = ++st.zlecenie
+    if (!st.worker && !st.blad && typeof Worker !== 'undefined') {
+      try {
+        const worker = new Worker(new URL('./mglaWorker.ts', import.meta.url), { type: 'module' })
+        worker.onmessage = (e: MessageEvent<ZWorkeraMgly>) => {
+          // Wynik starszy niż ostatnie zlecenie odpowiada już nieaktualnemu zbiorowi miast.
+          if (e.data.id !== st.zlecenie || mapaRef.current !== mapa) return
+          zastosujOtoczke(mapa, e.data.otoczka)
+        }
+        worker.onerror = () => {
+          // Worker nie wstał (np. moduł się nie załadował): zapas na wątku głównym.
+          st.blad = true
+          st.worker?.terminate()
+          st.worker = null
+          zlecMgle(mapa)
+        }
+        st.worker = worker
+      } catch {
+        st.blad = true
+      }
+    }
+    if (!st.worker) return zastosujOtoczke(mapa, zbudujOtoczke(r8))
+    const zlecenie: DoWorkeraMgly = { id, r8 }
+    st.worker.postMessage(zlecenie)
+  }
+
+  /** Odrzuca oczekujące zlecenie mgły (timer i wynik z workera) – mgła ma zostać taka, jak jest. */
+  function anulujMgle() {
+    const st = mglaRef.current
+    if (st.timer !== null) clearTimeout(st.timer)
+    st.timer = null
+    st.zlecenie++
   }
 
   /**

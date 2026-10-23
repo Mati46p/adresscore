@@ -60,11 +60,21 @@ async function wczytajWszystko(slug: SlugMiasta, signal?: AbortSignal): Promise<
   return { ...wynik, adresy }
 }
 
-const pamiec = utworzPamiecDanych(wczytajWszystko, {
-  pobierzStan,
-  podlaczDane,
-  subskrybuj: subskrybujStan,
-})
+/** Zapas bramki: po tylu ms od startu strony pełne dane ruszają, nawet gdy mapa nie dała sygnału. */
+const ZAPAS_BRAMKI_MS = 4000
+
+// Bramka zamknięta (A4): pełne dane nie konkurują z mapą o sieć i CPU, dopóki mapa się nie pokoloruje.
+const pamiec = utworzPamiecDanych(
+  wczytajWszystko,
+  { pobierzStan, podlaczDane, subskrybuj: subskrybujStan },
+  { bramkaZamknieta: true, zapasMs: ZAPAS_BRAMKI_MS },
+)
+
+/**
+ * Pozwala na pobranie pełnych danych (do wywołania `useDane()` zwraca `ladowanie` bez startu). Idempotentne;
+ * woła ją ekran Szukaj po pierwszym pokolorowaniu mapy, a pozostałe ekrany przy wejściu.
+ */
+export const pozwolNaPelneDane = pamiec.pozwolNaPelneDane
 
 /**
  * Startuje ładowanie danych miasta (raz na miasto, dopóki mieści się w pamięci) i zwraca obietnicę

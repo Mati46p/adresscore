@@ -24,7 +24,7 @@ export function podpisMgly(zTlem: boolean): string {
 
 /**
  * Dymek heksu tła: „<Miasto> · wynik N (średnia okolicy)" albo „<Miasto> · brak danych".
- * `w` to wartość z feature-state (-1 = brak). Zero jest wynikiem, nie brakiem.
+ * `w` to wartość heksu z feature-state albo właściwości (-1 = brak). Zero jest wynikiem, nie brakiem.
  */
 export function podpisHeksuTla(nazwaMiasta: string, w: number | null | undefined): string {
   if (w === null || w === undefined || Number.isNaN(w) || w < 0)

@@ -13,7 +13,7 @@ import { MEDIA_ARKUSZA } from '@/lib/punktyLamania'
 import { kadrZapasowyMiasta, WIDOK_MIAST } from '@/mapa/lot'
 import { type OkolicaNaMapie, okolicaNaMapie } from '@/mapa/okolica/granice'
 import { wczytajGraniceOkolic } from '@/mapa/okolica/wczytajGranice'
-import { useDane } from '@/wynik/dane'
+import { pozwolNaPelneDane, useDane } from '@/wynik/dane'
 import { useMiasto, useTylkoKrakow } from '@/wynik/miastoDanych'
 import { miejsceAdresu, miejsceOkolicy } from '@/wynik/miejsceAdresu'
 import { BIZNESY, PERSONY, TRYBY, warstwyBiznesu } from '@/wynik/persony'
@@ -61,9 +61,16 @@ import type { WynikOkolicy } from './wyszukiwarka/szukajOkolic'
 import { Wyszukiwarka } from './wyszukiwarka/Wyszukiwarka'
 import './szukaj.css'
 
-const MapaKrakowa = lazy(async () => ({
-  default: (await import('@/mapa/MapaKrakowa')).MapaKrakowa,
-}))
+// Prefetch chunka mapy już przy wczytaniu modułu (A4): pobieranie rusza, zanim ekran się wyrenderuje.
+const chunkMapy = import('@/mapa/MapaKrakowa')
+const MapaKrakowa = lazy(async () => ({ default: (await chunkMapy).MapaKrakowa }))
+
+/** Pełne dane startują, gdy przeglądarka ma chwilę wolnego czasu (Safari bez `requestIdleCallback`: 200 ms). */
+function pozwolPoCichu() {
+  if (typeof requestIdleCallback === 'function')
+    requestIdleCallback(pozwolNaPelneDane, { timeout: 1500 })
+  else setTimeout(pozwolNaPelneDane, 200)
+}
 
 // Stała, bo nowa pusta mapa przy każdym renderze wymuszałaby przemalowanie warstwy heksów.
 const BRAK_HEKSOW: ReadonlyMap<string, number | null> = new Map()
@@ -526,6 +533,7 @@ export function EkranSzukaj() {
             }
           >
             <MapaKrakowa
+              onPierwszyKolor={pozwolPoCichu}
               heksy={wyniki?.heksy ?? przeglad.biezaceR10 ?? BRAK_HEKSOW}
               podpisWarstwy={podpis}
               // Tło: pozostałe miasta pod mgłą. Obecność propa (także z pustymi mapami, zanim przeglądy

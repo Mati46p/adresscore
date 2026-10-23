@@ -7,13 +7,16 @@ import {
   POZIOMY_TLA,
   poziomyTlaDoOdswiezenia,
   rowneKlucze,
+  roznice,
   sredniaDzieci,
   takieSameKlucze,
   takieSameKluczeTla,
   zbudujGeometrie,
   zbudujGeometrieTla,
   zbudujOtoczke,
+  zWartosciami,
 } from './geometria.ts'
+import { stanHeksu, W_BRAK, W_WYKLUCZONY } from './wykluczenie.ts'
 
 // Środki dwóch miast ze zbioru: nie dotykają się, więc ich heksy tworzą dwa osobne obszary.
 const KRAKOW = { lat: 50.046, lon: 19.95 }
@@ -282,5 +285,51 @@ describe('sredniaDzieci', () => {
 
   it('prawdziwe zero jest wynikiem, nie brakiem', () => {
     assert.equal(sredniaDzieci(['d'], heksy), 0)
+  })
+})
+
+describe('zWartosciami i roznice', () => {
+  const [a, b, c, d] = obszar(KRAKOW, 8, 1) as [string, string, string, string]
+  const kol = zbudujGeometrieTla([a, b, c, d], []).zrodla[8]
+
+  it('wpisuje stan do właściwości: brak = -1, wykluczony = -2, zero zostaje zerem', () => {
+    const stany = new Map([
+      [a, stanHeksu(0)],
+      [b, stanHeksu(null)],
+      [c, W_WYKLUCZONY],
+    ])
+    const w = new Map(
+      zWartosciami(kol, stany).features.map((f) => [f.properties.h3, f.properties.w]),
+    )
+    assert.equal(w.get(a), 0)
+    assert.equal(w.get(b), W_BRAK)
+    assert.equal(w.get(c), W_WYKLUCZONY)
+    // Heks bez wpisu to brak danych, nie zero.
+    assert.equal(w.get(d), W_BRAK)
+  })
+
+  it('nie liczy geometrii od nowa i nie rusza kolekcji źródłowej', () => {
+    const wynik = zWartosciami(kol, new Map([[a, 42]]))
+    assert.equal(wynik.features.length, kol.features.length)
+    kol.features.forEach((f, i) => {
+      assert.equal(wynik.features[i]?.geometry, f.geometry)
+      assert.deepEqual(Object.keys(f.properties), ['h3'])
+    })
+  })
+
+  it('roznice zwracają tylko zmienione i nowe wpisy', () => {
+    const wyslane = new Map([
+      [a, 10],
+      [b, 20],
+    ])
+    const docelowe = new Map([
+      [a, 10],
+      [b, 21],
+      [c, 0],
+    ])
+    assert.deepEqual(roznice(docelowe, wyslane), [
+      [b, 21],
+      [c, 0],
+    ])
   })
 })
