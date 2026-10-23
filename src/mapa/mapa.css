@@ -338,7 +338,10 @@
     width: var(--cel-dotyku);
     height: var(--cel-dotyku);
     border-radius: 50%;
+    /* Ikona MapLibre to tło 24 px – bez no-repeat powiększony przycisk pokazywał ją cztery razy. */
     background-color: var(--powierzchnia);
+    background-repeat: no-repeat;
+    background-position: center;
     box-shadow: 0 2px 8px rgb(24 32 43 / 0.15);
   }
   .mapa-zrodla-miasta {
