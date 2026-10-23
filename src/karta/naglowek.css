@@ -1,21 +1,24 @@
 /* Nagłówek: logo, kroki, tryby i menu na telefonie (przeniesione ze styles.css, #248). */
 /* ── Nagłówek ─────────────────────────────────────────────────────────────── */
 .naglowek {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-naglowek);
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 12px 16px;
-  min-height: calc(var(--wys-naglowka) - var(--wys-paska-serwisow));
-  padding: 12px 32px;
+  gap: 16px;
+  height: 56px;
+  padding: 0 32px;
   background: var(--powierzchnia);
-  border-bottom: 1px solid var(--ramka);
+  border-bottom: 1px solid var(--linia);
 }
 /* Na szerokim ekranie opakowanie nawigacji nie istnieje dla układu, a przycisk menu jest ukryty. */
 .naglowek-nawigacja {
   display: contents;
 }
-.naglowek-menu {
+.naglowek-menu,
+.naglowek-serwisy {
   display: none;
 }
 .logo {
@@ -33,11 +36,18 @@
     color: var(--tekst);
   }
 }
+/* Chip miasta jak .chip-miasta w makiecie – tylko wygląd, cały link nadal prowadzi na Szukaj. */
 .logo-miasto {
-  font-family: var(--font-mono);
-  font-weight: 400;
-  font-size: 13px;
-  color: var(--tekst-3);
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: var(--promien-pelny);
+  background: var(--akcent-jasny);
+  color: var(--akcent);
+  font-family: var(--font);
+  font-weight: 600;
+  font-size: var(--rozmiar-s);
 }
 .kroki {
   display: flex;
@@ -67,35 +77,36 @@
   color: var(--powierzchnia);
 }
 
-@media (max-width: 860px) {
-  /* Telefon: nagłówek w jednym wierszu (logo + Menu), kroki i tryby w rozwijanym panelu pod nim. */
-  :root {
-    --wys-naglowka: calc(57px + var(--wys-paska-serwisow));
-  }
+@media (max-width: 1023.98px) /* bp-l */ {
+  /* Poniżej 1024: logo + chip miasta + przycisk menu, kroki, tryby i serwisy w panelu pod nagłówkiem. */
   .naglowek {
-    position: relative;
-    z-index: var(--z-naglowek);
-    flex-wrap: nowrap;
-    height: calc(var(--wys-naglowka) - var(--wys-paska-serwisow));
-    min-height: 0;
-    padding: 6px 16px;
+    padding: 0 8px 0 16px;
   }
   .naglowek-menu {
     display: inline-flex;
     align-items: center;
-    min-height: var(--cel-dotyku);
-    padding: 0 16px;
-    border: 1px solid var(--ramka-pola);
-    border-radius: 999px;
-    background: var(--powierzchnia);
-    color: var(--tekst);
-    font: inherit;
-    font-size: 14px;
-    font-weight: 600;
+    justify-content: center;
+    flex: none;
+    width: var(--cel-dotyku);
+    height: var(--cel-dotyku);
+    margin-left: auto;
+    padding: 0;
+    border: 0;
+    border-radius: var(--promien-pelny);
+    background: transparent;
     cursor: pointer;
   }
+  /* Trzy kreski z jednego elementu: środkowa to tło, górna i dolna to cienie. */
+  .naglowek-burger {
+    width: 18px;
+    height: 2px;
+    background: var(--tekst);
+    box-shadow:
+      0 -6px 0 var(--tekst),
+      0 6px 0 var(--tekst);
+  }
   .naglowek[data-menu="otwarte"] .naglowek-menu {
-    border-color: var(--tekst);
+    background: var(--akcent-jasny);
   }
   .naglowek-nawigacja {
     display: none;
@@ -108,11 +119,11 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
-    max-height: calc(100dvh - var(--wys-naglowka));
+    max-height: calc(100dvh - 56px);
     overflow-y: auto;
     padding: 16px;
     background: var(--powierzchnia);
-    border-bottom: 1px solid var(--ramka);
+    border-bottom: 1px solid var(--linia);
     box-shadow: 0 12px 24px rgb(20 41 31 / 14%);
   }
   .naglowek-nawigacja .kroki {
@@ -121,7 +132,39 @@
   .naglowek-nawigacja .tryby {
     align-self: flex-start;
   }
-  .logo-miasto {
-    display: none;
+  .naglowek-serwisy {
+    display: block;
+    padding-top: 12px;
+    border-top: 1px solid var(--linia);
   }
+  .naglowek-serwisy h2 {
+    margin: 0 0 4px;
+    color: var(--tekst-2);
+    font-size: var(--rozmiar-xs);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .naglowek-serwisy ul {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .naglowek-serwisy a {
+    display: flex;
+    align-items: center;
+    min-height: var(--cel-dotyku);
+    color: var(--tekst-2);
+    font-size: var(--rozmiar-s);
+    font-weight: 600;
+    text-decoration: none;
+  }
+}
+/* Fokus widoczny na elementach sterujących nagłówka. */
+.naglowek a:focus-visible,
+.naglowek button:focus-visible {
+  outline: 2px solid var(--akcent);
+  outline-offset: 2px;
 }

@@ -1,56 +1,57 @@
-/* ── Układ ekranu Szukaj (przeniesione ze styles.css, #248) ───────────────── */
-.szukaj-mapa__zwin {
-  display: none;
-}
+/* ── Układ ekranu Szukaj (#248) ───────────────────────────────────────────────
+   Od bp-l: lewy panel 400 px z własnym przewijaniem + mapa na całą wysokość prawej kolumny.
+   Poniżej bp-l: mapa na cały ekran pod nagłówkiem i dolny arkusz (ArkuszDolny); strona się nie przewija. */
 .szukaj {
   display: grid;
-  grid-template-columns: minmax(320px, 440px) minmax(0, 1fr);
+  grid-template-columns: 400px minmax(0, 1fr);
   height: calc(100dvh - var(--wys-naglowka));
+  overflow: hidden;
 }
-.szukaj-lewa {
+.szukaj-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--odstep-4);
+  min-height: 0;
+  padding: var(--odstep-6) var(--odstep-6) var(--odstep-4);
   overflow-y: auto;
+  overscroll-behavior: contain;
   background: var(--powierzchnia);
-  border-right: 1px solid var(--ramka);
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
+  border-right: 1px solid var(--linia);
 }
+.szukaj-panel .panel-wstep h1 {
+  margin: 0 0 var(--odstep-2);
+  font-size: var(--rozmiar-xl);
+  line-height: 1.25;
+}
+.szukaj-panel .panel-wstep p {
+  margin: 0;
+  color: var(--tekst-2);
+  font-size: var(--rozmiar-s);
+  line-height: var(--interlinia);
+}
+/* Lista podpowiedzi wychodzi poza blok pola i ma leżeć nad zakładkami pod nim. */
 .szukaj-wyszukaj {
+  position: relative;
+  z-index: var(--z-lepkie);
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--odstep-3);
 }
 .szukaj-filtry {
   display: flex;
   flex-direction: column;
-  gap: 24px;
-}
-.szukaj-prawa {
-  min-width: 0;
-  padding: 20px 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  overflow-y: auto;
+  gap: var(--odstep-6);
 }
 .szukaj-mapa {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.pasek-warstw {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--tlo-mapy);
 }
 .slot-mapy {
-  position: relative;
-  flex: 1 0 auto;
-  min-height: max(420px, 60dvh);
-  border-radius: var(--promien);
-  overflow: hidden;
-  border: 1px solid var(--ramka);
+  position: absolute;
+  inset: 0;
   background: var(--tlo-mapy);
 }
 .mapa {
@@ -58,182 +59,134 @@
   inset: 0;
 }
 
-/* Telefon: jedna kolumna – h1 i wyszukiwarka, warstwy, mapa, pasek adresu, filtry, ranking.
-   Kontenery lewej i prawej kolumny znikają (display: contents), żeby ich dzieci dało się
-   ułożyć naprzemiennie przez order. */
-@media (max-width: 860px) {
-  /* Pół na pół w pionie: mapa przyklejona w górnej połowie, filtry przewijają się pod nią. */
-  .szukaj {
-    display: flex;
-    flex-direction: column;
-    height: calc(100dvh - var(--wys-naglowka));
-    overflow-y: auto;
-  }
-  .szukaj-lewa,
-  .szukaj-prawa {
-    display: contents;
-  }
-  .szukaj-wyszukaj {
-    order: 1;
-    padding: 16px;
-    background: var(--powierzchnia);
-  }
-  .szukaj-mapa {
-    order: 2;
-    position: sticky;
-    top: 0;
-    z-index: var(--z-lepkie);
-    gap: 8px;
-    padding: 8px 16px;
-    background: var(--tlo);
-    border-bottom: 1px solid var(--ramka);
-  }
-  .szukaj-filtry {
-    order: 3;
-    border-top: 1px solid var(--ramka);
-    background: var(--powierzchnia);
-    padding: 20px 16px;
-  }
-  .szukaj-ranking {
-    order: 4;
-    padding: 20px 16px;
-  }
-  .pasek-warstw {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    scroll-snap-type: x proximity;
-    scrollbar-width: none;
-    /* Przycięcie przy prawej krawędzi sygnalizuje, że pasek się przewija. */
-    mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
-    /* Zapas wokół przycisków, żeby overflow nie uciął obrysu fokusu. */
-    padding: 4px 28px 4px 4px;
-    margin: -4px;
-  }
-  .pasek-warstw::-webkit-scrollbar {
-    display: none;
-  }
-  .pasek-warstw .seg {
-    flex: none;
-    scroll-snap-align: start;
-    white-space: nowrap;
-  }
-  /* Mapa ok. 40% wysokości (svh: pasek adresu przeglądarki nie skacze mapą przy przewijaniu). */
-  .slot-mapy {
-    flex: none;
-    height: 40svh;
-    min-height: 200px;
-  }
-  .szukaj-mapa[data-zwinieta] .slot-mapy {
-    display: none;
-  }
-  /* Uchwyt zwijania: pełna szerokość pod mapą, jak uchwyt arkusza w aplikacjach mapowych. */
-  .szukaj-mapa__zwin {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 32px;
-    margin: -4px -16px -8px;
-    border: 0;
-    background: none;
-    color: var(--tekst-2);
-    font: inherit;
-    font-size: 13px;
-    cursor: pointer;
-  }
-}
-
-.wybrany-adres {
+/* Pasek warstw pływa nad mapą (lewy górny róg): pigułki 44 px, przewijane poziomo bez paska. */
+.pasek-warstw {
+  position: absolute;
+  z-index: var(--z-mapa-pasek);
+  top: var(--odstep-3);
+  left: var(--odstep-3);
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 10px 14px;
-  border: 1px solid var(--ramka);
-  border-radius: var(--promien);
-  background: var(--powierzchnia);
+  gap: var(--odstep-2);
+  max-width: calc(100% - 396px);
+  /* Zapas wokół pigułek, żeby overflow nie uciął cienia i obrysu fokusu. */
+  padding: var(--odstep-1);
+  margin: calc(-1 * var(--odstep-1));
+  overflow-x: auto;
+  scrollbar-width: none;
+  scroll-snap-type: x proximity;
 }
-.wybrany-adres .seg {
-  min-height: 44px;
+.pasek-warstw::-webkit-scrollbar {
+  display: none;
+}
+.pasek-warstw .seg {
+  flex: none;
+  min-height: var(--cel-dotyku);
+  padding: 0 var(--odstep-4);
+  border-radius: var(--promien-pelny);
+  box-shadow: var(--cien-1);
+  font-size: var(--rozmiar-s);
+  font-weight: 500;
+  white-space: nowrap;
+  scroll-snap-align: start;
+}
+/* Ustawienia mapy (krycie, warstwy) schodzą pod pasek warstw. */
+.slot-mapy .mapa-ustawienia {
+  top: calc(var(--odstep-3) + var(--cel-dotyku) + var(--odstep-3));
+  left: var(--odstep-3);
 }
 
+/* Pigułka porównania: dół środka mapy; nad arkuszem (--arkusz-odstep) na telefonie. */
 .heksy-pasek {
   position: absolute;
-  z-index: 5;
-  bottom: 14px;
+  z-index: var(--z-mapa-pasek);
+  bottom: calc(var(--arkusz-odstep, 0px) + var(--odstep-4));
   left: 50%;
   display: flex;
   align-items: center;
-  gap: 6px;
-  max-width: calc(100% - 32px);
-  padding: 4px 4px 4px 12px;
+  gap: var(--odstep-3);
+  max-width: calc(100% - 2 * var(--odstep-3));
+  padding: 0 0 0 var(--odstep-4);
+  transform: translateX(-50%);
+  border-radius: var(--promien-pelny);
+  background: var(--tekst);
+  box-shadow: var(--cien-2);
+  color: var(--powierzchnia);
+  font-size: var(--rozmiar-s);
+  white-space: nowrap;
+  transition: bottom var(--czas) var(--krzywa);
+}
+.heksy-pasek__tekst b {
+  font-family: var(--font-mono);
+}
+.heksy-pasek__akcja {
+  flex: none;
+  min-height: var(--cel-dotyku);
+  padding: 0 var(--odstep-4);
+  border: 0;
+  border-radius: var(--promien-pelny);
+  background: var(--powierzchnia);
+  color: var(--tekst);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.heksy-podpowiedz {
+  position: absolute;
+  z-index: var(--z-mapa-pasek);
+  bottom: calc(var(--arkusz-odstep, 0px) + var(--odstep-4));
+  left: 50%;
+  max-width: calc(100% - 2 * var(--odstep-3));
+  padding: var(--odstep-2) var(--odstep-3);
   transform: translateX(-50%);
   border: 1px solid var(--ramka);
-  border-radius: 999px;
-  background: rgb(255 255 255 / 94%);
-  box-shadow: 0 4px 20px rgb(20 41 31 / 15%);
-  backdrop-filter: blur(8px);
-}
-
-.heksy-pasek__naglowek {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  flex: none;
-  color: var(--tekst);
-  white-space: nowrap;
-  min-width: 0;
-}
-
-.heksy-pasek__naglowek span {
+  border-radius: var(--promien-pelny);
+  background: rgb(255 255 255 / 90%);
+  box-shadow: var(--cien-1);
   color: var(--tekst-2);
-  font-size: 0.85rem;
+  font-size: var(--rozmiar-s);
+  text-align: center;
+  pointer-events: none;
+  transition: bottom var(--czas) var(--krzywa);
+}
+/* Pigułka stoi na środku dołu: legenda i przyciski mapy zostają nad nią. */
+.slot-mapy:has(.heksy-pasek) .maplibregl-ctrl-bottom-left,
+.slot-mapy:has(.heksy-pasek) .maplibregl-ctrl-bottom-right {
+  bottom: calc(var(--arkusz-odstep, 0px) + 60px);
 }
 
-.heksy-pasek__naglowek strong {
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.heksy-pasek__lista {
+/* Wybrane heksy jako chipy z × (cel 44 px): w panelu i w arkuszu. */
+.porownanie-lista {
   display: flex;
-  gap: 4px;
-  min-width: 0;
-  overflow: hidden;
+  flex-wrap: wrap;
+  gap: var(--odstep-2);
 }
-
 .heksy-pasek__chip {
   display: inline-flex;
   align-items: center;
-  max-width: 150px;
+  max-width: 100%;
   min-width: 0;
-  gap: 2px;
-  padding: 1px 2px 1px 8px;
-  border: 1px solid #a4c6b4;
-  border-radius: 999px;
-  background: #edf5ef;
-  color: #194d3c;
-  font-size: 0.78rem;
+  padding-left: var(--odstep-3);
+  border: 1px solid var(--akcent-obrys);
+  border-radius: var(--promien-pelny);
+  background: var(--akcent-jasny);
+  color: var(--akcent-hover);
+  font-size: var(--rozmiar-s);
 }
-
 .heksy-pasek__chip[data-aktywny] {
-  border-color: #1f5c46;
-  background: #d6e9dc;
-  box-shadow: 0 0 0 2px rgb(31 92 70 / 18%);
+  border-color: var(--akcent);
+  background: var(--akcent-jasny-2);
 }
-
 .heksy-pasek__chip > span {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
 .heksy-pasek__chip button {
   display: grid;
   flex: none;
-  width: 22px;
-  height: 22px;
+  width: var(--cel-dotyku);
+  height: var(--cel-dotyku);
   place-items: center;
   padding: 0;
   border: 0;
@@ -241,66 +194,68 @@
   background: transparent;
   color: inherit;
   font: inherit;
-  font-size: 1rem;
+  font-size: var(--rozmiar-xl);
   cursor: pointer;
 }
-
-.heksy-pasek__chip button:hover,
 .heksy-pasek__chip button:focus-visible {
-  background: #d6e9dc;
+  background: var(--akcent-jasny-2);
 }
-
-.heksy-pasek__akcja {
-  order: 3;
-  flex: none;
-  min-height: 30px;
-  padding: 4px 12px;
-  font-size: 0.85rem;
-  border: 0;
-  border-radius: 999px;
-  background: #1f5c46;
-  color: white;
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.heksy-pasek__akcja:hover,
-.heksy-pasek__akcja:focus-visible {
-  background: #174936;
-}
-
-.heksy-podpowiedz {
-  position: absolute;
-  z-index: 5;
-  bottom: 16px;
-  left: 50%;
-  max-width: calc(100% - 32px);
-  padding: 6px 12px;
-  transform: translateX(-50%);
-  border: 1px solid rgb(211 221 214 / 90%);
-  border-radius: 999px;
-  background: rgb(255 255 255 / 90%);
-  box-shadow: 0 2px 8px rgb(20 41 31 / 10%);
-  color: var(--tekst-2);
-  font-size: 0.82rem;
-  text-align: center;
-  pointer-events: none;
-}
-
-/* Pasek zajmuje dół mapy; legenda i przyciski mapy pozostają nad nim. */
-.slot-mapy:has(.heksy-pasek) .maplibregl-ctrl-bottom-left,
-.slot-mapy:has(.heksy-pasek) .maplibregl-ctrl-bottom-right {
-  bottom: 60px;
-}
-
-@media (max-width: 700px) {
-  .heksy-pasek__lista {
-    flex-wrap: wrap;
+@media (hover: hover) {
+  .heksy-pasek__chip button:hover,
+  .heksy-pasek__akcja:hover {
+    background: var(--akcent-jasny-2);
   }
+}
 
-  .heksy-podpowiedz {
-    bottom: 42px;
+/* Podsumowanie w nagłówku arkusza: profil · tryb · liczba filtrów, jeden wiersz. */
+.arkusz-podsumowanie {
+  display: flex;
+  align-items: center;
+  gap: var(--odstep-2);
+  min-height: 20px;
+  margin: 0 0 var(--odstep-3);
+  overflow: hidden;
+  color: var(--tekst-2);
+  font-size: var(--rozmiar-s);
+  white-space: nowrap;
+}
+.arkusz-podsumowanie b {
+  overflow: hidden;
+  color: var(--tekst);
+  font-weight: 600;
+  text-overflow: ellipsis;
+}
+.arkusz-podsumowanie__kropka {
+  flex: none;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--tekst-3);
+}
+
+/* Telefon i tablet: mapa na cały ekran pod nagłówkiem, strona się nie przewija – przewija się tylko treść arkusza. */
+@media (max-width: 1023.98px) /* bp-l */ {
+  .szukaj {
+    display: block;
+  }
+  .szukaj-mapa {
+    position: fixed;
+    inset: var(--wys-naglowka) 0 0 0;
+  }
+  .pasek-warstw {
+    top: var(--odstep-2);
+    right: var(--odstep-3);
+    max-width: none;
+    /* Przycięcie przy prawej krawędzi sygnalizuje, że pasek się przewija. */
+    mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+  }
+  .slot-mapy .mapa-ustawienia {
+    top: calc(var(--odstep-2) + var(--cel-dotyku) + var(--odstep-3));
+  }
+  .heksy-pasek {
+    right: var(--odstep-3);
+    left: auto;
+    transform: none;
   }
 }
 
@@ -391,105 +346,6 @@
   margin: 0;
   color: var(--tekst-2);
   font-size: 13px;
-}
-
-/* Telefon: lista podpowiedzi wychodzi poza blok pola i ma leżeć nad przyklejoną mapą (z-index 10 w styles.css). */
-@media (max-width: 860px) {
-  .szukaj-wyszukaj {
-    position: relative;
-    z-index: 11;
-  }
-}
-
-/* Pod adresem wybranym na mapie: okolica z okolice.json (#185), bez podpisu w zapasie na dzielnicę i gminę. */
-.wybrany-adres__miejsce {
-  display: block;
-  margin-top: 2px;
-  color: var(--tekst-2);
-  font-size: 13px;
-}
-
-.wybrany-adres__miejsce strong {
-  color: var(--tekst);
-  font-weight: 600;
-}
-
-/* Mobile: panele mapy (ustawienia, pasek heksów, podpowiedź) poza płótnem – mapa zostaje odkryta.
-   Slot rośnie w kolumnę: ustawienia → płótno → pasek heksów. Legenda zostaje na mapie, ale zwarta. */
-@media (max-width: 700px) {
-  .szukaj-mapa .slot-mapy {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    height: auto;
-    min-height: 0;
-    overflow: visible;
-    border: 0;
-    border-radius: 0;
-    background: none;
-  }
-  .slot-mapy > .mapa-krakowa {
-    position: relative;
-    inset: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-  .slot-mapy > .mapa-krakowa > .mapa-krakowa__plotno {
-    position: relative;
-    inset: auto;
-    height: 40svh;
-    min-height: 200px;
-    overflow: hidden;
-    border: 1px solid var(--ramka);
-    border-radius: var(--promien);
-    background: #e4e7e2;
-  }
-  .slot-mapy .mapa-ustawienia {
-    position: static;
-    order: -1;
-    max-width: none;
-    box-shadow: none;
-  }
-  .slot-mapy .mapa-ustawienia__suwak {
-    flex: 1;
-    width: auto;
-    min-width: 80px;
-  }
-  .slot-mapy .mapa-ustawienia__warstwy {
-    margin-left: auto;
-  }
-  .slot-mapy .heksy-pasek,
-  .slot-mapy .heksy-podpowiedz {
-    position: static;
-    max-width: none;
-    transform: none;
-    box-shadow: none;
-  }
-  .slot-mapy .heksy-pasek {
-    flex-wrap: wrap;
-    border-radius: 14px;
-  }
-  .slot-mapy .heksy-podpowiedz {
-    align-self: center;
-  }
-  .slot-mapy:has(.heksy-pasek) .maplibregl-ctrl-bottom-left,
-  .slot-mapy:has(.heksy-pasek) .maplibregl-ctrl-bottom-right {
-    bottom: 0;
-  }
-  .slot-mapy .mapa-legenda {
-    max-width: 120px;
-    padding: 4px 6px;
-    font-size: 10px;
-  }
-  .slot-mapy .mapa-legenda__tytul {
-    display: none;
-  }
-  .slot-mapy .mapa-legenda__skala {
-    margin: 0 0 2px;
-    padding: 2px 0;
-    font-size: 10px;
-  }
 }
 
 /* Lista miast (#223): przyciski zawijają się w wiersze, więc na 360 px nie ma poziomego przewijania.
@@ -619,84 +475,139 @@
   font-size: 14px;
 }
 
-/* Mini-karta: wynik i główne czynniki po wyborze adresu, w prawym górnym rogu mapy pod „Porą dnia”. */
-.mini-karta {
+/* Baner „Przełącz na …” pływa nad mapą pod paskiem warstw (nie zabiera jej miejsca). */
+.szukaj-mapa > .przelacz-miasto {
   position: absolute;
-  top: 56px;
-  right: 12px;
-  z-index: 3;
-  width: 260px;
-  max-height: calc(100% - 200px);
+  z-index: var(--z-lepkie);
+  top: calc(var(--odstep-3) + var(--cel-dotyku) + var(--odstep-3));
+  left: var(--odstep-3);
+  max-width: min(560px, calc(100% - 396px));
+  box-shadow: var(--cien-2);
+}
+@media (max-width: 1023.98px) /* bp-l */ {
+  .szukaj-mapa > .przelacz-miasto {
+    top: calc(var(--odstep-2) + var(--cel-dotyku) + var(--odstep-3));
+    right: var(--odstep-3);
+    max-width: none;
+  }
+}
+
+/* Podsumowanie wybranego adresu (MiniKarta): karta w prawym górnym rogu mapy albo sekcja na górze arkusza. */
+.mini-karta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--odstep-4);
+  background: var(--powierzchnia);
+  font-size: var(--rozmiar-s);
+}
+.mini-karta--mapa {
+  position: absolute;
+  z-index: var(--z-mapa-pasek);
+  top: var(--odstep-4);
+  right: var(--odstep-4);
+  width: min(340px, calc(100% - 2 * var(--odstep-4)));
+  max-height: calc(100% - 2 * var(--odstep-4));
+  padding: var(--odstep-4);
   overflow-y: auto;
-  padding: 12px 14px;
-  border: 1px solid var(--ramka);
-  border-radius: var(--promien);
-  background: #fff;
-  box-shadow: 0 6px 20px rgb(0 0 0 / 0.12);
-  font-size: 13px;
+  border-radius: var(--promien-l);
+  box-shadow: var(--cien-2);
+}
+.mini-karta--arkusz {
+  margin-bottom: var(--odstep-4);
+}
+.mini-karta__zamknij {
+  position: absolute;
+  top: var(--odstep-2);
+  right: var(--odstep-2);
+  width: var(--cel-dotyku);
+  height: var(--cel-dotyku);
+  border: 0;
+  background: none;
+  color: var(--tekst-3);
+  font-size: var(--rozmiar-xl);
+  cursor: pointer;
 }
 .mini-karta__gora {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 8px;
-}
-.mini-karta__nazwa {
-  font-size: 14px;
-}
-.mini-karta__zamknij {
-  min-width: 28px;
-  min-height: 28px;
-  border: 0;
-  background: none;
-  font-size: 18px;
-  line-height: 1;
-  cursor: pointer;
-  color: var(--tekst-2);
-}
-.mini-karta__wynik {
-  display: flex;
   align-items: center;
-  gap: 10px;
-  margin: 6px 0 10px;
+  gap: var(--odstep-3);
 }
-.mini-karta__liczba {
-  font-size: 34px;
-  font-weight: 700;
-  color: var(--akcent);
-  line-height: 1;
+.mini-karta--mapa .mini-karta__gora {
+  padding-right: var(--odstep-5);
 }
-.mini-karta__podpis {
+.mini-karta__plakietka {
+  display: grid;
+  flex: none;
+  width: 56px;
+  height: 56px;
+  place-items: center;
+  border-radius: var(--promien);
+  background: var(--akcent);
+  color: var(--powierzchnia);
+  font: 600 var(--rozmiar-xxl) / 1 var(--font-mono);
+}
+.mini-karta__plakietka[data-brak] {
+  background: var(--brak-danych);
+  color: var(--tekst);
+}
+.mini-karta__opis {
   display: flex;
   flex-direction: column;
-  color: var(--tekst-2);
+  gap: 2px;
+  min-width: 0;
+}
+.mini-karta__nazwa {
+  font-size: var(--rozmiar-l);
+  line-height: 1.25;
+}
+.mini-karta__okolica {
+  color: var(--tekst-3);
+  font-size: var(--rozmiar-s);
+}
+.mini-karta__okolica strong {
+  color: var(--tekst);
+  font-weight: 600;
+}
+.mini-karta__uwaga {
+  color: var(--ostrzezenie-tekst);
+  font-size: var(--rozmiar-s);
+  font-weight: 600;
+}
+.mini-karta__czynniki {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--odstep-2);
 }
 .mini-karta__lista {
-  margin-bottom: 8px;
+  padding: var(--odstep-2) var(--odstep-3);
+  border: 1px solid var(--linia);
+  border-radius: var(--promien);
 }
 .mini-karta__tytul {
-  font-size: 12px;
+  color: var(--tekst-3);
+  font-size: var(--rozmiar-xs);
   font-weight: 600;
-  color: var(--tekst-2);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 .mini-karta__lista ul {
-  margin: 4px 0 0;
+  margin: var(--odstep-1) 0 0;
   padding: 0;
   list-style: none;
 }
 .mini-karta__lista li {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--odstep-2);
   padding: 2px 0;
 }
 .mini-karta__pkt {
   flex: none;
   min-width: 34px;
-  text-align: center;
   padding: 2px 6px;
-  border-radius: 6px;
-  font-size: 12px;
+  border-radius: var(--promien-s);
+  font-size: var(--rozmiar-xs);
+  text-align: center;
 }
 .mini-karta__pkt--plus {
   background: var(--akcent-jasny);
@@ -711,15 +622,113 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.mini-karta__akcja {
-  width: 100%;
-  margin-top: 4px;
+/* Jedno główne CTA „Otwórz kartę”, obok drugorzędny przycisk porównania. */
+.mini-karta__akcje {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--odstep-2);
 }
-@media (max-width: 700px) {
-  .mini-karta {
-    position: static;
-    width: auto;
-    max-height: none;
-    box-shadow: none;
+.mini-karta__cta,
+.mini-karta__drugi {
+  min-height: 48px;
+  padding: 0 var(--odstep-4);
+  border: 1px solid var(--ramka-pola);
+  border-radius: var(--promien);
+  background: var(--powierzchnia);
+  color: var(--tekst);
+  font: 600 var(--rozmiar-m) var(--font);
+  cursor: pointer;
+}
+.mini-karta__cta {
+  border-color: var(--akcent);
+  background: var(--akcent);
+  color: var(--powierzchnia);
+}
+.mini-karta__drugi:disabled {
+  border-color: var(--ramka);
+  color: var(--tekst-3);
+  cursor: not-allowed;
+}
+@media (hover: hover) {
+  .mini-karta__cta:hover {
+    border-color: var(--akcent-hover);
+    background: var(--akcent-hover);
   }
+  .mini-karta__drugi:hover:not(:disabled) {
+    border-color: var(--akcent-obrys);
+  }
+}
+
+/* Ranking: wiersz jak w makiecie – plakietka 40 px z liczbą, nazwa i okolica, okrągły przycisk porównania 44 px. */
+.szukaj-ranking .lista-wynikow {
+  gap: 0;
+}
+.szukaj-ranking .ranking-ulica {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--cel-dotyku);
+  align-items: center;
+  gap: var(--odstep-3);
+  min-height: 60px;
+  border-bottom: 1px solid var(--linia);
+}
+.szukaj-ranking .ranking-ulica .pozycja-wyniku {
+  gap: var(--odstep-3);
+  padding: var(--odstep-2) 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+}
+.ranking-ulica__nazwa {
+  font-size: var(--rozmiar-m);
+  font-weight: 600;
+}
+.szukaj-ranking .ranking-ulica__opis small {
+  color: var(--tekst-3);
+  font-size: var(--rozmiar-s);
+}
+.plakietka-wyniku[data-poziom="sredni"] {
+  background: var(--plakietka-srednia);
+}
+/* Najniższy poziom jest jasny, więc liczba dostaje ciemne pismo (kontrast). */
+.plakietka-wyniku[data-poziom="niski"] {
+  background: var(--plakietka-niska);
+  color: var(--tekst);
+}
+.szukaj-ranking .ranking-ulica .ranking-ulica__dodaj {
+  position: relative;
+  width: var(--cel-dotyku);
+  height: var(--cel-dotyku);
+  min-height: 0;
+  padding: 0;
+  border: 1px solid var(--ramka-pola);
+  border-radius: 50%;
+  background: var(--powierzchnia);
+  color: var(--tekst);
+}
+.ranking-ulica__dodaj::before,
+.ranking-ulica__dodaj::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 14px;
+  height: 2px;
+  background: currentcolor;
+  transform: translate(-50%, -50%);
+}
+.ranking-ulica__dodaj::after {
+  transform: translate(-50%, -50%) rotate(90deg);
+}
+.szukaj-ranking .ranking-ulica .ranking-ulica__dodaj[aria-pressed="true"] {
+  border-color: var(--akcent);
+  background: var(--akcent);
+  color: var(--powierzchnia);
+}
+/* Dodane: sam minus (usuń z porównania). */
+.ranking-ulica__dodaj[aria-pressed="true"]::after {
+  display: none;
+}
+.szukaj-ranking .ranking-ulica .ranking-ulica__dodaj:disabled {
+  border-color: var(--ramka);
+  color: var(--tekst-3);
 }

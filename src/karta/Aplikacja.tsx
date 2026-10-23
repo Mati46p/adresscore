@@ -172,7 +172,8 @@ function Powloka() {
         {ekran === 'biznes' && <EkranBiznes />}
         {ekran === 'miasto' && <EkranMiasto />}
       </Suspense>
-      <StopkaPrawna />
+      {/* Na Szukaj mapa ma pełną wysokość; linki prawne są tam w panelu (StopkaPrawna, wariant „panel”). */}
+      {ekran !== 'szukaj' && <StopkaPrawna />}
     </>
   )
 }

@@ -24,8 +24,8 @@
   --promien: 12px;
   --cel-dotyku: 44px;
   /* Wysokość wszystkiego nad treścią: pasek serwisów + nagłówek. */
-  --wys-paska-serwisow: 32px;
-  --wys-naglowka: calc(69px + var(--wys-paska-serwisow));
+  --wys-paska-serwisow: 28px;
+  --wys-naglowka: calc(56px + var(--wys-paska-serwisow));
   --akcent-jasny-2: #d6e9dc;
   --plakietka-srednia: #5d8f6f;
   --plakietka-niska: #9bb79c;
