@@ -4,6 +4,7 @@
 // #156: przy średniej pewności JEV dwa przyciski „Chodziło Ci o…?”; klik pokazuje odpowiedź z danych.
 import { useId, useRef, useState } from 'react'
 import { useDane } from '@/wynik/dane'
+import { pozycjaWKaflu, useKafelAdresu } from '@/wynik/kafle'
 import {
   listaWarstw,
   type Odpowiedz,
@@ -28,14 +29,19 @@ type Stan =
 /** `indeks` – indeks adresu w danych (ten sam co `stan.wybrany` w src/wynik/stan.ts). */
 export function PoleZapytajOAdres({ indeks }: { indeks: number }) {
   const dane = useDane()
+  // Bez pełnych danych (karta okolicy na kompakcie, #247 B7b) pytamy kafel adresu: te same warstwy i
+  // wartości tylko dla adresów kafla, więc odpowiedź ma tę samą liczbę, źródło i rozdzielczość.
+  const kafel = useKafelAdresu(dane.stan === 'gotowe' ? null : indeks)
   const [tekst, setTekst] = useState('')
   const [stan, setStan] = useState<Stan>({ stan: 'pusty' })
   const licznik = useRef(0)
   const idPola = useId()
   const idNaglowka = useId()
 
-  if (dane.stan !== 'gotowe') return null
-  const wskazniki = dane.wskazniki
+  const pozycja = kafel ? pozycjaWKaflu(kafel, indeks) : -1
+  if (dane.stan !== 'gotowe' && (!kafel || pozycja < 0)) return null
+  const wskazniki = dane.stan === 'gotowe' ? dane.wskazniki : (kafel?.wskazniki ?? [])
+  const iWskaznikow = dane.stan === 'gotowe' ? indeks : pozycja
   const przyklady = podpowiedziListy(listaWarstw(wskazniki.map((w) => w.meta)))
 
   async function zapytaj(pytanie: string) {
@@ -43,7 +49,7 @@ export function PoleZapytajOAdres({ indeks }: { indeks: number }) {
     if (!p) return
     const numer = ++licznik.current
     setStan({ stan: 'pytam', pytanie: p })
-    const { odpowiedzi, propozycje } = await zapytajOAdresZPropozycjami(p, wskazniki, indeks)
+    const { odpowiedzi, propozycje } = await zapytajOAdresZPropozycjami(p, wskazniki, iWskaznikow)
     // Starsze pytanie, które wróciło po nowszym, nie nadpisuje odpowiedzi.
     if (numer === licznik.current)
       setStan({ stan: 'gotowe', pytanie: p, numer, odpowiedzi, propozycje })

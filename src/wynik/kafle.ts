@@ -393,6 +393,11 @@ export function useAdresyKompakt(is: readonly number[]): Adres[] {
   return adresyZPamieci(is)
 }
 
+/** Kafel z adresem `i`, jeśli jest w pamięci (bez subskrypcji; wołać po hooku, który odświeża komponent). */
+export function kafelAdresuZPamieci(i: number): KafelGotowy | null {
+  return poI.get(i) ?? null
+}
+
 /** Adres o pozycji `i`, jeśli jego kafel jest już w pamięci; inaczej null. */
 export function useAdresKompakt(i: number | null): Adres | null {
   useSyncExternalStore(subskrybuj, migawka, migawka)

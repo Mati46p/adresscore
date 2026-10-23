@@ -16,8 +16,11 @@ import { MEDIA_ARKUSZA } from '@/lib/punktyLamania'
 import { ograniczonyRuch, PAUZA_PRZED_LOTEM } from '@/mapa/lot'
 import { POLSKIE_NAPISY, STYL } from '@/mapa/MapaKrakowa'
 import { useDane } from '@/wynik/dane'
+import { useAdresKompakt } from '@/wynik/kafle'
+import { useDaneHeksow } from '@/wynik/kompaktBiezacy'
 import { useStan } from '@/wynik/stan'
 import { policzWyniki } from '@/wynik/useWyniki'
+import { adresyZKafli } from './adresyZKafli'
 import { type BudynkiOkolicy, wczytajBudynkiWokol } from './kontrakt'
 import {
   type BudynekOkolicy,
@@ -32,6 +35,7 @@ import './miasto3d.css'
 import { PanelCienia, type Swiatlo, useSwiatlo } from './PanelCienia'
 import { dymekPozwolenia, PanelPozwolen, usePozwolenia, warstwaPozwolen } from './Pozwolenia3D'
 import type { Pozwolenie } from './pozwolenia'
+import { useKafleOkolicy } from './useKafleOkolicy'
 
 const AKCENT = naRgba('#1F5C46')
 const NAPISY = {
@@ -139,7 +143,11 @@ export default function Okolica3D({
   const wybrany = adresI === undefined ? wybranyStan : adresI
   const wagi = useStan((s) => s.wagi)
   const kierunki = useStan((s) => s.kierunki)
-  const adres = dane.stan === 'gotowe' && wybrany !== null ? dane.adresy[wybrany] : null
+  // Bez pełnych danych (karta okolicy na kompakcie, #247 B7b) adres i wyniki budynków biorą się z kafli
+  // wokół adresu – jak w `Warstwa3D`; liczy je ten sam `wynikAdresu` co karta.
+  const pelne = dane.stan === 'gotowe'
+  const adresKafla = useAdresKompakt(pelne ? null : wybrany)
+  const adres = pelne ? (wybrany !== null ? dane.adresy[wybrany] : null) : adresKafla
   const lon = adres?.lon ?? null
   const lat = adres?.lat ?? null
 
@@ -157,24 +165,39 @@ export default function Okolica3D({
     }
   }, [lon, lat])
 
+  const kafleOkolicy = useKafleOkolicy(lon, lat, !pelne)
+  const zKafli =
+    !pelne && kafleOkolicy && lon !== null && lat !== null
+      ? adresyZKafli(kafleOkolicy, wagi, kierunki, lon, lat)
+      : null
   const budynki =
-    dane.stan === 'gotowe' && adres && budynkiStan.stan === 'gotowe'
-      ? budynkiOkolicy(
-          budynkiStan.dane.budynki,
-          dane.adresy,
-          policzWyniki(dane, wagi, kierunki, 'wynik').naAdres,
-          adres.lon,
-          adres.lat,
-        )
+    adres && budynkiStan.stan === 'gotowe'
+      ? dane.stan === 'gotowe'
+        ? budynkiOkolicy(
+            budynkiStan.dane.budynki,
+            dane.adresy,
+            policzWyniki(dane, wagi, kierunki, 'wynik').naAdres,
+            adres.lon,
+            adres.lat,
+          )
+        : zKafli
+          ? budynkiOkolicy(
+              budynkiStan.dane.budynki,
+              zKafli.adresy,
+              zKafli.wyniki,
+              adres.lon,
+              adres.lat,
+            )
+          : []
       : []
   const wybranyBudynek = adres ? budynekAdresu(budynki, adres) : null
   const swiatlo = useSwiatlo(lon ?? 0, lat ?? 0)
   const pozwolenia = usePozwolenia(lon, lat)
   const [pokazPozwolenia, setPokazPozwolenia] = useState(true)
-  const zrodlaPozwolen =
-    dane.stan === 'gotowe'
-      ? (dane.manifest.wskazniki.find((w) => w.id === 'inwestycje_500m')?.zrodla ?? [])
-      : []
+  const hk = useDaneHeksow()
+  const manifest =
+    dane.stan === 'gotowe' ? dane.manifest : hk.stan === 'gotowe' ? hk.manifest : null
+  const zrodlaPozwolen = manifest?.wskazniki.find((w) => w.id === 'inwestycje_500m')?.zrodla ?? []
 
   if (!adres || lon === null || lat === null) return null
 

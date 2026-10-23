@@ -13,6 +13,7 @@ import {
   type OpcjeSasiadow,
   PROMIEN_SASIADA_M,
 } from './sasiedzi.ts'
+import { lepsiSasiedziZKafli, type ZbiorKafli } from './sasiedziZKafli.ts'
 import type { Kierunki, Litera, Wagi, WskaznikPrzygotowany } from './silnik.ts'
 import { dodajDoPorownania, pobierzStan, pokazOkolice, przejdz } from './stan.ts'
 import { MAKS_POROWNANIE } from './url.ts'
@@ -147,6 +148,52 @@ export function sasiedziOtwartej(
 ): LepsiSasiedzi | null {
   if (s.zrodlo === null || s.zrodlo !== wybranyAdres || !w) return null
   return policzSasiadow(s.zrodlo, w)
+}
+
+/** Wejście „Lepszego sąsiada” bez pełnych danych: adresy i warstwy z kafli wokół adresu (#247, B7b). */
+export interface WejscieSasiadowKafli {
+  zbior: ZbiorKafli
+  wagi: Wagi
+  kierunki: Kierunki
+  filtry: readonly TwardyFiltr[]
+}
+
+let pamiecKafli: { i: number; wejscie: WejscieSasiadowKafli; wynik: LepsiSasiedzi | null } | null =
+  null
+
+/**
+ * `lepsiSasiedziZKafli` z pamięcią ostatniego wywołania (jak `policzSasiadow`). Null, gdy kafla adresu
+ * wyjściowego nie ma jeszcze w zbiorze.
+ */
+export function policzSasiadowKafli(i: number, w: WejscieSasiadowKafli): LepsiSasiedzi | null {
+  const p = pamiecKafli
+  if (
+    p &&
+    p.i === i &&
+    p.wejscie.zbior === w.zbior &&
+    p.wejscie.wagi === w.wagi &&
+    p.wejscie.kierunki === w.kierunki &&
+    p.wejscie.filtry === w.filtry
+  ) {
+    return p.wynik
+  }
+  const wynik = lepsiSasiedziZKafli(i, w.zbior, {
+    wagi: w.wagi,
+    kierunki: w.kierunki,
+    filtry: w.filtry,
+  })
+  pamiecKafli = { i, wejscie: w, wynik }
+  return wynik
+}
+
+/** Jak `sasiedziOtwartej`, ale na adresach z kafli. */
+export function sasiedziOtwartejKafli(
+  s: StanSasiadow,
+  wybranyAdres: number | null,
+  w: WejscieSasiadowKafli | null,
+): LepsiSasiedzi | null {
+  if (s.zrodlo === null || s.zrodlo !== wybranyAdres || !w) return null
+  return policzSasiadowKafli(s.zrodlo, w)
 }
 
 /** Podświetlenie, które nadal wskazuje istniejącego kandydata (lista mogła się skrócić). */

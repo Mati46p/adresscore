@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useRef } from 'react'
 import { Pokaz3D, parametrPokazu } from '@/miasto3d/Pokaz3D'
 import { pozwolNaPelneDane, useDaneJesliSa } from '@/wynik/dane'
+import { useAdresKompakt } from '@/wynik/kafle'
 import { useMiasto } from '@/wynik/miastoDanych'
 import { hrefAdresu } from '@/wynik/slug'
 import { useStan } from '@/wynik/stan'
@@ -37,11 +38,16 @@ export function Aplikacja() {
   // Link do prezentacji: pełny ekran 3D zamiast powłoki (#130).
   const pokaz = parametrPokazu()
   const ekran = useStan((s) => s.ekran)
-  // Bramka pełnych danych (A4): Szukaj zwalnia ją sam po pierwszym kolorze mapy, a katalog i panel ich nie
-  // pobierają. Pozostałe ekrany i prezentacja 3D (`?pokaz`) potrzebują danych od razu, więc otwierają bramkę
-  // przy wejściu – inaczej czekałyby na zapas czasowy.
+  // Bramka pełnych danych (A4): Szukaj zwalnia ją sam po pierwszym kolorze mapy, a katalog, panel i karta
+  // okolicy ich nie pobierają (B7b: karta stoi na kompakcie i kaflach, a stary kompakt bez rozszerzeń albo
+  // kafel, którego nie ma, otwiera bramkę sam – `useStartKompakt`, `useKafelWybranego`). Pozostałe ekrany i
+  // prezentacja 3D (`?pokaz`) potrzebują danych od razu, więc otwierają bramkę przy wejściu – inaczej
+  // czekałyby na zapas czasowy.
   useEffect(() => {
-    if (pokaz !== null || !['szukaj', 'katalog', 'panel'].includes(ekran)) pozwolNaPelneDane()
+    // Porównanie i Metoda (B7b) też stoją na kompakcie i kaflach; stary kompakt otwiera bramkę sam, w ekranie.
+    if (pokaz === null && (ekran === 'porownanie' || ekran === 'metoda')) return
+    if (pokaz !== null || !['szukaj', 'katalog', 'panel', 'okolica'].includes(ekran))
+      pozwolNaPelneDane()
   }, [pokaz, ekran])
   if (pokaz !== null) return <Pokaz3D id={pokaz} />
   // Panel admina (#/panel) żyje poza powłoką, jak prezentacja 3D: bez nagłówka mapy, bez tytułu i
@@ -73,8 +79,15 @@ function Powloka() {
   const miasto = useMiasto()
   // Bez startu ładowania: pełne dane (~300 MB dla Krakowa) pobiera ekran, który ich używa, a katalog nie.
   const dane = useDaneJesliSa()
-  const gotowe = dane.stan === 'gotowe'
-  const adres = dane.stan === 'gotowe' && wybrany !== null ? dane.adresy[wybrany] : undefined
+  // Karta okolicy bez pełnych danych (B7b) bierze adres z kafla: tytuł, adres kanoniczny i fokus na h1 działają tak samo.
+  const adresKompakt = useAdresKompakt(dane.stan === 'gotowe' ? null : wybrany)
+  const adres =
+    dane.stan === 'gotowe'
+      ? wybrany !== null
+        ? dane.adresy[wybrany]
+        : undefined
+      : (adresKompakt ?? undefined)
+  const gotowe = dane.stan === 'gotowe' || adres !== undefined
   const nazwaAdresu = adres ? opisAdresu(adres) : 'Karta okolicy'
 
   // Tytuły ekranów z własnym adresem (/, /adres/…, /metoda) są dla Krakowa te same co w HTML z serwera
