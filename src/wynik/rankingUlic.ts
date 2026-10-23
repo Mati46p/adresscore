@@ -73,7 +73,9 @@ export function okolicaUlicy(
 }
 
 interface Grupa {
-  slug: string
+  /** Wzorzec do wyliczenia sluga (liczy się leniwie, `slugGrupy`). */
+  wzor: Pick<Adres, 'teryt' | 'miejscowosc' | 'ulica'>
+  slug: string | null
   nazwa: string
   miejscowosc: string
   liczbaAdresow: number
@@ -109,7 +111,8 @@ export function rankingUlic(
       grupa.indeksy.push(i)
     } else {
       grupy.set(klucz, {
-        slug: slugUlicy(adres),
+        wzor: adres,
+        slug: null,
         nazwa: adres.ulica ?? adres.miejscowosc,
         miejscowosc: adres.miejscowosc,
         liczbaAdresow: 1,
@@ -119,12 +122,15 @@ export function rankingUlic(
       })
     }
   }
+  // Slug (normalizacja + hash) kosztuje, a potrzebny jest tylko przy remisie wyniku i dla ulic z topu:
+  // liczymy go leniwie i raz na ulicę, wynik jest ten sam co przy liczeniu od razu.
+  const slugGrupy = (g: Grupa) => (g.slug ??= slugUlicy(g.wzor))
   return [...grupy.values()]
     .map((g) => ({ g, wynik: g.suma / g.liczbaAdresow }))
-    .sort((a, b) => b.wynik - a.wynik || a.g.slug.localeCompare(b.g.slug, 'pl'))
+    .sort((a, b) => b.wynik - a.wynik || slugGrupy(a.g).localeCompare(slugGrupy(b.g), 'pl'))
     .slice(0, ile)
     .map(({ g, wynik }) => ({
-      slug: g.slug,
+      slug: slugGrupy(g),
       nazwa: g.nazwa,
       miejscowosc: g.miejscowosc,
       okolica: okolicaUlicy(g.indeksy, adresy, okolice, g.miejscowosc),

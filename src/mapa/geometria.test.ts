@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 import { cellToBoundary, cellToParent, gridDisk, latLngToCell } from 'h3-js'
 import {
+  kolekcjaZWartosciami,
   POZIOMY,
   POZIOMY_TLA,
   poziomyTlaDoOdswiezenia,
@@ -14,7 +15,6 @@ import {
   zbudujGeometrie,
   zbudujGeometrieTla,
   zbudujOtoczke,
-  zWartosciami,
 } from './geometria.ts'
 import { stanHeksu, W_BRAK, W_WYKLUCZONY } from './wykluczenie.ts'
 
@@ -88,10 +88,8 @@ describe('zbudujGeometrie (heksy bieżącego miasta)', () => {
   const r10 = obszar(KRAKOW, 10, 3)
   const g = zbudujGeometrie(r10)
 
-  it('r10 ma poligon na każdy klucz, r8 i r9 na każdego rodzica', () => {
-    assert.equal(g.zrodla[10].features.length, r10.length)
-    assert.equal(g.zrodla[9].features.length, g.dzieci[9].size)
-    assert.equal(g.zrodla[8].features.length, g.dzieci[8].size)
+  it('każdy heks r10 ma dokładnie jednego rodzica r8 i r9', () => {
+    assert.equal(g.klucze.size, r10.length)
     for (const res of [8, 9] as const) {
       let dzieci = 0
       for (const [rodzic, lista] of g.dzieci[res]) {
@@ -113,7 +111,7 @@ describe('zbudujGeometrie (heksy bieżącego miasta)', () => {
     const pusta = zbudujGeometrie([])
     assert.equal(pusta.klucze.size, 0)
     assert.equal(pusta.granice, null)
-    assert.equal(pusta.zrodla[10].features.length, 0)
+    assert.equal(pusta.dzieci[8].size, 0)
   })
 
   it('takieSameKlucze: te same klucze w dowolnej kolejności, inaczej false', () => {
@@ -129,54 +127,17 @@ describe('zbudujGeometrieTla', () => {
   const r8 = obszar(KRAKOW, 8, 2)
   const r9 = obszar(GDANSK, 9, 3)
 
-  it('kolekcje r8 i r9 – i tylko one, bez r10', () => {
-    const g = zbudujGeometrieTla(r8, r9)
-    assert.deepEqual(Object.keys(g.zrodla).sort(), ['8', '9'])
-    assert.deepEqual(
-      POZIOMY_TLA.map((p) => p.res),
-      [8, 9],
-    )
-    assert.equal(g.zrodla[8].features.length, r8.length)
-    assert.equal(g.zrodla[9].features.length, r9.length)
-    assert.deepEqual([...g.klucze[8]].sort(), [...r8].sort())
-    assert.deepEqual([...g.klucze[9]].sort(), [...r9].sort())
+  it('trzyma klucze obu poziomów, bez powtórzeń', () => {
+    const g = zbudujGeometrieTla([...r8, ...r8], r9)
+    assert.deepEqual(Object.keys(g.klucze).sort(), ['8', '9'])
+    assert.equal(g.klucze[8].size, r8.length)
+    assert.equal(g.klucze[9].size, r9.length)
   })
 
-  it('poligon heksu: id h3 w właściwościach, zamknięty pierścień, współrzędne [lon, lat]', () => {
-    const g = zbudujGeometrieTla(r8, r9)
-    for (const f of g.zrodla[8].features) {
-      assert.ok(g.klucze[8].has(f.properties.h3))
-      assert.equal(f.geometry.type, 'Polygon')
-      const pierscien = f.geometry.coordinates[0] as [number, number][]
-      assert.deepEqual(pierscien[0], pierscien[pierscien.length - 1])
-      // Kraków: lon ok. 20°E, lat ok. 50°N. Odwrócona kolejność dałaby 50 i 20.
-      const [lon, lat] = pierscien[0] as [number, number]
-      assert.ok(lon > 19 && lon < 21 && lat > 49 && lat < 51, `[${lon}, ${lat}]`)
-    }
-  })
-
-  it('pusty zbiór: puste kolekcje', () => {
+  it('puste tło: puste zbiory', () => {
     const g = zbudujGeometrieTla([], [])
-    assert.equal(g.zrodla[8].features.length, 0)
-    assert.equal(g.zrodla[9].features.length, 0)
-  })
-
-  it('powtórzony klucz daje jeden poligon', () => {
-    const g = zbudujGeometrieTla([...r8, ...r8], [])
-    assert.equal(g.zrodla[8].features.length, r8.length)
-  })
-
-  it('z poprzednią geometrią poziom o tych samych kluczach zachowuje kolekcję (ten sam obiekt)', () => {
-    const pierwsza = zbudujGeometrieTla(r8, r9)
-    const tylkoR9 = zbudujGeometrieTla([...r8].reverse(), obszar(GDANSK, 9, 4), pierwsza)
-    assert.ok(tylkoR9.zrodla[8] === pierwsza.zrodla[8], 'r8 bez zmian: ta sama kolekcja')
-    assert.ok(tylkoR9.zrodla[9] !== pierwsza.zrodla[9], 'r9 się zmienił: nowa kolekcja')
-    const tylkoR8 = zbudujGeometrieTla(obszar(KRAKOW, 8, 3), r9, pierwsza)
-    assert.ok(tylkoR8.zrodla[8] !== pierwsza.zrodla[8])
-    assert.ok(tylkoR8.zrodla[9] === pierwsza.zrodla[9])
-    // Bez poprzedniej wszystko liczy się od nowa.
-    const nowa = zbudujGeometrieTla(r8, r9)
-    assert.ok(nowa.zrodla[8] !== pierwsza.zrodla[8])
+    assert.equal(g.klucze[8].size, 0)
+    assert.equal(g.klucze[9].size, 0)
   })
 })
 
@@ -290,31 +251,41 @@ describe('sredniaDzieci', () => {
 
 describe('zWartosciami i roznice', () => {
   const [a, b, c, d] = obszar(KRAKOW, 8, 1) as [string, string, string, string]
-  const kol = zbudujGeometrieTla([a, b, c, d], []).zrodla[8]
+  const klucze = [a, b, c, d]
 
   it('wpisuje stan do właściwości: brak = -1, wykluczony = -2, zero zostaje zerem', () => {
-    const stany = new Map([
-      [a, stanHeksu(0)],
-      [b, stanHeksu(null)],
-      [c, W_WYKLUCZONY],
-    ])
-    const w = new Map(
-      zWartosciami(kol, stany).features.map((f) => [f.properties.h3, f.properties.w]),
-    )
+    const kol = kolekcjaZWartosciami(klucze, [stanHeksu(0), stanHeksu(null), W_WYKLUCZONY])
+    const w = new Map(kol.features.map((f) => [f.properties.h3, f.properties.w]))
     assert.equal(w.get(a), 0)
     assert.equal(w.get(b), W_BRAK)
     assert.equal(w.get(c), W_WYKLUCZONY)
-    // Heks bez wpisu to brak danych, nie zero.
+    // Heks bez wartości (krótsza tablica) i NaN to brak danych, nie zero.
     assert.equal(w.get(d), W_BRAK)
+    const nan = kolekcjaZWartosciami([a], new Float64Array([Number.NaN]))
+    assert.equal(nan.features[0]?.properties.w, W_BRAK)
   })
 
-  it('nie liczy geometrii od nowa i nie rusza kolekcji źródłowej', () => {
-    const wynik = zWartosciami(kol, new Map([[a, 42]]))
-    assert.equal(wynik.features.length, kol.features.length)
-    kol.features.forEach((f, i) => {
-      assert.equal(wynik.features[i]?.geometry, f.geometry)
-      assert.deepEqual(Object.keys(f.properties), ['h3'])
-    })
+  it('zachowuje kolejność kluczy, h3 jest id (bez pola id), poligon jest zamknięty', () => {
+    const odwrocone = [...klucze].reverse()
+    const kol = kolekcjaZWartosciami(odwrocone, new Float64Array([1, 2, 3, 4]))
+    assert.deepEqual(
+      kol.features.map((f) => f.properties.h3),
+      odwrocone,
+    )
+    assert.deepEqual(
+      kol.features.map((f) => f.properties.w),
+      [1, 2, 3, 4],
+    )
+    for (const f of kol.features) {
+      assert.equal('id' in f, false)
+      const pierscien = f.geometry.coordinates[0] ?? []
+      assert.deepEqual(pierscien[0], pierscien[pierscien.length - 1])
+    }
+  })
+
+  it('wynik przechodzi przez JSON bez strat (to leci do mapy jako blob)', () => {
+    const kol = kolekcjaZWartosciami(klucze, [12.5, -1, -2, 0])
+    assert.deepEqual(JSON.parse(JSON.stringify(kol)), kol)
   })
 
   it('roznice zwracają tylko zmienione i nowe wpisy', () => {

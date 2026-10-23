@@ -185,13 +185,202 @@ export async function ladujDaneMiasta(
   }
 }
 
+/** Tyle elementów kolumny tekstowej na wiadomość: klon porcji to ułamek ms, a nie wielka pauza. */
+export const ELEMENTOW_W_PORCJI = 20_000
+
+type KluczKolumny = keyof PlikAdresow['kolumny']
+
 /**
- * Bufory do przekazania z workera bez kopiowania: wartości warstw i indeks heksów. Każdy bufor
- * występuje raz (transfer tego samego bufora dwa razy rzuca wyjątek).
+ * Wynik ładowania pocięty na wiadomości workera. Każda jest tania do sklonowania na wątku głównym
+ * (kawałek kolumny, etykiet albo jedna warstwa); wartości warstw idą jako tablice typowane z transferem.
+ * Kolumny tekstowe w kawałkach zamiast słownika: nie wymagają kodowania ani dekodowania, a h3
+ * w ogóle nie jedzie – wątek główny odtwarza je z `heksy` + `indeksHeksu`, które i tak są potrzebne.
  */
-export function listaTransferow(wynik: WynikLadowania): ArrayBuffer[] {
-  const bufory = new Set<ArrayBuffer>()
-  for (const w of wynik.wskazniki) bufory.add(w.wartosci.buffer as ArrayBuffer)
-  bufory.add(wynik.grupyHeksow.indeksHeksu.buffer as ArrayBuffer)
-  return [...bufory]
+export type Porcja =
+  | {
+      typ: 'start'
+      miasto: SlugMiasta
+      wersja: string
+      zrodla: PlikAdresow['zrodla']
+      atrapa?: boolean
+      manifest: Manifest
+      n: number
+    }
+  | { typ: 'kolumna'; klucz: Exclude<KluczKolumny, 'h3'>; od: number; dane: unknown[] }
+  | { typ: 'heksy'; od: number; dane: string[] }
+  | { typ: 'indeksHeksu'; dane: Uint32Array }
+  | { typ: 'okolice'; okolice: PlikOkolic | null }
+  | { typ: 'okolica'; od: number; dane: (number | null)[] }
+  | {
+      typ: 'warstwa'
+      meta: WskaznikPrzygotowany['meta']
+      skala: Skala
+      niedostepny?: string
+      slownikEtykiet?: WskaznikPrzygotowany['slownikEtykiet']
+      wartosci: Float64Array
+      /** Długość kolumny etykiet, gdy warstwa je ma; same napisy idą kolejnymi porcjami `etykiety`. */
+      liczbaEtykiet?: number
+    }
+  | { typ: 'etykiety'; warstwa: number; od: number; dane: (string | null)[] }
+  | { typ: 'koniec'; pominiete: WynikLadowania['pominiete'] }
+
+/** Porcje wyniku po kolei, każda z listą buforów do transferu. Kolejność: start … warstwy, koniec. */
+export function* porcjeWyniku(
+  wynik: WynikLadowania,
+  wPorcji = ELEMENTOW_W_PORCJI,
+): Generator<{ porcja: Porcja; transfer: ArrayBuffer[] }> {
+  const { plikAdresow, grupyHeksow, okolice } = wynik
+  const n = plikAdresow.kolumny.id.length
+  yield {
+    porcja: {
+      typ: 'start',
+      miasto: wynik.miasto,
+      wersja: plikAdresow.wersja,
+      zrodla: plikAdresow.zrodla,
+      atrapa: plikAdresow.atrapa,
+      manifest: wynik.manifest,
+      n,
+    },
+    transfer: [],
+  }
+  for (const klucz of Object.keys(plikAdresow.kolumny) as KluczKolumny[]) {
+    if (klucz === 'h3') continue
+    const kolumna: readonly unknown[] = plikAdresow.kolumny[klucz]
+    for (let od = 0; od < n; od += wPorcji) {
+      yield {
+        porcja: { typ: 'kolumna', klucz, od, dane: kolumna.slice(od, od + wPorcji) },
+        transfer: [],
+      }
+    }
+  }
+  for (let od = 0; od < grupyHeksow.heksy.length; od += wPorcji) {
+    yield {
+      porcja: { typ: 'heksy', od, dane: grupyHeksow.heksy.slice(od, od + wPorcji) },
+      transfer: [],
+    }
+  }
+  yield {
+    porcja: { typ: 'indeksHeksu', dane: grupyHeksow.indeksHeksu },
+    transfer: [grupyHeksow.indeksHeksu.buffer as ArrayBuffer],
+  }
+  // Okolice bez kolumny adresów (ta idzie kawałkami); składacz dokłada ją z powrotem.
+  yield {
+    porcja: {
+      typ: 'okolice',
+      okolice: okolice ? { ...okolice, kolumny: { okolica: [] } } : null,
+    },
+    transfer: [],
+  }
+  if (okolice) {
+    const kol = okolice.kolumny.okolica
+    for (let od = 0; od < kol.length; od += wPorcji) {
+      yield { porcja: { typ: 'okolica', od, dane: kol.slice(od, od + wPorcji) }, transfer: [] }
+    }
+  }
+  for (const [warstwa, w] of wynik.wskazniki.entries()) {
+    const { wartosci, etykiety, ...reszta } = w
+    yield {
+      porcja: { typ: 'warstwa', ...reszta, wartosci, liczbaEtykiet: etykiety?.length },
+      transfer: [wartosci.buffer as ArrayBuffer],
+    }
+    // Etykiety bywają unikalne dla każdego adresu (słownik nic nie daje, a to ~16 MB napisów): kawałkami.
+    const krok = Math.max(1, wPorcji >> 2) // napisy ~170 B każdy, więc porcje 4x mniejsze
+    for (let od = 0; etykiety && od < etykiety.length; od += krok) {
+      yield {
+        porcja: {
+          typ: 'etykiety',
+          warstwa,
+          od,
+          dane: etykiety.slice(od, od + krok) as (string | null)[],
+        },
+        transfer: [],
+      }
+    }
+  }
+  yield { porcja: { typ: 'koniec', pominiete: wynik.pominiete }, transfer: [] }
+}
+
+/**
+ * Składa porcje z workera w `WynikLadowania` identyczny z tym, który dostałby wątek główny bez
+ * porcjowania. Każde `dodaj` to krótka praca (przepisanie kawałka), więc każda wiadomość
+ * workera to osobne, małe zadanie.
+ */
+export function utworzSkladacza() {
+  let start: Extract<Porcja, { typ: 'start' }> | null = null
+  let kolumny: Record<string, unknown[]> = {}
+  const heksy: string[] = []
+  let indeksHeksu: Uint32Array | null = null
+  let okolice: PlikOkolic | null = null
+  let okolica: (number | null)[] = []
+  const wskazniki: WskaznikPrzygotowany[] = []
+  let pominiete: WynikLadowania['pominiete'] | null = null
+
+  const wpisz = (cel: unknown[], od: number, dane: readonly unknown[]) => {
+    for (let i = 0; i < dane.length; i++) cel[od + i] = dane[i]
+  }
+
+  return {
+    /** Dodaje porcję; zwraca true po ostatniej (`koniec`). */
+    dodaj(p: Porcja): boolean {
+      switch (p.typ) {
+        case 'start':
+          start = p
+          kolumny = {}
+          return false
+        case 'kolumna': {
+          const cel = (kolumny[p.klucz] ??= new Array(start?.n ?? 0))
+          wpisz(cel, p.od, p.dane)
+          return false
+        }
+        case 'heksy':
+          wpisz(heksy, p.od, p.dane)
+          return false
+        case 'indeksHeksu':
+          indeksHeksu = p.dane
+          return false
+        case 'okolice':
+          okolice = p.okolice
+          okolica = new Array(start?.n ?? 0)
+          return false
+        case 'okolica':
+          wpisz(okolica, p.od, p.dane)
+          return false
+        case 'warstwa': {
+          const { typ: _typ, liczbaEtykiet, ...w } = p
+          wskazniki.push(
+            liczbaEtykiet === undefined ? w : { ...w, etykiety: new Array(liczbaEtykiet) },
+          )
+          return false
+        }
+        case 'etykiety': {
+          const cel = wskazniki[p.warstwa]?.etykiety as (string | null)[] | undefined
+          if (cel) wpisz(cel, p.od, p.dane)
+          return false
+        }
+        case 'koniec':
+          pominiete = p.pominiete
+          return true
+      }
+    },
+    zloz(): WynikLadowania {
+      if (!start || !indeksHeksu || !pominiete) throw new Error('Niekompletne porcje danych')
+      const h3 = new Array<string>(start.n)
+      for (let i = 0; i < start.n; i++) h3[i] = heksy[indeksHeksu[i] as number] as string
+      const plikAdresow: PlikAdresow = {
+        wersja: start.wersja,
+        zrodla: start.zrodla,
+        ...(start.atrapa === undefined ? {} : { atrapa: start.atrapa }),
+        kolumny: { ...kolumny, h3 } as unknown as PlikAdresow['kolumny'],
+      }
+      return {
+        miasto: start.miasto,
+        plikAdresow,
+        manifest: start.manifest,
+        wskazniki,
+        pominiete,
+        grupyHeksow: { heksy, indeksHeksu },
+        okolice: okolice ? { ...okolice, kolumny: { okolica } } : null,
+      }
+    },
+  }
 }

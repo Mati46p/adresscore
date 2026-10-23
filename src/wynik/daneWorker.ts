@@ -2,7 +2,7 @@
 // skale i grupowanie heksów – to, co wcześniej blokowało kartę na dziesiątki sekund. Cienka
 // powłoka jak `obliczenia.worker.ts`: cała logika siedzi w `ladowanieDanych.ts`. Uruchamia go
 // wyłącznie `daneWTle.ts`; jedno ładowanie na worker, który po wyniku jest zamykany.
-import { ladujDaneMiasta, listaTransferow, type WynikLadowania } from './ladowanieDanych.ts'
+import { ladujDaneMiasta, type Porcja, porcjeWyniku } from './ladowanieDanych.ts'
 
 /** Wiadomość do workera. Baza ma być bezwzględna: worker nie zna adresu strony. */
 export interface DoWorkeraDanych {
@@ -11,7 +11,8 @@ export interface DoWorkeraDanych {
 }
 
 export type ZWorkeraDanych =
-  | { typ: 'gotowe'; wynik: WynikLadowania; ostrzezenia: string[] }
+  | { typ: 'porcja'; porcja: Porcja }
+  | { typ: 'ostrzezenia'; ostrzezenia: string[] }
   | { typ: 'blad'; blad: string }
 
 // tsconfig ma lib DOM, nie WebWorker – opisujemy tylko to, czego używamy z zakresu workera.
@@ -36,7 +37,12 @@ zakres.onmessage = async (e) => {
       pobierzJson,
       ostrzez: (t) => ostrzezenia.push(t),
     })
-    zakres.postMessage({ typ: 'gotowe', wynik, ostrzezenia }, listaTransferow(wynik))
+    // Wynik idzie porcjami (każda tania do sklonowania), ostrzeżenia przed ostatnią, żeby wątek
+    // główny miał je, zanim złoży całość.
+    zakres.postMessage({ typ: 'ostrzezenia', ostrzezenia }, [])
+    for (const { porcja, transfer } of porcjeWyniku(wynik)) {
+      zakres.postMessage({ typ: 'porcja', porcja }, transfer)
+    }
   } catch (blad) {
     zakres.postMessage(
       { typ: 'blad', blad: blad instanceof Error ? blad.message : String(blad) },

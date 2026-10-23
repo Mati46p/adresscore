@@ -1,11 +1,12 @@
 // Wątek główny strony ładowania danych: zleca `ladujDaneMiasta` workerowi (`daneWorker.ts`) i
-// odbiera gotowy wynik z wartościami warstw przekazanymi bez kopiowania. Bez `Worker` (stare
+// odbiera wynik porcjami (tanimi do sklonowania, wartości warstw transferem) i składa go z powrotem. Bez `Worker` (stare
 // przeglądarki, błąd ładowania modułu workera) to samo robi wątek główny – wolniej, ale działa.
 
 import type { DoWorkeraDanych, ZWorkeraDanych } from './daneWorker.ts'
 import {
   ladujDaneMiasta,
   type PobierzJson,
+  utworzSkladacza,
   type WejscieLadowania,
   type WynikLadowania,
 } from './ladowanieDanych.ts'
@@ -64,12 +65,25 @@ export function ladujDaneWTle(
       return
     }
     signal?.addEventListener('abort', przy, { once: true })
+    const skladacz = utworzSkladacza()
     worker.onmessage = (e: MessageEvent<ZWorkeraDanych>) => {
       const odp = e.data
+      if (odp.typ === 'ostrzezenia') {
+        for (const t of odp.ostrzezenia) console.warn(t)
+        return
+      }
+      if (odp.typ === 'blad') {
+        koniec()
+        return reject(new Error(odp.blad))
+      }
+      // Każda porcja to osobne zadanie wątku głównego; ostatnia (`koniec`) składa całość.
+      if (!skladacz.dodaj(odp.porcja)) return
       koniec()
-      if (odp.typ === 'blad') return reject(new Error(odp.blad))
-      for (const t of odp.ostrzezenia) console.warn(t)
-      resolve(odp.wynik)
+      try {
+        resolve(skladacz.zloz())
+      } catch (blad) {
+        reject(blad)
+      }
     }
     worker.onerror = () => {
       // Worker nie wstał (np. moduł się nie załadował): zapas na wątku głównym.

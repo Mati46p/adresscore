@@ -5,11 +5,12 @@ import { describe, it } from 'node:test'
 import type { Manifest, PlikAdresow, PlikWskaznika, WskaznikMeta } from '../kontrakty/index.ts'
 import {
   ladujDaneMiasta,
-  listaTransferow,
   POBRAN_NARAZ,
   type PobierzJson,
+  porcjeWyniku,
+  utworzSkladacza,
 } from './ladowanieDanych.ts'
-import { ocenWartosc, wynikAdresu } from './silnik.ts'
+import { ocenWartosc, type WskaznikPrzygotowany, wynikAdresu } from './silnik.ts'
 
 const BAZA = '/dane/miasta/test'
 
@@ -173,11 +174,45 @@ describe('ladujDaneMiasta', () => {
     assert.deepEqual(ostrzezenia, [])
   })
 
-  it('lista transferów zawiera każdy bufor raz', async () => {
-    const w = await ladujDaneMiasta(wej(atrapa()))
-    const lista = listaTransferow(w)
-    assert.equal(new Set(lista).size, lista.length)
-    // Każda warstwa ma własny bufor + indeks heksów.
-    assert.equal(lista.length, w.wskazniki.length + 1)
+  it('porcje złożone z powrotem dają wynik identyczny jak bez porcjowania', async () => {
+    const etykietowany: PlikWskaznika = {
+      ...wskaznikA,
+      meta: meta('a', { rozdzielczosc: 'adres' }),
+    }
+    const w = await ladujDaneMiasta(wej(atrapa({ [`${BAZA}/wskazniki/a.json`]: etykietowany })))
+    // Etykiety i NaN w warstwie, żeby sprawdzić kodowanie słownikowe.
+    w.wskazniki[0] = { ...(w.wskazniki[0] as WskaznikPrzygotowany), etykiety: ['x', null, 'x'] }
+    const oczekiwany = structuredClone(w)
+    const skladacz = utworzSkladacza()
+    let koniec = false
+    let porcji = 0
+    const wszystkie = new Set<ArrayBuffer>()
+    // Porcje po 2 elementy: każda kolumna dzieli się na kilka wiadomości.
+    for (const { porcja, transfer } of porcjeWyniku(w, 2)) {
+      for (const b of transfer) {
+        assert.ok(!wszystkie.has(b), 'bufor dwa razy w transferze')
+        wszystkie.add(b)
+      }
+      koniec = skladacz.dodaj(structuredClone(porcja))
+      porcji++
+    }
+    assert.ok(koniec)
+    assert.ok(porcji > 10)
+    const zlozony = skladacz.zloz()
+    // Klucz `etykiety: undefined` i jego brak znaczą to samo, więc porównanie przez JSON-owy odpowiednik
+    // plus osobno bufory typowane.
+    const bezUndef = (x: unknown) => JSON.parse(JSON.stringify(x))
+    assert.deepEqual(
+      bezUndef(zlozony.wskazniki.map((x) => ({ ...x, wartosci: 0 }))),
+      bezUndef(oczekiwany.wskazniki.map((x) => ({ ...x, wartosci: 0 }))),
+    )
+    for (const [i, x] of zlozony.wskazniki.entries()) {
+      assert.deepEqual(x.wartosci, oczekiwany.wskazniki[i]?.wartosci)
+    }
+    assert.deepEqual({ ...zlozony, wskazniki: [] }, { ...oczekiwany, wskazniki: [] })
+    const a = zlozony.wskazniki[0]
+    assert.ok(a?.wartosci instanceof Float64Array)
+    assert.ok(Number.isNaN(a.wartosci[2]), 'brak danych dalej NaN, nie 0')
+    assert.deepEqual(a.etykiety, ['x', null, 'x'])
   })
 })

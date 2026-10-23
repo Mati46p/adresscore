@@ -52,19 +52,20 @@ export interface Otoczka {
   granice: Ramka | null
 }
 
+/**
+ * Lekka geometria wątku głównego: klucze, rodzice i obrys. Poligony heksów (`cellToBoundary`, dziesiątki
+ * tysięcy) liczy worker (`geometriaWorker.ts`) i oddaje mapie jako URL, więc tu ich nie ma.
+ */
 export interface Geometria extends Otoczka {
   klucze: ReadonlySet<string>
-  /** Rozdzielczość → poligony heksów (właściwość h3 = id do feature-state; wartości `w` dochodzą z `zWartosciami`). */
-  zrodla: Record<Rozdzielczosc, FeatureCollection<Polygon, { h3: string }>>
   /** Rodzic r8/r9 → jego heksy r10 z danymi; do średniej przy oddaleniu. */
   dzieci: Record<8 | 9, Map<string, string[]>>
 }
 
-/** Poligony r8 i r9 miast tła; r10 tła nie ma (patrz POZIOMY_TLA). */
+/** Klucze r8 i r9 miast tła; r10 tła nie ma (patrz POZIOMY_TLA). Poligony liczy worker. */
 export interface GeometriaTla {
   /** Klucze obu poziomów – do porównania „czy zbiór się zmienił" bez przebudowy poligonów. */
   klucze: Record<RozdzielczoscTla, ReadonlySet<string>>
-  zrodla: Record<RozdzielczoscTla, FeatureCollection<Polygon, { h3: string }>>
 }
 
 const SWIAT: [number, number][] = [
@@ -75,12 +76,23 @@ const SWIAT: [number, number][] = [
   [-180, -85],
 ]
 
-function kolekcja(h3: Iterable<string>): FeatureCollection<Polygon, { h3: string }> {
-  const features: Feature<Polygon, { h3: string }>[] = []
-  for (const h of h3) {
+/**
+ * Poligony heksów z wartością `w` (stan heksu: wynik, `W_BRAK` albo `W_WYKLUCZONY`) w każdej
+ * właściwości. `w[i]` należy do `klucze[i]`; brakująca wartość (krótsza tablica, NaN) to `W_BRAK`,
+ * nigdy 0. Feature nie ma pola `id`: mapa bierze id z właściwości `h3` (`promoteId`), tak samo jak
+ * feature-state. Czysta funkcja, wołana w workerze (a bez workera na wątku głównym).
+ */
+export function kolekcjaZWartosciami(
+  klucze: ArrayLike<string>,
+  w: ArrayLike<number>,
+): FeatureCollection<Polygon, { h3: string; w: number }> {
+  const features: Feature<Polygon, { h3: string; w: number }>[] = []
+  for (let i = 0; i < klucze.length; i++) {
+    const h = klucze[i] as string
+    const wartosc = w[i]
     features.push({
       type: 'Feature',
-      properties: { h3: h },
+      properties: { h3: h, w: wartosc === undefined || Number.isNaN(wartosc) ? W_BRAK : wartosc },
       geometry: { type: 'Polygon', coordinates: [cellToBoundary(h, true)] },
     })
   }
@@ -89,30 +101,11 @@ function kolekcja(h3: Iterable<string>): FeatureCollection<Polygon, { h3: string
 
 /**
  * Powyżej tylu różnic wartości na źródło taniej przebudować właściwości `w` i wysłać jedno `setData`
- * (parsowanie i kafelkowanie idą do workera MapLibre), niż wołać `setFeatureState` dla każdego heksu:
- * każde takie wywołanie to ok. 70 µs na desktopie (×4 na telefonie), a jedno `setData` 23 tys. heksów
- * wychodzi na wątku głównym na kilkadziesiąt ms. Przecięcie leży w okolicy 2000 różnic.
+ * z URL-em (JSON składa nasz worker, parsowanie i kafelkowanie robi worker MapLibre), niż wołać
+ * `setFeatureState` dla każdego heksu: każde takie wywołanie to ok. 70 µs na desktopie (×4 na
+ * telefonie) na wątku głównym. Przecięcie leży w okolicy 2000 różnic.
  */
 export const PROG_PRZEBUDOWY_WARTOSCI = 2000
-
-/**
- * Kopia kolekcji z wartością `w` (stan heksu: wynik, `W_BRAK` albo `W_WYKLUCZONY`) w każdej
- * właściwości. Geometria jest ta sama (te same obiekty), więc h3 nie liczy się od nowa. Heks bez wpisu
- * dostaje `W_BRAK`; zero zostaje zerem, bo jest najniższym wynikiem, nie brakiem.
- */
-export function zWartosciami(
-  kol: FeatureCollection<Polygon, { h3: string }>,
-  stany: ReadonlyMap<string, number>,
-): FeatureCollection<Polygon, { h3: string; w: number }> {
-  return {
-    type: 'FeatureCollection',
-    features: kol.features.map((f) => ({
-      type: 'Feature',
-      properties: { h3: f.properties.h3, w: stany.get(f.properties.h3) ?? W_BRAK },
-      geometry: f.geometry,
-    })),
-  }
-}
 
 /** Wpisy `docelowe`, których wartość różni się od już wysłanej (albo jeszcze nie była wysłana). */
 export function roznice(
@@ -191,33 +184,18 @@ export function zbudujGeometrie(klucze: Iterable<string>): Geometria {
 
   return {
     klucze: zbior,
-    zrodla: { 8: kolekcja(dzieci[8].keys()), 9: kolekcja(dzieci[9].keys()), 10: kolekcja(zbior) },
     dzieci,
     ...zbudujOtoczke(dzieci[8].keys()),
   }
 }
 
 /**
- * Poligony tła z kluczy r8 i r9 (kolekcje bez r10). Liczone raz na zbiór kluczy, tak samo jak
- * `zbudujGeometrie`: zmiana samych wartości (suwak wag) nie przebudowuje wielokątów. Mgłę z sumy
- * bieżącego miasta i tła składa `zbudujOtoczke` z kluczy r8 obu zbiorów, bo tło jej nie przechowuje.
- *
- * Z `poprzednia` poziom o tych samych kluczach dostaje tę samą kolekcję (ten sam obiekt): wołający
- * porównuje `zrodla[res]` z poprzednią i wysyła do mapy tylko poziomy, które naprawdę się zmieniły.
- * Doczytane miasto zmienia klucze r8 i r9 naraz, ale samo przybliżenie, które włącza r9, nie
- * powinno przebudowywać r8 (i odwrotnie).
+ * Klucze tła r8 i r9. Poligony powstają w workerze osobno dla każdego poziomu; wołający porównuje
+ * klucze poziomów (`rowneKlucze`) i zleca przebudowę tylko tym, które się zmieniły: doczytane miasto
+ * zmienia r8 i r9 naraz, ale samo przybliżenie, które włącza r9, nie powinno przebudowywać r8.
  */
-export function zbudujGeometrieTla(
-  r8: Iterable<string>,
-  r9: Iterable<string>,
-  poprzednia: GeometriaTla | null = null,
-): GeometriaTla {
-  const klucze = { 8: new Set(r8), 9: new Set(r9) }
-  const poziom = (res: RozdzielczoscTla) =>
-    poprzednia && rowneKlucze(poprzednia.klucze[res], klucze[res])
-      ? poprzednia.zrodla[res]
-      : kolekcja(klucze[res])
-  return { klucze, zrodla: { 8: poziom(8), 9: poziom(9) } }
+export function zbudujGeometrieTla(r8: Iterable<string>, r9: Iterable<string>): GeometriaTla {
+  return { klucze: { 8: new Set(r8), 9: new Set(r9) } }
 }
 
 /**
@@ -232,7 +210,7 @@ const ZAPAS_ZOOMU_TLA = 1.5
  * - suwak wag zmienia wartości kilka razy na klatkę, a każda zmiana to setFeatureState na każdy heks;
  *   przy zoomie ulicznym tło (kilkanaście tysięcy r9 + kilka tysięcy r8) jest niewidoczne, więc te
  *   wywołania byłyby czystym kosztem,
- * - r9 tła to kilkanaście tysięcy poligonów liczonych na głównym wątku; przy widoku Polski nikt ich
+ * - r9 tła to kilkanaście tysięcy poligonów liczonych w workerze i parsowanych przez MapLibre; przy widoku Polski nikt ich
  *   nie widzi, a start strony i tak czeka na sieć.
  */
 export function poziomyTlaDoOdswiezenia(zoom: number): readonly RozdzielczoscTla[] {

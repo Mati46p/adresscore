@@ -35,6 +35,7 @@ import {
 } from '@/kontrakty/miasta'
 import { MEDIA_ARKUSZA } from '@/lib/punktyLamania'
 import { useZnacznikiBiznesu } from '@/mapa/biznes/ZnacznikiBiznesu'
+import { DostawcaGeoJson } from '@/mapa/dostawcaGeoJson'
 import { useEtykietyZrodel } from '@/mapa/etykietyZrodel'
 import {
   type Geometria,
@@ -46,6 +47,7 @@ import {
   poziomyTlaDoOdswiezenia,
   type Ramka,
   type RozdzielczoscTla,
+  rowneKlucze,
   roznice,
   sredniaDzieci,
   takieSameKlucze,
@@ -53,7 +55,6 @@ import {
   zbudujGeometrie,
   zbudujGeometrieTla,
   zbudujOtoczke,
-  zWartosciami,
 } from '@/mapa/geometria'
 import {
   dodajWarstwyLotu,
@@ -69,7 +70,6 @@ import {
   ZOOM_MIASTA,
   zapamietajLotStartowy,
 } from '@/mapa/lot'
-import type { DoWorkeraMgly, ZWorkeraMgly } from '@/mapa/mglaWorker'
 import type { OkolicaNaMapie } from '@/mapa/okolica/granice'
 import { useObrysOkolicy } from '@/mapa/okolica/ObrysOkolicy'
 import {
@@ -230,7 +230,8 @@ const PRZESUNIECIE_3D_M = 300
 
 // Wartość heksu to stan `w` (-1 = brak danych, -2 = wykluczony), bo ani stan, ani właściwość nie
 // odróżniają null od nieustawionego. Feature-state ma pierwszeństwo, właściwość `w` jest bazą:
-// duże zmiany idą hurtem we właściwościach (jedno setData), drobne przez setFeatureState.
+// duże zmiany idą hurtem we właściwościach (jedno setData z URL-em z workera), drobne przez
+// setFeatureState.
 const WARTOSC: ExpressionSpecification = ['coalesce', ['feature-state', 'w'], ['get', 'w'], -1]
 const BRAK = jestBrakiem(WARTOSC)
 const WYKLUCZONY = jestWykluczony(WARTOSC)
@@ -379,27 +380,35 @@ function naStany(wartosci: ReadonlyMap<string, number | null>): Map<string, numb
 }
 
 /**
- * Dostarcza mapie wartości `w` jednego źródła i zapisuje je w `wyslane`. Po zmianie geometrii
- * (`przebuduj`) albo gdy różnic jest więcej niż PROG_PRZEBUDOWY_WARTOSCI: właściwości `w` w nowych
- * obiektach feature (ta sama geometria), jedno `setData` i czyszczenie feature-state, które inaczej
- * przesłaniałoby nową bazę. Poniżej progu: `setFeatureState` tylko dla zmienionych heksów.
+ * Dostarcza mapie wartości `w` jednego źródła i zapisuje je w `wyslane` (stan, do którego dąży mapa).
+ * Po zmianie zbioru kluczy (`przebuduj`) albo gdy różnic jest więcej niż PROG_PRZEBUDOWY_WARTOSCI:
+ * worker składa poligony z nowymi właściwościami `w`, mapa dostaje je jako URL (`setData`), a dopiero
+ * po załadowaniu tych danych znika feature-state, który inaczej przesłaniałby nową bazę. Poniżej progu:
+ * `setFeatureState` tylko dla zmienionych heksów.
+ *
+ * Dopóki przebudowa czeka na załadowanie, każda kolejna zmiana wartości też idzie przebudową (nowsze
+ * zlecenie wygrywa, starsze wyniki są odrzucane): `setFeatureState` w tym oknie zostałby zmazany przez
+ * `removeFeatureState` po załadowaniu, a stare dane z feature-state wyglądałyby jak nowsze.
  */
 function wyslijWartosci(
   mapa: MapaLibre,
+  dostawca: DostawcaGeoJson,
   zrodlo: string,
-  kolekcja: Parameters<typeof zWartosciami>[0],
   docelowe: ReadonlyMap<string, number>,
   wyslane: Map<string, number>,
   przebuduj: boolean,
 ) {
   const zmiany = przebuduj ? [] : roznice(docelowe, wyslane)
-  if (przebuduj || zmiany.length > PROG_PRZEBUDOWY_WARTOSCI) {
-    mapa.getSource<GeoJSONSource>(zrodlo)?.setData(zWartosciami(kolekcja, docelowe))
-    mapa.removeFeatureState({ source: zrodlo })
+  const oczekuje = dostawca.czeka(zrodlo)
+  if (przebuduj || zmiany.length > PROG_PRZEBUDOWY_WARTOSCI || (oczekuje && zmiany.length)) {
+    dostawca.zlec(zrodlo, [...docelowe.keys()], Float64Array.from(docelowe.values()), () =>
+      mapa.removeFeatureState({ source: zrodlo }),
+    )
     wyslane.clear()
     for (const [h, v] of docelowe) wyslane.set(h, v)
     return
   }
+  if (oczekuje) return
   for (const [h, v] of zmiany) {
     wyslane.set(h, v)
     mapa.setFeatureState({ source: zrodlo, id: h }, { w: v })
@@ -479,6 +488,8 @@ export function MapaKrakowa({
   const onPierwszyKolorRef = useRef(onPierwszyKolor)
   // Pierwszy niepusty zbiór heksów już zlecił czekanie na `idle`: wywołanie następuje raz.
   const kolorZlecony = useRef(false)
+  // Worker geometrii (poligony heksów jako URL dla mapy, mgła) – jeden na mapę, życie razem z nią.
+  const dostawcaRef = useRef<DostawcaGeoJson | null>(null)
   const tloRef = useRef(tlo)
   const kadrStartowyRef = useRef(kadrStartowy)
   const slugMiastaRef = useRef(slugMiasta)
@@ -566,6 +577,7 @@ export function MapaKrakowa({
       locale: POLSKIE_NAPISY,
     })
     mapaRef.current = mapa
+    dostawcaRef.current = new DostawcaGeoJson(mapa)
     const kontrolkaLegendy = new KontrolkaLegendy()
     // Pozycje dolne wstawiają nowszą kontrolkę nad starszą: skala na dole, legenda nad nią.
     mapa.addControl(new ScaleControl({ unit: 'metric' }), 'bottom-left')
@@ -758,8 +770,8 @@ export function MapaKrakowa({
       kadrDanychRef.current = false
       kolorZlecony.current = false
       anulujMgle()
-      mglaRef.current.worker?.terminate()
-      mglaRef.current.worker = null
+      dostawcaRef.current?.zniszcz()
+      dostawcaRef.current = null
       if (dymekTlaRef.current !== null) clearTimeout(dymekTlaRef.current)
       dymekTlaRef.current = null
       znacznikRef.current = null
@@ -779,13 +791,8 @@ export function MapaKrakowa({
   const najnowszeTloRef = useRef(tlo ?? BRAK_TLA)
   const klatkaRef = useRef<number | null>(null)
   const wyslaneRef = useRef<Wyslane>(pusteWyslane())
-  // Mgła z sumy r8 wszystkich miast liczy się w workerze; `zlecenie` odróżnia wynik aktualny od starego.
-  const mglaRef = useRef<{
-    worker: Worker | null
-    blad: boolean
-    zlecenie: number
-    timer: number | null
-  }>({ worker: null, blad: false, zlecenie: 0, timer: null })
+  // Mgła z sumy r8 wszystkich miast liczy się w workerze geometrii (po debounce); `timer` to zwłoka.
+  const mglaRef = useRef<{ timer: number | null }>({ timer: null })
 
   useEffect(() => {
     najnowszeRef.current = heksy
@@ -855,6 +862,8 @@ export function MapaKrakowa({
       geometriaRef.current = g
     }
     // Wartości r10 oraz rodziców r8/r9 (średnia dzieci albo `wartoscRodzica`).
+    const dostawca = dostawcaRef.current
+    if (!dostawca) return false
     const stany: Record<8 | 9 | 10, Map<string, number>> = {
       8: new Map(),
       9: new Map(),
@@ -869,13 +878,13 @@ export function MapaKrakowa({
           stanHeksu(wszystkieWykluczone(dzieci, wykluczone) ? W_WYKLUCZONY : rodzic(dzieci)),
         )
     }
-    // Nowa geometria wchodzi razem z wartościami we właściwościach: jedno setData na źródło, bez
-    // dziesiątek tysięcy setFeatureState (profil: 5 s na wątku głównym).
+    // Nowa geometria wchodzi razem z wartościami we właściwościach: jedno setData (URL z workera)
+    // na źródło, bez dziesiątek tysięcy setFeatureState (profil: 5 s na wątku głównym).
     for (const { res } of POZIOMY) {
       wyslijWartosci(
         mapa,
+        dostawca,
         zrodloHeksow(res),
-        g.zrodla[res],
         stany[res],
         wyslaneRef.current[res],
         zmieniona,
@@ -889,11 +898,14 @@ export function MapaKrakowa({
     }
     if (heksy.size && !kolorZlecony.current) {
       kolorZlecony.current = true
-      // Kolory są już u mapy; `idle` przychodzi, gdy kafle z tymi danymi się narysują.
-      mapa.once('idle', () => {
-        if (mapaRef.current !== mapa) return
-        performance.mark('mapa-kolor')
-        onPierwszyKolorRef.current?.()
+      // Pierwszy kolor to chwila, gdy MapLibre załadował dane r10 (worker + parsowanie), a `idle`
+      // przychodzi, gdy kafle z tymi danymi się narysują.
+      dostawca.kiedyZaladowane(zrodloHeksow(10), () => {
+        mapa.once('idle', () => {
+          if (mapaRef.current !== mapa) return
+          performance.mark('mapa-kolor')
+          onPierwszyKolorRef.current?.()
+        })
       })
     }
     return zmieniona
@@ -929,31 +941,33 @@ export function MapaKrakowa({
     const stara = geometriaTlaRef.current
     let zmienionyR8 = false
     const juzWyslane = new Set<RozdzielczoscTla>()
+    const dostawca = dostawcaRef.current
+    if (!dostawca) return false
     if (!takieSameKluczeTla(stara, wartosci)) {
-      // Poziom o niezmienionych kluczach zachowuje poligony (ta sama kolekcja), więc `setData`
-      // idzie tylko do źródeł, które się zmieniły.
-      const nowa = zbudujGeometrieTla(wartosci[8].keys(), wartosci[9].keys(), stara)
+      // Poziom o niezmienionych kluczach zachowuje poligony, więc zlecenie do workera i `setData`
+      // idą tylko do źródeł, które się zmieniły.
+      const nowa = zbudujGeometrieTla(wartosci[8].keys(), wartosci[9].keys())
       geometriaTlaRef.current = nowa
       for (const { res } of POZIOMY_TLA) {
-        if (nowa.zrodla[res] === stara.zrodla[res]) continue
+        if (rowneKlucze(stara.klucze[res], nowa.klucze[res])) continue
         wyslijWartosci(
           mapa,
+          dostawca,
           zrodloTla(res),
-          nowa.zrodla[res],
           naStany(wartosci[res]),
           wyslaneTloRef.current[res],
           true,
         )
         juzWyslane.add(res)
       }
-      zmienionyR8 = nowa.zrodla[8] !== stara.zrodla[8]
+      zmienionyR8 = !rowneKlucze(stara.klucze[8], nowa.klucze[8])
     }
     for (const res of poziomy) {
       if (juzWyslane.has(res)) continue
       wyslijWartosci(
         mapa,
+        dostawca,
         zrodloTla(res),
-        geometriaTlaRef.current.zrodla[res],
         naStany(tlo.heksy[res]),
         wyslaneTloRef.current[res],
         false,
@@ -996,38 +1010,17 @@ export function MapaKrakowa({
     ustawPodpisMgly(mapa)
   }
 
-  /** Wysyła workerowi najnowszy zbiór r8; bez workera (albo po jego błędzie) liczy na wątku głównym. */
+  /** Zleca najnowszy zbiór r8 workerowi geometrii; bez workera (albo po jego błędzie) liczy na wątku głównym. */
   function zlecMgle(mapa: MapaLibre) {
-    if (mapaRef.current !== mapa) return
-    const st = mglaRef.current
+    const dostawca = dostawcaRef.current
+    if (mapaRef.current !== mapa || !dostawca) return
     const r8 = [
       ...(geometriaRef.current?.dzieci[8].keys() ?? []),
       ...geometriaTlaRef.current.klucze[8],
     ]
-    const id = ++st.zlecenie
-    if (!st.worker && !st.blad && typeof Worker !== 'undefined') {
-      try {
-        const worker = new Worker(new URL('./mglaWorker.ts', import.meta.url), { type: 'module' })
-        worker.onmessage = (e: MessageEvent<ZWorkeraMgly>) => {
-          // Wynik starszy niż ostatnie zlecenie odpowiada już nieaktualnemu zbiorowi miast.
-          if (e.data.id !== st.zlecenie || mapaRef.current !== mapa) return
-          zastosujOtoczke(mapa, e.data.otoczka)
-        }
-        worker.onerror = () => {
-          // Worker nie wstał (np. moduł się nie załadował): zapas na wątku głównym.
-          st.blad = true
-          st.worker?.terminate()
-          st.worker = null
-          zlecMgle(mapa)
-        }
-        st.worker = worker
-      } catch {
-        st.blad = true
-      }
-    }
-    if (!st.worker) return zastosujOtoczke(mapa, zbudujOtoczke(r8))
-    const zlecenie: DoWorkeraMgly = { id, r8 }
-    st.worker.postMessage(zlecenie)
+    dostawca.mgla(r8, (otoczka) => {
+      if (mapaRef.current === mapa) zastosujOtoczke(mapa, otoczka)
+    })
   }
 
   /** Odrzuca oczekujące zlecenie mgły (timer i wynik z workera) – mgła ma zostać taka, jak jest. */
@@ -1035,7 +1028,7 @@ export function MapaKrakowa({
     const st = mglaRef.current
     if (st.timer !== null) clearTimeout(st.timer)
     st.timer = null
-    st.zlecenie++
+    dostawcaRef.current?.anulujMgle()
   }
 
   /**
