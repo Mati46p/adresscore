@@ -1,4 +1,12 @@
-import { type CSSProperties, lazy, Suspense, useRef, useState, useSyncExternalStore } from 'react'
+import {
+  type CSSProperties,
+  lazy,
+  Suspense,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react'
 import { PoleOpiszSiebie } from '@/ai/PoleOpiszSiebie'
 import {
   type Adres,
@@ -16,6 +24,7 @@ import { pozwolNaPelneDane, useDane } from '@/wynik/dane'
 import {
   adresZPunktu,
   kafelPunktu,
+  przypnijAdresy,
   useAdresKompakt,
   useAdresyKompakt,
   wczytajKafel,
@@ -190,6 +199,10 @@ export function EkranSzukaj() {
   const okolice = dane.stan === 'gotowe' ? dane.okolice : okoliceKompakt
   const adresKompakt = useAdresKompakt(wybrany)
   const adresyKompakt = useAdresyKompakt(porownanie)
+  // Kafle wybranego adresu i porównania zostają w pamięci (LRU ich nie wyrzuca).
+  useEffect(() => {
+    przypnijAdresy(wybrany === null ? porownanie : [wybrany, ...porownanie])
+  }, [wybrany, porownanie])
   const rozbicieKompakt = useWynikAdresu(pelne ? null : wybrany)
   const wykluczenieKompakt = useWykluczenieAdresuKompakt(pelne ? null : wybrany)
   const numerKliku = useRef(0)

@@ -81,11 +81,27 @@ function powiadom() {
   for (const s of sluchacze) s()
 }
 
+// Adresy, których kafle nie mogą wypaść z pamięci (wybrany i porównanie): inaczej chip porównania
+// i karta znikały po obejrzeniu ponad 40 innych kafli.
+let przypiete: ReadonlySet<number> = new Set()
+
+/** Ustala adresy przypięte (wybrany + porównanie); ich kafle LRU pomija przy wyrzucaniu. */
+export function przypnijAdresy(adresy: Iterable<number>) {
+  przypiete = new Set(adresy)
+}
+
+function maPrzypiety(kafel: KafelGotowy): boolean {
+  for (const i of przypiete) if (kafel.pozycje.has(i)) return true
+  return false
+}
+
 function wstaw(klucz: string, kafel: KafelGotowy) {
   gotowe.set(klucz, kafel)
   for (const i of kafel.pozycje.keys()) poI.set(i, kafel)
-  while (gotowe.size > KAFLI_W_PAMIECI) {
-    const [stary, k] = gotowe.entries().next().value as [string, KafelGotowy]
+  // Najstarszy nieprzypięty wypada; same przypięte (najwyżej 6) mogą chwilowo przekroczyć limit.
+  for (const [stary, k] of gotowe) {
+    if (gotowe.size <= KAFLI_W_PAMIECI) break
+    if (stary === klucz || maPrzypiety(k)) continue
     gotowe.delete(stary)
     for (const i of k.pozycje.keys()) if (poI.get(i) === k) poI.delete(i)
   }

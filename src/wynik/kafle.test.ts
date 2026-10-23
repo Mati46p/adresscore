@@ -10,7 +10,9 @@ import {
   adresZPunktu,
   kafelAdresu,
   kafelPunktu,
+  kafelZPamieci,
   pozycjaWKaflu,
+  przypnijAdresy,
   skaleKafli,
   wczytajKafel,
   wyczyscKafle,
@@ -105,6 +107,21 @@ describe('kafle – jednostkowo', () => {
     assert.equal(pobran, 1)
     const przerwanie = AbortSignal.abort(new Error('stop'))
     await assert.rejects(wczytajKafel('/b', wpis, skale, { signal: przerwanie, pobierz }))
+  })
+
+  it('LRU nie wyrzuca kafla z przypiętym adresem', async () => {
+    wyczyscKafle()
+    const bufor = gzipSync(JSON.stringify(plikKafla()))
+    const pobierz = async () => new Uint8Array(bufor)
+    // plikKafla() ma adres i = 7 (pierwszy w kaflu): przypinamy go i zalewamy pamięć innymi kaflami.
+    przypnijAdresy([7])
+    await wczytajKafel('/b', { ...wpis, plik: 'przypiety.json.gz' }, skale, { pobierz })
+    for (let n = 0; n < 45; n++) {
+      przypnijAdresy([7])
+      await wczytajKafel('/b', { ...wpis, plik: `inny-${n}.json.gz` }, skale, { pobierz })
+    }
+    assert.ok(kafelZPamieci('/b', { ...wpis, plik: 'przypiety.json.gz' }))
+    przypnijAdresy([])
   })
 
   it('kafelAdresu: wyszukiwanie po indeksie kompaktu, null bez mapy', () => {
