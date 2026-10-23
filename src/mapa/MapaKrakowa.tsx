@@ -1026,14 +1026,25 @@ export function MapaKrakowa({
 
   // Padding dolny mapy: flyTo/jumpTo (lec) i cameraForBounds liczą środek z transform.padding,
   // a fitBounds go nie nadpisuje (MapLibre kasuje padding z opcji przed ruchem), więc wystarczy
-  // ustawić go tu raz.
+  // ustawić go tu raz. easeTo przerwałby trwający przelot (wybór okolicy, miasta, adresu), więc w ruchu
+  // czekamy na jego koniec.
   useEffect(() => {
     const mapa = mapaRef.current
     if (!mapa || !gotowa) return
-    mapa.easeTo({
-      padding: { top: 0, bottom: odstepDolny, left: 0, right: 0 },
-      duration: ograniczonyRuch() ? 0 : 300,
-    })
+    const ustaw = () => {
+      mapa.easeTo({
+        padding: { top: 0, bottom: odstepDolny, left: 0, right: 0 },
+        duration: ograniczonyRuch() ? 0 : 300,
+      })
+    }
+    if (!mapa.isMoving()) {
+      ustaw()
+      return
+    }
+    mapa.once('moveend', ustaw)
+    return () => {
+      mapa.off('moveend', ustaw)
+    }
   }, [gotowa, odstepDolny])
 
   function zakonczIntro() {

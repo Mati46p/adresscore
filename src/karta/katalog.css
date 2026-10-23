@@ -54,7 +54,8 @@
 /* Pasek narzędzi: szukaj, sortuj, filtry */
 .katalog-narzedzia {
   position: sticky;
-  top: var(--wys-naglowka);
+  /* Lepki jest sam nagłówek (pasek serwisów odjeżdża ze stroną), więc pod nim, bez przerwy. */
+  top: calc(var(--wys-naglowka) - var(--wys-paska-serwisow));
   z-index: var(--z-mapa-kontrolki);
   display: flex;
   flex-wrap: wrap;

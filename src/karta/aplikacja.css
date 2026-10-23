@@ -9,7 +9,7 @@
   font-size: 14px;
 }
 
-@media (max-width: 860px) {
+@media (max-width: 1023.98px) /* bp-l */ {
   .komunikat--info {
     padding: 10px 16px;
   }
