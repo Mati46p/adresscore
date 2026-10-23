@@ -7,11 +7,12 @@ import {
   ustawPomiar,
   wylaczonyPrzezGpc,
 } from '@/pomiar/pomiar.ts'
-import { useDane } from '@/wynik/dane'
 import { useMiasto } from '@/wynik/miastoDanych'
-import { PROGI_LITER, WAGA_MAX, type WskaznikPrzygotowany } from '@/wynik/silnik'
+import { PROGI_LITER, WAGA_MAX } from '@/wynik/silnik'
 import './metoda.css'
 import { przelaczPomiar } from './przelacznikPomiaru.ts'
+import { useWarstwyMetody } from './warstwyMetody'
+import type { Pokrycie, WarstwaMetody } from './warstwyMetodyLogika'
 
 const ATRYBUCJA_MSIP = 'Gmina Miejska Kraków, Portal MSIP Obserwatorium'
 const ATRYBUCJA_OSM = '© OpenStreetMap contributors'
@@ -69,17 +70,6 @@ function rozdzielczoscOpis(meta: WskaznikMeta): string {
   return meta.rozmiar ? `${baza}: ${meta.rozmiar}` : baza
 }
 
-interface Pokrycie {
-  zDanymi: number
-  wszystkich: number
-}
-
-function pokrycie(w: WskaznikPrzygotowany): Pokrycie {
-  let zDanymi = 0
-  for (const v of w.wartosci) if (v !== null && !Number.isNaN(v)) zDanymi++
-  return { zDanymi, wszystkich: w.wartosci.length }
-}
-
 function procent(p: Pokrycie): string {
   if (p.wszystkich === 0) return '–'
   const u = (100 * p.zDanymi) / p.wszystkich
@@ -88,9 +78,9 @@ function procent(p: Pokrycie): string {
   return `${tekst}%`
 }
 
-function WierszWarstwy({ w }: { w: WskaznikPrzygotowany }) {
+function WierszWarstwy({ w }: { w: WarstwaMetody }) {
   const m = w.meta
-  const p = pokrycie(w)
+  const p = w.pokrycie
   const licencje = unikalne(m.zrodla.map((z) => z.licencja))
   const daty = unikalne(m.zrodla.map((z) => z.dataDanych))
   const msip = zMsip(m)
@@ -153,7 +143,7 @@ function WierszWarstwy({ w }: { w: WskaznikPrzygotowany }) {
 }
 
 function TabelaZrodel() {
-  const dane = useDane()
+  const dane = useWarstwyMetody()
   if (dane.stan === 'ladowanie') return <p className="met-stan">Wczytuję listę źródeł…</p>
   if (dane.stan === 'blad') {
     return (
@@ -183,7 +173,7 @@ function TabelaZrodel() {
           </tr>
         </thead>
         <tbody>
-          {dane.wskazniki.map((w) => (
+          {dane.warstwy.map((w) => (
             <WierszWarstwy key={w.meta.id} w={w} />
           ))}
         </tbody>
@@ -193,16 +183,16 @@ function TabelaZrodel() {
 }
 
 function Ograniczenia() {
-  const dane = useDane()
+  const dane = useWarstwyMetody()
   const miasto = useMiasto()
   if (dane.stan !== 'gotowe') return null
-  const atrapy = dane.wskazniki.filter((w) => w.meta.atrapa)
-  const luki = dane.wskazniki
+  const atrapy = dane.warstwy.filter((w) => w.meta.atrapa)
+  const luki = dane.warstwy
     .filter((w) => !w.meta.atrapa && !w.niedostepny)
-    .map((w) => ({ w, p: pokrycie(w) }))
+    .map((w) => ({ w, p: w.pokrycie }))
     .filter(({ p }) => p.wszystkich > 0 && p.zDanymi < p.wszystkich)
-  const niedostepne = dane.wskazniki.filter((w) => w.niedostepny)
-  const naKarcie = dane.wskazniki.filter((w) => !w.meta.atrapa)
+  const niedostepne = dane.warstwy.filter((w) => w.niedostepny)
+  const naKarcie = dane.warstwy.filter((w) => !w.meta.atrapa)
   return (
     <>
       <ul className="met-punkty">

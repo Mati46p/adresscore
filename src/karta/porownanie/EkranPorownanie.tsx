@@ -3,15 +3,19 @@ import { liczba, opisAdresu } from '@/karta/adres'
 import { PanelFiltrow } from '@/karta/panel/PanelFiltrow'
 import { etykietaKierunku } from '@/karta/panel/preferencje'
 import { Wyszukiwarka } from '@/karta/wyszukiwarka/Wyszukiwarka'
+import type { Adres } from '@/kontrakty'
 import { KATEGORIE } from '@/kontrakty'
 import { PUNKTY } from '@/lib/punktyLamania'
 import { udostepnienie } from '@/pomiar/pomiar.ts'
+import { filtryZBudzetem } from '@/wynik/budzet'
 import { useDane } from '@/wynik/dane'
 import { ocenFiltr, opisFiltru, type TwardyFiltr } from '@/wynik/filtry'
+import { kafelAdresuZPamieci, useAdresyKompakt } from '@/wynik/kafle'
 import { miejsceAdresu } from '@/wynik/miejsceAdresu'
 import type { RozbicieWarstwy } from '@/wynik/silnik'
 import { wynikAdresu } from '@/wynik/silnik'
 import { dodajDoPorownania, hrefDla, useStan, usunZPorownania } from '@/wynik/stan'
+import { useOkoliceKompaktu } from '@/wynik/startKompakt'
 import { MAKS_POROWNANIE } from '@/wynik/url'
 import { useWyniki } from '@/wynik/useWyniki'
 import {
@@ -26,8 +30,12 @@ import {
   werdykt,
 } from './model'
 import './porownanie.css'
+import { useAdresyWyszukiwarki, useKafleAdresow, useKompaktEkranu } from './useKompaktPorownania'
+import { adresZKafla } from './zKafli'
 
 const KOLORY = ['#176448', '#bc6b38', '#4b67a1', '#9a5f91', '#697a2e']
+
+const PUSTE_ADRESY: Adres[] = []
 
 const POMIAR = new Intl.NumberFormat('pl-PL', { maximumFractionDigits: 2 })
 
@@ -40,19 +48,20 @@ function TabelaAtrybutow({
   okolice,
   filtry,
   wykluczone,
+  zPlikuOkolic,
 }: {
   okolice: readonly OkolicaPorownania[]
   filtry: readonly TwardyFiltr[]
   wykluczone: ReadonlySet<string>
+  /** Czy okolice adresów pochodzą z pliku okolice.json (Kraków); bez niego dzielnica albo gmina z adresu. */
+  zPlikuOkolic: boolean
 }) {
-  const dane = useDane()
   const grupy = warstwyPorownania(okolice[0]!.wynik)
   // Okolice z pliku ma tylko Kraków (jednostki SIM i miejscowości obwarzanka, D8, #223); inne miasta pokazują
   // dzielnicę albo gminę z adresu (miejsceAdresu: zapas), więc podpis wiersza mówi to, co jest w komórkach.
-  const podpisOkolicy =
-    dane.stan === 'gotowe' && dane.okolice
-      ? 'Jednostka SIM w Krakowie, miejscowość poza nim'
-      : 'Dzielnica albo gmina adresu'
+  const podpisOkolicy = zPlikuOkolic
+    ? 'Jednostka SIM w Krakowie, miejscowość poza nim'
+    : 'Dzielnica albo gmina adresu'
   return (
     <section
       className="porownanie-tabela"
@@ -325,7 +334,19 @@ function Radar({ okolice }: { okolice: readonly OkolicaPorownania[] }) {
 export function EkranPorownanie() {
   const dane = useDane()
   const stan = useStan((s) => s)
-  const wynikiMapy = useWyniki()
+  const wyniki = useWyniki()
+  // Bez pełnych danych (#247, B7b) ekran stoi na kompakcie: adresy i wyniki z kafli, kandydaci do dodania
+  // z szukaj.bin (pobieranego dopiero przy fokusie w polu). Pełne dane otwiera tylko stary kompakt.
+  const pelne = dane.stan === 'gotowe'
+  const hk = useKompaktEkranu(pelne)
+  const gotowy = pelne || hk.stan === 'gotowe'
+  const [poleAktywne, ustawPoleAktywne] = useState(false)
+  const porownywane = stan.porownanie.slice(0, MAKS_POROWNANIE)
+  useKafleAdresow(hk, porownywane, !pelne)
+  // Subskrypcja: ekran odświeża się, gdy kafle dochodzą do pamięci.
+  useAdresyKompakt(porownywane)
+  const okoliceKompakt = useOkoliceKompaktu(hk, !pelne)
+  const adresyKompakt = useAdresyWyszukiwarki(hk, !pelne && poleAktywne)
   const [status, ustawStatus] = useState('')
   const [szerokiEkran, ustawSzerokiEkran] = useState(() =>
     typeof window === 'undefined' ? true : window.matchMedia(`(min-width: ${PUNKTY.l}px)`).matches,
@@ -337,35 +358,58 @@ export function EkranPorownanie() {
     media.addEventListener('change', zmiana)
     return () => media.removeEventListener('change', zmiana)
   }, [])
+  const kandydaci = dane.stan === 'gotowe' ? dane.adresy : (adresyKompakt ?? PUSTE_ADRESY)
   const adresyDoDodania = useMemo(() => {
-    if (dane.stan !== 'gotowe') return []
+    if (!gotowy) return []
     const wybrane = new Set(stan.porownanie)
-    return dane.adresy.filter((adres) => !wybrane.has(adres.i))
-  }, [dane, stan.porownanie])
-  const okolice: (OkolicaPorownania & { i: number })[] =
+    return kandydaci.filter((adres) => !wybrane.has(adres.i))
+  }, [gotowy, kandydaci, stan.porownanie])
+  const okoliceAdresow = dane.stan === 'gotowe' ? dane.okolice : okoliceKompakt
+  const filtryRazem =
+    stan.tryb === 'biznes' ? stan.filtry : filtryZBudzetem(stan.filtry, stan.budzet)
+  const okolice: (OkolicaPorownania & { i: number; wykluczony: boolean; niewiadomy: boolean })[] = (
     dane.stan === 'gotowe'
-      ? stan.porownanie.slice(0, MAKS_POROWNANIE).flatMap((i, pozycja) => {
+      ? porownywane.flatMap((i, pozycja) => {
           const adres = dane.adresy[i]
           return adres
             ? [
                 {
-                  id: adres.id,
+                  adres,
                   i,
-                  kolor: KOLORY[pozycja],
-                  nazwa: opisAdresu(adres),
-                  // Okolica z okolice.json (jednostka SIM, miejscowość); bez pliku dzielnica albo gmina.
-                  miejsce: miejsceAdresu(adres, i, dane.okolice),
+                  pozycja,
                   wynik: wynikAdresu(i, dane.wskazniki, stan.wagi, stan.kierunki),
-                  href: hrefDla(stan, { ekran: 'okolica', wybrany: i }),
+                  wykluczony: Boolean(wyniki?.wykluczenia.wykluczony[i]),
+                  niewiadomy: Boolean(wyniki?.wykluczenia.niewiadomy[i]),
                 },
               ]
             : []
         })
-      : []
-  const aktywneOkolice = okolice.filter((o) => !wynikiMapy?.wykluczenia.wykluczony[o.i])
+      : hk.stan === 'gotowe'
+        ? porownywane.flatMap((i, pozycja) => {
+            // Te same funkcje silnika i filtrów co dla pełnych danych, na wartościach kafla adresu.
+            const z = adresZKafla(kafelAdresuZPamieci(i), i, stan.wagi, stan.kierunki, filtryRazem)
+            return z ? [{ ...z, i, pozycja }] : []
+          })
+        : []
+  ).map(({ adres, i, pozycja, wynik, wykluczony, niewiadomy }) => ({
+    id: adres.id,
+    i,
+    kolor: KOLORY[pozycja],
+    nazwa: opisAdresu(adres),
+    // Okolica z okolice.json (jednostka SIM, miejscowość); bez pliku dzielnica albo gmina.
+    miejsce: miejsceAdresu(adres, i, okoliceAdresow),
+    wynik,
+    wykluczony,
+    niewiadomy,
+    href: hrefDla(stan, { ekran: 'okolica', wybrany: i }),
+  }))
+  const aktywneOkolice = okolice.filter((o) => !o.wykluczony)
   const wykluczonych = okolice.length - aktywneOkolice.length
   const atrapa =
-    dane.stan === 'gotowe' && (dane.plikAdresow.atrapa || dane.wskazniki.some((w) => w.meta.atrapa))
+    dane.stan === 'gotowe'
+      ? dane.plikAdresow.atrapa || dane.wskazniki.some((w) => w.meta.atrapa)
+      : hk.stan === 'gotowe' &&
+        (hk.indeks.atrapa === true || hk.manifest.wskazniki.some((w) => w.atrapa))
   // Pomiar udostępnień: element to stały id z kodu, kanał – schowek albo błąd (menu systemowego tu nie ma).
   async function kopiuj() {
     try {
@@ -422,8 +466,15 @@ export function EkranPorownanie() {
         {atrapa && (
           <p className="porownanie-uwaga">Dane przykładowe: część wyników pochodzi z atrapy.</p>
         )}
-        {dane.stan === 'ladowanie' && <p className="komunikat">Wczytywanie danych porównania…</p>}
-        {dane.stan === 'gotowe' && stan.porownanie.length < MAKS_POROWNANIE && (
+        {!gotowy && dane.stan !== 'blad' && (
+          <p className="komunikat">Wczytywanie danych porównania…</p>
+        )}
+        {gotowy && !pelne && okolice.length < porownywane.length && (
+          <p className="komunikat" role="status">
+            Wczytuję adresy porównania…
+          </p>
+        )}
+        {gotowy && stan.porownanie.length < MAKS_POROWNANIE && (
           <section
             className="porownanie-dodaj"
             aria-label="Dodaj adres do porównania"
@@ -434,15 +485,26 @@ export function EkranPorownanie() {
               adresy={adresyDoDodania}
               mierz
               wyczyscPoWyborze
+              onFokus={() => ustawPoleAktywne(true)}
               onWybierz={(i) => {
                 if (stan.porownanie.includes(i)) {
                   ustawStatus('Ten adres jest już w porównaniu.')
                   return
                 }
                 dodajDoPorownania(i)
-                ustawStatus(`Dodano ${opisAdresu(dane.adresy[i]!)} do porównania.`)
+                const wybrany = kandydaci.find((a) => a.i === i)
+                ustawStatus(
+                  wybrany
+                    ? `Dodano ${opisAdresu(wybrany)} do porównania.`
+                    : 'Dodano adres do porównania.',
+                )
               }}
             />
+            {!pelne && poleAktywne && adresyKompakt === null && (
+              <p className="komunikat" role="status">
+                Wczytuję listę adresów…
+              </p>
+            )}
           </section>
         )}
         {stan.porownanie.length === 0 && (
@@ -460,21 +522,21 @@ export function EkranPorownanie() {
               aria-label="Wybrane adresy"
               data-sekcja="porownanie-lista"
             >
-              {okolice.map((o, i) => (
+              {okolice.map((o) => (
                 <div className="porownanie-adres" key={o.id}>
                   <span className="porownanie-kropka" style={{ background: o.kolor }} />
                   <a href={o.href} data-cel="otworz-karte">
                     {o.nazwa}
                   </a>
-                  {wynikiMapy?.wykluczenia.wykluczony[o.i] ? (
+                  {o.wykluczony ? (
                     <span className="porownanie-adres__status">Wykluczony filtrem</span>
-                  ) : wynikiMapy?.wykluczenia.niewiadomy[o.i] ? (
+                  ) : o.niewiadomy ? (
                     <span className="porownanie-adres__status">Brak danych dla filtru</span>
                   ) : null}
                   <button
                     type="button"
                     data-cel="usun-z-porownania"
-                    onClick={() => usunZPorownania(stan.porownanie[i] as number)}
+                    onClick={() => usunZPorownania(o.i)}
                     aria-label={`Usuń ${o.nazwa} z porównania`}
                   >
                     ×
@@ -496,11 +558,8 @@ export function EkranPorownanie() {
             <TabelaAtrybutow
               okolice={okolice}
               filtry={stan.filtry}
-              wykluczone={
-                new Set(
-                  okolice.filter((o) => wynikiMapy?.wykluczenia.wykluczony[o.i]).map((o) => o.id),
-                )
-              }
+              zPlikuOkolic={okoliceAdresow !== null && okoliceAdresow !== undefined}
+              wykluczone={new Set(okolice.filter((o) => o.wykluczony).map((o) => o.id))}
             />
             {aktywneOkolice.length > 0 && (
               <>
