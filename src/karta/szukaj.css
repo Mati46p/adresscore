@@ -8,6 +8,8 @@
   overflow: hidden;
 }
 .szukaj-panel {
+  /* Pozycjonowany, żeby .sr-only (position: absolute) w przewijanej treści nie wystawał poza stronę. */
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--odstep-4);
