@@ -9,6 +9,12 @@ import { MAKS_POROWNANIE } from '@/wynik/url'
 import { useWyniki } from '@/wynik/useWyniki'
 import { liczba, opisAdresu } from './adres'
 
+/** Poziom koloru plakietki: wysoki / średni / niski wynik (kolory z tokenów, liczba zawsze obok). */
+function poziomWyniku(wynik: number | null | undefined): 'wysoki' | 'sredni' | 'niski' {
+  if (wynik === null || wynik === undefined || Number.isNaN(wynik)) return 'niski'
+  return wynik >= 75 ? 'wysoki' : wynik >= 70 ? 'sredni' : 'niski'
+}
+
 /**
  * Pięć ulic bieżącego miasta z najwyższą średnią oceną adresów dla aktualnych wag lub wybranej warstwy.
  * `nazwaWarstwy` to podpis wybranej warstwy z przeglądu: miasto, które jej nie ma, nie zna jej nazwy.
@@ -77,25 +83,30 @@ export function Ranking({ nazwaWarstwy }: { nazwaWarstwy: string }) {
               const pelne = stan.porownanie.length >= MAKS_POROWNANIE
               return (
                 <li className="ranking-ulica" key={ulica.slug}>
-                  <a className="pozycja-wyniku" href={hrefUlicy(ulica)}>
-                    <span className="plakietka-wyniku">{liczba(ulica.wynik)}</span>
+                  <a
+                    className="pozycja-wyniku"
+                    href={hrefUlicy(ulica)}
+                    title={
+                      adresPorownania ? `Do porównania: ${opisAdresu(adresPorownania)}` : undefined
+                    }
+                  >
+                    {/* Liczba zawsze widoczna; kolor to tylko trzeci poziom, bez znaczenia samego koloru. */}
+                    <span className="plakietka-wyniku" data-poziom={poziomWyniku(ulica.wynik)}>
+                      {liczba(ulica.wynik)}
+                    </span>
                     <span className="ranking-ulica__opis">
-                      <span>
-                        {ulica.nazwa}, {ulica.miejscowosc}
-                        {ulica.okolica && (
-                          <span style={{ color: 'var(--tekst-3)' }}> · {ulica.okolica}</span>
-                        )}
-                      </span>
-                      {adresPorownania && (
-                        <small>Do porównania: {opisAdresu(adresPorownania)}</small>
-                      )}
+                      <span className="ranking-ulica__nazwa">{ulica.nazwa}</span>
+                      <small>
+                        {ulica.miejscowosc}
+                        {ulica.okolica && ` · ${ulica.okolica}`}
+                      </small>
                     </span>
                   </a>
                   <button
                     className="ranking-ulica__dodaj"
                     type="button"
                     aria-pressed={dodano}
-                    aria-label={`${dodano ? 'Usuń z porównania' : 'Dodaj do porównania'} adres ${adresPorownania ? opisAdresu(adresPorownania) : ulica.nazwa}`}
+                    aria-label={`${dodano ? 'Usuń z porównania' : pelne ? 'Limit 5 adresów, nie dodasz do porównania' : 'Dodaj do porównania'} adres ${adresPorownania ? opisAdresu(adresPorownania) : ulica.nazwa}`}
                     title={
                       adresPorownania
                         ? `Porównywany adres: ${opisAdresu(adresPorownania)}`
@@ -106,13 +117,7 @@ export function Ranking({ nazwaWarstwy }: { nazwaWarstwy: string }) {
                       if (wybranyAdres !== undefined) usunZPorownania(wybranyAdres)
                       else dodajDoPorownania(ulica.adresDoPorownania)
                     }}
-                  >
-                    {dodano
-                      ? 'Usuń z porównania'
-                      : pelne
-                        ? 'Limit 5 adresów'
-                        : 'Dodaj do porównania'}
-                  </button>
+                  />
                 </li>
               )
             })}

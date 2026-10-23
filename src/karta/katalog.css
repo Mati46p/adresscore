@@ -26,7 +26,7 @@
 }
 .katalog-naglowek > p {
   margin: 0;
-  color: var(--tekst-2, #3d4652);
+  color: var(--tekst-2, var(--tekst-2));
 }
 .katalog-liczby {
   display: flex;
@@ -39,7 +39,7 @@
   flex-direction: column-reverse;
 }
 .katalog-liczby dt {
-  color: var(--tekst-2, #3d4652);
+  color: var(--tekst-2, var(--tekst-2));
   font-size: 0.85rem;
 }
 .katalog-liczby dd {
@@ -54,8 +54,9 @@
 /* Pasek narzędzi: szukaj, sortuj, filtry */
 .katalog-narzedzia {
   position: sticky;
-  top: var(--wys-naglowka);
-  z-index: 2;
+  /* Lepki jest sam nagłówek (pasek serwisów odjeżdża ze stroną), więc pod nim, bez przerwy. */
+  top: calc(var(--wys-naglowka) - var(--wys-paska-serwisow));
+  z-index: var(--z-mapa-kontrolki);
   display: flex;
   flex-wrap: wrap;
   align-items: end;
@@ -131,12 +132,12 @@
   position: relative;
   border-color: var(--akcent);
   background: var(--akcent);
-  color: #fff;
+  color: var(--powierzchnia);
 }
 
 .katalog-status {
   margin: 0 0 12px;
-  color: var(--tekst-2, #3d4652);
+  color: var(--tekst-2, var(--tekst-2));
 }
 
 /* Lista ulic */
@@ -173,8 +174,10 @@
 .katalog-ulice details[open] summary::before {
   transform: rotate(90deg);
 }
-.katalog-ulice summary:hover {
-  background: var(--tlo);
+@media (hover: hover) {
+  .katalog-ulice summary:hover {
+    background: var(--tlo);
+  }
 }
 .katalog-ulice details[open] summary {
   background: var(--akcent-jasny);
@@ -185,7 +188,7 @@
   min-width: 0;
 }
 .katalog-nazwa small {
-  color: var(--tekst-2, #3d4652);
+  color: var(--tekst-2, var(--tekst-2));
   font-size: 0.85rem;
 }
 .katalog-licznik {
@@ -236,9 +239,11 @@
   color: var(--tekst);
   text-decoration: none;
 }
-.katalog-adresy a:hover {
-  background: var(--akcent-jasny);
-  color: var(--akcent-hover);
+@media (hover: hover) {
+  .katalog-adresy a:hover {
+    background: var(--akcent-jasny);
+    color: var(--akcent-hover);
+  }
 }
 section > .katalog-adresy {
   padding: 8px;
@@ -260,11 +265,13 @@ section > .katalog-adresy {
   font-weight: 600;
   cursor: pointer;
 }
-.katalog-wiecej:hover {
-  background: var(--akcent-jasny);
+@media (hover: hover) {
+  .katalog-wiecej:hover {
+    background: var(--akcent-jasny);
+  }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 639.98px) /* bp-m */ {
   .katalog-naglowek {
     padding: 20px 16px;
   }

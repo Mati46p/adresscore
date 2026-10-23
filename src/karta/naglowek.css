@@ -1,0 +1,170 @@
+/* Nagłówek: logo, kroki, tryby i menu na telefonie (przeniesione ze styles.css, #248). */
+/* ── Nagłówek ─────────────────────────────────────────────────────────────── */
+.naglowek {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-naglowek);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  height: 56px;
+  padding: 0 32px;
+  background: var(--powierzchnia);
+  border-bottom: 1px solid var(--linia);
+}
+/* Na szerokim ekranie opakowanie nawigacji nie istnieje dla układu, a przycisk menu jest ukryty. */
+.naglowek-nawigacja {
+  display: contents;
+}
+.naglowek-menu,
+.naglowek-serwisy {
+  display: none;
+}
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--cel-dotyku);
+  text-decoration: none;
+  color: var(--tekst);
+  font-weight: 700;
+  font-size: 18px;
+}
+@media (hover: hover) {
+  .logo:hover {
+    color: var(--tekst);
+  }
+}
+/* Chip miasta jak .chip-miasta w makiecie – tylko wygląd, cały link nadal prowadzi na Szukaj. */
+.logo-miasto {
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: var(--promien-pelny);
+  background: var(--akcent-jasny);
+  color: var(--akcent);
+  font-family: var(--font);
+  font-weight: 600;
+  font-size: var(--rozmiar-s);
+}
+.kroki {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 14px;
+}
+.krok {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--cel-dotyku);
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid var(--ramka);
+  color: var(--tekst-2);
+  text-decoration: none;
+}
+@media (hover: hover) {
+  .krok:hover {
+    border-color: var(--akcent-obrys);
+    color: var(--tekst);
+  }
+}
+.krok[aria-current="step"] {
+  background: var(--akcent);
+  border-color: var(--akcent);
+  color: var(--powierzchnia);
+}
+
+@media (max-width: 1023.98px) /* bp-l */ {
+  /* Poniżej 1024: logo + chip miasta + przycisk menu, kroki, tryby i serwisy w panelu pod nagłówkiem. */
+  .naglowek {
+    padding: 0 8px 0 16px;
+  }
+  .naglowek-menu {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: var(--cel-dotyku);
+    height: var(--cel-dotyku);
+    margin-left: auto;
+    padding: 0;
+    border: 0;
+    border-radius: var(--promien-pelny);
+    background: transparent;
+    cursor: pointer;
+  }
+  /* Trzy kreski z jednego elementu: środkowa to tło, górna i dolna to cienie. */
+  .naglowek-burger {
+    width: 18px;
+    height: 2px;
+    background: var(--tekst);
+    box-shadow:
+      0 -6px 0 var(--tekst),
+      0 6px 0 var(--tekst);
+  }
+  .naglowek[data-menu="otwarte"] .naglowek-menu {
+    background: var(--akcent-jasny);
+  }
+  .naglowek-nawigacja {
+    display: none;
+  }
+  .naglowek[data-menu="otwarte"] .naglowek-nawigacja {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-height: calc(100dvh - 56px);
+    overflow-y: auto;
+    padding: 16px;
+    background: var(--powierzchnia);
+    border-bottom: 1px solid var(--linia);
+    box-shadow: 0 12px 24px rgb(20 41 31 / 14%);
+  }
+  .naglowek-nawigacja .kroki {
+    flex-direction: column;
+  }
+  .naglowek-nawigacja .tryby {
+    align-self: flex-start;
+  }
+  .naglowek-serwisy {
+    display: block;
+    padding-top: 12px;
+    border-top: 1px solid var(--linia);
+  }
+  .naglowek-serwisy h2 {
+    margin: 0 0 4px;
+    color: var(--tekst-2);
+    font-size: var(--rozmiar-xs);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .naglowek-serwisy ul {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .naglowek-serwisy a {
+    display: flex;
+    align-items: center;
+    min-height: var(--cel-dotyku);
+    color: var(--tekst-2);
+    font-size: var(--rozmiar-s);
+    font-weight: 600;
+    text-decoration: none;
+  }
+}
+/* Fokus widoczny na elementach sterujących nagłówka. */
+.naglowek a:focus-visible,
+.naglowek button:focus-visible {
+  outline: 2px solid var(--akcent);
+  outline-offset: 2px;
+}

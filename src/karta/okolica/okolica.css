@@ -39,9 +39,9 @@
   color: var(--tekst-2);
   line-height: 1.35;
 }
-@media (max-width: 650px) {
+@media (max-width: 1023.98px) /* bp-l */ {
   .okol-wybor-trybu__opcje {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .okol-wybor-trybu__opcje button {
     min-height: 0;
@@ -190,7 +190,7 @@
   margin-left: 6px;
   padding: 0 8px 0 16px;
   background: var(--tekst);
-  color: #fff;
+  color: var(--powierzchnia);
   font-family: var(--font-mono);
   font-size: 18px;
   font-weight: 500;
@@ -480,7 +480,7 @@
 }
 
 /* Telefon: pierścień, nazwa i drabinka mieszczą się w pierwszym ekranie (390×844). */
-@media (max-width: 860px) {
+@media (max-width: 1023.98px) /* bp-l */ {
   .okol-naglowek {
     padding: 16px;
     gap: 14px;
@@ -528,7 +528,7 @@
     font-size: 14px;
   }
   .okol-dwie {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -610,7 +610,7 @@
 }
 .okol-jak-warstwy summary {
   cursor: pointer;
-  min-height: 32px;
+  min-height: var(--cel-dotyku);
   color: var(--tekst-2);
 }
 .okol-jak-warstwy ul,

@@ -4,7 +4,7 @@
   flex-direction: column;
   gap: 6px;
   font-family: "IBM Plex Sans", system-ui, sans-serif;
-  color: #18202b;
+  color: var(--tekst);
 }
 
 .wysz-etykieta {
@@ -18,20 +18,20 @@
   width: 100%;
   min-height: 44px;
   padding: 10px 12px;
-  border: 1px solid var(--ramka-pola, #8a939b);
+  border: 1px solid var(--ramka-pola, var(--ramka-pola));
   border-radius: 12px;
-  background: #fff;
-  color: #18202b;
+  background: var(--powierzchnia);
+  color: var(--tekst);
 }
 
 .wysz-pole::placeholder {
-  color: #5b6470;
+  color: var(--tekst-3);
 }
 
 .wysz-pole:focus-visible {
-  outline: 2px solid #1f5c46;
+  outline: 2px solid var(--akcent);
   outline-offset: 1px;
-  border-color: #1f5c46;
+  border-color: var(--akcent);
 }
 
 .wysz-lista {
@@ -39,15 +39,15 @@
   top: 100%;
   left: 0;
   right: 0;
-  z-index: 10;
+  z-index: var(--z-lepkie);
   margin: 4px 0 0;
   padding: 4px;
   list-style: none;
   max-height: min(60vh, 22rem);
   overflow-y: auto;
-  border: 1px solid #dde1e4;
+  border: 1px solid var(--ramka);
   border-radius: 12px;
-  background: #fff;
+  background: var(--powierzchnia);
   box-shadow: 0 8px 24px rgb(24 32 43 / 0.12);
 }
 
@@ -62,24 +62,24 @@
 }
 
 .wysz-opcja[aria-selected="true"] {
-  background: #e3efe8;
+  background: var(--akcent-jasny);
 }
 
 .wysz-tytul {
   font-size: 15px;
   font-weight: 500;
-  color: #18202b;
+  color: var(--tekst);
 }
 
 .wysz-opis {
   font-size: 13px;
-  color: #3d4652;
+  color: var(--tekst-2);
 }
 
 .wysz-status {
   margin: 0;
   font-size: 13px;
-  color: #3d4652;
+  color: var(--tekst-2);
 }
 
 .wysz-status[data-ukryty="true"] {

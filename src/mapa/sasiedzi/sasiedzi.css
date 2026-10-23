@@ -8,10 +8,10 @@
   padding: 0;
   display: grid;
   place-items: center;
-  border: 3px solid #ffffff;
+  border: 3px solid var(--powierzchnia);
   border-radius: 50%;
   background: var(--sasiad-tlo, #8a9097);
-  color: var(--sasiad-tekst, #18202b);
+  color: var(--sasiad-tekst, var(--tekst));
   font:
     700 17px / 1 "IBM Plex Sans",
     system-ui,
@@ -23,22 +23,24 @@
   z-index: 1;
 }
 
-.mapa-sasiad:hover {
-  box-shadow:
-    0 0 0 2px #18202b,
-    0 2px 6px rgb(24 32 43 / 0.3);
+@media (hover: hover) {
+  .mapa-sasiad:hover {
+    box-shadow:
+      0 0 0 2px var(--tekst),
+      0 2px 6px rgb(24 32 43 / 0.3);
+  }
 }
 
 .mapa-sasiad:focus-visible {
-  outline: 3px solid #18202b;
+  outline: 3px solid var(--tekst);
   outline-offset: 2px;
 }
 
 /* Wybrany na karcie albo na mapie: gruba ciemna obwódka, nad pozostałymi. */
 .mapa-sasiad--wybrany {
-  border-color: #18202b;
+  border-color: var(--tekst);
   box-shadow:
-    0 0 0 3px #ffffff,
+    0 0 0 3px var(--powierzchnia),
     0 2px 8px rgb(24 32 43 / 0.45);
-  z-index: 2;
+  z-index: var(--z-mapa-kontrolki);
 }

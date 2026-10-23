@@ -2,6 +2,7 @@
 // i bez suwaków (burza E5, 17c), a każde urządzenie – bezpiecznik, który wyłącza cień, gdy
 // klatki spadają poniżej ~30 na sekundę podczas ruchu suwaka.
 import { useRef, useState } from 'react'
+import { MEDIA_ARKUSZA } from '@/lib/punktyLamania'
 import {
   type ChwilaLokalna,
   chwilaLokalna,
@@ -45,7 +46,7 @@ export function useSwiatlo(lon: number, lat: number) {
   const [lekki] = useState(
     () =>
       typeof window !== 'undefined' &&
-      window.matchMedia('(pointer: coarse), (max-width: 860px)').matches,
+      window.matchMedia(`(pointer: coarse), ${MEDIA_ARKUSZA}`).matches,
   )
   const [chwila, setChwila] = useState(() => chwilaLokalna(Date.now()))
   const [skrot, setSkrot] = useState<Skrot | null>('teraz')

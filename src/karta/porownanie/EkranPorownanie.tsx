@@ -4,6 +4,7 @@ import { PanelFiltrow } from '@/karta/panel/PanelFiltrow'
 import { etykietaKierunku } from '@/karta/panel/preferencje'
 import { Wyszukiwarka } from '@/karta/wyszukiwarka/Wyszukiwarka'
 import { KATEGORIE } from '@/kontrakty'
+import { PUNKTY } from '@/lib/punktyLamania'
 import { udostepnienie } from '@/pomiar/pomiar.ts'
 import { useDane } from '@/wynik/dane'
 import { ocenFiltr, opisFiltru, type TwardyFiltr } from '@/wynik/filtry'
@@ -327,11 +328,11 @@ export function EkranPorownanie() {
   const wynikiMapy = useWyniki()
   const [status, ustawStatus] = useState('')
   const [szerokiEkran, ustawSzerokiEkran] = useState(() =>
-    typeof window === 'undefined' ? true : window.matchMedia('(min-width: 861px)').matches,
+    typeof window === 'undefined' ? true : window.matchMedia(`(min-width: ${PUNKTY.l}px)`).matches,
   )
   const [panelOtwarty, ustawPanelOtwarty] = useState(false)
   useEffect(() => {
-    const media = window.matchMedia('(min-width: 861px)')
+    const media = window.matchMedia(`(min-width: ${PUNKTY.l}px)`)
     const zmiana = () => ustawSzerokiEkran(media.matches)
     media.addEventListener('change', zmiana)
     return () => media.removeEventListener('change', zmiana)

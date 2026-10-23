@@ -1,14 +1,24 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react'
+import {
+  type CSSProperties,
+  lazy,
+  Suspense,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react'
 import { PoleOpiszSiebie } from '@/ai/PoleOpiszSiebie'
 import { miasto as miastoZRejestru, type SlugMiasta } from '@/kontrakty'
+import { MEDIA_ARKUSZA } from '@/lib/punktyLamania'
 import { kadrZapasowyMiasta, WIDOK_MIAST } from '@/mapa/lot'
 import { type OkolicaNaMapie, okolicaNaMapie } from '@/mapa/okolica/granice'
 import { wczytajGraniceOkolic } from '@/mapa/okolica/wczytajGranice'
 import { useDane } from '@/wynik/dane'
 import { useMiasto, useTylkoKrakow } from '@/wynik/miastoDanych'
 import { miejsceAdresu, miejsceOkolicy } from '@/wynik/miejsceAdresu'
-import { BIZNESY, warstwyBiznesu } from '@/wynik/persony'
+import { BIZNESY, PERSONY, TRYBY, warstwyBiznesu } from '@/wynik/persony'
 import { usePrzeglad } from '@/wynik/przeglad'
+import { rankingUlic } from '@/wynik/rankingUlic'
 import { zamknijSasiadow } from '@/wynik/sasiedziStan'
 import { kierunekEfektywny } from '@/wynik/silnik'
 import {
@@ -26,6 +36,8 @@ import { czytajHash, MAKS_POROWNANIE } from '@/wynik/url'
 import { usePropsSasiadowMapy } from '@/wynik/useSasiedzi'
 import { useWyniki } from '@/wynik/useWyniki'
 import { opisAdresu } from './adres'
+import { ArkuszDolny, type StanArkusza } from './arkusz/ArkuszDolny'
+import { Zakladki } from './arkusz/Zakladki'
 import { MiniKarta } from './MiniKarta'
 import {
   biernikMiasta,
@@ -38,6 +50,7 @@ import {
 } from './miastoTeksty'
 import type { WybranaOkolica } from './okolicaWybrana'
 import { PasekOkolicy } from './PasekOkolicy'
+import { StopkaPrawna } from './PasekSerwisow'
 import { PanelBudzetu } from './panel/PanelBudzetu'
 import { PanelDojazdu } from './panel/PanelDojazdu'
 import { PanelFiltrow } from './panel/PanelFiltrow'
@@ -79,6 +92,21 @@ function lotDoMiasta(slug: SlugMiasta, granice: OkolicaNaMapie['granice'] | null
   return { id: `miasto:${slug}`, granice: granice ?? kadrZapasowyMiasta(slug), obrys: null }
 }
 
+function subskrybujUklad(zmiana: () => void) {
+  const mq = window.matchMedia(MEDIA_ARKUSZA)
+  mq.addEventListener('change', zmiana)
+  return () => mq.removeEventListener('change', zmiana)
+}
+const czyUkladArkusza = () => window.matchMedia(MEDIA_ARKUSZA).matches
+
+/** „1 filtr”, „2 filtry”, „5 filtrów”, „22 filtry” – do podsumowania w nagłówku arkusza. */
+function liczbaFiltrow(n: number): string {
+  const j = n % 10
+  const d = n % 100
+  const slowo = n === 1 ? 'filtr' : j >= 2 && j <= 4 && (d < 12 || d > 14) ? 'filtry' : 'filtrów'
+  return `${n} ${slowo}`
+}
+
 /** Ekran 1 wg docs/makieta/Main.dc.html: panel filtrów po lewej, mapa po prawej. */
 export function EkranSzukaj() {
   const dane = useDane()
@@ -94,8 +122,14 @@ export function EkranSzukaj() {
   const kierunki = useStan((s) => s.kierunki)
   const [komunikatHeksow, setKomunikatHeksow] = useState('')
   const [warstwyRozwiniete, setWarstwyRozwiniete] = useState(false)
-  // Telefon: mapę da się zwinąć do paska warstw, żeby filtry i ranking dostały cały ekran.
-  const [mapaZwinieta, setMapaZwinieta] = useState(false)
+  // Poniżej bp-l zamiast lewego panelu jest dolny arkusz nad mapą na cały ekran. Jedno drzewo na oba układy:
+  // mapa ma stały klucz, więc zmiana szerokości okna jej nie montuje od nowa.
+  const jestArkusz = useSyncExternalStore(subskrybujUklad, czyUkladArkusza, () => false)
+  const [stanArkusza, setStanArkusza] = useState<StanArkusza>('zwiniety')
+  const [odstepArkusza, setOdstepArkusza] = useState(0)
+  const [zakladka, setZakladka] = useState('filtry')
+  const persona = useStan((s) => s.persona)
+  const filtry = useStan((s) => s.filtry)
   // Okolica z pola wyszukiwarki żyje w stanie ekranu: link i stan aplikacji nie znają okolic (url.ts, stan.ts).
   const [okolica, setOkolica] = useState<WybranaOkolica | null>(null)
   const [komunikatOkolicy, setKomunikatOkolicy] = useState('')
@@ -106,7 +140,6 @@ export function EkranSzukaj() {
   const [propozycja, setPropozycja] = useState<SlugMiasta | null>(null)
   const [ogloszenieMiasta, setOgloszenieMiasta] = useState('')
   const wyborOkolicy = useRef(0)
-  const sekcjaMapy = useRef<HTMLElement>(null)
   const ostatniZoom = useRef(0)
   const spokojDo = useRef(0)
   // Kadr startowy (D4): widok wszystkich miast – tylko przy pierwszym wejściu bez linku z miejscem. Stały
@@ -183,6 +216,8 @@ export function EkranSzukaj() {
     setKomunikatOkolicy('')
     setOkolica({ naMapie, miejsce, nazwaOsm: wynik.nazwaOsm })
     setCel({ miasto: miasto.slug, naMapie })
+    // Pole siedzi w arkuszu, który przy fokusie rośnie na cały ekran: po wyborze oddajemy mapę.
+    if (jestArkusz) setStanArkusza('polowa')
   }
 
   function wyczyscOkolice(zKlawiatury: boolean) {
@@ -195,15 +230,6 @@ export function EkranSzukaj() {
       document.querySelector<HTMLInputElement>('.szukaj-wyszukaj input[role="combobox"]')?.focus()
     }
   }
-
-  // Telefon: pole i pasek okolicy stoją nad mapą, więc po wyborze mapa bywa poza ekranem. Przewijamy tylko tyle,
-  // żeby cała mapa była widoczna (nic się nie dzieje, gdy już jest), a przy ograniczonym ruchu bez animacji.
-  useEffect(() => {
-    const sekcja = sekcjaMapy.current
-    if (!okolica || !sekcja || !window.matchMedia('(max-width: 860px)').matches) return
-    const bezRuchu = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    sekcja.scrollIntoView({ block: 'nearest', behavior: bezRuchu ? 'auto' : 'smooth' })
-  }, [okolica])
 
   /**
    * Zmienia bieżące miasto. Stan aplikacji czyści wybrany adres, porównanie, symulator i miejsca Biznesu
@@ -256,301 +282,368 @@ export function EkranSzukaj() {
       ? miastoZRejestru(propozycja)
       : null
 
+  const profilNazwa =
+    tryb === 'biznes'
+      ? (BIZNESY.find((b) => b.id === biznes)?.nazwa ?? 'Biznes')
+      : (PERSONY.find((p) => p.id === persona)?.nazwa ?? 'Własne ustawienia')
+  const trybNazwa = tryb === 'biznes' ? 'Dla biznesu' : TRYBY.find((t) => t.id === tryb)?.nazwa
+  const liczbaUlic =
+    dane.stan === 'gotowe' && wyniki && !brakWarstwy
+      ? rankingUlic(
+          dane.adresy,
+          wyniki.naAdres,
+          wyniki.wykluczenia.wykluczony,
+          wyniki.heksy,
+          dane.okolice,
+        ).length
+      : 0
+  const tytul =
+    tryb === 'biznes'
+      ? `Znajdź miejsce na działalność: ${BIZNESY.find((b) => b.id === biznes)?.nazwa ?? 'biznes'}`
+      : naglowekSzukaj(miasto)
+  const wPorownaniu = adres ? porownanie.includes(adres.i) : false
+  const ogloszenieAdresu = adres
+    ? [
+        `${adres.ulica ?? adres.miejscowosc} ${adres.nr}`,
+        wynikWybranego === undefined || Number.isNaN(wynikWybranego)
+          ? 'brak danych'
+          : `${podpis}: ${Math.round(wynikWybranego)}`,
+        wyniki?.wykluczenia.wykluczony[adres.i] ? 'wykluczony filtrem' : null,
+        wyniki?.wykluczenia.niewiadomy[adres.i]
+          ? 'nie wiemy, czy spełnia filtr (brak danych)'
+          : null,
+      ]
+        .filter((c) => c !== null)
+        .join(' · ')
+    : ''
+
+  // Pole nazwy okolicy z komunikatami: w arkuszu stoi w nagłówku (widoczne także po zwinięciu), na desktopie nad zakładkami.
+  const poleOkolicy = (
+    <div className="szukaj-wyszukaj" data-sekcja="wyszukiwarka">
+      {dane.stan === 'gotowe' && dane.okolice ? (
+        // Pole szuka okolic, nie adresów: na Szukaj oglądamy mapę (decyzja właściciela, commit 80c7aad),
+        // a adresy są w Katalogu adresów. Włączenie adresów to prop `adresy` + `onWybierz`.
+        <Wyszukiwarka
+          okolice={dane.okolice}
+          onWybierzOkolice={(w) => void wybierzOkolice(w)}
+          onFokus={() => void wczytajGraniceOkolic()}
+          etykieta="Nazwa okolicy"
+          placeholder="np. Ruczaj, Rakowice, Kurdwanów"
+          mierz
+        />
+      ) : dane.stan === 'ladowanie' ? (
+        <p className="etykieta-sekcji">{wInnymMiescie ? 'Wczytuję dane…' : 'Wczytuję okolice…'}</p>
+      ) : dane.stan === 'gotowe' && wInnymMiescie ? (
+        // Okolice (jednostki SIM, miejscowości) ma tylko Kraków (D8): zamiast pustego pola komunikat.
+        <p className="szukaj-okolica-komunikat">
+          Wyszukiwanie okolic na razie tylko w Krakowie. Kliknij mapę, żeby wybrać adres.
+        </p>
+      ) : null}
+      {komunikatOkolicy && <p className="szukaj-okolica-komunikat">{komunikatOkolicy}</p>}
+      {okolica && <PasekOkolicy okolica={okolica} onZamknij={wyczyscOkolice} />}
+      {/* Stały region: czytnik ogłasza zmianę tekstu, a nie samo pojawienie się paska z treścią. */}
+      <span className="sr-only" role="status">
+        {ogloszenieOkolicy}
+      </span>
+    </div>
+  )
+
+  const filtryPanel = (
+    <div className="szukaj-filtry" role="group" aria-label="Filtry" data-sekcja="szukaj-filtry">
+      <PoleOpiszSiebie />
+      <PanelFiltrow />
+      <PanelBudzetu />
+      <PanelDojazdu />
+      <WyborMiasta
+        biezace={miasto.slug}
+        wczytywane={dane.stan === 'ladowanie' ? miasto.nazwa : null}
+        niedostepne={przeglad.miasta
+          .filter((m) => m.stan === 'brak')
+          .map((m) => miastoZRejestru(m.slug).nazwa)}
+        onWybierz={(slug) => zmienMiasto(slug, { lot: true })}
+      />
+    </div>
+  )
+
+  // Wybrane heksy jako lista chipów z × (cel 44 px): w arkuszu i w panelu, nie w pływającej pigułce.
+  const listaPorownania =
+    wybraneAdresy.length > 0 ? (
+      <section className="porownanie-lista" aria-label="Wybrane heksy do porównania">
+        {wybraneAdresy.map((a) => (
+          <span className="heksy-pasek__chip" data-aktywny={a.i === wybrany || undefined} key={a.i}>
+            <span title={`${opisAdresu(a)} · heks ${a.h3}`}>{opisAdresu(a)}</span>
+            <button
+              type="button"
+              data-cel="usun-z-porownania"
+              aria-label={`Usuń heks ${opisAdresu(a)} z porównania`}
+              onClick={() => usunZPorownania(a.i)}
+            >
+              ×
+            </button>
+          </span>
+        ))}
+      </section>
+    ) : null
+
+  // Stopka prawna na dole panelu i arkusza: na Szukaj mapa ma pełną wysokość, więc nie ma jej pod ekranem.
+  const zakladki = (
+    <>
+      <Zakladki
+        id="szukaj"
+        etykieta="Panel wyników"
+        zakladki={[
+          { id: 'filtry', etykieta: 'Filtry' },
+          { id: 'ranking', etykieta: liczbaUlic > 0 ? `Ranking (${liczbaUlic})` : 'Ranking' },
+        ]}
+        wybrana={zakladka}
+        onWybierz={setZakladka}
+        panel={(id) => (id === 'filtry' ? filtryPanel : <Ranking nazwaWarstwy={podpis} />)}
+      />
+      <StopkaPrawna wariant="panel" />
+    </>
+  )
+
+  const paskiWarstw = (
+    <div role="group" aria-label="Co pokazuje mapa" className="pasek-warstw">
+      {/* Wszystkie przyciski warstw mają jeden cel pomiaru: to jedna czynność (zmiana warstwy),
+          a nazwa warstwy jest zmienna, więc nie może trafić do klucza. */}
+      <button
+        type="button"
+        className="seg"
+        data-cel="zmien-warstwe"
+        aria-pressed={warstwa === 'wynik'}
+        onClick={() => ustawWarstwe('wynik')}
+      >
+        Wynik tej okolicy
+      </button>
+      {/* Wybrana warstwa, której bieżące miasto nie ma (wybrano ją w innym): mapa pokazuje to miasto w
+          szrafurze, a pasek nie ma jej przycisku – ten znacznik mówi, co jest włączone i dlaczego szaro. */}
+      {brakWarstwy && (
+        <span className="pasek-warstw__brak" role="status">
+          {podpis}: brak danych {miasto.wMiescie}
+        </span>
+      )}
+      {warstwy
+        .filter((w) => warstwyRozwiniete || warstwa === w.meta.id)
+        .map((w) => (
+          <button
+            key={w.meta.id}
+            type="button"
+            className="seg"
+            data-cel="zmien-warstwe"
+            aria-pressed={warstwa === w.meta.id}
+            onClick={() => ustawWarstwe(w.meta.id)}
+          >
+            {w.meta.nazwa}
+          </button>
+        ))}
+      {warstwy.length > 0 && (
+        <button
+          type="button"
+          className="seg pasek-warstw__wiecej"
+          data-cel="rozwin-warstwy"
+          aria-expanded={warstwyRozwiniete}
+          onClick={() => setWarstwyRozwiniete(!warstwyRozwiniete)}
+        >
+          {warstwyRozwiniete ? 'Zwiń warstwy ▴' : `Inne warstwy (${warstwy.length}) ▾`}
+        </button>
+      )}
+    </div>
+  )
+
+  const miniKarta = adres ? (
+    <MiniKarta
+      indeks={adres.i}
+      nazwa={`${adres.ulica ?? adres.miejscowosc} ${adres.nr}`}
+      wariant={jestArkusz ? 'arkusz' : 'mapa'}
+      miejsce={miejsceWybranego}
+      wykluczony={Boolean(wyniki?.wykluczenia.wykluczony[adres.i])}
+      niewiadomy={Boolean(wyniki?.wykluczenia.niewiadomy[adres.i])}
+      wPorownaniu={wPorownaniu}
+      limitPorownania={porownanie.length >= MAKS_POROWNANIE}
+      onPorownanie={() => (wPorownaniu ? usunZPorownania(adres.i) : dodajDoPorownania(adres.i))}
+      ogloszenie={ogloszenieAdresu}
+      onOtworz={() => pokazOkolice(adres.i)}
+    />
+  ) : null
+
   return (
     <main className="szukaj">
-      <div className="szukaj-lewa">
-        <div className="szukaj-wyszukaj" data-sekcja="wyszukiwarka">
+      {jestArkusz && (
+        // Arkusz jest w stanie zwiniętym nieaktywny (inert), więc nagłówek strony stoi poza nim.
+        <h1 className="sr-only" tabIndex={-1}>
+          {tytul}
+        </h1>
+      )}
+      {!jestArkusz && (
+        <div key="panel" className="szukaj-panel">
           <div className="panel-wstep">
-            <h1 tabIndex={-1}>
-              {tryb === 'biznes'
-                ? `Znajdź miejsce na działalność: ${BIZNESY.find((b) => b.id === biznes)?.nazwa ?? 'biznes'}`
-                : naglowekSzukaj(miasto)}
-            </h1>
+            <h1 tabIndex={-1}>{tytul}</h1>
             <p>
               {tryb === 'biznes'
                 ? 'Wagi konkurencji i liczby stałych mieszkańców przeliczają kolory na mapie. Wybierz rodzaj działalności poniżej, kliknij heks i porównaj okolice.'
                 : 'Profil i wagi poniżej od razu przeliczają kolory na mapie. Kliknij mapę, żeby zobaczyć okolicę i dodać jej heks do porównania.'}
             </p>
           </div>
-          <WyborMiasta
-            biezace={miasto.slug}
-            wczytywane={dane.stan === 'ladowanie' ? miasto.nazwa : null}
-            niedostepne={przeglad.miasta
-              .filter((m) => m.stan === 'brak')
-              .map((m) => miastoZRejestru(m.slug).nazwa)}
-            onWybierz={(slug) => zmienMiasto(slug, { lot: true })}
-          />
-          {dane.stan === 'gotowe' && dane.okolice ? (
-            // Pole szuka okolic, nie adresów: na Szukaj oglądamy mapę (decyzja właściciela, commit 80c7aad),
-            // a adresy są w Katalogu adresów. Włączenie adresów to prop `adresy` + `onWybierz`.
-            <Wyszukiwarka
-              okolice={dane.okolice}
-              onWybierzOkolice={(w) => void wybierzOkolice(w)}
-              onFokus={() => void wczytajGraniceOkolic()}
-              etykieta="Nazwa okolicy"
-              placeholder="np. Ruczaj, Rakowice, Kurdwanów"
-              mierz
-            />
-          ) : dane.stan === 'ladowanie' ? (
-            <p className="etykieta-sekcji">
-              {wInnymMiescie ? 'Wczytuję dane…' : 'Wczytuję okolice…'}
-            </p>
-          ) : dane.stan === 'gotowe' && wInnymMiescie ? (
-            // Okolice (jednostki SIM, miejscowości) ma tylko Kraków (D8): zamiast pustego pola komunikat.
-            <p className="szukaj-okolica-komunikat">
-              Wyszukiwanie okolic na razie tylko w Krakowie. Kliknij mapę, żeby wybrać adres.
-            </p>
-          ) : null}
-          {komunikatOkolicy && <p className="szukaj-okolica-komunikat">{komunikatOkolicy}</p>}
-          {okolica && <PasekOkolicy okolica={okolica} onZamknij={wyczyscOkolice} />}
-          {/* Stały region: czytnik ogłasza zmianę tekstu, a nie samo pojawienie się paska z treścią. */}
-          <span className="sr-only" role="status">
-            {ogloszenieOkolicy}
-          </span>
+          {poleOkolicy}
+          {listaPorownania}
+          {zakladki}
         </div>
-        <aside aria-label="Filtry" className="szukaj-filtry" data-sekcja="szukaj-filtry">
-          <PoleOpiszSiebie />
-          <PanelFiltrow />
-          <PanelBudzetu />
-          <PanelDojazdu />
-        </aside>
-      </div>
+      )}
 
-      <div className="szukaj-prawa">
-        <section
-          aria-label="Mapa miast"
-          className="szukaj-mapa"
-          data-sekcja="szukaj-mapa"
-          data-zwinieta={mapaZwinieta || undefined}
-          ref={sekcjaMapy}
-        >
-          <div role="group" aria-label="Co pokazuje mapa" className="pasek-warstw">
-            {/* Wszystkie przyciski warstw mają jeden cel pomiaru: to jedna czynność (zmiana warstwy),
-                a nazwa warstwy jest zmienna, więc nie może trafić do klucza. */}
+      <section key="mapa" aria-label="Mapa miast" className="szukaj-mapa" data-sekcja="szukaj-mapa">
+        {paskiWarstw}
+        {propozycjaMiasta && (
+          <div className="przelacz-miasto" role="group" aria-label="Zmiana miasta">
+            <p>
+              Mapa pokazuje teraz {biernikMiasta(propozycjaMiasta.nazwa)}.{' '}
+              {ostrzezenieOPrzelaczeniu({
+                adres: wybrany !== null,
+                porownanie: porownanie.length > 0,
+              })}
+            </p>
             <button
               type="button"
               className="seg"
-              data-cel="zmien-warstwe"
-              aria-pressed={warstwa === 'wynik'}
-              onClick={() => ustawWarstwe('wynik')}
+              data-cel="przelacz-miasto"
+              onClick={() => zmienMiasto(propozycjaMiasta.slug, { lot: false })}
             >
-              Wynik tej okolicy
+              Przełącz na {biernikMiasta(propozycjaMiasta.nazwa)}
             </button>
-            {/* Wybrana warstwa, której bieżące miasto nie ma (wybrano ją w innym): mapa pokazuje to miasto w
-                szrafurze, a pasek nie ma jej przycisku – ten znacznik mówi, co jest włączone i dlaczego szaro. */}
-            {brakWarstwy && (
-              <span className="pasek-warstw__brak" role="status">
-                {podpis}: brak danych {miasto.wMiescie}
-              </span>
-            )}
-            {warstwy
-              .filter((w) => warstwyRozwiniete || warstwa === w.meta.id)
-              .map((w) => (
-                <button
-                  key={w.meta.id}
-                  type="button"
-                  className="seg"
-                  data-cel="zmien-warstwe"
-                  aria-pressed={warstwa === w.meta.id}
-                  onClick={() => ustawWarstwe(w.meta.id)}
-                >
-                  {w.meta.nazwa}
-                </button>
-              ))}
-            {warstwy.length > 0 && (
-              <button
-                type="button"
-                className="seg pasek-warstw__wiecej"
-                data-cel="rozwin-warstwy"
-                aria-expanded={warstwyRozwiniete}
-                onClick={() => setWarstwyRozwiniete(!warstwyRozwiniete)}
-              >
-                {warstwyRozwiniete ? 'Zwiń warstwy ▴' : `Inne warstwy (${warstwy.length}) ▾`}
-              </button>
-            )}
           </div>
-          {propozycjaMiasta && (
-            <div className="przelacz-miasto" role="group" aria-label="Zmiana miasta">
-              <p>
-                Mapa pokazuje teraz {biernikMiasta(propozycjaMiasta.nazwa)}.{' '}
-                {ostrzezenieOPrzelaczeniu({
-                  adres: wybrany !== null,
-                  porownanie: porownanie.length > 0,
-                })}
+        )}
+        <div
+          className="slot-mapy"
+          data-slot="mapa"
+          id="slot-mapy"
+          style={{ '--arkusz-odstep': `${jestArkusz ? odstepArkusza : 0}px` } as CSSProperties}
+        >
+          <Suspense
+            fallback={
+              <p className="komunikat" role="status">
+                Wczytuję mapę…
               </p>
-              <button
-                type="button"
-                className="seg"
-                data-cel="przelacz-miasto"
-                onClick={() => zmienMiasto(propozycjaMiasta.slug, { lot: false })}
-              >
-                Przełącz na {biernikMiasta(propozycjaMiasta.nazwa)}
-              </button>
-            </div>
-          )}
-          <div className="slot-mapy" data-slot="mapa" id="slot-mapy">
-            <Suspense
-              fallback={
-                <p className="komunikat" role="status">
-                  Wczytuję mapę…
-                </p>
-              }
+            }
+          >
+            <MapaKrakowa
+              heksy={wyniki?.heksy ?? przeglad.biezaceR10 ?? BRAK_HEKSOW}
+              podpisWarstwy={podpis}
+              // Tło: pozostałe miasta pod mgłą. Obecność propa (także z pustymi mapami, zanim przeglądy
+              // dojdą) znaczy „mapa wszystkich miast”: zmienia podpis mgły i legendę.
+              tlo={przeglad.tlo}
+              miasto={miasto.slug}
+              kadrStartowy={kadrStartowy}
+              wykluczone={wyniki?.wykluczoneHeksy}
+              sasiedzi={sasiedzi}
+              okolica={cel?.naMapie ?? null}
+              wybrany={adres ? { lon: adres.lon, lat: adres.lat } : null}
+              widok3d
+              odstepDolny={jestArkusz ? odstepArkusza : 0}
+              onWidok={naWidok}
+              onKlik={(lon, lat) => {
+                // Klik w heks innego miasta (FR-006b): miasto staje się bieżącym, a po wczytaniu jego danych
+                // wybiera się adres z klikniętego heksu. Z bliska kamera już tam stoi, więc nie lecimy.
+                const slug = przeglad.miastoPunktu(lon, lat)
+                if (slug !== null && slug !== miasto.slug) {
+                  zmienMiasto(slug, {
+                    lot: ostatniZoom.current < ZOOM_ZMIANY_MIASTA,
+                    klik: { lon, lat },
+                  })
+                  return
+                }
+                if (dane.stan !== 'gotowe') return
+                const kandydat = adresWKliknietymHeksie(dane.adresy, lon, lat)
+                if (!kandydat.adres) {
+                  setKomunikatHeksow('W tym heksie nie ma adresu. Wybierz inny heks.')
+                  return
+                }
+                const juzWybrany = wybraneAdresy.find((a) => a.h3 === kandydat.h3)
+                wybierzAdres(juzWybrany?.i ?? kandydat.adres.i)
+                // Arkusz pokazuje adres od razu; fokus zostaje, ogłoszenie idzie przez regiony status.
+                if (jestArkusz) setStanArkusza('polowa')
+                if (juzWybrany) {
+                  usunZPorownania(juzWybrany.i)
+                  setKomunikatHeksow('Usunięto heks z porównania.')
+                  return
+                }
+                if (porownanie.length >= MAKS_POROWNANIE) {
+                  setKomunikatHeksow('Możesz porównać maksymalnie 5 heksów. Usuń jeden z listy.')
+                  return
+                }
+                dodajDoPorownania(kandydat.adres.i)
+                setKomunikatHeksow('Dodano heks do porównania.')
+              }}
+            />
+          </Suspense>
+          {wybraneAdresy.length > 0 ? (
+            <div
+              className="heksy-pasek"
+              role="group"
+              aria-label="Porównanie heksów"
+              data-liczba={wybraneAdresy.length}
             >
-              <MapaKrakowa
-                heksy={wyniki?.heksy ?? przeglad.biezaceR10 ?? BRAK_HEKSOW}
-                podpisWarstwy={podpis}
-                // Tło: pozostałe miasta pod mgłą. Obecność propa (także z pustymi mapami, zanim przeglądy
-                // dojdą) znaczy „mapa wszystkich miast”: zmienia podpis mgły i legendę.
-                tlo={przeglad.tlo}
-                miasto={miasto.slug}
-                kadrStartowy={kadrStartowy}
-                wykluczone={wyniki?.wykluczoneHeksy}
-                sasiedzi={sasiedzi}
-                okolica={cel?.naMapie ?? null}
-                wybrany={adres ? { lon: adres.lon, lat: adres.lat } : null}
-                widok3d
-                onWidok={naWidok}
-                onKlik={(lon, lat) => {
-                  // Klik w heks innego miasta (FR-006b): miasto staje się bieżącym, a po wczytaniu jego danych
-                  // wybiera się adres z klikniętego heksu. Z bliska kamera już tam stoi, więc nie lecimy.
-                  const slug = przeglad.miastoPunktu(lon, lat)
-                  if (slug !== null && slug !== miasto.slug) {
-                    zmienMiasto(slug, {
-                      lot: ostatniZoom.current < ZOOM_ZMIANY_MIASTA,
-                      klik: { lon, lat },
-                    })
-                    return
-                  }
-                  if (dane.stan !== 'gotowe') return
-                  const kandydat = adresWKliknietymHeksie(dane.adresy, lon, lat)
-                  if (!kandydat.adres) {
-                    setKomunikatHeksow('W tym heksie nie ma adresu. Wybierz inny heks.')
-                    return
-                  }
-                  const juzWybrany = wybraneAdresy.find((a) => a.h3 === kandydat.h3)
-                  wybierzAdres(juzWybrany?.i ?? kandydat.adres.i)
-                  if (juzWybrany) {
-                    usunZPorownania(juzWybrany.i)
-                    setKomunikatHeksow('Usunięto heks z porównania.')
-                    return
-                  }
-                  if (porownanie.length >= MAKS_POROWNANIE) {
-                    setKomunikatHeksow('Możesz porównać maksymalnie 5 heksów. Usuń jeden z listy.')
-                    return
-                  }
-                  dodajDoPorownania(kandydat.adres.i)
-                  setKomunikatHeksow('Dodano heks do porównania.')
-                }}
-              />
-            </Suspense>
-            {wybraneAdresy.length > 0 ? (
-              <div
-                className="heksy-pasek"
-                aria-label="Heksy do porównania"
-                data-liczba={wybraneAdresy.length}
-              >
-                <div className="heksy-pasek__naglowek">
-                  <strong>Porównanie</strong>
-                  <span>
-                    {wybraneAdresy.length}/{MAKS_POROWNANIE}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  className="heksy-pasek__akcja"
-                  data-cel="przejdz-do-porownania"
-                  onClick={() => przejdz('porownanie')}
-                >
-                  Porównaj ({wybraneAdresy.length})
-                </button>
-                <div className="heksy-pasek__lista">
-                  {wybraneAdresy.map((a) => (
-                    <span
-                      className="heksy-pasek__chip"
-                      data-aktywny={a.i === wybrany || undefined}
-                      key={a.i}
-                    >
-                      <span title={`${opisAdresu(a)} · heks ${a.h3}`}>{opisAdresu(a)}</span>
-                      <button
-                        type="button"
-                        data-cel="usun-z-porownania"
-                        aria-label={`Usuń heks ${opisAdresu(a)} z porównania`}
-                        onClick={() => usunZPorownania(a.i)}
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <span className="heksy-podpowiedz">Kliknij heks, aby porównać</span>
-            )}
-            {adres && (
-              <MiniKarta
-                indeks={adres.i}
-                nazwa={`${adres.ulica ?? adres.miejscowosc} ${adres.nr}`}
-                onOtworz={() => pokazOkolice(adres.i)}
-              />
-            )}
-            <span className="sr-only" role="status">
-              {komunikatHeksow}
-            </span>
-            {/* Zmiana miasta (FR-007) i propozycja przełączenia: czytnik ogłasza, co się stało i co wyczyszczono. */}
-            <span className="sr-only" role="status">
-              {ogloszenieMiasta}
-            </span>
-          </div>
-          {adres && (
-            <div className="wybrany-adres">
-              <span role="status">
-                <strong>
-                  {adres.ulica ?? adres.miejscowosc} {adres.nr}
-                </strong>
-                {' · '}
-                {wynikWybranego === undefined || Number.isNaN(wynikWybranego)
-                  ? 'brak danych'
-                  : `${podpis}: ${Math.round(wynikWybranego)}`}
-                {wyniki?.wykluczenia.wykluczony[adres.i] ? ' · wykluczony filtrem' : ''}
-                {wyniki?.wykluczenia.niewiadomy[adres.i]
-                  ? ' · nie wiemy, czy spełnia filtr (brak danych)'
-                  : ''}
-                {miejsceWybranego && (
-                  <small className="wybrany-adres__miejsce">
-                    {miejsceWybranego.rodzaj === 'zapas' ? (
-                      miejsceWybranego.nazwa
-                    ) : (
-                      <>
-                        Okolica: <strong>{miejsceWybranego.nazwa}</strong>
-                        {miejsceWybranego.podpis && `, ${miejsceWybranego.podpis}`}
-                      </>
-                    )}
-                  </small>
-                )}
+              <span className="heksy-pasek__tekst">
+                Porównanie{' '}
+                <b>
+                  {wybraneAdresy.length}/{MAKS_POROWNANIE}
+                </b>
               </span>
               <button
                 type="button"
-                className="seg wlaczony"
-                data-cel="otworz-karte"
-                onClick={() => pokazOkolice(adres.i)}
+                className="heksy-pasek__akcja"
+                data-cel="przejdz-do-porownania"
+                onClick={() => przejdz('porownanie')}
               >
-                Otwórz kartę
+                Porównaj
               </button>
             </div>
+          ) : (
+            <span className="heksy-podpowiedz">Kliknij heks, aby porównać</span>
           )}
-          <button
-            type="button"
-            className="szukaj-mapa__zwin"
-            data-cel="zwin-mape"
-            aria-expanded={!mapaZwinieta}
-            aria-controls="slot-mapy"
-            onClick={() => setMapaZwinieta(!mapaZwinieta)}
-          >
-            {mapaZwinieta ? 'Pokaż mapę ▾' : 'Zwiń mapę ▴'}
-          </button>
-        </section>
-        <Ranking nazwaWarstwy={podpis} />
-      </div>
+          {!jestArkusz && miniKarta}
+          <span className="sr-only" role="status">
+            {komunikatHeksow}
+          </span>
+          {/* Zmiana miasta (FR-007) i propozycja przełączenia: czytnik ogłasza, co się stało i co wyczyszczono. */}
+          <span className="sr-only" role="status">
+            {ogloszenieMiasta}
+          </span>
+        </div>
+      </section>
+
+      {jestArkusz && (
+        <ArkuszDolny
+          key="arkusz"
+          stan={stanArkusza}
+          onStan={setStanArkusza}
+          etykieta="Panel wyników"
+          onOdstep={setOdstepArkusza}
+          naglowek={
+            <>
+              <p className="arkusz-podsumowanie">
+                <b>{profilNazwa}</b>
+                {trybNazwa && (
+                  <>
+                    <span className="arkusz-podsumowanie__kropka" aria-hidden="true" />
+                    {trybNazwa}
+                  </>
+                )}
+                {tryb !== 'biznes' && filtry.length > 0 && (
+                  <>
+                    <span className="arkusz-podsumowanie__kropka" aria-hidden="true" />
+                    {liczbaFiltrow(filtry.length)}
+                  </>
+                )}
+              </p>
+              {poleOkolicy}
+            </>
+          }
+        >
+          {miniKarta}
+          {listaPorownania}
+          {zakladki}
+        </ArkuszDolny>
+      )}
     </main>
   )
 }

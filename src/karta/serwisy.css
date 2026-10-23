@@ -1,4 +1,5 @@
 .serwisy {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 16px;
@@ -13,7 +14,7 @@
 .serwisy-tytul {
   margin: 0;
   color: var(--tekst-2);
-  font-size: 11px;
+  font-size: var(--rozmiar-xs);
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -31,12 +32,14 @@
   gap: 6px;
   height: var(--wys-paska-serwisow);
   color: var(--tekst-2);
-  font-size: 12px;
+  font-size: var(--rozmiar-xs);
   font-weight: 600;
   text-decoration: none;
 }
-.serwisy a:hover {
-  color: var(--tekst);
+@media (hover: hover) {
+  .serwisy a:hover {
+    color: var(--tekst);
+  }
 }
 .serwisy img {
   width: 16px;
@@ -44,29 +47,35 @@
   border-radius: 3px;
   object-fit: contain;
 }
+/* „Dla dziennikarzy” jako link tekstowy z celem dotyku 44 px. */
 .dziennikarze {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   min-height: var(--cel-dotyku);
-  padding: 0 16px;
-  border: 1px solid var(--ramka);
-  border-radius: 999px;
-  background: var(--powierzchnia);
   color: var(--tekst);
   font-size: 14px;
   font-weight: 600;
   text-decoration: none;
 }
-.dziennikarze:hover {
-  border-color: var(--akcent-obrys);
-}
-@media (max-width: 860px) {
-  .serwisy {
-    padding: 0 16px;
+@media (hover: hover) {
+  .dziennikarze:hover {
+    color: var(--akcent);
+    text-decoration: underline;
   }
-  .serwisy-tytul,
-  .serwisy img {
+}
+.dziennikarze:focus-visible,
+.serwisy a:focus-visible,
+.stopka-prawna a:focus-visible {
+  outline: 2px solid var(--akcent);
+  outline-offset: 2px;
+}
+/* Poniżej 1024 pasek nie stoi nad nagłówkiem; te same linki są na dole panelu menu. */
+@media (max-width: 1023.98px) /* bp-l */ {
+  :root {
+    --wys-paska-serwisow: 0px;
+  }
+  .serwisy {
     display: none;
   }
 }
@@ -92,7 +101,23 @@
   font-size: 13px;
   text-decoration: none;
 }
-.stopka-prawna a:hover {
-  color: var(--tekst);
-  text-decoration: underline;
+@media (hover: hover) {
+  .stopka-prawna a:hover {
+    color: var(--tekst);
+    text-decoration: underline;
+  }
+}
+
+/* Wariant panelowy (panel ekranu Szukaj): bez tła, ramki i marginesów, małe pismo. */
+.stopka-prawna--panel {
+  padding: 0;
+  border-top: 0;
+  background: none;
+}
+.stopka-prawna--panel ul {
+  justify-content: flex-start;
+  gap: 0 16px;
+}
+.stopka-prawna--panel a {
+  font-size: var(--rozmiar-xs);
 }

@@ -118,7 +118,7 @@
   margin: auto;
 }
 /* Panel po lewej jak w trybie mieszkańca; na wąskim ekranie (jedna kolumna) mapa zostaje pierwsza. */
-@media (min-width: 1051px) {
+@media (min-width: 1024px) /* bp-l */ {
   .biznes-panel {
     order: -1;
   }
@@ -327,12 +327,12 @@
 .biznes-pusta {
   color: var(--tekst-3);
 }
-@media (max-width: 1050px) {
+@media (max-width: 1023.98px) /* bp-l */ {
   .biznes-uklad {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
-@media (max-width: 600px) {
+@media (max-width: 639.98px) /* bp-m */ {
   .biznes-glowa {
     display: block;
   }

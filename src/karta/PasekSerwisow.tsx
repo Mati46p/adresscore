@@ -49,7 +49,6 @@ const SERWISY = [
   },
 ]
 
-/** Cienki pasek nad nagłówkiem, na każdym ekranie. Jego wysokość siedzi w --wys-naglowka (styles.css). */
 const PRAWNE = [
   { id: 'met-prywatnosc', etykieta: 'Prywatność' },
   { id: 'met-cookies', etykieta: 'Cookies' },
@@ -74,16 +73,13 @@ function doSekcji(zdarzenie: MouseEvent<HTMLAnchorElement>, id: string) {
   requestAnimationFrame(szukaj)
 }
 
-export function PasekSerwisow() {
+function ListaSerwisow({ zLogo }: { zLogo: boolean }) {
   return (
-    <nav className="serwisy" aria-labelledby="serwisy-h">
-      <h2 id="serwisy-h" className="serwisy-tytul">
-        Serwisy współpracujące
-      </h2>
-      <ul>
-        {SERWISY.map((s) => (
-          <li key={s.cel}>
-            <a href={s.href} target="_blank" rel="noopener" data-cel={`partner-${s.cel}`}>
+    <ul>
+      {SERWISY.map((s) => (
+        <li key={s.cel}>
+          <a href={s.href} target="_blank" rel="noopener" data-cel={`partner-${s.cel}`}>
+            {zLogo && (
               <img
                 src={`https://cpdp.media/${s.logo}`}
                 alt=""
@@ -91,12 +87,34 @@ export function PasekSerwisow() {
                 height={16}
                 loading="lazy"
               />
-              {s.nazwa}
-              <span className="sr-only">(otwiera się w nowej karcie)</span>
-            </a>
-          </li>
-        ))}
-      </ul>
+            )}
+            {s.nazwa}
+            <span className="sr-only">(otwiera się w nowej karcie)</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+/** Pasek nad nagłówkiem (od 1024 px; niżej CSS go chowa, a linki są w panelu menu). */
+export function PasekSerwisow() {
+  return (
+    <nav className="serwisy" aria-labelledby="serwisy-h">
+      <h2 id="serwisy-h" className="serwisy-tytul">
+        Serwisy współpracujące
+      </h2>
+      <ListaSerwisow zLogo />
+    </nav>
+  )
+}
+
+/** Te same linki na dole panelu menu nagłówka (poniżej 1024 px), bez logotypów. */
+export function SerwisyWMenu() {
+  return (
+    <nav className="naglowek-serwisy" aria-labelledby="serwisy-menu-h">
+      <h2 id="serwisy-menu-h">Serwisy współpracujące</h2>
+      <ListaSerwisow zLogo={false} />
     </nav>
   )
 }
@@ -117,12 +135,17 @@ export function PrzyciskDziennikarze() {
   )
 }
 
-/** Stopka na dole każdego ekranu: linki prawne prowadzą do sekcji Metody. */
-export function StopkaPrawna() {
+/**
+ * Linki prawne do sekcji Metody. Wariant „stopka” (domyślny) to stopka na dole ekranu;
+ * wariant „panel” jest do wstawienia w panel ekranu Szukaj (bez tła i marginesów, małe pismo).
+ */
+export function StopkaPrawna({ wariant = 'stopka' }: { wariant?: 'stopka' | 'panel' }) {
   const stan = useStan((s) => s)
   const hrefMetody = hrefDla(stan, { ekran: 'metoda' })
   return (
-    <footer className="stopka-prawna">
+    <footer
+      className={wariant === 'panel' ? 'stopka-prawna stopka-prawna--panel' : 'stopka-prawna'}
+    >
       <ul>
         {PRAWNE.map((p) => (
           <li key={p.id}>

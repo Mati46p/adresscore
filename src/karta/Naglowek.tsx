@@ -5,7 +5,8 @@ import { TRYBY_APLIKACJI, trybEkranu } from '@/wynik/trybyAplikacji'
 import type { Ekran } from '@/wynik/url'
 import { Logo } from './Logo'
 import { przygotujEkran } from './ladowanieEkranow'
-import { PrzyciskDziennikarze } from './PasekSerwisow'
+import { PrzyciskDziennikarze, SerwisyWMenu } from './PasekSerwisow'
+import './naglowek.css'
 import './tryby.css'
 
 // Kroki zwykłej pracy mieszkańca. „Dla miasta” i „Dla biznesu” to osobne tryby (przełącznik obok).
@@ -41,9 +42,10 @@ export function Naglowek() {
         className="naglowek-menu"
         aria-expanded={menuOtwarte}
         aria-controls="naglowek-nawigacja"
+        aria-label="Menu"
         onClick={() => setMenuOtwarte(!menuOtwarte)}
       >
-        {menuOtwarte ? 'Zamknij' : 'Menu'}
+        <span className="naglowek-burger" aria-hidden="true" />
       </button>
       <div id="naglowek-nawigacja" className="naglowek-nawigacja">
         <nav aria-label="Kroki" className="kroki">
@@ -87,6 +89,7 @@ export function Naglowek() {
           ))}
         </nav>
         <PrzyciskDziennikarze />
+        <SerwisyWMenu />
       </div>
     </header>
   )

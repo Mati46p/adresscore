@@ -15,7 +15,17 @@ import {
 } from 'maplibre-gl'
 import adresWorkera from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import { Protocol } from 'pmtiles'
-import { type JSX, lazy, type ReactNode, Suspense, useEffect, useId, useRef, useState } from 'react'
+import {
+  type CSSProperties,
+  type JSX,
+  lazy,
+  type ReactNode,
+  Suspense,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from 'react'
 import { createPortal } from 'react-dom'
 import {
   MIASTO_DOMYSLNE,
@@ -23,6 +33,7 @@ import {
   type SlugMiasta,
   type TloMapy,
 } from '@/kontrakty/miasta'
+import { MEDIA_ARKUSZA } from '@/lib/punktyLamania'
 import { useZnacznikiBiznesu } from '@/mapa/biznes/ZnacznikiBiznesu'
 import { useEtykietyZrodel } from '@/mapa/etykietyZrodel'
 import {
@@ -100,6 +111,11 @@ import 'maplibre-gl/dist/maplibre-gl.css'
 import './mapa.css'
 
 export interface MapaKrakowaProps {
+  /**
+   * Wysokość dolnego arkusza (px), który zasłania mapę. Mapa dostaje padding od dołu, więc wybrany
+   * punkt i środek kadru stoją nad arkuszem; kontrolki dolne i legenda przesuwają się o tyle samo.
+   */
+  odstepDolny?: number
   /** h3 r10 → wynik 0–100; null = brak danych (szary). */
   heksy: ReadonlyMap<string, number | null>
   /** Np. „Wynik tej okolicy" – nagłówek legendy. */
@@ -395,6 +411,7 @@ export function MapaKrakowa({
   tlo,
   kadrStartowy,
   miasto: slugMiasta = MIASTO_DOMYSLNE,
+  odstepDolny = 0,
 }: MapaKrakowaProps): JSX.Element {
   const kontener = useRef<HTMLDivElement>(null)
   const mapaRef = useRef<MapaLibre | null>(null)
@@ -431,6 +448,12 @@ export function MapaKrakowa({
   const [gotowa, setGotowa] = useState(false)
   const [legenda, setLegenda] = useState<HTMLElement | null>(null)
   const [krycieHeksow, setKrycieHeksow] = useState(100)
+  // Telefon: panel ustawień jest zwinięty do przycisku; na większych ekranach CSS pokazuje go zawsze.
+  const [ustawieniaOtwarte, setUstawieniaOtwarte] = useState(false)
+  // Legenda: rozwinięta od szerokości arkusza w górę, na telefonie i tablecie zwinięta do paska.
+  const [legendaRozwinieta, setLegendaRozwinieta] = useState(
+    () => !window.matchMedia(MEDIA_ARKUSZA).matches,
+  )
   const krycieHeksowRef = useRef(krycieHeksow)
   const idKrycia = useId()
   const [grupyPodkladu, setGrupyPodkladu] = useState<Record<GrupaPodkladu, boolean>>({
@@ -1001,6 +1024,29 @@ export function MapaKrakowa({
     })
   }, [gotowa, kluczKadruStartowego])
 
+  // Padding dolny mapy: flyTo/jumpTo (lec) i cameraForBounds liczą środek z transform.padding,
+  // a fitBounds go nie nadpisuje (MapLibre kasuje padding z opcji przed ruchem), więc wystarczy
+  // ustawić go tu raz. easeTo przerwałby trwający przelot (wybór okolicy, miasta, adresu), więc w ruchu
+  // czekamy na jego koniec.
+  useEffect(() => {
+    const mapa = mapaRef.current
+    if (!mapa || !gotowa) return
+    const ustaw = () => {
+      mapa.easeTo({
+        padding: { top: 0, bottom: odstepDolny, left: 0, right: 0 },
+        duration: ograniczonyRuch() ? 0 : 300,
+      })
+    }
+    if (!mapa.isMoving()) {
+      ustaw()
+      return
+    }
+    mapa.once('moveend', ustaw)
+    return () => {
+      mapa.off('moveend', ustaw)
+    }
+  }, [gotowa, odstepDolny])
+
   function zakonczIntro() {
     if (pauzaRef.current !== null) clearTimeout(pauzaRef.current)
     pauzaRef.current = null
@@ -1057,7 +1103,10 @@ export function MapaKrakowa({
   }
 
   return (
-    <div className={etap === 'miasto' ? 'mapa-krakowa' : 'mapa-krakowa mapa-krakowa--intro'}>
+    <div
+      className={etap === 'miasto' ? 'mapa-krakowa' : 'mapa-krakowa mapa-krakowa--intro'}
+      style={{ '--arkusz-odstep': `${odstepDolny}px` } as CSSProperties}
+    >
       <div
         ref={kontener}
         className="mapa-krakowa__plotno"
@@ -1066,43 +1115,72 @@ export function MapaKrakowa({
       />
       {etap === 'miasto' && (
         <div className="mapa-ustawienia" role="group" aria-label="Ustawienia mapy">
-          <label htmlFor={idKrycia}>Krycie heksów</label>
-          <input
-            id={idKrycia}
-            className="mapa-ustawienia__suwak"
-            type="range"
-            min="0"
-            max="100"
-            step="5"
-            value={krycieHeksow}
-            aria-valuetext={`${krycieHeksow}% krycia heksów`}
-            onChange={(e) => setKrycieHeksow(Number(e.currentTarget.value))}
-          />
-          <output htmlFor={idKrycia} className="mapa-ustawienia__wartosc">
-            {krycieHeksow}%
-          </output>
-          <details className="mapa-ustawienia__warstwy">
-            <summary title="Warstwy podkładu">Warstwy</summary>
-            <div className="mapa-ustawienia__warstwy-lista">
-              {GRUPY_PODKLADU.map(({ id, etykieta }) => (
-                <button
-                  key={id}
-                  type="button"
-                  className="mapa-ustawienia__przelacznik"
-                  aria-pressed={grupyPodkladu[id]}
-                  onClick={() =>
-                    setGrupyPodkladu((aktualne) => ({
-                      ...aktualne,
-                      [id]: !aktualne[id],
-                    }))
-                  }
-                >
-                  <span className="mapa-ustawienia__znacznik" aria-hidden="true" />
-                  {etykieta}
-                </button>
-              ))}
-            </div>
-          </details>
+          <button
+            type="button"
+            className="mapa-ustawienia__przycisk"
+            aria-label="Ustawienia mapy"
+            aria-expanded={ustawieniaOtwarte}
+            aria-controls={`${idKrycia}-panel`}
+            onClick={() => setUstawieniaOtwarte((o) => !o)}
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              aria-hidden="true"
+            >
+              <path d="M4 7h10M18 7h2M4 17h2M10 17h10" />
+              <circle cx="16" cy="7" r="2" />
+              <circle cx="8" cy="17" r="2" />
+            </svg>
+          </button>
+          <div
+            id={`${idKrycia}-panel`}
+            className="mapa-ustawienia__panel"
+            data-otwarte={ustawieniaOtwarte || undefined}
+          >
+            <label htmlFor={idKrycia}>Krycie heksów</label>
+            <input
+              id={idKrycia}
+              className="mapa-ustawienia__suwak"
+              type="range"
+              min="0"
+              max="100"
+              step="5"
+              value={krycieHeksow}
+              aria-valuetext={`${krycieHeksow}% krycia heksów`}
+              onChange={(e) => setKrycieHeksow(Number(e.currentTarget.value))}
+            />
+            <output htmlFor={idKrycia} className="mapa-ustawienia__wartosc">
+              {krycieHeksow}%
+            </output>
+            <details className="mapa-ustawienia__warstwy">
+              <summary title="Warstwy podkładu">Warstwy</summary>
+              <div className="mapa-ustawienia__warstwy-lista">
+                {GRUPY_PODKLADU.map(({ id, etykieta }) => (
+                  <button
+                    key={id}
+                    type="button"
+                    className="mapa-ustawienia__przelacznik"
+                    aria-pressed={grupyPodkladu[id]}
+                    onClick={() =>
+                      setGrupyPodkladu((aktualne) => ({
+                        ...aktualne,
+                        [id]: !aktualne[id],
+                      }))
+                    }
+                  >
+                    <span className="mapa-ustawienia__znacznik" aria-hidden="true" />
+                    {etykieta}
+                  </button>
+                ))}
+              </div>
+            </details>
+          </div>
         </div>
       )}
       {widok3d &&
@@ -1131,46 +1209,75 @@ export function MapaKrakowa({
       )}
       {legenda &&
         krycieHeksow > 0 &&
-        wlasnaLegenda !== undefined &&
-        createPortal(wlasnaLegenda, legenda)}
-      {legenda &&
-        krycieHeksow > 0 &&
-        wlasnaLegenda === undefined &&
         createPortal(
           <>
-            <div className="mapa-legenda__tytul">{podpisWarstwy}</div>
-            <div
-              className="mapa-legenda__pasek"
-              style={{ background: gradientCss(), opacity: (KRYCIE_DANYCH * krycieHeksow) / 100 }}
-            />
-            <div className="mapa-legenda__skala" aria-hidden="true">
-              {etykietySkali.map((t) => (
-                <span key={t}>{t}</span>
-              ))}
-            </div>
-            {/* Ocena warstwy to pozycja w rozkładzie adresów danego miasta (D10): kolor 70 w Łodzi
-                i w Krakowie znaczy co innego, więc przy tle mapa mówi to wprost, zamiast sugerować
-                porównywalność. */}
-            {tlo && tlo.heksy[8].size > 0 && (
-              <div className="mapa-legenda__nota">{TEKST_SKALI_MIAST}</div>
-            )}
-            <div className="mapa-legenda__wiersz">
-              <span
-                className="mapa-legenda__probka mapa-legenda__probka--brak"
-                style={{ background: szrafuraCss() }}
-              />
-              brak danych
-            </div>
-            {wykluczone.size > 0 && (
-              <div className="mapa-legenda__wiersz">
-                <span className="mapa-legenda__probka mapa-legenda__probka--wykluczony" />
-                wykluczone filtrem
+            <button
+              type="button"
+              className="mapa-legenda__naglowek"
+              aria-expanded={legendaRozwinieta}
+              data-cel="legenda-przelacznik"
+              onClick={() => setLegendaRozwinieta((r) => !r)}
+            >
+              <span className="mapa-legenda__tytul">{podpisWarstwy}</span>
+              <span className="mapa-legenda__strzalka" aria-hidden="true" />
+            </button>
+            {!legendaRozwinieta && wlasnaLegenda === undefined && (
+              <div className="mapa-legenda__zwinieta">
+                <div
+                  className="mapa-legenda__pasek"
+                  style={{
+                    background: gradientCss(),
+                    opacity: (KRYCIE_DANYCH * krycieHeksow) / 100,
+                  }}
+                />
+                <span
+                  className="mapa-legenda__probka mapa-legenda__probka--brak"
+                  style={{ background: szrafuraCss() }}
+                  role="img"
+                  aria-label="brak danych"
+                />
               </div>
             )}
-            <div className="mapa-legenda__wiersz">
-              <span className="mapa-legenda__probka mapa-legenda__probka--mgla" />
-              {podpisMgly(tlo !== undefined)}
-            </div>
+            {legendaRozwinieta && wlasnaLegenda !== undefined && wlasnaLegenda}
+            {legendaRozwinieta && wlasnaLegenda === undefined && (
+              <>
+                <div
+                  className="mapa-legenda__pasek"
+                  style={{
+                    background: gradientCss(),
+                    opacity: (KRYCIE_DANYCH * krycieHeksow) / 100,
+                  }}
+                />
+                <div className="mapa-legenda__skala" aria-hidden="true">
+                  {etykietySkali.map((t) => (
+                    <span key={t}>{t}</span>
+                  ))}
+                </div>
+                {/* Ocena warstwy to pozycja w rozkładzie adresów danego miasta (D10): kolor 70 w Łodzi
+                    i w Krakowie znaczy co innego, więc przy tle mapa mówi to wprost, zamiast sugerować
+                    porównywalność. */}
+                {tlo && tlo.heksy[8].size > 0 && (
+                  <div className="mapa-legenda__nota">{TEKST_SKALI_MIAST}</div>
+                )}
+                <div className="mapa-legenda__wiersz">
+                  <span
+                    className="mapa-legenda__probka mapa-legenda__probka--brak"
+                    style={{ background: szrafuraCss() }}
+                  />
+                  brak danych
+                </div>
+                {wykluczone.size > 0 && (
+                  <div className="mapa-legenda__wiersz">
+                    <span className="mapa-legenda__probka mapa-legenda__probka--wykluczony" />
+                    wykluczone filtrem
+                  </div>
+                )}
+                <div className="mapa-legenda__wiersz">
+                  <span className="mapa-legenda__probka mapa-legenda__probka--mgla" />
+                  {podpisMgly(tlo !== undefined)}
+                </div>
+              </>
+            )}
           </>,
           legenda,
         )}
