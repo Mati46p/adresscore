@@ -7,7 +7,6 @@ import {
   KOLEJNOSC_KATEGORII,
   kierunekEfektywny,
   WAGA_MAX,
-  type WskaznikPrzygotowany,
   wagaUzytkownika,
 } from '@/wynik/silnik'
 import {
@@ -20,10 +19,17 @@ import {
   ustawWage,
   wybierzPersone,
 } from '@/wynik/stan'
+import { useMetaWarstw } from '@/wynik/startKompakt'
+import { useWynikiMapy } from '@/wynik/useWynikiMapy'
 import './panel.css'
 import { czyWarstwaWyborow } from '@/wynik/wybory'
 import { etykietaKierunku, kierunkiWarstwy } from './preferencje'
 import { WybierakKomitetu } from './WybierakKomitetu'
+
+/** Panel czyta z warstwy tylko `meta`, więc wystarczy manifest kompaktu (Szukaj bez pełnych danych). */
+interface WarstwaPanelu {
+  meta: WskaznikMeta
+}
 
 const SEGMENTY_WAGI = Array.from({ length: WAGA_MAX + 1 }, (_, n) => n)
 
@@ -39,6 +45,39 @@ const OPIS_TRYBU: Record<Tryb, string> = {
     'Mocniej liczy się dojazd (waga +1). Szacunek czynszu: wkrótce – nie mamy jeszcze danych o najmie.',
   biznes:
     'Dalej od podobnej usługi i więcej stałych mieszkańców w polu 1 km² daje wyższy wynik. To wstępna ocena lokalizacji: nie mierzy ruchu pieszych, popytu ani sprzedaży.',
+}
+
+/** Po tylu ms oczekiwania na pliki filtrów panel mówi, że filtr się wczytuje (krótsze ładowanie jest ciche). */
+const OPOZNIENIE_KOMUNIKATU_MS = 1500
+
+/**
+ * Stan filtrów twardych bez pełnych danych: pliki filtrów i skal idą z kompaktu leniwie, więc mapa
+ * bywa chwilę nieprzefiltrowana. Pokazuje „wczytuje się” (po chwili) albo błąd, który źródło ponawia samo.
+ */
+function KomunikatFiltrow() {
+  const wyniki = useWynikiMapy()
+  const czeka = wyniki !== null && !wyniki.filtryGotowe
+  const [dlugo, setDlugo] = useState(false)
+  useEffect(() => {
+    if (!czeka) {
+      setDlugo(false)
+      return
+    }
+    const t = setTimeout(() => setDlugo(true), OPOZNIENIE_KOMUNIKATU_MS)
+    return () => clearTimeout(t)
+  }, [czeka])
+  if (!czeka) return null
+  if (wyniki.filtryBlad)
+    return (
+      <p className="panel-uwaga" role="status">
+        Nie udało się wczytać filtra – spróbuj ponownie
+      </p>
+    )
+  return dlugo ? (
+    <p className="panel-uwaga" role="status">
+      Filtr wczytuje się…
+    </p>
+  ) : null
 }
 
 // Panel pamięta ostatni wybrany profil, żeby „Przywróć wagi profilu" działało po ręcznej
@@ -70,7 +109,11 @@ export function PanelFiltrow() {
     if (persona !== 'wlasna') ostatniaPersona = persona
   }, [persona])
 
-  const wskazniki = dane.stan === 'gotowe' ? dane.wskazniki : []
+  // Pełne dane, a bez nich manifest kompaktu: lista warstw jest ta sama, panel działa od pierwszego koloru.
+  const metaKompaktu = useMetaWarstw()
+  const wskazniki: readonly WarstwaPanelu[] =
+    dane.stan === 'gotowe' ? dane.wskazniki : (metaKompaktu ?? []).map((meta) => ({ meta }))
+  const warstwyGotowe = dane.stan === 'gotowe' || metaKompaktu !== null
   const warstwyPanelu =
     tryb === 'biznes'
       ? wskazniki.filter((w) =>
@@ -191,6 +234,7 @@ export function PanelFiltrow() {
             {aktywne} {aktywne === 1 ? 'warstwa aktywna' : 'warstw aktywnych'} z {liczone.length}
           </span>
         </div>
+        {dane.stan !== 'gotowe' && <KomunikatFiltrow />}
         <p className="panel-uwaga">
           Waga 0–4 mówi, jak ważna jest dla Ciebie warstwa: 0 – pomijam, 4 – bardzo ważne. Kierunek
           wskazuje, które miejsca wolisz.
@@ -209,8 +253,12 @@ export function PanelFiltrow() {
           </div>
         )}
 
-        {dane.stan === 'ladowanie' && <p className="panel-uwaga">Wczytuję warstwy…</p>}
-        {dane.stan === 'blad' && <p className="panel-uwaga">Nie udało się wczytać warstw.</p>}
+        {!warstwyGotowe && dane.stan === 'ladowanie' && (
+          <p className="panel-uwaga">Wczytuję warstwy…</p>
+        )}
+        {!warstwyGotowe && dane.stan === 'blad' && (
+          <p className="panel-uwaga">Nie udało się wczytać warstw.</p>
+        )}
         {KOLEJNOSC_KATEGORII.map((kat) => {
           const warstwy = warstwyPanelu.filter(
             (w) => w.meta.kategoria === kat && !czyWarstwaWyborow(w.meta.id),
@@ -274,14 +322,14 @@ export function PanelFiltrow() {
 
 interface GrupaProps {
   kategoria: KategoriaId
-  warstwy: readonly WskaznikPrzygotowany[]
+  warstwy: readonly WarstwaPanelu[]
   wagi: Readonly<Record<string, number>>
   kierunki: Readonly<Record<string, KierunekOceny>>
   poczatkowoOtwarta: boolean
   /** Warstwa wyborów: liczona razem z grupą (waga i suma), komitet wybierany w miejscu. */
   wybory?: {
-    komitet: WskaznikPrzygotowany
-    komitety: readonly WskaznikPrzygotowany[]
+    komitet: WarstwaPanelu
+    komitety: readonly WarstwaPanelu[]
   }
 }
 
@@ -355,7 +403,7 @@ function Warstwa({
   wagi,
   kierunki,
 }: {
-  w: WskaznikPrzygotowany
+  w: WarstwaPanelu
   wagi: Readonly<Record<string, number>>
   kierunki: Readonly<Record<string, KierunekOceny>>
 }) {

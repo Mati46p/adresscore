@@ -6,9 +6,14 @@ import { SolidPolygonLayer } from '@deck.gl/layers'
 import { MapboxOverlay } from '@deck.gl/mapbox'
 import type { Map as MapaLibre } from 'maplibre-gl'
 import { useEffect, useRef, useState } from 'react'
+import { bazaDanych } from '@/kontrakty'
 import { useDane } from '@/wynik/dane'
+import { type KafelGotowy, useAdresKompakt, wczytajKafel } from '@/wynik/kafle'
+import { useDaneHeksow } from '@/wynik/kompaktBiezacy'
 import { useStan } from '@/wynik/stan'
+import { wczytajSkaleKafli } from '@/wynik/startKompakt'
 import { policzWyniki } from '@/wynik/useWyniki'
+import { adresyZKafli, kafleWokol } from './adresyZKafli'
 import { type BudynkiOkolicy, wczytajBudynkiWokol } from './kontrakt'
 import { budynekAdresu, budynkiOkolicy } from './laczenie'
 import './miasto3d.css'
@@ -86,9 +91,34 @@ export default function Warstwa3D({
     }
   }, [lon, lat])
 
-  const adres = dane.stan === 'gotowe' && wybrany !== null ? dane.adresy[wybrany] : null
+  // Bez pełnych danych (Szukaj na kompakcie) adresy i wyniki budynków biorą się z kafli okolicy.
+  const hk = useDaneHeksow()
+  const pelne = dane.stan === 'gotowe'
+  const [kafleOkolicy, setKafleOkolicy] = useState<readonly KafelGotowy[]>([])
+  const indeks = hk.stan === 'gotowe' ? hk.indeks : null
+  const miasto = hk.stan === 'gotowe' ? hk.miasto : null
+  useEffect(() => {
+    if (pelne || !indeks || !miasto) return
+    let aktualne = true
+    wczytajSkaleKafli(miasto, indeks)
+      .then((skale) =>
+        Promise.all(
+          kafleWokol(indeks, lon, lat).map((w) => wczytajKafel(bazaDanych(miasto), w, skale)),
+        ),
+      )
+      .then(
+        (k) => aktualne && setKafleOkolicy(k),
+        (e: unknown) => console.warn('Kafle okolicy budynków niedostępne', e),
+      )
+    return () => {
+      aktualne = false
+    }
+  }, [pelne, indeks, miasto, lon, lat])
+  const adresKafla = useAdresKompakt(pelne ? null : wybrany)
+  const adres = pelne ? (wybrany !== null ? dane.adresy[wybrany] : null) : adresKafla
+  const zKafli = pelne ? null : adresyZKafli(kafleOkolicy, wagi, kierunki, lon, lat)
   const budynki =
-    dane.stan === 'gotowe' && budynkiDane
+    budynkiDane && pelne
       ? budynkiOkolicy(
           budynkiDane.budynki,
           dane.adresy,
@@ -96,7 +126,9 @@ export default function Warstwa3D({
           lon,
           lat,
         )
-      : []
+      : budynkiDane && zKafli
+        ? budynkiOkolicy(budynkiDane.budynki, zKafli.adresy, zKafli.wyniki, lon, lat)
+        : []
   const wybranyBudynek = adres ? budynekAdresu(budynki, adres) : null
   const swiatlo = useSwiatlo(lon, lat)
   const s = swiatlo.swiatlo

@@ -176,6 +176,11 @@ export interface MapaKrakowaProps {
    * `performance.mark('mapa-kolor')`.
    */
   onPierwszyKolor?: () => void
+  /**
+   * Mapa nie wstała: brak WebGL albo błąd stylu przed pierwszym `load`. Wołany raz. Ekran Szukaj otwiera
+   * wtedy pełne dane (zapas zamiast kolorów z kompaktu, których nie ma na czym narysować).
+   */
+  onAwaria?: () => void
   /** Budynki 3D przy dużym zoomie albo przy wybranym adresie (mapa główna). */
   widok3d?: boolean
   /**
@@ -467,6 +472,7 @@ export function MapaKrakowa({
   wyroznione,
   onWidok,
   onPierwszyKolor,
+  onAwaria,
   widok3d = false,
   tlo,
   kadrStartowy,
@@ -486,6 +492,7 @@ export function MapaKrakowa({
   const graniceRef = useRef(granice)
   const onWidokRef = useRef(onWidok)
   const onPierwszyKolorRef = useRef(onPierwszyKolor)
+  const onAwariaRef = useRef(onAwaria)
   // Pierwszy niepusty zbiór heksów już zlecił czekanie na `idle`: wywołanie następuje raz.
   const kolorZlecony = useRef(false)
   // Pierwszy kolor się narysował: dopiero wtedy ruszają tło i mgła (worker kanału tła jest wstrzymany).
@@ -548,6 +555,7 @@ export function MapaKrakowa({
     graniceRef.current = granice
     onWidokRef.current = onWidok
     onPierwszyKolorRef.current = onPierwszyKolor
+    onAwariaRef.current = onAwaria
     tloRef.current = tlo
     kadrStartowyRef.current = kadrStartowy
     slugMiastaRef.current = slugMiasta
@@ -569,16 +577,34 @@ export function MapaKrakowa({
       dolnaKrawedzPaska(plotno),
     )
     if ('bounds' in kamera && kamera.bounds === kadr) kadrZastosowanyRef.current = kluczKadru(kadr)
-    const mapa = new MapaLibre({
-      container: plotno,
-      style: STYL,
-      ...kamera,
-      minZoom: 5,
-      maxBounds: GRANICE_WIDOKU,
-      attributionControl: false,
-      locale: POLSKIE_NAPISY,
-    })
+    let mapa: MapaLibre
+    try {
+      mapa = new MapaLibre({
+        container: plotno,
+        style: STYL,
+        ...kamera,
+        minZoom: 5,
+        maxBounds: GRANICE_WIDOKU,
+        attributionControl: false,
+        locale: POLSKIE_NAPISY,
+      })
+    } catch (e) {
+      // Brak WebGL: konstruktor rzuca. Zgłaszamy awarię i oddajemy błąd dalej, jak dotąd.
+      onAwariaRef.current?.()
+      throw e
+    }
     mapaRef.current = mapa
+    // Błąd stylu przed pierwszym `load` znaczy, że mapa się nie narysuje; późniejsze błędy niczego nie otwierają.
+    let zaladowana = false
+    mapa.once('load', () => {
+      zaladowana = true
+    })
+    mapa.on('error', (e) => {
+      // Błąd kafla albo źródła (`sourceId`) to zwykła usterka sieci; awarią jest błąd samego stylu.
+      if (zaladowana || (e as { sourceId?: string }).sourceId) return
+      zaladowana = true
+      onAwariaRef.current?.()
+    })
     dostawcaRef.current = new DostawcaGeoJson(mapa)
     const kontrolkaLegendy = new KontrolkaLegendy()
     // Pozycje dolne wstawiają nowszą kontrolkę nad starszą: skala na dole, legenda nad nią.

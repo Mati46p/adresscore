@@ -216,7 +216,7 @@ describe('pamięć danych per miasto', { timeout: 5000 }, () => {
     ladowanie.dokoncz('lodz')
     await lodz
     assert.equal(s.indeksAdresu('lodz-0'), null, 'Łódź nie jest już bieżąca: bez słownika')
-    assert.equal(s.indeksAdresu('krakow-0'), 0, 'stary słownik czeka na dane Gdańska')
+    assert.equal(s.indeksAdresu('krakow-0'), null, 'słownik Krakowa nie rozwiązuje id w Gdańsku')
 
     ladowanie.dokoncz('gdansk')
     await pamiec.zaladujDane('gdansk')

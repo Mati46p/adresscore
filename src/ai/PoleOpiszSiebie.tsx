@@ -3,6 +3,7 @@
 import { type FormEvent, type KeyboardEvent, useId, useRef, useState } from 'react'
 import { useDane } from '@/wynik/dane'
 import { pobierzStan, useStan, ustawWagi, wybierzPersone } from '@/wynik/stan'
+import { useMetaWarstw } from '@/wynik/startKompakt'
 import type { WynikZZapasem } from './jev'
 import {
   nicNieZrozumiano,
@@ -36,6 +37,8 @@ function opisZrodla(w: WynikZZapasem<Zrozumienie>): string {
 
 export function PoleOpiszSiebie() {
   const dane = useDane()
+  // Wagi z opisu liczy się na samych meta warstw: wystarcza manifest kompaktu, pełne dane nie są potrzebne.
+  const metaKompaktu = useMetaWarstw()
   const tryb = useStan((s) => s.tryb)
   const [tekst, setTekst] = useState('')
   const [trwa, setTrwa] = useState(false)
@@ -46,11 +49,12 @@ export function PoleOpiszSiebie() {
   const idNaglowka = useId()
 
   if (tryb === 'biznes') return null
-  const gotowe = dane.stan === 'gotowe'
+  const meta = dane.stan === 'gotowe' ? dane.wskazniki.map((x) => x.meta) : metaKompaktu
+  const gotowe = meta !== null
 
   async function przelicz(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    if (dane.stan !== 'gotowe' || !tekst.trim()) return
+    if (!meta || !tekst.trim()) return
     const nr = ++numer.current
     setTrwa(true)
     const w = await opiszSiebie(tekst)
@@ -59,16 +63,11 @@ export function PoleOpiszSiebie() {
     setWynik(w)
     const s = pobierzStan()
     if (nicNieZrozumiano(w.wynik) || s.tryb === 'biznes') return
-    const nowe = wagiZeZrozumienia(
-      w.wynik,
-      s.tryb,
-      dane.wskazniki.map((x) => x.meta),
-      { wagi: s.wagi, kierunki: s.kierunki },
-    )
+    const nowe = wagiZeZrozumienia(w.wynik, s.tryb, meta, { wagi: s.wagi, kierunki: s.kierunki })
     if (nowe.persona === 'wlasna') {
       // Opis zamienia się w wagi tylko dla warstw bieżącego miasta, a profil jest wspólny dla wszystkich miast
       // na mapie (D9): wagi warstw, które ma tylko inne miasto, zostają (wagiInnychMiast.ts).
-      const idMiasta = new Set(dane.wskazniki.map((x) => x.meta.id))
+      const idMiasta = new Set(meta.map((x) => x.id))
       ustawWagi(
         { ...poza(s.wagi, idMiasta), ...nowe.wagi },
         { ...poza(s.kierunki, idMiasta), ...nowe.kierunki },

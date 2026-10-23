@@ -92,6 +92,9 @@ const menedzer = utworzMenedzerPrzegladu({
   poUstabilizowaniu: import.meta.env.DEV ? zalogujPodsumowanie : undefined,
 })
 
+/** Dostęp do wpisów przeglądu dla innych modułów (B2, #247): jedno źródło podstawy i warstw heksów. */
+export const przegladMenedzer = menedzer
+
 if (import.meta.env.DEV) {
   // Domyślny bufor Resource Timing (250 wpisów) mieści mniej plików, niż przegląd pobiera.
   performance.setResourceTimingBufferSize(2000)

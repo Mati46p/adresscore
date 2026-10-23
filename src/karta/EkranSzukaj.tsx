@@ -1,12 +1,35 @@
-import { type CSSProperties, lazy, Suspense, useRef, useState, useSyncExternalStore } from 'react'
+import {
+  type CSSProperties,
+  lazy,
+  Suspense,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react'
 import { PoleOpiszSiebie } from '@/ai/PoleOpiszSiebie'
-import { miasto as miastoZRejestru, type SlugMiasta } from '@/kontrakty'
+import {
+  type Adres,
+  bazaDanych,
+  miasto as miastoZRejestru,
+  type SlugMiasta,
+  type WskaznikMeta,
+} from '@/kontrakty'
 import { MEDIA_ARKUSZA } from '@/lib/punktyLamania'
 import { kadrZapasowyMiasta, WIDOK_MIAST } from '@/mapa/lot'
 import { type OkolicaNaMapie, okolicaNaMapie } from '@/mapa/okolica/granice'
 import { wczytajGraniceOkolic } from '@/mapa/okolica/wczytajGranice'
 import { ZOOM_PODPISU_MIASTA } from '@/mapa/tlo'
 import { pozwolNaPelneDane, useDane } from '@/wynik/dane'
+import {
+  adresyZPamieci,
+  adresZPunktu,
+  kafelPunktu,
+  przypnijAdresy,
+  useAdresKompakt,
+  useAdresyKompakt,
+  wczytajKafel,
+} from '@/wynik/kafle'
 import { useMiasto, useTylkoKrakow } from '@/wynik/miastoDanych'
 import { miejsceAdresu, miejsceOkolicy } from '@/wynik/miejsceAdresu'
 import { BIZNESY, PERSONY, TRYBY, warstwyBiznesu } from '@/wynik/persony'
@@ -25,9 +48,18 @@ import {
   usunZPorownania,
   wybierzAdres,
 } from '@/wynik/stan'
+import {
+  metaWarstw,
+  okolicaNaMapieKompaktu,
+  useOkoliceKompaktu,
+  useStartKompakt,
+  wczytajSkaleKafli,
+} from '@/wynik/startKompakt'
 import { MAKS_POROWNANIE } from '@/wynik/url'
+import { useRankingWstepny } from '@/wynik/useRankingKompakt'
 import { usePropsSasiadowMapy } from '@/wynik/useSasiedzi'
-import { useWyniki } from '@/wynik/useWyniki'
+import { useWykluczenieAdresuKompakt, useWynikAdresu, useWyniki } from '@/wynik/useWyniki'
+import { useWynikiMapy } from '@/wynik/useWynikiMapy'
 import { opisAdresu } from './adres'
 import { ArkuszDolny, type StanArkusza } from './arkusz/ArkuszDolny'
 import { Zakladki } from './arkusz/Zakladki'
@@ -57,13 +89,25 @@ import './szukaj.css'
 const chunkMapy = import('@/mapa/MapaKrakowa')
 const MapaKrakowa = lazy(async () => ({ default: (await chunkMapy).MapaKrakowa }))
 
-/** Pełne dane startują, gdy przeglądarka ma chwilę wolnego czasu (Safari bez `requestIdleCallback`: 200 ms). */
+/**
+ * Pierwszy kolor mapy otwiera bramkę tła (#250): pozostałe miasta ruszają dopiero teraz. Pełnych danych
+ * (adresy.json, wskazniki/*.json) to NIE otwiera (#247): Szukaj liczy mapę, filtry, kartę adresu i
+ * wstępny ranking z kompaktu i kafli; pełne dane otwiera zakładka Ranking, wybór celu dojazdu, ekran
+ * spoza Szukaj albo awaria mapy.
+ */
 function pozwolPoCichu() {
-  // Pierwszy kolor mapy otwiera też bramkę tła (#250): pozostałe miasta ruszają dopiero teraz.
   otworzTloPrzegladu()
-  if (typeof requestIdleCallback === 'function')
-    requestIdleCallback(pozwolNaPelneDane, { timeout: 1500 })
-  else setTimeout(pozwolNaPelneDane, 200)
+}
+
+/** Ocena adresu na aktywnej warstwie mapy z rozbicia kafla (NaN = brak danych, nigdy 0). */
+function ocenaNaWarstwie(
+  rozbicie: ReturnType<typeof useWynikAdresu>,
+  warstwa: string,
+): number | undefined {
+  if (!rozbicie) return undefined
+  const ocena =
+    warstwa === 'wynik' ? rozbicie.wynik : rozbicie.warstwy.find((w) => w.id === warstwa)?.ocena
+  return ocena ?? Number.NaN
 }
 
 // Stała, bo nowa pusta mapa przy każdym renderze wymuszałaby przemalowanie warstwy heksów.
@@ -145,50 +189,98 @@ export function EkranSzukaj() {
     setCel((c) => (c?.miasto === miasto.slug ? c : null))
   }
   const wyniki = useWyniki()
+  const pelne = dane.stan === 'gotowe'
+  // Bez pełnych danych ekran stoi na kompakcie (#247): meta warstw i słownik podpina `useStartKompakt`,
+  // heksy i wyniki mapy dają `useWynikiMapy`, adresy przychodzą z kafli na żądanie.
+  const hk = useStartKompakt(pelne)
+  const wynikiMapy = useWynikiMapy()
+  const wstepneUlice = useRankingWstepny(5)
+  const [okolicaAktywna, setOkolicaAktywna] = useState(false)
+  const okoliceKompakt = useOkoliceKompaktu(hk, okolicaAktywna || wybrany !== null)
+  const okolice = dane.stan === 'gotowe' ? dane.okolice : okoliceKompakt
+  const adresKompakt = useAdresKompakt(wybrany)
+  const adresyKompakt = useAdresyKompakt(porownanie)
+  // Kafle wybranego adresu i porównania zostają w pamięci (LRU ich nie wyrzuca).
+  useEffect(() => {
+    przypnijAdresy(wybrany === null ? porownanie : [wybrany, ...porownanie])
+  }, [wybrany, porownanie])
+  const rozbicieKompakt = useWynikAdresu(pelne ? null : wybrany)
+  const wykluczenieKompakt = useWykluczenieAdresuKompakt(pelne ? null : wybrany)
+  const numerKliku = useRef(0)
   const sasiedzi = usePropsSasiadowMapy()
   // Legenda i nagłówek ranking nazywają warstwę: miasto, które jej nie ma, nie zna jej nazwy, więc bierzemy
   // ją z przeglądu (zna ją każde miasto, które warstwę ma).
-  const brakWarstwy = wyniki?.brakWarstwy === true
-  const podpis = wyniki && !brakWarstwy ? wyniki.podpis : przeglad.podpis
-  const adres = dane.stan === 'gotowe' && wybrany !== null ? dane.adresy[wybrany] : undefined
-  const wybraneAdresy =
+  const wynikiWidoku: { brakWarstwy: boolean; podpis: string } | null = wyniki ?? wynikiMapy
+  const brakWarstwy = wynikiWidoku?.brakWarstwy === true
+  const podpis = wynikiWidoku && !brakWarstwy ? wynikiWidoku.podpis : przeglad.podpis
+  const adres: Adres | undefined =
+    dane.stan === 'gotowe'
+      ? wybrany !== null
+        ? dane.adresy[wybrany]
+        : undefined
+      : (adresKompakt ?? undefined)
+  const wybraneAdresy: Adres[] =
     dane.stan === 'gotowe'
       ? porownanie.flatMap((i) => {
           const wybranyAdres = dane.adresy[i]
           return wybranyAdres ? [wybranyAdres] : []
         })
-      : []
-  const wynikWybranego = adres && wyniki ? wyniki.naAdres[adres.i] : undefined
+      : adresyKompakt
+  const wynikWybranego =
+    pelne && adres && wyniki
+      ? wyniki.naAdres[adres.i]
+      : pelne
+        ? undefined
+        : ocenaNaWarstwie(rozbicieKompakt, warstwa)
+  const wykluczony = pelne
+    ? Boolean(adres && wyniki?.wykluczenia.wykluczony[adres.i])
+    : wykluczenieKompakt.wykluczony
+  const niewiadomy = pelne
+    ? Boolean(adres && wyniki?.wykluczenia.niewiadomy[adres.i])
+    : wykluczenieKompakt.niewiadomy
+  const wczytujeMiasto = dane.stan === 'ladowanie' && hk.stan !== 'gotowe'
   const ogloszenieOkolicy = okolica
     ? `Wybrano okolicę ${okolica.miejsce.nazwa}. ${okolica.miejsce.opis ?? ''}`.trim()
     : komunikatOkolicy
   // Okolica wybranego adresu: jednostka SIM albo miejscowość z okolice.json, bez pliku dzielnica albo gmina.
-  const miejsceWybranego =
-    adres && dane.stan === 'gotowe' ? miejsceAdresu(adres, adres.i, dane.okolice) : null
+  const miejsceWybranego = adres ? miejsceAdresu(adres, adres.i, okolice) : null
   // Przełącznik pokazuje tylko warstwy, które coś oceniają. Liczy się kierunek efektywny:
   // warstwa neutralna z kierunkiem nadanym przez personę wchodzi do wyniku, więc ma przycisk.
-  const warstwy =
+  // Lista warstw jest z pełnych danych, a bez nich z manifestu kompaktu (ta sama kolejność i meta).
+  const wskaznikiPaska: readonly { meta: WskaznikMeta }[] =
     dane.stan === 'gotowe'
-      ? dane.wskazniki.filter(
-          (w) =>
-            kierunekEfektywny(w.meta, kierunki) !== null &&
-            (tryb !== 'biznes' ||
-              warstwyBiznesu(biznes).some((id) => id === w.meta.id && !w.meta.atrapa)),
-        )
-      : []
+      ? dane.wskazniki
+      : hk.stan === 'gotowe'
+        ? metaWarstw(hk.manifest).map((meta) => ({ meta }))
+        : []
+  const warstwy = wskaznikiPaska.filter(
+    (w) =>
+      kierunekEfektywny(w.meta, kierunki) !== null &&
+      (tryb !== 'biznes' ||
+        warstwyBiznesu(biznes).some((id) => id === w.meta.id && !w.meta.atrapa)),
+  )
 
   // Wybór okolicy z podpowiedzi. Granice jednostek SIM ładują się przy pierwszym fokusie w polu (albo tu,
   // gdy ktoś wybrał szybciej); miejscowość granic nie potrzebuje. Nowszy wybór wyprzedza starszy, który
   // jeszcze czeka na plik.
   async function wybierzOkolice(wynik: WynikOkolicy) {
-    if (dane.stan !== 'gotowe' || !dane.okolice) return
+    if (!okolice) return
     const numer = ++wyborOkolicy.current
     setKomunikatOkolicy('Wczytuję granice okolicy…')
     const granice = wynik.rodzaj === 'sim' ? await wczytajGraniceOkolic() : null
     // Miasto mogło się zmienić, zanim przyszedł plik granic: okolica z poprzedniego miasta nie wróci na ekran.
     if (numer !== wyborOkolicy.current || pobierzStan().miasto !== miasto.slug) return
-    const naMapie = okolicaNaMapie(wynik.id, granice, dane.adresy, dane.okolice)
-    const miejsce = miejsceOkolicy(dane.okolice, wynik.id)
+    // Bez adresów w pamięci ramkę miejscowości daje kompakt (`okolice.<skrót>.json`), nie adresy.
+    const naMapie =
+      dane.stan === 'gotowe'
+        ? okolicaNaMapie(wynik.id, granice, dane.adresy, okolice)
+        : hk.stan === 'gotowe'
+          ? await okolicaNaMapieKompaktu(hk.miasto, hk.indeks, wynik.id, granice, okolice).catch(
+              () => null,
+            )
+          : null
+    if (numer !== wyborOkolicy.current || pobierzStan().miasto !== miasto.slug) return
+    const miejsce = miejsceOkolicy(okolice, wynik.id)
     if (!naMapie || !miejsce) {
       setOkolica(null)
       setCel(null)
@@ -236,6 +328,9 @@ export function EkranSzukaj() {
     opcje: { lot: boolean; klik?: { lon: number; lat: number } },
   ) {
     if (slug !== miasto.slug) {
+      // Klik w heks innego miasta wybiera po wczytaniu jego danych adres z tego heksu (`oczekujacyKlik` w stanie),
+      // a ten wybór potrzebuje wszystkich adresów miasta: tylko wtedy otwieramy bramkę pełnych danych.
+      if (opcje.klik) pozwolNaPelneDane()
       const czyscimy = { adres: wybrany !== null, porownanie: porownanie.length > 0 }
       ustawMiasto(slug, opcje.klik ? { klik: opcje.klik } : undefined)
       zamknijSasiadow()
@@ -246,6 +341,63 @@ export function EkranSzukaj() {
     if (opcje.lot) {
       const granice = przeglad.miasta.find((m) => m.slug === slug)?.granice ?? null
       setCel({ miasto: slug, naMapie: lotDoMiasta(slug, granice) })
+    }
+  }
+
+  /** Skutek kliku w heks bieżącego miasta, gdy znamy już adres z tego heksu (z pełnych danych albo z kafla). */
+  function zastosujKlik(kandydat: { h3: string; adres: Adres | null }) {
+    if (!kandydat.adres) {
+      setKomunikatHeksow('W tym heksie nie ma adresu. Wybierz inny heks.')
+      return
+    }
+    // Stan z chwili wykonania (kafel mógł przyjść po kilku klikach): porównanie czytamy na świeżo.
+    const porownanieTeraz = pobierzStan().porownanie
+    const wybraneTeraz =
+      dane.stan === 'gotowe'
+        ? porownanieTeraz.flatMap((i) => {
+            const a = dane.adresy[i]
+            return a ? [a] : []
+          })
+        : adresyZPamieci(porownanieTeraz)
+    const juzWybrany = wybraneTeraz.find((a) => a.h3 === kandydat.h3)
+    wybierzAdres(juzWybrany?.i ?? kandydat.adres.i)
+    // Arkusz pokazuje adres od razu; fokus zostaje, ogłoszenie idzie przez regiony status.
+    if (jestArkusz) setStanArkusza('polowa')
+    if (juzWybrany) {
+      usunZPorownania(juzWybrany.i)
+      setKomunikatHeksow('Usunięto heks z porównania.')
+      return
+    }
+    if (porownanieTeraz.length >= MAKS_POROWNANIE) {
+      setKomunikatHeksow('Możesz porównać maksymalnie 5 heksów. Usuń jeden z listy.')
+      return
+    }
+    dodajDoPorownania(kandydat.adres.i)
+    setKomunikatHeksow('Dodano heks do porównania.')
+  }
+
+  /**
+   * Klik w heks bez pełnych danych (#247): kafel punktu z kompaktu, z niego adres z klikniętego heksu.
+   * Kafel ma ~70 KB, więc klik odpowiada po jego pobraniu; nowszy klik wyprzedza starszy, który czeka.
+   */
+  async function klikBezPelnychDanych(lon: number, lat: number) {
+    if (hk.stan !== 'gotowe') return
+    const numer = ++numerKliku.current
+    const wpis = kafelPunktu(hk.indeks, lon, lat)
+    if (!wpis) {
+      setKomunikatHeksow('W tym heksie nie ma adresu. Wybierz inny heks.')
+      return
+    }
+    try {
+      const skale = await wczytajSkaleKafli(hk.miasto, hk.indeks)
+      const kafel = await wczytajKafel(bazaDanych(hk.miasto), wpis, skale)
+      if (numer !== numerKliku.current || pobierzStan().miasto !== hk.miasto) return
+      zastosujKlik(adresZPunktu(kafel, lon, lat))
+    } catch (e) {
+      console.warn('Kafel adresów niedostępny', e)
+      if (numer === numerKliku.current) {
+        setKomunikatHeksow('Nie udało się wczytać adresów tego heksu. Spróbuj jeszcze raz.')
+      }
     }
   }
 
@@ -291,7 +443,10 @@ export function EkranSzukaj() {
           wyniki.heksy,
           dane.okolice,
         ).length
-      : 0
+      : // Do dojścia pełnych danych licznik zakładki idzie ze wstępnego rankingu z heksów (bez kafli).
+        !pelne && !brakWarstwy
+        ? (wstepneUlice?.length ?? 0)
+        : 0
   const tytul =
     tryb === 'biznes'
       ? `Znajdź miejsce na działalność: ${BIZNESY.find((b) => b.id === biznes)?.nazwa ?? 'biznes'}`
@@ -303,10 +458,8 @@ export function EkranSzukaj() {
         wynikWybranego === undefined || Number.isNaN(wynikWybranego)
           ? 'brak danych'
           : `${podpis}: ${Math.round(wynikWybranego)}`,
-        wyniki?.wykluczenia.wykluczony[adres.i] ? 'wykluczony filtrem' : null,
-        wyniki?.wykluczenia.niewiadomy[adres.i]
-          ? 'nie wiemy, czy spełnia filtr (brak danych)'
-          : null,
+        wykluczony ? 'wykluczony filtrem' : null,
+        niewiadomy ? 'nie wiemy, czy spełnia filtr (brak danych)' : null,
       ]
         .filter((c) => c !== null)
         .join(' · ')
@@ -315,17 +468,26 @@ export function EkranSzukaj() {
   // Pole nazwy okolicy z komunikatami: w arkuszu stoi w nagłówku (widoczne także po zwinięciu), na desktopie nad zakładkami.
   const poleOkolicy = (
     <div className="szukaj-wyszukaj" data-sekcja="wyszukiwarka">
-      {dane.stan === 'gotowe' && dane.okolice ? (
+      {(dane.stan === 'gotowe' && dane.okolice) ||
+      (dane.stan !== 'gotowe' && hk.stan === 'gotowe' && !wInnymMiescie) ? (
         // Pole szuka okolic, nie adresów: na Szukaj oglądamy mapę (decyzja właściciela, commit 80c7aad),
         // a adresy są w Katalogu adresów. Włączenie adresów to prop `adresy` + `onWybierz`.
+        // Bez pełnych danych `okolice.json` (nazwy okolic) pobiera dopiero fokus w polu, jak granice.
         <Wyszukiwarka
-          okolice={dane.okolice}
+          okolice={okolice}
           onWybierzOkolice={(w) => void wybierzOkolice(w)}
-          onFokus={() => void wczytajGraniceOkolic()}
+          onFokus={() => {
+            setOkolicaAktywna(true)
+            void wczytajGraniceOkolic()
+          }}
           etykieta="Nazwa okolicy"
           placeholder="np. Ruczaj, Rakowice, Kurdwanów"
           mierz
         />
+      ) : dane.stan !== 'gotowe' && hk.stan === 'gotowe' && wInnymMiescie ? (
+        <p className="szukaj-okolica-komunikat">
+          Wyszukiwanie okolic na razie tylko w Krakowie. Kliknij mapę, żeby wybrać adres.
+        </p>
       ) : dane.stan === 'ladowanie' ? (
         <p className="etykieta-sekcji">{wInnymMiescie ? 'Wczytuję dane…' : 'Wczytuję okolice…'}</p>
       ) : dane.stan === 'gotowe' && wInnymMiescie ? (
@@ -334,6 +496,9 @@ export function EkranSzukaj() {
           Wyszukiwanie okolic na razie tylko w Krakowie. Kliknij mapę, żeby wybrać adres.
         </p>
       ) : null}
+      {okolicaAktywna && !okolice && dane.stan !== 'gotowe' && hk.stan === 'gotowe' && (
+        <p className="szukaj-okolica-komunikat">Wczytuję okolice…</p>
+      )}
       {komunikatOkolicy && <p className="szukaj-okolica-komunikat">{komunikatOkolicy}</p>}
       {okolica && <PasekOkolicy okolica={okolica} onZamknij={wyczyscOkolice} />}
       {/* Stały region: czytnik ogłasza zmianę tekstu, a nie samo pojawienie się paska z treścią. */}
@@ -351,7 +516,7 @@ export function EkranSzukaj() {
       <PanelDojazdu />
       <WyborMiasta
         biezace={miasto.slug}
-        wczytywane={dane.stan === 'ladowanie' ? miasto.nazwa : null}
+        wczytywane={wczytujeMiasto ? miasto.nazwa : null}
         niedostepne={przeglad.miasta
           .filter((m) => m.stan === 'brak')
           .map((m) => miastoZRejestru(m.slug).nazwa)}
@@ -453,8 +618,8 @@ export function EkranSzukaj() {
       nazwa={`${adres.ulica ?? adres.miejscowosc} ${adres.nr}`}
       wariant={jestArkusz ? 'arkusz' : 'mapa'}
       miejsce={miejsceWybranego}
-      wykluczony={Boolean(wyniki?.wykluczenia.wykluczony[adres.i])}
-      niewiadomy={Boolean(wyniki?.wykluczenia.niewiadomy[adres.i])}
+      wykluczony={wykluczony}
+      niewiadomy={niewiadomy}
       wPorownaniu={wPorownaniu}
       limitPorownania={porownanie.length >= MAKS_POROWNANIE}
       onPorownanie={() => (wPorownaniu ? usunZPorownania(adres.i) : dodajDoPorownania(adres.i))}
@@ -523,13 +688,15 @@ export function EkranSzukaj() {
           >
             <MapaKrakowa
               onPierwszyKolor={pozwolPoCichu}
-              heksy={wyniki?.heksy ?? przeglad.biezaceR10 ?? BRAK_HEKSOW}
+              // Awaria mapy (WebGL, styl) jest jedynym zapasem czasowym: wtedy otwieramy pełne dane (#247).
+              onAwaria={pozwolNaPelneDane}
+              heksy={wyniki?.heksy ?? wynikiMapy?.heksy ?? przeglad.biezaceR10 ?? BRAK_HEKSOW}
               podpisWarstwy={podpis}
               // Tło: pozostałe miasta pod mgłą. Obecność propa (także z pustymi mapami, zanim przeglądy
               // dojdą) znaczy „mapa wszystkich miast”: zmienia podpis mgły i legendę.
               tlo={przeglad.tlo}
               miasto={miasto.slug}
-              wykluczone={wyniki?.wykluczoneHeksy}
+              wykluczone={wyniki?.wykluczoneHeksy ?? wynikiMapy?.wykluczoneHeksy}
               sasiedzi={sasiedzi}
               okolica={cel?.naMapie ?? null}
               wybrany={adres ? { lon: adres.lon, lat: adres.lat } : null}
@@ -547,27 +714,11 @@ export function EkranSzukaj() {
                   })
                   return
                 }
-                if (dane.stan !== 'gotowe') return
-                const kandydat = adresWKliknietymHeksie(dane.adresy, lon, lat)
-                if (!kandydat.adres) {
-                  setKomunikatHeksow('W tym heksie nie ma adresu. Wybierz inny heks.')
+                if (dane.stan === 'gotowe') {
+                  zastosujKlik(adresWKliknietymHeksie(dane.adresy, lon, lat))
                   return
                 }
-                const juzWybrany = wybraneAdresy.find((a) => a.h3 === kandydat.h3)
-                wybierzAdres(juzWybrany?.i ?? kandydat.adres.i)
-                // Arkusz pokazuje adres od razu; fokus zostaje, ogłoszenie idzie przez regiony status.
-                if (jestArkusz) setStanArkusza('polowa')
-                if (juzWybrany) {
-                  usunZPorownania(juzWybrany.i)
-                  setKomunikatHeksow('Usunięto heks z porównania.')
-                  return
-                }
-                if (porownanie.length >= MAKS_POROWNANIE) {
-                  setKomunikatHeksow('Możesz porównać maksymalnie 5 heksów. Usuń jeden z listy.')
-                  return
-                }
-                dodajDoPorownania(kandydat.adres.i)
-                setKomunikatHeksow('Dodano heks do porównania.')
+                void klikBezPelnychDanych(lon, lat)
               }}
             />
           </Suspense>

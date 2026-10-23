@@ -10,6 +10,7 @@ import {
   wykluczoneHeksy,
 } from './filtry.ts'
 import { zakryjBrakiHeksow } from './heksy.ts'
+import { pozycjaWKaflu, useKafelAdresu } from './kafle.ts'
 import {
   type Kierunki,
   mapaHeksow,
@@ -116,11 +117,41 @@ export function useWyniki(): Wyniki | null {
   return dane.stan === 'gotowe' ? policzWyniki(dane, wagi, kierunki, warstwa, razem) : null
 }
 
-/** Pełne rozbicie jednego adresu dla karty okolicy i porównania. */
+/**
+ * Pełne rozbicie jednego adresu dla karty okolicy i porównania. Bez pełnych danych (Szukaj na kompakcie)
+ * liczy z kafla adresu: te same funkcje silnika, tylko na wartościach kafla, więc wynik ma ten sam kształt.
+ * null do czasu, aż kafel adresu będzie w pamięci.
+ */
 export function useWynikAdresu(i: number | null): WynikAdresu | null {
   const dane = useDane()
   const wagi = useStan((s) => s.wagi)
   const kierunki = useStan((s) => s.kierunki)
-  if (dane.stan !== 'gotowe' || i === null) return null
-  return wynikAdresu(i, dane.wskazniki, wagi, kierunki)
+  const kafel = useKafelAdresu(i)
+  if (i === null) return null
+  if (dane.stan === 'gotowe') return wynikAdresu(i, dane.wskazniki, wagi, kierunki)
+  if (!kafel) return null
+  const j = pozycjaWKaflu(kafel, i)
+  return j < 0 ? null : wynikAdresu(j, kafel.wskazniki, wagi, kierunki)
+}
+
+const BRAK_WYKLUCZENIA = { wykluczony: false, niewiadomy: false } as const
+
+/**
+ * Czy twarde filtry wykluczają adres `i` albo nie da się ich sprawdzić (brak danych), policzone na
+ * kaflu adresu – bez pełnych danych. Te same filtry i ta sama funkcja co w `policzWyniki`.
+ */
+export function useWykluczenieAdresuKompakt(i: number | null): {
+  wykluczony: boolean
+  niewiadomy: boolean
+} {
+  const kafel = useKafelAdresu(i)
+  const filtry = useStan((s) => s.filtry)
+  const budzet = useStan((s) => s.budzet)
+  const tryb = useStan((s) => s.tryb)
+  if (i === null || !kafel) return BRAK_WYKLUCZENIA
+  const j = pozycjaWKaflu(kafel, i)
+  if (j < 0) return BRAK_WYKLUCZENIA
+  const razem = tryb === 'biznes' ? filtry : filtryZBudzetem(filtry, budzet)
+  const w = policzWykluczenia(kafel.wskazniki, razem, kafel.adresy.length)
+  return { wykluczony: w.wykluczony[j] === 1, niewiadomy: w.niewiadomy[j] === 1 }
 }
