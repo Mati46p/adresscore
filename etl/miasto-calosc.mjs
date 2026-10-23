@@ -55,6 +55,8 @@ export const KROKI = [
   { nazwa: 'osm-uslugi', skrypt: 'osm-uslugi.mjs' },
   { nazwa: 'osm-uzupelnienie', skrypt: 'osm-uzupelnienie.mjs' },
   { nazwa: 'uslugi', skrypt: 'uslugi.mjs' },
+  { nazwa: 'wies-osm', skrypt: 'wies-osm.mjs', warunek: 'wiejska' }, // policja, sport, liceum, woda (tylko gminy wiejskie)
+  { nazwa: 'stacje-bazowe', skrypt: 'stacje-bazowe.mjs' },
   { nazwa: 'gtfs-przystanki', skrypt: 'gtfs-przystanki.mjs' },
   { nazwa: 'dojazd-gtfs', skrypt: 'dojazd-gtfs.mjs', arg: 'rynek' },
   { nazwa: 'dojazd-gtfs-graf', skrypt: 'dojazd-gtfs-graf.mjs' },
@@ -152,7 +154,8 @@ async function sewik(slug) {
 }
 
 /** Krok uprosc-kryteria działa w trybie miasta dopiero po merge #232; wcześniej jest pomijany (nie psuje danych). */
-function warunekSpelniony(krok) {
+function warunekSpelniony(krok, slug) {
+  if (krok.warunek === 'wiejska') return Boolean(USTAWIENIA[slug]?.wiejska)
   if (krok.warunek !== 'tryb-miasta') return true
   return readFileSync(join(KORZEN, 'etl', krok.skrypt), 'utf8').includes('MIASTO')
 }
@@ -185,9 +188,9 @@ async function main() {
 === [${slug}] ${krok.nazwa}: pominięty (--pomin) ===`)
       continue
     }
-    if (!warunekSpelniony(krok)) {
+    if (!warunekSpelniony(krok, slug)) {
       console.log(
-        `\n=== [${slug}] ${krok.nazwa}: pominięty (skrypt bez trybu miasta, czeka na #232) ===`,
+        `\n=== [${slug}] ${krok.nazwa}: pominięty (${krok.warunek === 'wiejska' ? 'tylko gminy wiejskie' : 'skrypt bez trybu miasta, czeka na #232'}) ===`,
       )
       continue
     }

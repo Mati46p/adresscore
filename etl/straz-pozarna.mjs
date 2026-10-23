@@ -69,7 +69,7 @@ async function wczytajPunkty(pbf, data) {
   ).getRowObjectsJson()
   c.closeSync()
   const punkty = punktyZObiektow(obiekty, wezly)
-  if (punkty.length < (MIASTO_INFO ? 1 : 20))
+  if (punkty.length < (MIASTO_INFO?.wiejska ? 1 : 20))
     throw new Error(`Za mało jednostek straży pożarnej: ${punkty.length}`)
   writeFileSync(cache, JSON.stringify(punkty))
   return punkty
