@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Makieta – arkusz mobile i desktop (#248)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Tokeny z src/styles.css + nowe z planu 004 (P0). Wartości 1:1 do przeniesienia. */
+:root {
+  --tlo: #f5f6f3; --powierzchnia: #fff; --powierzchnia-2: #fafbf9;
+  --tekst: #18202b; --tekst-2: #3d4652; --tekst-3: #5b6470;
+  --ramka: #dde1e4; --ramka-pola: #8a939b; --linia: #eef0f1;
+  --akcent: #1f5c46; --akcent-hover: #163f31; --akcent-jasny: #e3efe8; --akcent-obrys: #8bc0a3;
+  --brak-danych: #a9afb4;
+  --font: "IBM Plex Sans", system-ui, sans-serif; --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --odstep-1: 4px; --odstep-2: 8px; --odstep-3: 12px; --odstep-4: 16px; --odstep-5: 20px; --odstep-6: 24px; --odstep-7: 32px; --odstep-8: 48px;
+  --rozmiar-xs: 12px; --rozmiar-s: 13px; --rozmiar-m: 15px; --rozmiar-l: 17px; --rozmiar-xl: 20px; --rozmiar-xxl: 26px;
+  --promien-s: 6px; --promien: 12px; --promien-l: 16px; --promien-pelny: 999px;
+  --cien-1: 0 2px 8px rgb(24 32 43 / 0.10); --cien-2: 0 6px 20px rgb(24 32 43 / 0.12); --cien-arkusz: 0 -8px 24px rgb(24 32 43 / 0.14);
+  --cel-dotyku: 44px; --wys-naglowka: 56px;
+}
+* { box-sizing: border-box; }
+body { margin: 0; font-family: var(--font); color: var(--tekst); background: #d9ddd8; }
+h1.tytul { font-size: var(--rozmiar-xxl); margin: var(--odstep-7) var(--odstep-6) var(--odstep-2); }
+p.opis { margin: 0 var(--odstep-6) var(--odstep-6); color: var(--tekst-2); max-width: 900px; line-height: 1.45; }
+.rzad { display: flex; flex-wrap: wrap; gap: var(--odstep-7); padding: 0 var(--odstep-6) var(--odstep-7); align-items: flex-start; }
+.podpis-ramy { font-size: var(--rozmiar-s); color: var(--tekst-2); margin: var(--odstep-2) 0 0; max-width: 390px; line-height: 1.4; }
+.podpis-ramy b { color: var(--tekst); }
+
+/* ---------- Telefon ---------- */
+.telefon { width: 390px; height: 844px; border-radius: 28px; overflow: hidden; position: relative; background: var(--tlo); box-shadow: 0 20px 50px rgb(0 0 0 / .25); }
+.mapa { position: absolute; inset: 0; background:
+  radial-gradient(circle at 45% 42%, rgb(31 92 70 / .55) 0 70px, transparent 140px),
+  radial-gradient(circle at 62% 55%, rgb(178 94 18 / .35) 0 40px, transparent 100px),
+  radial-gradient(circle at 30% 60%, rgb(31 92 70 / .35) 0 50px, transparent 120px),
+  linear-gradient(#e7ebe4, #e2e6df); }
+.mapa::before { content: ""; position: absolute; inset: 0; opacity: .5; background-image:
+  linear-gradient(30deg, transparent 47%, #fff 48% 52%, transparent 53%),
+  linear-gradient(-30deg, transparent 47%, #fff 48% 52%, transparent 53%);
+  background-size: 22px 38px; mix-blend-mode: soft-light; }
+.rzeka { position: absolute; left: -10%; top: 48%; width: 120%; height: 14px; background: #b9d3df; transform: rotate(-8deg); border-radius: 8px; opacity: .9; }
+.znacznik { position: absolute; width: 22px; height: 22px; border-radius: 50%; background: var(--akcent); border: 3px solid #fff; box-shadow: var(--cien-1); transform: translate(-50%, -50%); }
+
+/* Nagłówek mobile: 56 px, logo + miasto + menu */
+.nag-m { position: absolute; top: 0; left: 0; right: 0; height: var(--wys-naglowka); display: flex; align-items: center; gap: var(--odstep-2); padding: 0 var(--odstep-3) 0 var(--odstep-4); background: rgb(255 255 255 / .94); backdrop-filter: blur(8px); border-bottom: 1px solid var(--linia); z-index: 30; }
+.logo { display: flex; align-items: center; gap: var(--odstep-2); font-weight: 700; font-size: var(--rozmiar-m); }
+.logo i { width: 22px; height: 22px; display: inline-block; background: var(--akcent); clip-path: polygon(25% 5%, 75% 5%, 100% 50%, 75% 95%, 25% 95%, 0 50%); }
+.chip-miasta { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 var(--odstep-3); border-radius: var(--promien-pelny); background: var(--akcent-jasny); color: var(--akcent); font-size: var(--rozmiar-s); font-weight: 600; border: 0; }
+.chip-miasta::after { content: ""; width: 8px; height: 8px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg) translateY(-2px); }
+.ikona-btn { width: var(--cel-dotyku); height: var(--cel-dotyku); border-radius: var(--promien-pelny); border: 1px solid var(--ramka); background: var(--powierzchnia); display: grid; place-items: center; margin-left: auto; }
+.burger { width: 18px; height: 2px; background: var(--tekst); box-shadow: 0 -6px 0 var(--tekst), 0 6px 0 var(--tekst); }
+
+/* Pasek warstw na mapie */
+.warstwy-m { position: absolute; top: calc(var(--wys-naglowka) + var(--odstep-2)); left: var(--odstep-3); right: var(--odstep-3); display: flex; gap: var(--odstep-2); z-index: 5; overflow: hidden; }
+.pigulka { height: var(--cel-dotyku); padding: 0 var(--odstep-4); border-radius: var(--promien-pelny); border: 1px solid var(--ramka); background: var(--powierzchnia); box-shadow: var(--cien-1); font: 500 var(--rozmiar-s)/1 var(--font); display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; color: var(--tekst); }
+.pigulka[aria-pressed="true"] { background: var(--akcent); color: #fff; border-color: var(--akcent); }
+.pigulka .strz { width: 7px; height: 7px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg) translateY(-2px); }
+
+/* Legenda zwinięta: sam pasek 0–100 nad arkuszem */
+.legenda-m { position: absolute; left: var(--odstep-3); z-index: 5; background: rgb(255 255 255 / .94); border-radius: var(--promien-s); padding: 6px var(--odstep-2); box-shadow: var(--cien-1); font: 500 11px var(--font-mono); color: var(--tekst-2); display: flex; align-items: center; gap: 6px; }
+.legenda-m .pasek { width: 96px; height: 8px; border-radius: 4px; background: linear-gradient(90deg, #d39a62, #efe6c9, #4f9a78); }
+.legenda-m .brak { width: 12px; height: 12px; border-radius: 2px; background: repeating-linear-gradient(45deg, var(--brak-danych) 0 2px, #fff 2px 4px); }
+
+/* Pływający pasek porównania nad arkuszem */
+.porownaj-m { position: absolute; right: var(--odstep-3); z-index: 6; height: var(--cel-dotyku); padding: 0 var(--odstep-2) 0 var(--odstep-4); border-radius: var(--promien-pelny); background: var(--tekst); color: #fff; display: flex; align-items: center; gap: var(--odstep-3); font-size: var(--rozmiar-s); box-shadow: var(--cien-2); }
+.porownaj-m b { font-family: var(--font-mono); }
+.porownaj-m span.akcja { background: #fff; color: var(--tekst); height: 32px; padding: 0 var(--odstep-3); border-radius: var(--promien-pelny); display: inline-flex; align-items: center; font-weight: 600; }
+
+/* ---------- Arkusz ---------- */
+.arkusz { position: absolute; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--powierzchnia); border-radius: var(--promien-l) var(--promien-l) 0 0; box-shadow: var(--cien-arkusz); display: flex; flex-direction: column; }
+.uchwyt { height: 28px; border: 0; background: none; width: 100%; display: grid; place-items: center; flex: none; }
+.uchwyt::before { content: ""; width: 40px; height: 5px; border-radius: 3px; background: var(--ramka-pola); }
+.arkusz-tresc { padding: 0 var(--odstep-4) calc(var(--odstep-4) + 20px); overflow: hidden; flex: 1; }
+.podsumowanie { display: flex; align-items: center; gap: var(--odstep-2); font-size: var(--rozmiar-s); color: var(--tekst-2); margin-bottom: var(--odstep-3); min-height: 20px; }
+.podsumowanie b { color: var(--tekst); font-weight: 600; }
+.kropka { width: 4px; height: 4px; border-radius: 50%; background: var(--tekst-3); }
+.pole { height: 48px; border: 1px solid var(--ramka-pola); border-radius: var(--promien); display: flex; align-items: center; gap: var(--odstep-2); padding: 0 var(--odstep-4); color: var(--tekst-3); font-size: var(--rozmiar-m); background: var(--powierzchnia); }
+.pole::before { content: ""; width: 14px; height: 14px; border: 2px solid var(--tekst-3); border-radius: 50%; box-shadow: 5px 5px 0 -3px var(--tekst-3); flex: none; }
+
+/* Karta wybranego adresu w arkuszu */
+.adres-gora { display: flex; gap: var(--odstep-3); align-items: center; }
+.plakietka { width: 56px; height: 56px; border-radius: var(--promien); background: var(--akcent); color: #fff; display: grid; place-items: center; font: 600 var(--rozmiar-xxl)/1 var(--font-mono); flex: none; }
+.adres-nazwa { font-size: var(--rozmiar-l); font-weight: 600; line-height: 1.25; }
+.adres-pod { font-size: var(--rozmiar-s); color: var(--tekst-3); margin-top: 2px; }
+.czynniki { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--odstep-2); margin: var(--odstep-4) 0; }
+.czynnik { border: 1px solid var(--linia); border-radius: var(--promien); padding: var(--odstep-2) var(--odstep-3); font-size: var(--rozmiar-s); line-height: 1.35; }
+.czynnik small { display: block; font-size: var(--rozmiar-xs); color: var(--tekst-3); text-transform: uppercase; letter-spacing: .04em; font-weight: 600; margin-bottom: 2px; }
+.czynnik .plus { color: var(--akcent); font-weight: 600; } .czynnik .minus { color: #9a4d0e; font-weight: 600; }
+.akcje { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--odstep-2); }
+.btn { height: 48px; border-radius: var(--promien); border: 1px solid var(--ramka-pola); background: var(--powierzchnia); font: 600 var(--rozmiar-m) var(--font); color: var(--tekst); padding: 0 var(--odstep-4); }
+.btn.glowny { background: var(--akcent); color: #fff; border-color: var(--akcent); }
+
+/* Zakładki */
+.zakladki { display: grid; grid-template-columns: 1fr 1fr; background: var(--tlo); border-radius: var(--promien); padding: 4px; margin-bottom: var(--odstep-4); }
+.zakladki button { height: 40px; border: 0; border-radius: 9px; background: none; font: 600 var(--rozmiar-s) var(--font); color: var(--tekst-2); }
+.zakladki button[aria-selected="true"] { background: var(--powierzchnia); color: var(--tekst); box-shadow: var(--cien-1); }
+.etyk { font-size: var(--rozmiar-xs); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--tekst-3); margin: var(--odstep-4) 0 var(--odstep-2); }
+.wybor { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--odstep-2); }
+.opcja { border: 1px solid var(--ramka-pola); border-radius: var(--promien); padding: var(--odstep-3); min-height: 64px; font-size: var(--rozmiar-xs); color: var(--tekst-3); }
+.opcja b { display: block; font-size: var(--rozmiar-m); color: var(--tekst); margin-bottom: 2px; }
+.opcja[aria-pressed="true"] { border: 2px solid var(--akcent); background: var(--akcent-jasny); }
+.suwak { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--odstep-3); min-height: var(--cel-dotyku); font-size: var(--rozmiar-m); border-bottom: 1px solid var(--linia); }
+.suwak .wartosc { display: flex; gap: 4px; }
+.suwak .wartosc i { width: 10px; height: 18px; border-radius: 3px; background: var(--ramka); }
+.suwak .wartosc i.on { background: var(--akcent); }
+.wiersz-r { display: grid; grid-template-columns: auto minmax(0, 1fr) var(--cel-dotyku); gap: var(--odstep-3); align-items: center; min-height: 60px; border-bottom: 1px solid var(--linia); }
+.wiersz-r .pl { width: 40px; height: 40px; border-radius: 10px; background: var(--akcent); color: #fff; display: grid; place-items: center; font: 600 var(--rozmiar-m) var(--font-mono); }
+.wiersz-r .pl.s { background: #5d8f6f; } .wiersz-r .pl.n { background: #9bb79c; }
+.wiersz-r .t { font-size: var(--rozmiar-m); font-weight: 600; } .wiersz-r .t small { display: block; font-weight: 400; color: var(--tekst-3); font-size: var(--rozmiar-s); }
+.plus-btn { width: var(--cel-dotyku); height: var(--cel-dotyku); border-radius: 50%; border: 1px solid var(--ramka-pola); background: var(--powierzchnia); position: relative; }
+.plus-btn::before, .plus-btn::after { content: ""; position: absolute; left: 50%; top: 50%; width: 14px; height: 2px; background: var(--tekst); transform: translate(-50%, -50%); }
+.plus-btn::after { transform: translate(-50%, -50%) rotate(90deg); }
+
+/* ---------- Desktop ---------- */
+.desktop { width: 1280px; height: 760px; border-radius: 14px; overflow: hidden; background: var(--tlo); box-shadow: 0 20px 50px rgb(0 0 0 / .25); display: grid; grid-template-rows: 28px var(--wys-naglowka) minmax(0, 1fr); }
+.partnerzy { background: var(--powierzchnia-2); border-bottom: 1px solid var(--linia); font-size: 11px; color: var(--tekst-3); display: flex; align-items: center; gap: var(--odstep-4); padding: 0 var(--odstep-6); }
+.partnerzy b { font-weight: 600; letter-spacing: .06em; text-transform: uppercase; font-size: 10px; }
+.nag-d { background: var(--powierzchnia); border-bottom: 1px solid var(--linia); display: flex; align-items: center; gap: var(--odstep-4); padding: 0 var(--odstep-6); }
+.kroki { display: flex; gap: 2px; margin-left: var(--odstep-6); }
+.kroki a { height: 36px; padding: 0 var(--odstep-3); border-radius: var(--promien-pelny); display: inline-flex; align-items: center; font-size: var(--rozmiar-s); font-weight: 500; color: var(--tekst-2); text-decoration: none; }
+.kroki a[aria-current] { background: var(--akcent); color: #fff; }
+.tryby { margin-left: auto; display: flex; border: 1px solid var(--ramka); border-radius: var(--promien-pelny); padding: 2px; }
+.tryby a { height: 32px; padding: 0 var(--odstep-3); display: inline-flex; align-items: center; font-size: var(--rozmiar-s); color: var(--tekst-2); text-decoration: none; border-radius: var(--promien-pelny); }
+.link-d { font-size: var(--rozmiar-s); color: var(--akcent); font-weight: 600; text-decoration: none; }
+.uklad-d { display: grid; grid-template-columns: 400px minmax(0, 1fr); min-height: 0; }
+.panel-d { background: var(--powierzchnia); border-right: 1px solid var(--linia); overflow: hidden; padding: var(--odstep-6) var(--odstep-6) 0; display: flex; flex-direction: column; min-height: 0; }
+.panel-d h1 { font-size: var(--rozmiar-xl); margin: 0 0 var(--odstep-2); line-height: 1.25; }
+.panel-d .lead { font-size: var(--rozmiar-s); color: var(--tekst-2); margin: 0 0 var(--odstep-4); line-height: 1.45; }
+.mapa-d { position: relative; overflow: hidden; }
+.mapa-d .warstwy-m { top: var(--odstep-4); left: var(--odstep-4); right: auto; }
+.legenda-d { position: absolute; left: var(--odstep-4); bottom: var(--odstep-4); background: var(--powierzchnia); border-radius: var(--promien); padding: var(--odstep-3); box-shadow: var(--cien-1); font-size: var(--rozmiar-xs); color: var(--tekst-2); width: 200px; z-index: 5; }
+.legenda-d .gora { display: flex; justify-content: space-between; font-weight: 600; color: var(--tekst); font-size: var(--rozmiar-s); margin-bottom: var(--odstep-2); }
+.legenda-d .pasek { height: 8px; border-radius: 4px; background: linear-gradient(90deg, #d39a62, #efe6c9, #4f9a78); }
+.legenda-d .skala { display: flex; justify-content: space-between; font-family: var(--font-mono); margin: 4px 0 var(--odstep-2); }
+.zoom { position: absolute; right: var(--odstep-4); bottom: var(--odstep-4); display: grid; background: var(--powierzchnia); border-radius: var(--promien); box-shadow: var(--cien-1); z-index: 5; }
+.zoom span { width: var(--cel-dotyku); height: var(--cel-dotyku); display: grid; place-items: center; font-size: 20px; color: var(--tekst-2); }
+.zoom span + span { border-top: 1px solid var(--linia); }
+.karta-d { position: absolute; top: var(--odstep-4); right: var(--odstep-4); width: 340px; background: var(--powierzchnia); border-radius: var(--promien-l); box-shadow: var(--cien-2); padding: var(--odstep-4); z-index: 6; }
+.karta-d .zamknij { position: absolute; top: var(--odstep-2); right: var(--odstep-2); width: var(--cel-dotyku); height: var(--cel-dotyku); border: 0; background: none; font-size: 20px; color: var(--tekst-3); }
+.porownaj-d { position: absolute; left: 50%; right: auto; bottom: var(--odstep-4); transform: translateX(-50%); width: max-content; }
+</style>
+</head>
+<body>
+<h1 class="tytul">Makieta – telefon z dolnym arkuszem i desktop z mapą na pełną wysokość</h1>
+<p class="opis">Kolory, odstępy, promienie i cienie to tokeny z planu 004 (P0) – te same wartości trafią do <code>src/styles.css</code>. Jeden czasownik na ekran: na mapie „kliknij heks”, w arkuszu z adresem „Otwórz kartę”. Akcent tylko na stanie wybranym i następnym kroku. Każdy cel dotyku ma ≥ 44 px.</p>
+
+<div class="rzad">
+  <!-- 1. Zwinięty -->
+  <div>
+    <div class="telefon">
+      <div class="mapa"><div class="rzeka"></div></div>
+      <div class="nag-m"><span class="logo"><i></i>adresscore</span><button class="chip-miasta">Kraków</button><span class="ikona-btn" aria-label="Menu"><span class="burger"></span></span></div>
+      <div class="warstwy-m"><span class="pigulka" aria-pressed="true">Wynik tej okolicy</span><span class="pigulka">Warstwy (108) <span class="strz"></span></span></div>
+      <div class="legenda-m" style="bottom:136px">0 <span class="pasek"></span> 100 <span class="brak"></span></div>
+      <div class="arkusz" style="height:124px">
+        <button class="uchwyt" aria-label="Panel wyników" aria-expanded="false"></button>
+        <div class="arkusz-tresc">
+          <div class="podsumowanie"><b>Rodzina z dziećmi</b><span class="kropka"></span>Kupuję<span class="kropka"></span>2 filtry</div>
+          <div class="pole">Nazwa okolicy, np. Ruczaj</div>
+        </div>
+      </div>
+    </div>
+    <p class="podpis-ramy"><b>1 · Zwinięty (start).</b> Mapa na cały ekran. W arkuszu: profil jednym wierszem i wyszukiwarka okolic. Etykiety „NN źródeł danych” schowane na telefonie; legenda to sam pasek 0–100.</p>
+  </div>
+
+  <!-- 2. Pół – wybrany adres -->
+  <div>
+    <div class="telefon">
+      <div class="mapa" style="background-position: 0 -150px"><div class="rzeka" style="top:30%"></div></div>
+      <div class="znacznik" style="left:48%; top:27%"></div>
+      <div class="nag-m"><span class="logo"><i></i>adresscore</span><button class="chip-miasta">Kraków</button><span class="ikona-btn"><span class="burger"></span></span></div>
+      <div class="warstwy-m"><span class="pigulka" aria-pressed="true">Wynik tej okolicy</span><span class="pigulka">Warstwy (108) <span class="strz"></span></span></div>
+      <div class="porownaj-m" style="bottom:434px">Porównanie <b>1/5</b><span class="akcja">Porównaj</span></div>
+      <div class="arkusz" style="height:422px">
+        <button class="uchwyt" aria-expanded="true"></button>
+        <div class="arkusz-tresc">
+          <div class="adres-gora">
+            <span class="plakietka">74</span>
+            <div><div class="adres-nazwa">Tadeusza Boya-Żeleńskiego 2</div><div class="adres-pod">Stare Bronowice Małe · 112 z 118 warstw z danymi</div></div>
+          </div>
+          <div class="czynniki">
+            <div class="czynnik"><small>Mocne</small><span class="plus">+</span> Przedszkole 180 m<br><span class="plus">+</span> Zieleń 92%<br><span class="plus">+</span> Cisza nocą</div>
+            <div class="czynnik"><small>Słabe</small><span class="minus">−</span> Tramwaj 14 min<br><span class="minus">−</span> SOR 6,1 km<br><span class="minus">−</span> Brak liceum</div>
+          </div>
+          <div class="akcje"><button class="btn glowny">Otwórz kartę</button><button class="btn">Usuń z porównania</button></div>
+        </div>
+      </div>
+    </div>
+    <p class="podpis-ramy"><b>2 · Pół – wybrany adres.</b> Klik w heks otwiera arkusz do połowy, mapa przesuwa się (padding), żeby znacznik stał nad arkuszem. Jedno główne CTA „Otwórz kartę” (dziś są dwa). Porównanie pływa nad arkuszem.</p>
+  </div>
+
+  <!-- 3. Pełny – filtry -->
+  <div>
+    <div class="telefon">
+      <div class="mapa"></div>
+      <div class="nag-m"><span class="logo"><i></i>adresscore</span><button class="chip-miasta">Kraków</button><span class="ikona-btn"><span class="burger"></span></span></div>
+      <div class="arkusz" style="top:64px">
+        <button class="uchwyt" aria-expanded="true"></button>
+        <div class="arkusz-tresc">
+          <div class="zakladki" role="tablist"><button role="tab" aria-selected="true">Filtry</button><button role="tab">Ranking (25)</button></div>
+          <div class="pole">Nazwa okolicy, np. Ruczaj</div>
+          <div class="etyk">Czego szukasz</div>
+          <div class="wybor"><div class="opcja" aria-pressed="true"><b>Kupuję</b>Na lata: bezpieczeństwo i ryzyko</div><div class="opcja"><b>Wynajmuję</b>Na teraz: dojazd i codzienność</div></div>
+          <div class="etyk">Profil · Rodzina z dziećmi</div>
+          <div class="suwak">Codzienność pieszo<span class="wartosc"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span></div>
+          <div class="suwak">Transport<span class="wartosc"><i class="on"></i><i class="on"></i><i></i><i></i></span></div>
+          <div class="suwak">Spokój i zdrowie<span class="wartosc"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span></div>
+          <div class="suwak">Bezpieczeństwo i ryzyko<span class="wartosc"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span></div>
+          <div class="etyk">Opisz siebie</div>
+          <div class="pole" style="height:72px; align-items:flex-start; padding-top:12px">Mam dwoje dzieci i psa…</div>
+        </div>
+      </div>
+    </div>
+    <p class="podpis-ramy"><b>3 · Pełny – filtry.</b> Przeciągnięcie w górę albo fokus w polu. Zakładki Filtry | Ranking zamiast dwóch długich sekcji. W stanie pełnym treść przewija się wewnątrz arkusza; przeciągnięcie w dół od góry listy zwija arkusz.</p>
+  </div>
+
+  <!-- 4. Pełny – ranking -->
+  <div>
+    <div class="telefon">
+      <div class="mapa"></div>
+      <div class="nag-m"><span class="logo"><i></i>adresscore</span><button class="chip-miasta">Kraków</button><span class="ikona-btn"><span class="burger"></span></span></div>
+      <div class="arkusz" style="top:64px">
+        <button class="uchwyt" aria-expanded="true"></button>
+        <div class="arkusz-tresc">
+          <div class="zakladki" role="tablist"><button role="tab">Filtry</button><button role="tab" aria-selected="true">Ranking (25)</button></div>
+          <div class="etyk" style="margin-top:0">Najlepiej pasujące ulice · wynik tej okolicy</div>
+          <div class="wiersz-r"><span class="pl">76</span><span class="t">Boya-Żeleńskiego<small>Stare Bronowice Małe</small></span><span class="plus-btn" aria-label="Dodaj do porównania"></span></div>
+          <div class="wiersz-r"><span class="pl">76</span><span class="t">Frassati-Gawrońskiej<small>Skotniki</small></span><span class="plus-btn"></span></div>
+          <div class="wiersz-r"><span class="pl s">72</span><span class="t">Na Błonie<small>Bronowice Wielkie</small></span><span class="plus-btn"></span></div>
+          <div class="wiersz-r"><span class="pl s">71</span><span class="t">Juliusza Lea<small>Krowodrza</small></span><span class="plus-btn"></span></div>
+          <div class="wiersz-r"><span class="pl n">69</span><span class="t">Zielony Jar<small>Wola Justowska</small></span><span class="plus-btn"></span></div>
+          <div class="wiersz-r"><span class="pl n">68</span><span class="t">Starego Wiarusa<small>Bronowice Małe</small></span><span class="plus-btn"></span></div>
+        </div>
+      </div>
+    </div>
+    <p class="podpis-ramy"><b>4 · Pełny – ranking.</b> Wiersz: plakietka wyniku (kolor = skala mapy, liczba zawsze obok), nazwa, okolica. „Dodaj do porównania” to okrągły przycisk 44 px zamiast długiego przycisku tekstowego w każdym wierszu.</p>
+  </div>
+</div>
+
+<div class="rzad">
+  <div>
+    <div class="desktop">
+      <div class="partnerzy"><b>Serwisy współpracujące</b><span>psoz.pl</span><span>cpdp.media</span><span>openbooks.pl</span><span>leniwyposel.pl</span><span>Wyniki szkół</span><span>z-dykty.pl</span></div>
+      <div class="nag-d"><span class="logo"><i></i>adresscore</span><button class="chip-miasta">Kraków</button>
+        <nav class="kroki"><a aria-current="page">Szukaj</a><a>Katalog adresów</a><a>Porównanie</a><a>Metoda i źródła</a></nav>
+        <div class="tryby"><a>Dla miasta</a><a>Dla biznesu</a></div><a class="link-d">Dla dziennikarzy ↗</a></div>
+      <div class="uklad-d">
+        <aside class="panel-d">
+          <h1>Znajdź okolicę w Krakowie</h1>
+          <p class="lead">Profil i wagi od razu przeliczają kolory na mapie. Kliknij heks, żeby zobaczyć okolicę.</p>
+          <div class="zakladki" role="tablist"><button role="tab" aria-selected="true">Filtry</button><button role="tab">Ranking (25)</button></div>
+          <div class="pole">Nazwa okolicy, np. Ruczaj</div>
+          <div class="etyk">Czego szukasz</div>
+          <div class="wybor"><div class="opcja" aria-pressed="true"><b>Kupuję</b>Na lata: bezpieczeństwo i ryzyko</div><div class="opcja"><b>Wynajmuję</b>Na teraz: dojazd i codzienność</div></div>
+          <div class="etyk">Profil · Rodzina z dziećmi</div>
+          <div class="suwak">Codzienność pieszo<span class="wartosc"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span></div>
+          <div class="suwak">Transport<span class="wartosc"><i class="on"></i><i class="on"></i><i></i><i></i></span></div>
+          <div class="suwak">Spokój i zdrowie<span class="wartosc"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span></div>
+        </aside>
+        <div class="mapa-d">
+          <div class="mapa"><div class="rzeka"></div></div>
+          <div class="znacznik" style="left:45%; top:42%"></div>
+          <div class="warstwy-m"><span class="pigulka" aria-pressed="true">Wynik tej okolicy</span><span class="pigulka">Warstwy (108) <span class="strz"></span></span><span class="pigulka">Krycie 100%</span></div>
+          <div class="karta-d">
+            <button class="zamknij" aria-label="Zamknij">×</button>
+            <div class="adres-gora"><span class="plakietka">74</span><div><div class="adres-nazwa">Boya-Żeleńskiego 2</div><div class="adres-pod">Stare Bronowice Małe</div></div></div>
+            <div class="czynniki">
+              <div class="czynnik"><small>Mocne</small><span class="plus">+</span> Przedszkole 180 m<br><span class="plus">+</span> Zieleń 92%</div>
+              <div class="czynnik"><small>Słabe</small><span class="minus">−</span> Tramwaj 14 min<br><span class="minus">−</span> SOR 6,1 km</div>
+            </div>
+            <div class="akcje"><button class="btn glowny">Otwórz kartę</button><button class="btn">Usuń</button></div>
+          </div>
+          <div class="legenda-d"><div class="gora">Wynik tej okolicy <span>▾</span></div><div class="pasek"></div><div class="skala"><span>0</span><span>50</span><span>100</span></div>Szrafura = brak danych, nigdy zero</div>
+          <div class="porownaj-m porownaj-d">Porównanie <b>1/5</b><span class="akcja">Porównaj</span></div>
+          <div class="zoom"><span>+</span><span>−</span></div>
+        </div>
+      </div>
+    </div>
+    <p class="podpis-ramy" style="max-width:1280px"><b>Desktop 1280.</b> Nagłówek jeden wiersz 56 px (sticky) + pasek partnerów 28 px. Panel 400 px z zakładkami Filtry | Ranking i własnym przewijaniem; mapa ma 100% wysokości prawej kolumny (dziś ~55%, ranking pod nią). Karta wybranego adresu w prawym górnym rogu, legenda zwijana, porównanie na dole środka. Stopka prawna przechodzi na dół panelu.</p>
+  </div>
+</div>
+</body>
+</html>
