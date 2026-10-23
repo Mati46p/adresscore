@@ -36,7 +36,7 @@
   line-height: 1.4;
   border-radius: 8px;
 }
-@media (max-width: 860px) {
+@media (max-width: 1023.98px) /* bp-l */ {
   .m3d-mapa {
     height: 320px;
   }
@@ -143,7 +143,7 @@
 .m3d-pokaz-panel {
   position: absolute;
   /* Nad płótnem deck.gl, które leży w kontenerze mapy. */
-  z-index: 2;
+  z-index: var(--z-mapa-kontrolki);
   top: 16px;
   left: 16px;
   bottom: 16px;
@@ -192,7 +192,7 @@
   margin: 8px 0 0;
   font-size: 14px;
 }
-@media (max-width: 860px) {
+@media (max-width: 1023.98px) /* bp-l */ {
   .m3d-pokaz-panel {
     top: auto;
     left: 8px;
@@ -209,7 +209,7 @@
 /* ── Pora dnia na mapie głównej: przycisk i okienko nad mapą ───────────────── */
 .m3d-pora {
   position: absolute;
-  z-index: 3;
+  z-index: var(--z-mapa-panel);
   top: 8px;
   right: 8px;
   display: grid;
@@ -218,8 +218,9 @@
   max-width: calc(100% - 16px);
 }
 .m3d-pora-przycisk {
+  min-height: var(--cel-dotyku);
   padding: 6px 12px;
-  border: 1px solid #dde1e4;
+  border: 1px solid var(--ramka);
   border-radius: 10px;
   background: rgb(255 255 255 / 0.96);
   box-shadow: 0 2px 8px rgb(24 32 43 / 0.1);
@@ -231,7 +232,7 @@
   position: relative;
   width: min(340px, calc(100vw - 32px));
   border-radius: 12px;
-  background: var(--powierzchnia, #fff);
+  background: var(--powierzchnia);
   box-shadow: 0 8px 24px rgb(24 32 43 / 0.2);
 }
 .m3d-pora-okno .m3d-cien {
@@ -242,8 +243,8 @@
   top: 6px;
   right: 8px;
   z-index: 1;
-  width: 32px;
-  height: 32px;
+  min-width: var(--cel-dotyku);
+  min-height: var(--cel-dotyku);
   border: 0;
   background: transparent;
   font-size: 20px;

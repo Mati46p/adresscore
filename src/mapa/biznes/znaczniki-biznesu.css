@@ -12,7 +12,7 @@
   background: transparent;
   color: var(--powierzchnia);
   cursor: grab;
-  z-index: 3;
+  z-index: var(--z-mapa-panel);
   touch-action: none;
 }
 

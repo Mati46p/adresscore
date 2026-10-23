@@ -3,11 +3,12 @@
 // razem z ETL-em. Marker HTML jak podpis mgły: bez glifów i zewnętrznego serwera.
 import { type Map as MapaLibre, Marker } from 'maplibre-gl'
 import { type RefObject, useEffect } from 'react'
+import { MEDIA_TELEFONU } from '@/lib/punktyLamania'
 import { bazaDanych, type Manifest, wczytajManifest } from '../kontrakty/index.ts'
 import { MIASTA, type Miasto } from '../kontrakty/miasta.ts'
 
 /** Od tego zoomu etykiety znikają: przy zbliżeniu zasłaniałyby heksy jednego miasta. */
-export const ZOOM_ETYKIET_ZRODEL = 9
+export const ZOOM_ETYKIET_ZRODEL = 7
 
 export function liczbaZrodel(manifest: Manifest): number {
   const nazwy = new Set<string>()
@@ -34,7 +35,8 @@ export function useEtykietyZrodel(
     const przerwanie = new AbortController()
     const znaczniki: Marker[] = []
     const pokazWgZoomu = () => {
-      const ukryj = mapa.getZoom() >= ZOOM_ETYKIET_ZRODEL
+      const ukryj =
+        mapa.getZoom() >= ZOOM_ETYKIET_ZRODEL || window.matchMedia(MEDIA_TELEFONU).matches
       for (const z of znaczniki) z.getElement().hidden = ukryj
     }
     const dodaj = (m: Miasto, manifest: Manifest) => {

@@ -1,3 +1,162 @@
+/* ── Układ ekranu Szukaj (przeniesione ze styles.css, #248) ───────────────── */
+.szukaj-mapa__zwin {
+  display: none;
+}
+.szukaj {
+  display: grid;
+  grid-template-columns: minmax(320px, 440px) minmax(0, 1fr);
+  height: calc(100dvh - var(--wys-naglowka));
+}
+.szukaj-lewa {
+  overflow-y: auto;
+  background: var(--powierzchnia);
+  border-right: 1px solid var(--ramka);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.szukaj-wyszukaj {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.szukaj-filtry {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.szukaj-prawa {
+  min-width: 0;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow-y: auto;
+}
+.szukaj-mapa {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.pasek-warstw {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.slot-mapy {
+  position: relative;
+  flex: 1 0 auto;
+  min-height: max(420px, 60dvh);
+  border-radius: var(--promien);
+  overflow: hidden;
+  border: 1px solid var(--ramka);
+  background: var(--tlo-mapy);
+}
+.mapa {
+  position: absolute;
+  inset: 0;
+}
+
+/* Telefon: jedna kolumna – h1 i wyszukiwarka, warstwy, mapa, pasek adresu, filtry, ranking.
+   Kontenery lewej i prawej kolumny znikają (display: contents), żeby ich dzieci dało się
+   ułożyć naprzemiennie przez order. */
+@media (max-width: 860px) {
+  /* Pół na pół w pionie: mapa przyklejona w górnej połowie, filtry przewijają się pod nią. */
+  .szukaj {
+    display: flex;
+    flex-direction: column;
+    height: calc(100dvh - var(--wys-naglowka));
+    overflow-y: auto;
+  }
+  .szukaj-lewa,
+  .szukaj-prawa {
+    display: contents;
+  }
+  .szukaj-wyszukaj {
+    order: 1;
+    padding: 16px;
+    background: var(--powierzchnia);
+  }
+  .szukaj-mapa {
+    order: 2;
+    position: sticky;
+    top: 0;
+    z-index: var(--z-lepkie);
+    gap: 8px;
+    padding: 8px 16px;
+    background: var(--tlo);
+    border-bottom: 1px solid var(--ramka);
+  }
+  .szukaj-filtry {
+    order: 3;
+    border-top: 1px solid var(--ramka);
+    background: var(--powierzchnia);
+    padding: 20px 16px;
+  }
+  .szukaj-ranking {
+    order: 4;
+    padding: 20px 16px;
+  }
+  .pasek-warstw {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    /* Przycięcie przy prawej krawędzi sygnalizuje, że pasek się przewija. */
+    mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+    /* Zapas wokół przycisków, żeby overflow nie uciął obrysu fokusu. */
+    padding: 4px 28px 4px 4px;
+    margin: -4px;
+  }
+  .pasek-warstw::-webkit-scrollbar {
+    display: none;
+  }
+  .pasek-warstw .seg {
+    flex: none;
+    scroll-snap-align: start;
+    white-space: nowrap;
+  }
+  /* Mapa ok. 40% wysokości (svh: pasek adresu przeglądarki nie skacze mapą przy przewijaniu). */
+  .slot-mapy {
+    flex: none;
+    height: 40svh;
+    min-height: 200px;
+  }
+  .szukaj-mapa[data-zwinieta] .slot-mapy {
+    display: none;
+  }
+  /* Uchwyt zwijania: pełna szerokość pod mapą, jak uchwyt arkusza w aplikacjach mapowych. */
+  .szukaj-mapa__zwin {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 32px;
+    margin: -4px -16px -8px;
+    border: 0;
+    background: none;
+    color: var(--tekst-2);
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+  }
+}
+
+.wybrany-adres {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--ramka);
+  border-radius: var(--promien);
+  background: var(--powierzchnia);
+}
+.wybrany-adres .seg {
+  min-height: 44px;
+}
+
 .heksy-pasek {
   position: absolute;
   z-index: 5;

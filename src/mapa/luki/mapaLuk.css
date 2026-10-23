@@ -30,7 +30,7 @@
   margin: 0;
   font-size: 13px;
   line-height: 1.35;
-  color: var(--tekst-2, #3d4652);
+  color: var(--tekst-2, var(--tekst-2));
   overflow-wrap: anywhere;
 }
 .mapa-luk__mapa {
@@ -43,16 +43,16 @@
 
 .mapa-luk-legenda__podstawa {
   margin: -3px 0 5px;
-  color: #3d4652;
+  color: var(--tekst-2);
 }
 .mapa-luk-legenda__kierunek {
   margin-bottom: 4px;
   font-weight: 600;
-  color: #18202b;
+  color: var(--tekst);
 }
 
 /* Telefon: ciaśniejsze przyciski warstw, żeby lista nie zjadała połowy wysokości mapy. */
-@media (max-width: 480px) {
+@media (max-width: 639.98px) /* bp-m */ {
   /* Dwie kolumny: 4 warstwy w 2 rzędach, długie nazwy łamią się w przycisku. */
   .mapa-luk__warstwy {
     display: grid;

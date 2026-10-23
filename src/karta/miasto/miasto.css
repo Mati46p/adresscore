@@ -55,7 +55,7 @@
 }
 
 /* Telefon: mapa nad panelem (jak w symulatorze), strona przewija się jako całość. */
-@media (max-width: 860px) {
+@media (max-width: 1023.98px) /* bp-l */ {
   .miasto {
     height: auto;
   }
@@ -83,7 +83,7 @@
 
 /* Telefon: dziesięć warstw w dwóch kolumnach zjadłoby pół ekranu przed mapą, więc pasek warstw nad mapą
    luk jest jednym przewijanym rzędem (jak pasek warstw na Szukaj). Nadpisuje siatkę z mapaLuk.css. */
-@media (max-width: 480px) {
+@media (max-width: 639.98px) /* bp-m */ {
   .miasto-luki .mapa-luk__warstwy {
     display: flex;
     flex-wrap: nowrap;

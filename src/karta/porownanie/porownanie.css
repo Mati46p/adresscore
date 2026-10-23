@@ -110,7 +110,7 @@
   cursor: pointer;
 }
 .porownanie-adres button:focus-visible {
-  outline: 2px solid #1f5c46;
+  outline: 2px solid var(--akcent);
   outline-offset: 2px;
 }
 .porownanie-kropka {
@@ -135,7 +135,7 @@
   overflow-x: auto;
 }
 .porownanie-wykres__przewijanie:focus-visible {
-  outline: 2px solid #1f5c46;
+  outline: 2px solid var(--akcent);
   outline-offset: 2px;
 }
 .porownanie-wykres svg {
@@ -160,7 +160,7 @@
   min-height: 44px;
   display: flex;
   align-items: center;
-  color: #1f5c46;
+  color: var(--akcent);
   font-weight: 600;
 }
 .porownanie-wykres__tekst ul {
@@ -182,7 +182,7 @@
   overflow-x: auto;
 }
 .porownanie-tabela__przewijanie:focus-visible {
-  outline: 2px solid #1f5c46;
+  outline: 2px solid var(--akcent);
   outline-offset: 2px;
 }
 .porownanie-tabela table {
@@ -237,7 +237,7 @@
 }
 .porownanie-ranking li {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 4px 12px;
   padding: 12px;
   border: 1px solid #e8edeb;
@@ -259,7 +259,7 @@
   color: var(--tekst-2);
 }
 
-@media (max-width: 860px) {
+@media (max-width: 1023.98px) /* bp-l */ {
   .porownanie-uklad {
     display: flex;
     flex-direction: column;

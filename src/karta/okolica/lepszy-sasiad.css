@@ -69,7 +69,7 @@
   height: 28px;
   border-radius: 50%;
   background: var(--akcent);
-  color: #fff;
+  color: var(--powierzchnia);
   font-weight: 700;
 }
 .sas-pusto-tytul {
@@ -191,7 +191,7 @@
 }
 
 /* Telefon (390 px): akcje pod tekstem, oba przyciski w jednym rzędzie na całą szerokość. */
-@media (max-width: 600px) {
+@media (max-width: 639.98px) /* bp-m */ {
   .sas-wiersz {
     grid-template-columns: auto minmax(0, 1fr);
     padding: 12px;

@@ -26,6 +26,52 @@
   /* Wysokość wszystkiego nad treścią: pasek serwisów + nagłówek. */
   --wys-paska-serwisow: 32px;
   --wys-naglowka: calc(69px + var(--wys-paska-serwisow));
+  --akcent-jasny-2: #d6e9dc;
+  --plakietka-srednia: #5d8f6f;
+  --plakietka-niska: #9bb79c;
+  /* Kolory mapy (kontrakt 004, tokeny.md). */
+  --tlo-mapy: #e4e7e2;
+  --mapa-wykluczony: #2f3438;
+  --mapa-mgla: #eef0ee;
+  --mapa-mgla-ramka: #9aa2a8;
+  /* Odstępy. */
+  --odstep-1: 4px;
+  --odstep-2: 8px;
+  --odstep-3: 12px;
+  --odstep-4: 16px;
+  --odstep-5: 20px;
+  --odstep-6: 24px;
+  --odstep-7: 32px;
+  --odstep-8: 48px;
+  /* Pismo. */
+  --rozmiar-xs: 12px;
+  --rozmiar-s: 13px;
+  --rozmiar-m: 15px;
+  --rozmiar-l: 17px;
+  --rozmiar-xl: 20px;
+  --rozmiar-xxl: 26px;
+  --interlinia: 1.4;
+  /* Promienie i cienie. */
+  --promien-s: 6px;
+  --promien-l: 16px;
+  --promien-pelny: 999px;
+  --cien-1: 0 2px 8px rgb(24 32 43 / 0.1);
+  --cien-2: 0 6px 20px rgb(24 32 43 / 0.12);
+  --cien-arkusz: 0 -8px 24px rgb(24 32 43 / 0.14);
+  /* Ruch. */
+  --czas-szybki: 120ms;
+  --czas: 200ms;
+  --czas-arkusz: 320ms;
+  --krzywa: cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* Warstwy (z-index). */
+  --z-mapa-kontrolki: 2;
+  --z-mapa-panel: 3;
+  --z-mapa-pasek: 5;
+  --z-lepkie: 10;
+  --z-arkusz: 20;
+  --z-naglowek: 30;
+  --z-menu: 40;
+  --z-toast: 50;
   font-family: var(--font);
   color: var(--tekst);
   background: var(--tlo);
@@ -66,73 +112,6 @@ a:hover {
   font-family: var(--font-mono);
 }
 
-/* ── Nagłówek ─────────────────────────────────────────────────────────────── */
-.naglowek {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px 16px;
-  min-height: calc(var(--wys-naglowka) - var(--wys-paska-serwisow));
-  padding: 12px 32px;
-  background: var(--powierzchnia);
-  border-bottom: 1px solid var(--ramka);
-}
-/* Na szerokim ekranie opakowanie nawigacji nie istnieje dla układu, a przycisk menu jest ukryty. */
-.naglowek-nawigacja {
-  display: contents;
-}
-.naglowek-menu {
-  display: none;
-}
-.szukaj-mapa__zwin {
-  display: none;
-}
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-height: var(--cel-dotyku);
-  text-decoration: none;
-  color: var(--tekst);
-  font-weight: 700;
-  font-size: 18px;
-}
-.logo:hover {
-  color: var(--tekst);
-}
-.logo-miasto {
-  font-family: var(--font-mono);
-  font-weight: 400;
-  font-size: 13px;
-  color: var(--tekst-3);
-}
-.kroki {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  font-size: 14px;
-}
-.krok {
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--cel-dotyku);
-  padding: 0 16px;
-  border-radius: 999px;
-  border: 1px solid var(--ramka);
-  color: var(--tekst-2);
-  text-decoration: none;
-}
-.krok:hover {
-  border-color: var(--akcent-obrys);
-  color: var(--tekst);
-}
-.krok[aria-current="step"] {
-  background: var(--akcent);
-  border-color: var(--akcent);
-  color: #fff;
-}
-
 /* ── Przyciski z makiety ──────────────────────────────────────────────────── */
 .seg {
   min-height: var(--cel-dotyku);
@@ -145,14 +124,16 @@ a:hover {
   font-size: 14px;
   cursor: pointer;
 }
-.seg:hover {
-  border-color: var(--akcent-obrys);
+@media (hover: hover) {
+  .seg:hover {
+    border-color: var(--akcent-obrys);
+  }
 }
 .seg[aria-pressed="true"],
 .seg.wlaczony {
   background: var(--akcent);
   border-color: var(--akcent);
-  color: #fff;
+  color: var(--powierzchnia);
 }
 .przycisk-glowny {
   display: inline-flex;
@@ -162,15 +143,17 @@ a:hover {
   border-radius: var(--promien);
   border: 0;
   background: var(--akcent);
-  color: #fff;
+  color: var(--powierzchnia);
   font: inherit;
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
 }
-.przycisk-glowny:hover {
-  background: var(--akcent-hover);
-  color: #fff;
+@media (hover: hover) {
+  .przycisk-glowny:hover {
+    background: var(--akcent-hover);
+    color: var(--powierzchnia);
+  }
 }
 .etykieta-sekcji {
   margin: 0;
@@ -198,203 +181,6 @@ a:hover {
   border-radius: 10px;
   background: var(--powierzchnia);
   color: var(--tekst);
-}
-
-/* ── Ekran Szukaj ─────────────────────────────────────────────────────────── */
-.szukaj {
-  display: grid;
-  grid-template-columns: minmax(320px, 440px) minmax(0, 1fr);
-  height: calc(100dvh - var(--wys-naglowka));
-}
-.szukaj-lewa {
-  overflow-y: auto;
-  background: var(--powierzchnia);
-  border-right: 1px solid var(--ramka);
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-.szukaj-wyszukaj {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-.szukaj-filtry {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-.szukaj-prawa {
-  min-width: 0;
-  padding: 20px 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  overflow-y: auto;
-}
-.szukaj-mapa {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.pasek-warstw {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-.slot-mapy {
-  position: relative;
-  flex: 1 0 auto;
-  min-height: max(420px, 60dvh);
-  border-radius: var(--promien);
-  overflow: hidden;
-  border: 1px solid var(--ramka);
-  background: #e4e7e2;
-}
-.mapa {
-  position: absolute;
-  inset: 0;
-}
-
-/* Telefon: jedna kolumna – h1 i wyszukiwarka, warstwy, mapa, pasek adresu, filtry, ranking.
-   Kontenery lewej i prawej kolumny znikają (display: contents), żeby ich dzieci dało się
-   ułożyć naprzemiennie przez order. */
-@media (max-width: 860px) {
-  /* Telefon: nagłówek w jednym wierszu (logo + Menu), kroki i tryby w rozwijanym panelu pod nim. */
-  :root {
-    --wys-naglowka: calc(57px + var(--wys-paska-serwisow));
-  }
-  .naglowek {
-    position: relative;
-    z-index: 30;
-    flex-wrap: nowrap;
-    height: calc(var(--wys-naglowka) - var(--wys-paska-serwisow));
-    min-height: 0;
-    padding: 6px 16px;
-  }
-  .naglowek-menu {
-    display: inline-flex;
-    align-items: center;
-    min-height: var(--cel-dotyku);
-    padding: 0 16px;
-    border: 1px solid var(--ramka-pola);
-    border-radius: 999px;
-    background: var(--powierzchnia);
-    color: var(--tekst);
-    font: inherit;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-  }
-  .naglowek[data-menu="otwarte"] .naglowek-menu {
-    border-color: var(--tekst);
-  }
-  .naglowek-nawigacja {
-    display: none;
-  }
-  .naglowek[data-menu="otwarte"] .naglowek-nawigacja {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    max-height: calc(100dvh - var(--wys-naglowka));
-    overflow-y: auto;
-    padding: 16px;
-    background: var(--powierzchnia);
-    border-bottom: 1px solid var(--ramka);
-    box-shadow: 0 12px 24px rgb(20 41 31 / 14%);
-  }
-  .naglowek-nawigacja .kroki {
-    flex-direction: column;
-  }
-  .naglowek-nawigacja .tryby {
-    align-self: flex-start;
-  }
-  .logo-miasto {
-    display: none;
-  }
-  /* Pół na pół w pionie: mapa przyklejona w górnej połowie, filtry przewijają się pod nią. */
-  .szukaj {
-    display: flex;
-    flex-direction: column;
-    height: calc(100dvh - var(--wys-naglowka));
-    overflow-y: auto;
-  }
-  .szukaj-lewa,
-  .szukaj-prawa {
-    display: contents;
-  }
-  .szukaj-wyszukaj {
-    order: 1;
-    padding: 16px;
-    background: var(--powierzchnia);
-  }
-  .szukaj-mapa {
-    order: 2;
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    gap: 8px;
-    padding: 8px 16px;
-    background: var(--tlo);
-    border-bottom: 1px solid var(--ramka);
-  }
-  .szukaj-filtry {
-    order: 3;
-    border-top: 1px solid var(--ramka);
-    background: var(--powierzchnia);
-    padding: 20px 16px;
-  }
-  .szukaj-ranking {
-    order: 4;
-    padding: 20px 16px;
-  }
-  .pasek-warstw {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    scroll-snap-type: x proximity;
-    scrollbar-width: none;
-    /* Przycięcie przy prawej krawędzi sygnalizuje, że pasek się przewija. */
-    mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
-    /* Zapas wokół przycisków, żeby overflow nie uciął obrysu fokusu. */
-    padding: 4px 28px 4px 4px;
-    margin: -4px;
-  }
-  .pasek-warstw::-webkit-scrollbar {
-    display: none;
-  }
-  .pasek-warstw .seg {
-    flex: none;
-    scroll-snap-align: start;
-    white-space: nowrap;
-  }
-  /* Mapa ok. 40% wysokości (svh: pasek adresu przeglądarki nie skacze mapą przy przewijaniu). */
-  .slot-mapy {
-    flex: none;
-    height: 40svh;
-    min-height: 200px;
-  }
-  .szukaj-mapa[data-zwinieta] .slot-mapy {
-    display: none;
-  }
-  /* Uchwyt zwijania: pełna szerokość pod mapą, jak uchwyt arkusza w aplikacjach mapowych. */
-  .szukaj-mapa__zwin {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 32px;
-    margin: -4px -16px -8px;
-    border: 0;
-    background: none;
-    color: var(--tekst-2);
-    font: inherit;
-    font-size: 13px;
-    cursor: pointer;
-  }
 }
 
 /* ── Ekrany treści (Okolica, Porównanie) ──────────────────────────────────── */
@@ -437,9 +223,11 @@ a:hover {
   text-decoration: none;
   color: var(--tekst);
 }
-.pozycja-wyniku:hover {
-  border-color: var(--akcent-obrys);
-  color: var(--tekst);
+@media (hover: hover) {
+  .pozycja-wyniku:hover {
+    border-color: var(--akcent-obrys);
+    color: var(--tekst);
+  }
 }
 .ranking-ulica {
   display: flex;
@@ -505,7 +293,7 @@ a:hover {
   height: 40px;
   border-radius: 10px;
   background: var(--akcent);
-  color: #fff;
+  color: var(--powierzchnia);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -521,22 +309,19 @@ a:hover {
   color: var(--tekst-2);
 }
 
-.wybrany-adres {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 10px 14px;
-  border: 1px solid var(--ramka);
-  border-radius: var(--promien);
-  background: #fff;
-}
-.wybrany-adres .seg {
-  min-height: 44px;
-}
-
 /* Fokus programowy na h1 po zmianie ekranu: obrys tylko, gdy użytkownik jedzie klawiaturą. */
 h1[tabindex="-1"]:focus:not(:focus-visible) {
   outline: none;
+}
+
+/* Globalny reset ruchu: kto prosi system o mniej animacji, dostaje stany bez przejść. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

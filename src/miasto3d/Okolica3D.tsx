@@ -12,6 +12,7 @@ import { PathLayer, SolidPolygonLayer } from '@deck.gl/layers'
 import { MapboxOverlay } from '@deck.gl/mapbox'
 import { AttributionControl, Map as MapaLibre, NavigationControl } from 'maplibre-gl'
 import { type ReactNode, useEffect, useRef, useState } from 'react'
+import { MEDIA_ARKUSZA } from '@/lib/punktyLamania'
 import { ograniczonyRuch, PAUZA_PRZED_LOTEM } from '@/mapa/lot'
 import { POLSKIE_NAPISY, STYL } from '@/mapa/MapaKrakowa'
 import { useDane } from '@/wynik/dane'
@@ -286,7 +287,7 @@ function Scena({
     if (pokaz) {
       mapa.once('load', () => {
         // Panel przykrywa lewy pas (komputer) albo dół (telefon) – adres ląduje w wolnej części.
-        const waski = window.matchMedia('(max-width: 860px)').matches
+        const waski = window.matchMedia(MEDIA_ARKUSZA).matches
         const cel = {
           center: [lon, lat] as [number, number],
           ...KADR_ADRESU,

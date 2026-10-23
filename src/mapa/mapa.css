@@ -2,7 +2,7 @@
   position: absolute;
   inset: 0;
   font-family: "IBM Plex Sans", system-ui, sans-serif;
-  color: #18202b;
+  color: var(--tekst);
 }
 /* Wyższa swoistość niż .maplibregl-map { position: relative } z CSS MapLibre. */
 .mapa-krakowa > .mapa-krakowa__plotno {
@@ -12,7 +12,7 @@
 
 .mapa-ustawienia {
   position: absolute;
-  z-index: 2;
+  z-index: var(--z-mapa-kontrolki);
   top: 8px;
   left: 8px;
   display: flex;
@@ -21,7 +21,7 @@
   gap: 4px 7px;
   max-width: calc(100% - 16px);
   padding: 4px 7px;
-  border: 1px solid #dde1e4;
+  border: 1px solid var(--ramka);
   border-radius: 10px;
   background: rgb(255 255 255 / 0.96);
   box-shadow: 0 2px 8px rgb(24 32 43 / 0.1);
@@ -29,13 +29,13 @@
 }
 .mapa-ustawienia__suwak {
   width: clamp(90px, 13vw, 150px);
-  height: 36px;
+  height: 44px;
   margin: 0;
-  accent-color: #1f5c46;
+  accent-color: var(--akcent);
   cursor: pointer;
 }
 .mapa-ustawienia__suwak:focus-visible {
-  outline: 3px solid #1f5c46;
+  outline: 3px solid var(--akcent);
   outline-offset: 2px;
 }
 .mapa-ustawienia__wartosc {
@@ -50,11 +50,11 @@
 .mapa-ustawienia__warstwy > summary {
   display: flex;
   align-items: center;
-  min-height: 36px;
+  min-height: 44px;
   padding: 0 8px;
-  border: 1px solid #929da5;
+  border: 1px solid var(--ramka-pola);
   border-radius: 7px;
-  background: #fff;
+  background: var(--powierzchnia);
   font-weight: 600;
   cursor: pointer;
   list-style: none;
@@ -70,12 +70,12 @@
   content: "▴";
 }
 .mapa-ustawienia__warstwy > summary:focus-visible {
-  outline: 3px solid #1f5c46;
+  outline: 3px solid var(--akcent);
   outline-offset: 2px;
 }
 .mapa-ustawienia__warstwy-lista {
   position: absolute;
-  z-index: 3;
+  z-index: var(--z-mapa-panel);
   top: calc(100% + 8px);
   right: 0;
   display: flex;
@@ -83,9 +83,9 @@
   gap: 6px;
   min-width: 170px;
   padding: 8px;
-  border: 1px solid #dde1e4;
+  border: 1px solid var(--ramka);
   border-radius: 8px;
-  background: #fff;
+  background: var(--powierzchnia);
   box-shadow: 0 4px 16px rgb(24 32 43 / 0.15);
 }
 
@@ -93,12 +93,12 @@
   min-width: 168px;
   max-width: 220px;
   padding: 8px 10px;
-  border: 1px solid #dde1e4;
+  border: 1px solid var(--ramka);
   border-radius: 8px;
   background: rgb(255 255 255 / 0.92);
   font-size: 12px;
   line-height: 1.3;
-  color: #18202b;
+  color: var(--tekst);
   pointer-events: auto;
 }
 .mapa-legenda[hidden],
@@ -120,19 +120,19 @@
   margin: 2px 0 6px;
   font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: 11px;
-  color: #3d4652;
+  color: var(--tekst-2);
 }
 /* Przypis do skali (#223): kolory liczone osobno w każdym mieście. Zwykły tekst, bez próbki. */
 .mapa-legenda__nota {
   margin: 0 0 6px;
-  color: #3d4652;
+  color: var(--tekst-2);
 }
 .mapa-legenda__wiersz {
   display: flex;
   align-items: center;
   gap: 6px;
   margin-top: 3px;
-  color: #3d4652;
+  color: var(--tekst-2);
 }
 .mapa-legenda__probka {
   flex: none;
@@ -148,12 +148,12 @@
 /* Heks wykluczony filtrem: pełny ciemny kolor, bez szrafury (brak danych ma szrafurę). */
 .mapa-legenda__probka--wykluczony {
   opacity: 1;
-  background: #2f3438;
+  background: var(--mapa-wykluczony);
 }
 .mapa-legenda__probka--mgla {
   opacity: 1;
-  background: #eef0ee;
-  border: 1px dashed #9aa2a8;
+  background: var(--mapa-mgla);
+  border: 1px dashed var(--mapa-mgla-ramka);
 }
 
 /* Cel dotyku 44 × 44 (WCAG 2.5.5); MapLibre domyślnie daje 29 px. */
@@ -171,7 +171,7 @@
   background: rgb(255 255 255 / 0.7);
   font-size: 12px;
   font-style: italic;
-  color: #5b6470;
+  color: var(--tekst-3);
   white-space: nowrap;
   pointer-events: none;
 }
@@ -184,7 +184,7 @@
   box-shadow: 0 1px 2px rgb(24 32 43 / 0.2);
   font-size: 11px;
   font-weight: 600;
-  color: #3d4652;
+  color: var(--tekst-2);
   white-space: nowrap;
   pointer-events: none;
 }
@@ -198,14 +198,14 @@
   border-radius: 6px;
   font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: 12px;
-  color: #18202b;
+  color: var(--tekst);
   pointer-events: none;
 }
 .mapa-dymek {
   pointer-events: none;
 }
 
-@media (max-width: 480px) {
+@media (max-width: 639.98px) /* bp-m */ {
   .mapa-ustawienia {
     top: 8px;
     left: 8px;
@@ -225,6 +225,16 @@
   }
   /* Podpis „poza obsługiwanymi miastami – brak danych" ma 41 znaków: na telefonie zawija się do
      dwóch wierszy zamiast wychodzić poza mapę. */
+  .mapa-krakowa .maplibregl-ctrl-zoom-in,
+  .mapa-krakowa .maplibregl-ctrl-zoom-out {
+    display: none;
+  }
+  .mapa-krakowa .maplibregl-ctrl-attrib.maplibregl-compact {
+    min-height: 44px;
+  }
+  .mapa-zrodla-miasta {
+    display: none;
+  }
   .mapa-mgla-podpis {
     max-width: 200px;
     white-space: normal;
@@ -249,12 +259,12 @@
   gap: 10px;
   max-width: calc(100% - 32px);
   padding: 8px 8px 8px 14px;
-  border: 1px solid #dde1e4;
+  border: 1px solid var(--ramka);
   border-radius: 8px;
   background: rgb(255 255 255 / 0.94);
   font-size: 14px;
   line-height: 1.3;
-  color: #18202b;
+  color: var(--tekst);
   transform: translateX(-50%);
   transition: opacity 0.6s ease;
 }
@@ -271,20 +281,20 @@
   padding: 0 14px;
   border: 0;
   border-radius: 6px;
-  background: #1f5c46;
+  background: var(--akcent);
   font: inherit;
   font-weight: 600;
-  color: #fff;
+  color: var(--powierzchnia);
   cursor: pointer;
 }
 .mapa-intro-przycisk:focus-visible {
-  outline: 2px solid #1f5c46;
+  outline: 2px solid var(--akcent);
   outline-offset: 2px;
 }
 /* Na dotyku stan hover zostawałby przyklejony po tapnięciu. */
 @media (hover: hover) {
   .mapa-intro-przycisk:hover {
-    background: #17493a;
+    background: var(--akcent-hover);
   }
 }
 .mapa-krakowa--intro .mapa-mgla-podpis {
@@ -297,11 +307,73 @@
     transition: none;
   }
 }
-@media (max-width: 480px) {
+@media (max-width: 639.98px) /* bp-m */ {
   .mapa-intro-podpis {
     flex-direction: column;
     align-items: stretch;
     font-size: 13px;
     text-align: center;
+  }
+}
+
+/* Arkusz od dołu (odstepDolny): kontrolki i legenda stoją nad nim. */
+.mapa-krakowa .maplibregl-ctrl-bottom-left,
+.mapa-krakowa .maplibregl-ctrl-bottom-right {
+  bottom: var(--arkusz-odstep, 0px);
+  transition: bottom var(--czas) var(--krzywa);
+}
+.mapa-krakowa .maplibregl-ctrl-bottom-left {
+  z-index: var(--z-mapa-kontrolki);
+}
+
+/* Legenda zwijana: nagłówek to przycisk (cel 44 px), zwinięta = pasek 0–100 + znacznik braku danych. */
+.mapa-legenda__naglowek {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mapa-legenda__naglowek:focus-visible {
+  outline: 3px solid var(--akcent);
+  outline-offset: 2px;
+}
+.mapa-legenda__naglowek .mapa-legenda__tytul {
+  margin-bottom: 0;
+}
+.mapa-legenda__strzalka::after {
+  content: "▴";
+}
+.mapa-legenda__naglowek[aria-expanded="true"] .mapa-legenda__strzalka::after {
+  content: "▾";
+}
+.mapa-legenda__zwinieta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 8px;
+}
+.mapa-legenda__zwinieta .mapa-legenda__pasek {
+  flex: 1;
+  min-width: 80px;
+}
+@media (hover: hover) {
+  .mapa-legenda__naglowek:hover .mapa-legenda__tytul {
+    color: var(--akcent-hover);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mapa-krakowa .maplibregl-ctrl-bottom-left,
+  .mapa-krakowa .maplibregl-ctrl-bottom-right {
+    transition: none;
   }
 }
