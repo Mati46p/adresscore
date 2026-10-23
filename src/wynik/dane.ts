@@ -60,8 +60,12 @@ async function wczytajWszystko(slug: SlugMiasta, signal?: AbortSignal): Promise<
   return { ...wynik, adresy }
 }
 
-/** Zapas bramki: po tylu ms od startu strony pełne dane ruszają, nawet gdy mapa nie dała sygnału. */
-const ZAPAS_BRAMKI_MS = 4000
+/**
+ * Zapas bramki: po tylu ms od startu strony pełne dane ruszają, nawet gdy mapa nie dała sygnału (np. brak
+ * WebGL). Sygnałem ma być pierwszy kolor, nie zegar: przy 4 s wolny telefon (pomiar produkcji, 4G 1,6 Mb/s)
+ * otwierał bramkę przed kolorem i 50 MB danych zabierało łącze heksom – pierwszy kolor 33 s zamiast kilku.
+ */
+const ZAPAS_BRAMKI_MS = 20_000
 
 // Bramka zamknięta (A4): pełne dane nie konkurują z mapą o sieć i CPU, dopóki mapa się nie pokoloruje.
 const pamiec = utworzPamiecDanych(
