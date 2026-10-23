@@ -50,5 +50,8 @@ export function adresyZKafli(
       wyniki[a.i] = wynikAdresu(j, kafel.wskazniki, wagi, kierunki).wynik ?? Number.NaN
     })
   }
+  // Kolejność jak w adresy.json: `budynkiOkolicy` sumuje wyniki adresów w obrysie po kolei, więc ta sama
+  // kolejność daje tę samą średnią co ścieżka pełnych danych co do ostatniego bitu.
+  adresy.sort((x, y) => x.i - y.i)
   return { adresy, wyniki }
 }

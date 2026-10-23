@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { opisAdresu } from '@/karta/adres'
 import { useDane } from '@/wynik/dane'
+import { useAdresKompakt } from '@/wynik/kafle'
 import type { LepszySasiad as Kandydat } from '@/wynik/sasiedzi'
 import {
   otworzKarteSasiada,
@@ -122,7 +123,9 @@ function Wiersz({
   onPelne: () => void
 }) {
   const dane = useDane()
-  const a = dane.stan === 'gotowe' ? dane.adresy[k.i] : undefined
+  // Bez pełnych danych adres kandydata leży w kaflach, które policzyły listę (są w pamięci).
+  const zKafla = useAdresKompakt(dane.stan === 'gotowe' ? null : k.i)
+  const a = dane.stan === 'gotowe' ? dane.adresy[k.i] : zKafla
   if (!a) return null
   const nazwa = opisAdresu(a)
   const kolor = KOLORY_ETYKIETY[k.litera as LiteraEtykiety]

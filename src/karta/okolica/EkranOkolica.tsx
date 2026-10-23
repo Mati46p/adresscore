@@ -5,6 +5,8 @@ import { KATEGORIE, type KategoriaId, type PlikOkolic } from '@/kontrakty'
 import { Sekcja3D } from '@/miasto3d/Sekcja3D'
 import { udostepnienie } from '@/pomiar/pomiar.ts'
 import { useDane } from '@/wynik/dane'
+import { useAdresKompakt } from '@/wynik/kafle'
+import { useKafelWybranego } from '@/wynik/kartaKompakt'
 import { trybLekki } from '@/wynik/lekki'
 import {
   type MiejsceAdresu,
@@ -19,10 +21,12 @@ import {
   dodajDoPorownania,
   dodajMiejsceBiznesu,
   hrefDla,
+  linkCzekaNaSlownik,
   przejdz,
   useStan,
   ustawTryb,
 } from '@/wynik/stan'
+import { useOkoliceKompaktu, useStartKompakt } from '@/wynik/startKompakt'
 import { useWynikAdresu } from '@/wynik/useWyniki'
 import { czyWarstwaWyborow } from '@/wynik/wybory'
 import { Etykieta } from './Etykieta'
@@ -55,19 +59,40 @@ const CoByToZmienilo = lazy(async () => ({
 export function EkranOkolica() {
   const dane = useDane()
   const stan = useStan((s) => s)
+  const pelne = dane.stan === 'gotowe'
+  // Bez pełnych danych karta stoi na kompakcie (#247, B7b): meta i słownik id podpina `useStartKompakt`,
+  // adres, rozbicie wyniku i sąsiedzi przychodzą z kafli na żądanie, okolice z pliku bocznego. Pełne dane
+  // otwiera tylko stary kompakt bez rozszerzeń albo kafel, którego nie da się znaleźć.
+  const hk = useStartKompakt(pelne)
+  const okoliceKompakt = useOkoliceKompaktu(hk, !pelne)
+  const okolice = pelne ? dane.okolice : okoliceKompakt
+  useKafelWybranego(stan.wybrany)
+  const adresKompakt = useAdresKompakt(pelne ? null : stan.wybrany)
   const wynik = useWynikAdresu(stan.wybrany)
-  const adres = dane.stan === 'gotowe' && stan.wybrany !== null ? dane.adresy[stan.wybrany] : null
+  const adres = pelne ? (stan.wybrany !== null ? dane.adresy[stan.wybrany] : null) : adresKompakt
+  const wersja = pelne
+    ? dane.plikAdresow.wersja
+    : hk.stan === 'gotowe'
+      ? hk.indeks.wersjaAdresow
+      : null
   const linkMapa = hrefDla(stan, { ekran: 'szukaj' })
   const [jakOtwarte, setJakOtwarte] = useState(false)
 
-  if (dane.stan === 'ladowanie') {
+  // Czekamy, dopóki dane nie rozstrzygną, czy adres istnieje: kompakt jeszcze się ładuje, link czeka na
+  // słownik id albo kafel adresu jest w drodze. Pusta karta „Nie ma takiego adresu” tylko po rozstrzygnięciu.
+  const czekam =
+    dane.stan === 'ladowanie' &&
+    (hk.stan !== 'gotowe' || (stan.wybrany === null ? linkCzekaNaSlownik() : adres === null))
+  if (czekam) {
     return (
       <main className="tresc okol">
-        <p className="komunikat">Wczytuję dane…</p>
+        <p className="komunikat" role="status">
+          Wczytuję dane…
+        </p>
       </main>
     )
   }
-  if (dane.stan !== 'gotowe' || stan.wybrany === null || !adres || !wynik) {
+  if (stan.wybrany === null || !adres || !wynik || wersja === null) {
     return (
       <main className="tresc okol">
         <section className="karta okol-pusta">
@@ -94,7 +119,7 @@ export function EkranOkolica() {
   const { mocne, slabe } = mocneISlabe(wynik.warstwy, wynik.wynik)
   const atrapa = wynik.warstwy.some((w) => w.meta.atrapa)
   // Okolica z okolice.json (jednostka SIM albo miejscowość); bez niej dzielnica Krakowa albo gmina.
-  const miejsce = miejsceAdresu(adres, stan.wybrany, dane.okolice)
+  const miejsce = miejsceAdresu(adres, stan.wybrany, okolice)
 
   return (
     <main className="tresc okol">
@@ -194,16 +219,14 @@ export function EkranOkolica() {
       <Rozbicie warstwy={warstwyWyniku} wynik={wynik.wynik} />
 
       {kontekst.length > 0 && (
-        <NaCoDzien warstwy={kontekst} indeks={stan.wybrany} wersja={dane.plikAdresow.wersja} />
+        <NaCoDzien warstwy={kontekst} indeks={stan.wybrany} wersja={wersja} />
       )}
 
       <p className="okol-przypis">
         Źródło, licencję, rozdzielczość i datę danych podajemy przy każdej warstwie w tabeli.
         Kategoria bez danych jest szara i nigdy nie liczy się jako zero.
       </p>
-      {dane.okolice && miejsce.rodzaj !== 'zapas' && (
-        <ZrodlaOkolicy miejsce={miejsce} plik={dane.okolice} />
-      )}
+      {okolice && miejsce.rodzaj !== 'zapas' && <ZrodlaOkolicy miejsce={miejsce} plik={okolice} />}
     </main>
   )
 }
