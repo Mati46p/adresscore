@@ -6,7 +6,7 @@
 //
 // Ten plik to klej: prawdziwa sieć (`fetch`), rejestr miast, stan aplikacji i React. Logika siedzi w
 // plikach bez `import.meta.env`, żeby `node --test` mógł ją sprawdzić:
-//   przegladMenedzer.ts – ładowanie i kolejność pobrań (bieżące miasto pierwsze, tło po 3 naraz),
+//   przegladMenedzer.ts – ładowanie i kolejność pobrań (bieżące miasto pierwsze, tło po 3 naraz, za bramką tła),
 //   przegladSklad.ts    – złożenie `Przeglad` z danych i ustawień widoku, stabilne referencje,
 //   przegladLiczenie.ts – arytmetyka: kolory, tło, granice, miasto pod punktem.
 // Kontrakt: specs/002-wszystkie-miasta/contracts/przeglad.md.
@@ -104,11 +104,24 @@ if (import.meta.env.DEV) {
   })
 }
 
+/** Zapas bramki tła (ms): gdy nic jej nie otworzy, pozostałe miasta same ruszają po tym czasie. */
+const ZAPAS_BRAMKI_TLA_MS = 8000
+
+/**
+ * Pozwala pobierać przeglądy pozostałych miast (decyzja #250: start na kadrze bieżącego miasta, tło dopiero
+ * po pierwszym kolorze mapy, oddaleniu kamery albo kliku „Wszystkie miasta”). Idempotentne.
+ */
+export function otworzTloPrzegladu() {
+  menedzer.otworzTlo()
+}
+
+setTimeout(otworzTloPrzegladu, ZAPAS_BRAMKI_TLA_MS)
+
 const zloz = utworzSkladacz()
 
 /**
  * Przegląd wszystkich miast. Pierwsze użycie uruchamia ładowanie: bieżące miasto pierwsze, reszta po jego
- * pierwszym kolorze. Wynik jest ten sam (`===`), dopóki nie zmieni się jego zawartość.
+ * pierwszym kolorze i otwarciu bramki tła (`otworzTloPrzegladu`). Wynik jest ten sam (`===`), dopóki nie zmieni się jego zawartość.
  */
 export function usePrzeglad(): Przeglad {
   const migawka = useSyncExternalStore(menedzer.subskrybuj, menedzer.migawka, menedzer.migawka)

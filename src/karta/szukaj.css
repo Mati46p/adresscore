@@ -418,6 +418,11 @@
   gap: 6px;
 }
 
+.wybor-miasta__wszystkie {
+  /* Przelot do kadru wszystkich miast: przycisk jak inne w panelu, cel dotyku z .seg (min-height). */
+  align-self: flex-start;
+}
+
 .wybor-miasta .seg {
   /* Nazwa nie dzieli się na dwa wiersze, a przycisk nie rośnie ponad swoją treść. */
   flex: 0 0 auto;
