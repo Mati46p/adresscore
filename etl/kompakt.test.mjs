@@ -117,13 +117,14 @@ test('słowniki etykiet trafiają do pliku bocznego', () => {
   )
   const { indeks, pliki } = zbudujKompakt(adresy, zSlownikiem)
   assert.ok(indeks.slowniki)
+  assert.ok(indeks.rozszerzenia.includes('slowniki'))
   const slowniki = JSON.parse(Buffer.from(pliki.get(indeks.slowniki.plik)).toString('utf8'))
   assert.deepEqual(slowniki[zSlownikiem[0].meta.id], { a1: 'Szkoła nr 1' })
 })
 
 test('kafel niesie kolumnę i zgodną z kolejnością adresy.json', async () => {
   const { indeks, pliki, kolejnosc } = zbudujKompakt(adresy, warstwy)
-  assert.deepEqual(indeks.rozszerzenia, ['i', 'r8', 'okolice'])
+  assert.deepEqual(indeks.rozszerzenia, ['i', 'r8', 'okolice', 'kolejnosc'])
   const zebrane = []
   for (const wpis of indeks.kafle) {
     const kafel = await odczytajKafel(pliki.get(wpis.plik))

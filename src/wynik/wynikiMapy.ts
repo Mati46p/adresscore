@@ -28,6 +28,8 @@ export interface WynikiMapy {
    * choć powinna zniknąć: ekran może pokazać to jako „liczę filtry".
    */
   filtryGotowe: boolean
+  /** Pobranie pliku filtra albo skal zawiodło (ponawiane co kilka sekund): panel mówi o tym wprost. */
+  filtryBlad: boolean
 }
 
 const BRAK_WYKLUCZONYCH: ReadonlySet<string> = new Set()
@@ -94,6 +96,8 @@ export function policzWynikiMapy(
     const skala = dane.skala(f.id)
     if (filtr && skala) dostepne.set(f.id, { filtr, skala })
   }
+  const filtryBlad =
+    aktywne.length > 0 && (dane.skalaBlad() || aktywne.some((f) => dane.filtrBlad(f.id)))
   const filtryGotowe = dostepne.size === new Set(aktywne.map((f) => f.id)).size
 
   let wykluczone = BRAK_WYKLUCZONYCH
@@ -132,6 +136,7 @@ export function policzWynikiMapy(
     podpis: meta ? meta.nazwa : 'Wynik tej okolicy',
     brakWarstwy: warstwa !== 'wynik' && !meta,
     filtryGotowe,
+    filtryBlad,
   }
   ostatni = { dane, wagi, kierunki, warstwa, filtry, wynik }
   return wynik

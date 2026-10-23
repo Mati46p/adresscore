@@ -11,6 +11,7 @@ import {
   kafelAdresu,
   kafelPunktu,
   kafelZPamieci,
+  kaflePoAdresach,
   pozycjaWKaflu,
   przypnijAdresy,
   skaleKafli,
@@ -135,6 +136,22 @@ describe('kafle – jednostkowo', () => {
     assert.equal(kafelAdresu(ix, 0), null)
     assert.equal(kafelAdresu(ix, 0, [7])?.h3, 'b')
     assert.equal(kafelAdresu(ix, 0, [-1]), null)
+  })
+
+  it('kaflePoAdresach: indeks adresu → mapa → kafel, bez powtórzeń i bez brakujących', () => {
+    const ix = {
+      kafle: [
+        { h3: 'a', od: 0, n: 5, plik: 'a' },
+        { h3: 'b', od: 5, n: 5, plik: 'b' },
+      ],
+    } as unknown as IndeksKompaktu
+    // adres 0 → kompakt 7 (kafel b), 1 → 8 (b), 2 → 1 (a), 3 → brak
+    const mapa = [7, 8, 1, -1]
+    assert.deepEqual(
+      kaflePoAdresach(ix, [0, 1, 2, 3], mapa).map((k) => k.h3),
+      ['b', 'a'],
+    )
+    assert.deepEqual(kaflePoAdresach(ix, [], mapa), [])
   })
 })
 

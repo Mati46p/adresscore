@@ -18,7 +18,7 @@ import {
 } from '@/kontrakty'
 import { type JednostkaGeoJson, type OkolicaNaMapie, okolicaNaMapie } from '@/mapa/okolica/granice'
 import { daneJesliGotowe, pozwolNaPelneDane } from './dane.ts'
-import { type SkaleKafli, skaleKafli } from './kafle.ts'
+import { type SkaleKafli, skaleKafli, wczytajKafleAdresow } from './kafle.ts'
 import {
   dekodujId,
   type IndeksKompaktu,
@@ -95,6 +95,7 @@ export function wczytajSlownikId(slug: SlugMiasta, indeks: IndeksKompaktu) {
     const r = await rozpakuj(
       await (await pobierz(plikKompaktu(slug, indeks.id.plik))).arrayBuffer(),
     )
+    // Bez `kolejnosc` (kompakt sprzed rozszerzenia) resolverZId rzuca: ekran wraca do pełnych danych.
     return resolverZId(dekodujId(r), kolejnoscId(r) ?? undefined)
   })
 }
@@ -265,8 +266,17 @@ export function useStartKompakt(pelneGotowe: boolean): StanDanychHeksow {
     wczytajSlownikId(miasto, indeks).then(
       (resolver) => {
         // Pełne dane mogły dojść w międzyczasie: ich słownik (z adresami) ma pierwszeństwo.
-        if (aktualne && pobierzStan().miasto === miasto && !daneJesliGotowe())
+        if (aktualne && pobierzStan().miasto === miasto && !daneJesliGotowe()) {
           podlaczSlownik(resolver)
+          // Link z `#/adres/…?cmp=…` ustawia wybrany i porównanie dopiero tu; bez ich kafli chipy
+          // porównania i karta byłyby puste do pierwszego kliku w mapę.
+          const { wybrany: w, porownanie: p } = pobierzStan()
+          const doWczytania = w === null ? p : [w, ...p]
+          if (doWczytania.length > 0)
+            wczytajSkaleKafli(miasto, indeks)
+              .then((skale) => wczytajKafleAdresow(bazaDanych(miasto), indeks, doWczytania, skale))
+              .catch((e: unknown) => console.warn('Kafle wybranych adresów niedostępne', e))
+        }
       },
       (e: unknown) => console.warn('Słownik id adresów niedostępny', e),
     )

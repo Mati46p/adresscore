@@ -78,6 +78,8 @@ function dane(
     ]),
     nieudane: new Set(opcje.nieudane ?? []),
     filtr: (id) => opcje.filtry?.[id] ?? null,
+    filtrBlad: () => false,
+    skalaBlad: () => false,
     skala: () => (opcje.skale === false ? null : SKALA),
   }
 }

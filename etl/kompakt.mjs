@@ -547,7 +547,9 @@ export function zbudujKompakt(plikAdresow, plikiWskaznikow, okolice = null) {
     resKafla: RES_KAFLA,
     // Dodatki formatu 2 (addytywne): stary kod je ignoruje, nowy po nich pozna, że kafle niosą
     // kolumnę `i`, mogą być r8, a okolice są w pliku bocznym – i startuje z kompaktu.
-    rozszerzenia: ['i', 'r8', 'okolice'],
+    // 'kolejnosc' = sekcja w id.bin (id adresu → pozycja), 'slowniki' = plik etykiet (tylko gdy powstał):
+    // kompakt z wcześniejszego ETL ich nie ma, więc klient nie może zakładać ich obecności.
+    rozszerzenia: ['i', 'r8', 'okolice', 'kolejnosc', ...(plikSlownikow ? ['slowniki'] : [])],
     ...(plikOkolic ? { okolice: plikOkolic } : {}),
     ...(plikSlownikow ? { slowniki: plikSlownikow } : {}),
     heksy: plikHeksow,

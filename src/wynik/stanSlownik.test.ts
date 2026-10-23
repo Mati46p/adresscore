@@ -4,22 +4,20 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import {
   idAdresu,
+  indeksAdresu,
   pobierzStan,
   podlaczMeta,
   podlaczSlownik,
   resolverZId,
+  ustawMiasto,
   wczytajLinkStartowy,
 } from './stan.ts'
 import { czytajHash } from './url.ts'
 
 const WSKAZNIKI = [{ id: 'halas_ldwn', kategoria: 'spokoj' as const }]
 
-test('resolverZId bez kolejności: pozycja w id.bin to indeks', () => {
-  const r = resolverZId(['a', 'b', 'c'])
-  assert.equal(r.indeksDlaId('b'), 1)
-  assert.equal(r.indeksDlaId('x'), null)
-  assert.equal(r.idDlaIndeksu(2), 'c')
-  assert.equal(r.idDlaIndeksu(9), null)
+test('resolverZId bez kolejności nie zgaduje – rzuca', () => {
+  assert.throws(() => resolverZId(['a', 'b', 'c'], undefined))
 })
 
 test('resolverZId z kolejnością kompaktu: indeks to pozycja w adresy.json', () => {
@@ -39,9 +37,17 @@ test('podlaczMeta liczy wagi bez słownika, a id z linku czekają na podlaczSlow
   assert.equal(pobierzStan().ekran, 'okolica')
   assert.equal(pobierzStan().wybrany, null)
   assert.deepEqual(pobierzStan().porownanie, [])
-  podlaczSlownik(resolverZId(['id-a', 'id-b', 'id-c']))
+  podlaczSlownik(resolverZId(['id-a', 'id-b', 'id-c'], [0, 1, 2]))
   const s = pobierzStan()
   assert.equal(s.wybrany, 1)
   assert.deepEqual(s.porownanie, [0, 2])
   assert.equal(idAdresu(1), 'id-b')
+})
+
+test('po zmianie miasta słownik poprzedniego nie rozwiązuje id', () => {
+  podlaczSlownik(resolverZId(['id-a', 'id-b', 'id-c'], [0, 1, 2]))
+  assert.equal(idAdresu(1), 'id-b')
+  ustawMiasto('lodz')
+  assert.equal(idAdresu(1), null)
+  assert.equal(indeksAdresu('id-b'), null)
 })

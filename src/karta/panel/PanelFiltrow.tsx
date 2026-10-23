@@ -20,6 +20,7 @@ import {
   wybierzPersone,
 } from '@/wynik/stan'
 import { useMetaWarstw } from '@/wynik/startKompakt'
+import { useWynikiMapy } from '@/wynik/useWynikiMapy'
 import './panel.css'
 import { czyWarstwaWyborow } from '@/wynik/wybory'
 import { etykietaKierunku, kierunkiWarstwy } from './preferencje'
@@ -44,6 +45,39 @@ const OPIS_TRYBU: Record<Tryb, string> = {
     'Mocniej liczy się dojazd (waga +1). Szacunek czynszu: wkrótce – nie mamy jeszcze danych o najmie.',
   biznes:
     'Dalej od podobnej usługi i więcej stałych mieszkańców w polu 1 km² daje wyższy wynik. To wstępna ocena lokalizacji: nie mierzy ruchu pieszych, popytu ani sprzedaży.',
+}
+
+/** Po tylu ms oczekiwania na pliki filtrów panel mówi, że filtr się wczytuje (krótsze ładowanie jest ciche). */
+const OPOZNIENIE_KOMUNIKATU_MS = 1500
+
+/**
+ * Stan filtrów twardych bez pełnych danych: pliki filtrów i skal idą z kompaktu leniwie, więc mapa
+ * bywa chwilę nieprzefiltrowana. Pokazuje „wczytuje się” (po chwili) albo błąd, który źródło ponawia samo.
+ */
+function KomunikatFiltrow() {
+  const wyniki = useWynikiMapy()
+  const czeka = wyniki !== null && !wyniki.filtryGotowe
+  const [dlugo, setDlugo] = useState(false)
+  useEffect(() => {
+    if (!czeka) {
+      setDlugo(false)
+      return
+    }
+    const t = setTimeout(() => setDlugo(true), OPOZNIENIE_KOMUNIKATU_MS)
+    return () => clearTimeout(t)
+  }, [czeka])
+  if (!czeka) return null
+  if (wyniki.filtryBlad)
+    return (
+      <p className="panel-uwaga" role="status">
+        Nie udało się wczytać filtra – spróbuj ponownie
+      </p>
+    )
+  return dlugo ? (
+    <p className="panel-uwaga" role="status">
+      Filtr wczytuje się…
+    </p>
+  ) : null
 }
 
 // Panel pamięta ostatni wybrany profil, żeby „Przywróć wagi profilu" działało po ręcznej
@@ -200,6 +234,7 @@ export function PanelFiltrow() {
             {aktywne} {aktywne === 1 ? 'warstwa aktywna' : 'warstw aktywnych'} z {liczone.length}
           </span>
         </div>
+        {dane.stan !== 'gotowe' && <KomunikatFiltrow />}
         <p className="panel-uwaga">
           Waga 0–4 mówi, jak ważna jest dla Ciebie warstwa: 0 – pomijam, 4 – bardzo ważne. Kierunek
           wskazuje, które miejsca wolisz.

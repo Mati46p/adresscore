@@ -22,6 +22,7 @@ import { wczytajGraniceOkolic } from '@/mapa/okolica/wczytajGranice'
 import { ZOOM_PODPISU_MIASTA } from '@/mapa/tlo'
 import { pozwolNaPelneDane, useDane } from '@/wynik/dane'
 import {
+  adresyZPamieci,
   adresZPunktu,
   kafelPunktu,
   przypnijAdresy,
@@ -349,7 +350,16 @@ export function EkranSzukaj() {
       setKomunikatHeksow('W tym heksie nie ma adresu. Wybierz inny heks.')
       return
     }
-    const juzWybrany = wybraneAdresy.find((a) => a.h3 === kandydat.h3)
+    // Stan z chwili wykonania (kafel mógł przyjść po kilku klikach): porównanie czytamy na świeżo.
+    const porownanieTeraz = pobierzStan().porownanie
+    const wybraneTeraz =
+      dane.stan === 'gotowe'
+        ? porownanieTeraz.flatMap((i) => {
+            const a = dane.adresy[i]
+            return a ? [a] : []
+          })
+        : adresyZPamieci(porownanieTeraz)
+    const juzWybrany = wybraneTeraz.find((a) => a.h3 === kandydat.h3)
     wybierzAdres(juzWybrany?.i ?? kandydat.adres.i)
     // Arkusz pokazuje adres od razu; fokus zostaje, ogłoszenie idzie przez regiony status.
     if (jestArkusz) setStanArkusza('polowa')
@@ -358,7 +368,7 @@ export function EkranSzukaj() {
       setKomunikatHeksow('Usunięto heks z porównania.')
       return
     }
-    if (porownanie.length >= MAKS_POROWNANIE) {
+    if (porownanieTeraz.length >= MAKS_POROWNANIE) {
       setKomunikatHeksow('Możesz porównać maksymalnie 5 heksów. Usuń jeden z listy.')
       return
     }

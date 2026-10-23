@@ -31,6 +31,7 @@ function wpisGotowy(i: IndeksKompaktu): WpisPrzegladu {
 
 function zrodlo(wpis: WpisPrzegladu | undefined) {
   const pobrane: string[] = []
+  const opozn: (() => void)[] = []
   const z = utworzZrodloHeksow({
     wpis: () => wpis,
     subskrybujWpisy: () => () => {},
@@ -45,8 +46,9 @@ function zrodlo(wpis: WpisPrzegladu | undefined) {
       return new ArrayBuffer(4)
     },
     ostrzez: () => {},
+    opoznij: (f) => void opozn.push(f),
   })
-  return { z, pobrane }
+  return { z, pobrane, opozn }
 }
 
 const czekaj = () => new Promise((r) => setTimeout(r, 5))
@@ -65,12 +67,12 @@ describe('źródło danych heksów', () => {
   })
 
   it('migawka jest stabilna (===), dopóki nic się nie zmieni', () => {
-    const { z } = zrodlo(wpisGotowy(indeks(['i'])))
+    const { z } = zrodlo(wpisGotowy(indeks(['i', 'kolejnosc'])))
     assert.equal(z.stan('krakow'), z.stan('krakow'))
   })
 
   it('skala: jeden fetch na plik, powiadomienie po dojściu, potem wartość', async () => {
-    const { z, pobrane } = zrodlo(wpisGotowy(indeks(['i'])))
+    const { z, pobrane } = zrodlo(wpisGotowy(indeks(['i', 'kolejnosc'])))
     let powiadomien = 0
     z.subskrybuj(() => powiadomien++)
     const przed = z.stan('krakow') as DaneHeksowGotowe
@@ -85,8 +87,8 @@ describe('źródło danych heksów', () => {
     assert.equal(po.skala('a')?.norma, 5)
   })
 
-  it('filtr: jeden fetch na plik, uszkodzony plik zostaje null i nie ponawia się', async () => {
-    const { z, pobrane } = zrodlo(wpisGotowy(indeks(['i'])))
+  it('filtr: jeden fetch na plik, uszkodzony plik zostaje null do planowego ponowienia', async () => {
+    const { z, pobrane } = zrodlo(wpisGotowy(indeks(['i', 'kolejnosc'])))
     let powiadomien = 0
     z.subskrybuj(() => powiadomien++)
     const d = z.stan('krakow') as DaneHeksowGotowe
@@ -98,5 +100,26 @@ describe('źródło danych heksów', () => {
     assert.equal(powiadomien, 1)
     assert.equal((z.stan('krakow') as DaneHeksowGotowe).filtr('a'), null)
     assert.equal(pobrane.filter((u) => u.endsWith('filtry/a.1.bin')).length, 1)
+  })
+
+  it('nieudany filtr i skale są ponawiane po przerwie, a błąd jest widoczny', async () => {
+    const { z, pobrane, opozn } = zrodlo(wpisGotowy(indeks(['i', 'kolejnosc'])))
+    const d = z.stan('krakow') as DaneHeksowGotowe
+    d.filtr('a')
+    await czekaj()
+    const po = z.stan('krakow') as DaneHeksowGotowe
+    assert.equal(po.filtrBlad('a'), true)
+    assert.equal(opozn.length, 1)
+    // upłynęła przerwa: błąd znika, następne filtr(id) zamawia pobranie od nowa
+    opozn.shift()?.()
+    const ponownie = z.stan('krakow') as DaneHeksowGotowe
+    assert.equal(ponownie.filtrBlad('a'), false)
+    ponownie.filtr('a')
+    await czekaj()
+    assert.equal(pobrane.filter((u) => u.endsWith('filtry/a.1.bin')).length, 2)
+  })
+
+  it('kompakt bez sekcji kolejnosc to stan brak', () => {
+    assert.equal(zrodlo(wpisGotowy(indeks(['i', 'r8', 'okolice']))).z.stan('krakow').stan, 'brak')
   })
 })

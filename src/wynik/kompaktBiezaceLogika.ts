@@ -26,6 +26,10 @@ export interface DaneHeksowGotowe {
   filtr(id: string): FiltrHeksow | null
   /** Skala warstwy; null, dopóki `skale.json` nie doszło albo gdy warstwy nie ma (pierwsze wywołanie zamawia pobranie). */
   skala(id: string): Skala | null
+  /** Czy pobranie filtra warstwy zawiodło (do ponowienia automatycznego albo po zmianie filtrów). */
+  filtrBlad(id: string): boolean
+  /** Czy pobranie skal zawiodło. */
+  skalaBlad(): boolean
 }
 
 export type StanDanychHeksow =
@@ -42,7 +46,14 @@ export interface ZaleznosciZrodla {
   json: <T>(url: string) => Promise<T>
   bajty: (url: string) => Promise<ArrayBuffer>
   ostrzez: (komunikat: string, powod?: unknown) => void
+  /** Opóźnione wywołanie (ponowienie nieudanego pobrania); domyślnie `setTimeout`. */
+  opoznij?: (f: () => void, ms: number) => void
 }
+
+/** Po tylu ms od błędu pobranie filtra albo skal jest zamawiane od nowa (kolejna zmiana migawki). */
+export const PRZERWA_PONOWIENIA_MS = 5000
+/** Tyle automatycznych ponowień na plik; dalej user wywoła je zmianą filtrów (nowa migawka, nowy indeks). */
+const MAX_PONOWIEN = 3
 
 /** Pliki dociągane leniwie dla jednego indeksu kompaktu (nowy indeks = świeży cache). */
 interface Cache {
@@ -50,6 +61,8 @@ interface Cache {
   zamowione: Set<string>
   skale: Record<string, Skala> | 'blad' | null
   skaleZamowione: boolean
+  /** Liczba dotychczasowych ponowień: filtry po id, skale pod kluczem ''. */
+  ponowienia: Map<string, number>
   /** Rośnie przy każdym dojściu pliku: odświeża migawkę. */
   wersja: number
 }
@@ -77,10 +90,30 @@ export function utworzZrodloHeksow(z: ZaleznosciZrodla) {
   function cacheIndeksu(indeks: IndeksKompaktu): Cache {
     let c = cache.get(indeks)
     if (!c) {
-      c = { filtry: new Map(), zamowione: new Set(), skale: null, skaleZamowione: false, wersja: 0 }
+      c = {
+        filtry: new Map(),
+        zamowione: new Set(),
+        skale: null,
+        skaleZamowione: false,
+        ponowienia: new Map(),
+        wersja: 0,
+      }
       cache.set(indeks, c)
     }
     return c
+  }
+
+  /** Po przerwie czyści błąd pliku, żeby kolejne `filtr`/`skala` zamówiły pobranie od nowa. */
+  function zaplanujPonowienie(c: Cache, klucz: string, wyczysc: () => void) {
+    const proby = c.ponowienia.get(klucz) ?? 0
+    if (proby >= MAX_PONOWIEN) return
+    c.ponowienia.set(klucz, proby + 1)
+    const opoznij = z.opoznij ?? ((f, ms) => void setTimeout(f, ms))
+    opoznij(() => {
+      wyczysc()
+      c.wersja++
+      powiadom()
+    }, PRZERWA_PONOWIENIA_MS)
   }
 
   function zamowSkale(slug: SlugMiasta, indeks: IndeksKompaktu, c: Cache) {
@@ -95,6 +128,11 @@ export function utworzZrodloHeksow(z: ZaleznosciZrodla) {
       (e: unknown) => {
         z.ostrzez(`Skale kompaktu (${slug}) niedostępne`, e)
         c.skale = 'blad'
+        zaplanujPonowienie(c, '', () => {
+          if (c.skale !== 'blad') return
+          c.skale = null
+          c.skaleZamowione = false
+        })
         c.wersja++
         powiadom()
       },
@@ -113,6 +151,11 @@ export function utworzZrodloHeksow(z: ZaleznosciZrodla) {
         (e: unknown) => {
           z.ostrzez(`Filtr ${id} (${slug}) niedostępny`, e)
           c.filtry.set(id, 'blad')
+          zaplanujPonowienie(c, id, () => {
+            if (c.filtry.get(id) !== 'blad') return
+            c.filtry.delete(id)
+            c.zamowione.delete(id)
+          })
         },
       )
       .finally(() => {
@@ -125,8 +168,10 @@ export function utworzZrodloHeksow(z: ZaleznosciZrodla) {
     if (!wpis) return { stan: 'ladowanie' }
     if (wpis.stan === 'brak') return { stan: 'brak', powod: wpis.powod }
     const { indeks } = wpis
-    // Stary format kompaktu: bez kolumny `i` i kafli r8 ekran szukania nie ma czym zastąpić pełnych danych.
-    if (!indeks.rozszerzenia?.length) {
+    // Stary format kompaktu: bez kolumny `i`, kafli r8 i sekcji `kolejnosc` (id.bin) ekran szukania nie
+    // ma czym zastąpić pełnych danych. Marker 'slowniki' nie jest wymagany: ETL wystawia go tylko,
+    // gdy słowniki etykiet powstały, a bez nich etykiety kafli i tak nie są kodami.
+    if (!indeks.rozszerzenia?.includes('kolejnosc')) {
       return { stan: 'brak', powod: 'kompakt bez rozszerzeń (stary format)' }
     }
     const c = cacheIndeksu(indeks)
@@ -148,6 +193,8 @@ export function utworzZrodloHeksow(z: ZaleznosciZrodla) {
         zamowSkale(slug, indeks, c)
         return c.skale && c.skale !== 'blad' ? (c.skale[id] ?? null) : null
       },
+      filtrBlad: (id) => c.filtry.get(id) === 'blad',
+      skalaBlad: () => c.skale === 'blad',
     }
   }
 

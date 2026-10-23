@@ -294,6 +294,40 @@ export function wczytajMapeAdresow(
   return p
 }
 
+/** Wpisy kafli (bez powtórzeń) zawierających adresy `is`; adres bez kafla w mapie odpada. Czysta funkcja. */
+export function kaflePoAdresach(
+  indeks: IndeksKompaktu,
+  is: readonly number[],
+  mapa: ArrayLike<number>,
+): KafelKompaktu[] {
+  const wpisy = new Set<KafelKompaktu>()
+  for (const i of is) {
+    const k = kafelAdresu(indeks, i, mapa)
+    if (k) wpisy.add(k)
+  }
+  return [...wpisy]
+}
+
+/**
+ * Wczytuje kafle adresów `is` (wybrany + porównanie z linku), żeby karta i chipy porównania były
+ * widoczne bez kliknięcia w mapę. Stary `id.bin` bez `kolejnosc` nie ma jak wskazać kafla: zwraca [].
+ */
+export async function wczytajKafleAdresow(
+  baza: string,
+  indeks: IndeksKompaktu,
+  is: readonly number[],
+  skale: SkaleKafli,
+  pobierz?: (url: string) => Promise<ArrayBuffer | Uint8Array>,
+): Promise<KafelGotowy[]> {
+  if (is.length === 0) return []
+  const mapa = await wczytajMapeAdresow(baza, indeks, pobierz)
+  if (!mapa) return []
+  const opcje = pobierz ? { pobierz } : {}
+  return Promise.all(
+    kaflePoAdresach(indeks, is, mapa).map((w) => wczytajKafel(baza, w, skale, opcje)),
+  )
+}
+
 /** Pozycja adresu `i` (z adresy.json) w kaflu albo -1; to ją przyjmuje `wynikAdresu`. */
 export function pozycjaWKaflu(kafel: KafelGotowy, i: number): number {
   return kafel.pozycje.get(i) ?? -1
@@ -344,14 +378,19 @@ export function useKafelAdresu(i: number | null): KafelGotowy | null {
   return i === null ? null : (poI.get(i) ?? null)
 }
 
-/** Adresy o pozycjach `is`, których kafle są w pamięci (kolejność jak w `is`; reszta odpada). */
-export function useAdresyKompakt(is: readonly number[]): Adres[] {
-  useSyncExternalStore(subskrybuj, migawka, migawka)
+/** Adresy o pozycjach `is`, których kafle są teraz w pamięci (bez subskrypcji – dla handlerów po `await`). */
+export function adresyZPamieci(is: readonly number[]): Adres[] {
   return is.flatMap((i) => {
     const k = poI.get(i)
     const a = k ? k.adresy[k.pozycje.get(i) as number] : undefined
     return a ? [a] : []
   })
+}
+
+/** Adresy o pozycjach `is`, których kafle są w pamięci (kolejność jak w `is`; reszta odpada). */
+export function useAdresyKompakt(is: readonly number[]): Adres[] {
+  useSyncExternalStore(subskrybuj, migawka, migawka)
+  return adresyZPamieci(is)
 }
 
 /** Adres o pozycji `i`, jeśli jego kafel jest już w pamięci; inaczej null. */

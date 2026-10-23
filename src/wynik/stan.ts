@@ -284,10 +284,23 @@ export function subskrybuj(sluchacz: () => void): () => void {
   return () => sluchacze.delete(sluchacz)
 }
 
+/** Słownik tylko wtedy, gdy należy do bieżącego miasta. */
+function slownikBiezacy(): ResolverId | null {
+  return slownik && miastoSlownika === stan.miasto ? slownik : null
+}
+
 function zmien(latka: Partial<StanAplikacji>) {
   const poprzedni = stan
   stan = zgodnyZTrybem(poprzedni, { ...stan, ...latka })
-  if (slownik) zapiszPreferencje(doUrl(stan))
+  // Słownik id należy do miasta, dla którego go podpięto: po zmianie miasta nie może rozwiązywać ani
+  // zapisywać id z innego zbioru adresów (czeka na `podlaczSlownik`/`podlaczDane` nowego miasta).
+  if (stan.miasto !== poprzedni.miasto && miastoSlownika !== stan.miasto) {
+    slownik = null
+    indeksPoHash = null
+    adresyStanu = []
+    miastoSlownika = null
+  }
+  if (slownikBiezacy()) zapiszPreferencje(doUrl(stan))
   zapiszDoUrl(poprzedni)
   for (const s of sluchacze) s()
 }
@@ -588,11 +601,11 @@ function miastoZLinku(url: StanUrl): Partial<StanAplikacji> {
 
 /** Id adresu pod indeksem – do linków `#/adres/<id>`. */
 export function idAdresu(i: number | null): string | null {
-  return i === null ? null : (slownik?.idDlaIndeksu(i) ?? null)
+  return i === null ? null : (slownikBiezacy()?.idDlaIndeksu(i) ?? null)
 }
 
 export function indeksAdresu(id: string | null): number | null {
-  return id === null ? null : (slownik?.indeksDlaId(id) ?? null)
+  return id === null ? null : (slownikBiezacy()?.indeksDlaId(id) ?? null)
 }
 
 /**
@@ -636,18 +649,19 @@ function resolverZPelnychId(ids: readonly string[]): ResolverId {
 /**
  * Resolver z samych id kompaktu (`id.bin` po `dekodujId`), bez pełnych adresów. `id.bin` jest w
  * kolejności KOMPAKTU, a `wybrany`/`porownanie` to indeksy w adresy.json (`etl/kompakt.mjs`:
- * `kolejnosc[j]` = indeks w adresy.json adresu o indeksie j w kompakcie, kolumna `i` kafli). Bez
- * `kolejnosc` pozycja w `id.bin` jest indeksem wyniku; z nią indeks przechodzi przez tę tablicę
- * w obie strony.
+ * `kolejnosc[j]` = indeks w adresy.json adresu o indeksie j w kompakcie, kolumna `i` kafli). Indeks
+ * przechodzi przez tę tablicę w obie strony; bez niej (stary kompakt) resolver nie powstaje.
  */
 export function resolverZId(
   dekodowaneId: readonly string[],
-  kolejnosc?: ArrayLike<number>,
+  kolejnosc: ArrayLike<number> | undefined,
 ): ResolverId {
-  const poId = new Map(dekodowaneId.map((id, j) => [id, kolejnosc ? (kolejnosc[j] as number) : j]))
+  // Bez `kolejnosc` pozycja w id.bin nie jest indeksem adresy.json (kompakt sprzed rozszerzenia):
+  // zgadywanie podmieniłoby adresy po cichu, więc rzucamy, a wołający wraca do pełnych danych.
+  if (!kolejnosc) throw new Error('id.bin bez sekcji kolejnosc: słownik z kompaktu niedostępny')
+  const poId = new Map(dekodowaneId.map((id, j) => [id, kolejnosc[j] as number]))
   let odwrotna: Map<number, number> | null = null
   const pozycja = (i: number): number | undefined => {
-    if (!kolejnosc) return i
     if (!odwrotna) {
       odwrotna = new Map()
       for (let j = 0; j < dekodowaneId.length; j++) odwrotna.set(kolejnosc[j] as number, j)
@@ -959,7 +973,7 @@ function zapiszDoUrl(poprzedni: StanAplikacji) {
   // `replaceState` na `/#/panel` (bez query), skasował kod przed wymianą i logowanie kończyłoby się
   // cichą porażką, szczególnie gdy dostawca obetnie fragment adresu powrotu.
   if (stan.ekran === 'panel') return
-  if (!slownik) return zapiszParametryEkranuPrzedDanymi(poprzedni)
+  if (!slownikBiezacy()) return zapiszParametryEkranuPrzedDanymi(poprzedni)
   // Indeksowalne ścieżki (/katalog/<ulica>, /metoda) to strony Krakowa i nie niosą `mst=`: zostają
   // tylko, gdy miasto było i jest Krakowem. Zmiana miasta przepisuje adres na hash z `mst=`.
   const wKrakowie = stan.miasto === MIASTO_DOMYSLNE && poprzedni.miasto === MIASTO_DOMYSLNE
