@@ -59,14 +59,37 @@ function przepisz(sciezka) {
   return null
 }
 
+// Pliki kompaktu z hashem w nazwie (`heksy.46328432c8.bin`, `kafle/871e...ffff.88763e305b.json.gz`)
+// zmieniają nazwę razem z treścią, więc są niezmienne na rok.
+const KOMPAKT_Z_HASHEM = /\/kompakt\/.*\.[0-9a-f]{10}\.(bin|json|json\.gz)$/
+
 function naglowkiPliku(sciezka) {
   const naglowki = { 'X-Content-Type-Options': 'nosniff' }
   if (sciezka === '/sw.js') naglowki['Cache-Control'] = 'no-cache'
   else if (sciezka.startsWith('/assets/'))
     naglowki['Cache-Control'] = 'public, max-age=31536000, immutable'
   else if (sciezka.endsWith('.pmtiles')) naglowki['Cache-Control'] = 'public, max-age=86400'
-  else naglowki['Cache-Control'] = 'public, max-age=300'
+  else if (sciezka.startsWith('/dane/')) {
+    // Indeks i manifest bez hasha: zawsze rewalidacja (tania dzięki ETag/304), reszta danych z SWR.
+    if (KOMPAKT_Z_HASHEM.test(sciezka))
+      naglowki['Cache-Control'] = 'public, max-age=31536000, immutable'
+    else if (/\/(indeks|manifest)\.json$/.test(sciezka)) naglowki['Cache-Control'] = 'no-cache'
+    else naglowki['Cache-Control'] = 'public, max-age=300, stale-while-revalidate=86400'
+  } else naglowki['Cache-Control'] = 'public, max-age=300'
   return naglowki
+}
+
+/** Czy warunkowe żądanie (If-None-Match / If-Modified-Since) mówi, że klient ma świeżą kopię. */
+function swiezaKopia(req, etag, mtime) {
+  const jeden = req.headers['if-none-match']
+  if (jeden !== undefined) {
+    if (jeden.trim() === '*') return true
+    // Porównanie słabe: prefiks W/ pomijamy po obu stronach.
+    const goly = (e) => e.trim().replace(/^W\//, '')
+    return jeden.split(',').some((e) => goly(e) === goly(etag))
+  }
+  const od = Date.parse(req.headers['if-modified-since'] ?? '')
+  return !Number.isNaN(od) && Math.floor(mtime / 1000) <= Math.floor(od / 1000)
 }
 
 async function plik(req, res, sciezka, korzen = KORZEN, zadanaSciezka = sciezka) {
@@ -81,13 +104,24 @@ async function plik(req, res, sciezka, korzen = KORZEN, zadanaSciezka = sciezka)
   }
   if (!info.isFile()) return false
 
+  const etag = `W/"${info.size.toString(16)}-${Math.floor(info.mtimeMs).toString(16)}"`
   const naglowki = {
     ...naglowkiPliku(zadanaSciezka),
     'Content-Type': TYPY[extname(pelna)] ?? 'application/octet-stream',
     'Accept-Ranges': 'bytes',
     'Last-Modified': info.mtime.toUTCString(),
+    // Słaby ETag z rozmiaru i mtime: wystarcza do rewalidacji w public/sw.js (If-None-Match).
+    ETag: etag,
   }
   if (sciezka === '/llms.txt') naglowki['Content-Type'] = 'text/plain; charset=utf-8'
+
+  // Warunki tylko dla żądań bez Range – zakresy mają własną logikę poniżej.
+  if (!req.headers.range && swiezaKopia(req, etag, info.mtimeMs)) {
+    const { 'Content-Type': _t, 'Accept-Ranges': _a, ...bez } = naglowki
+    res.writeHead(304, bez)
+    res.end()
+    return true
+  }
 
   // PMTiles czyta mapę zakresami bajtów – bez Range mapa nie ruszy.
   const zakres = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range ?? '')
